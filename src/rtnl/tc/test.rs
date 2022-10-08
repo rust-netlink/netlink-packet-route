@@ -7,9 +7,7 @@ use crate::{
     nlas::NlasIterator,
     tc::{ingress, Nla, Stats, Stats2, StatsBuffer, TC_HEADER_LEN},
     traits::{Emitable, Parseable},
-    TcHeader,
-    TcMessage,
-    TcMessageBuffer,
+    TcHeader, TcMessage, TcMessageBuffer,
 };
 
 #[rustfmt::skip]

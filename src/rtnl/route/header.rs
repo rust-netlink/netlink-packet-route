@@ -3,9 +3,7 @@
 use crate::{
     constants::*,
     traits::{Emitable, Parseable},
-    DecodeError,
-    RouteMessageBuffer,
-    ROUTE_HEADER_LEN,
+    DecodeError, RouteMessageBuffer, ROUTE_HEADER_LEN,
 };
 
 bitflags! {
@@ -85,8 +83,8 @@ impl Default for RouteFlags {
 /// ```
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
 pub struct RouteHeader {
-    /// Address family of the route: either [`AF_INET`] for IPv4 prefixes, or [`AF_INET6`] for IPv6
-    /// prefixes.
+    /// Address family of the route: either [`AF_INET`] for IPv4 prefixes, or
+    /// [`AF_INET6`] for IPv6 prefixes.
     pub address_family: u8,
     /// Prefix length of the destination subnet.
     ///
@@ -94,12 +92,13 @@ pub struct RouteHeader {
     pub destination_prefix_length: u8,
     /// Prefix length of the source address.
     ///
-    /// There could be multiple addresses from which a certain network is reachable. To decide which
-    /// source address to use to reach and address in that network, the kernel rely on the route's
+    /// There could be multiple addresses from which a certain network is
+    /// reachable. To decide which source address to use to reach and
+    /// address in that network, the kernel rely on the route's
     /// source address for this destination.
     ///
-    /// For instance, interface `if1` could have two addresses `10.0.0.1/24` and `10.0.0.128/24`,
-    /// and we could have the following routes:
+    /// For instance, interface `if1` could have two addresses `10.0.0.1/24`
+    /// and `10.0.0.128/24`, and we could have the following routes:
     ///
     /// ```no_rust
     /// 10.0.0.10/32 dev if1 scope link src 10.0.0.1
@@ -108,30 +107,35 @@ pub struct RouteHeader {
     /// 10.0.0.0/24 dev if1 scope link src 10.0.0.128
     /// ```
     ///
-    /// It means that for `10.0.0.10`, `10.0.0.11` and `10.0.0.12` the packets will be sent with
-    /// `10.0.0.1` as source address, while for the rest of the `10.0.0.0/24` subnet, the source
-    /// address will be `10.0.0.128`
+    /// It means that for `10.0.0.10`, `10.0.0.11` and `10.0.0.12` the packets
+    /// will be sent with `10.0.0.1` as source address, while for the rest
+    /// of the `10.0.0.0/24` subnet, the source address will be
+    /// `10.0.0.128`
     pub source_prefix_length: u8,
     /// TOS filter
     pub tos: u8,
-    /// Routing table ID. It can be one of the `RT_TABLE_*` constants or a custom table number
-    /// between 1 and 251 (included). Note that Linux supports routing table with an ID greater than
-    /// 255, in which case this attribute will be set to [`RT_TABLE_COMPAT`] and an [`Nla::Table`]
+    /// Routing table ID. It can be one of the `RT_TABLE_*` constants or a
+    /// custom table number between 1 and 251 (included). Note that Linux
+    /// supports routing table with an ID greater than 255, in which case
+    /// this attribute will be set to [`RT_TABLE_COMPAT`] and an [`Nla::Table`]
     /// netlink attribute will be present in the message.
     pub table: u8,
-    /// Protocol from which the route was learnt. It should be set to one of the `RTPROT_*`
-    /// constants.
+    /// Protocol from which the route was learnt. It should be set to one of
+    /// the `RTPROT_*` constants.
     pub protocol: u8,
-    /// The scope of the area where the addresses in the destination subnet are valid. Predefined
-    /// scope values are the `RT_SCOPE_*` constants.
+    /// The scope of the area where the addresses in the destination subnet are
+    /// valid. Predefined scope values are the `RT_SCOPE_*` constants.
     pub scope: u8,
     /// Route type. It should be set to one of the `RTN_*` constants.
     pub kind: u8,
-    /// Flags when querying the kernel with a `RTM_GETROUTE` message. See [`RouteFlags`].
+    /// Flags when querying the kernel with a `RTM_GETROUTE` message. See
+    /// [`RouteFlags`].
     pub flags: RouteFlags,
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteMessageBuffer<&'a T>> for RouteHeader {
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteMessageBuffer<&'a T>>
+    for RouteHeader
+{
     fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(RouteHeader {
             address_family: buf.address_family(),

@@ -93,8 +93,10 @@ impl<T: AsRef<[u8]>> Parseable<Inet6DevConfBuffer<T>> for Inet6DevConf {
             accept_dad: buf.accept_dad(),
             force_tllao: buf.force_tllao(),
             ndisc_notify: buf.ndisc_notify(),
-            mldv1_unsolicited_report_interval: buf.mldv1_unsolicited_report_interval(),
-            mldv2_unsolicited_report_interval: buf.mldv2_unsolicited_report_interval(),
+            mldv1_unsolicited_report_interval: buf
+                .mldv1_unsolicited_report_interval(),
+            mldv2_unsolicited_report_interval: buf
+                .mldv2_unsolicited_report_interval(),
             suppress_frag_ndisc: buf.suppress_frag_ndisc(),
             accept_ra_from_local: buf.accept_ra_from_local(),
             use_optimistic: buf.use_optimistic(),
@@ -155,8 +157,12 @@ impl Emitable for Inet6DevConf {
         buffer.set_accept_dad(self.accept_dad);
         buffer.set_force_tllao(self.force_tllao);
         buffer.set_ndisc_notify(self.ndisc_notify);
-        buffer.set_mldv1_unsolicited_report_interval(self.mldv1_unsolicited_report_interval);
-        buffer.set_mldv2_unsolicited_report_interval(self.mldv2_unsolicited_report_interval);
+        buffer.set_mldv1_unsolicited_report_interval(
+            self.mldv1_unsolicited_report_interval,
+        );
+        buffer.set_mldv2_unsolicited_report_interval(
+            self.mldv2_unsolicited_report_interval,
+        );
         buffer.set_suppress_frag_ndisc(self.suppress_frag_ndisc);
         buffer.set_accept_ra_from_local(self.accept_ra_from_local);
         buffer.set_use_optimistic(self.use_optimistic);
@@ -164,8 +170,11 @@ impl Emitable for Inet6DevConf {
         buffer.set_stable_secret(self.stable_secret);
         buffer.set_use_oif_addrs_only(self.use_oif_addrs_only);
         buffer.set_accept_ra_min_hop_limit(self.accept_ra_min_hop_limit);
-        buffer.set_ignore_routes_with_linkdown(self.ignore_routes_with_linkdown);
-        buffer.set_drop_unicast_in_l2_multicast(self.drop_unicast_in_l2_multicast);
+        buffer
+            .set_ignore_routes_with_linkdown(self.ignore_routes_with_linkdown);
+        buffer.set_drop_unicast_in_l2_multicast(
+            self.drop_unicast_in_l2_multicast,
+        );
         buffer.set_drop_unsolicited_na(self.drop_unsolicited_na);
         buffer.set_keep_addr_on_down(self.keep_addr_on_down);
         buffer.set_rtr_solicit_max_interval(self.rtr_solicit_max_interval);

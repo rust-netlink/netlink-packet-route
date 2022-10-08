@@ -241,18 +241,30 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             RTA_PAD => Pad(payload.to_vec()),
             RTA_UID => Uid(payload.to_vec()),
             RTA_TTL_PROPAGATE => TtlPropagate(payload.to_vec()),
-            RTA_ENCAP_TYPE => {
-                EncapType(parse_u16(payload).context("invalid RTA_ENCAP_TYPE value")?)
+            RTA_ENCAP_TYPE => EncapType(
+                parse_u16(payload).context("invalid RTA_ENCAP_TYPE value")?,
+            ),
+            RTA_IIF => {
+                Iif(parse_u32(payload).context("invalid RTA_IIF value")?)
             }
-            RTA_IIF => Iif(parse_u32(payload).context("invalid RTA_IIF value")?),
-            RTA_OIF => Oif(parse_u32(payload).context("invalid RTA_OIF value")?),
-            RTA_PRIORITY => Priority(parse_u32(payload).context("invalid RTA_PRIORITY value")?),
-            RTA_PROTOINFO => {
-                ProtocolInfo(parse_u32(payload).context("invalid RTA_PROTOINFO value")?)
+            RTA_OIF => {
+                Oif(parse_u32(payload).context("invalid RTA_OIF value")?)
             }
-            RTA_FLOW => Flow(parse_u32(payload).context("invalid RTA_FLOW value")?),
-            RTA_TABLE => Table(parse_u32(payload).context("invalid RTA_TABLE value")?),
-            RTA_MARK => Mark(parse_u32(payload).context("invalid RTA_MARK value")?),
+            RTA_PRIORITY => Priority(
+                parse_u32(payload).context("invalid RTA_PRIORITY value")?,
+            ),
+            RTA_PROTOINFO => ProtocolInfo(
+                parse_u32(payload).context("invalid RTA_PROTOINFO value")?,
+            ),
+            RTA_FLOW => {
+                Flow(parse_u32(payload).context("invalid RTA_FLOW value")?)
+            }
+            RTA_TABLE => {
+                Table(parse_u32(payload).context("invalid RTA_TABLE value")?)
+            }
+            RTA_MARK => {
+                Mark(parse_u32(payload).context("invalid RTA_MARK value")?)
+            }
 
             #[cfg(not(feature = "rich_nlas"))]
             RTA_CACHEINFO => CacheInfo(payload.to_vec()),
@@ -269,7 +281,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             #[cfg(feature = "rich_nlas")]
             RTA_MFC_STATS => MfcStats(
                 mfc_stats::MfcStats::parse(
-                    &MfcStatsBuffer::new_checked(payload).context("invalid RTA_MFC_STATS value")?,
+                    &MfcStatsBuffer::new_checked(payload)
+                        .context("invalid RTA_MFC_STATS value")?,
                 )
                 .context("invalid RTA_MFC_STATS value")?,
             ),
@@ -278,7 +291,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             #[cfg(feature = "rich_nlas")]
             RTA_METRICS => Metrics(
                 metrics::Metrics::parse(
-                    &NlaBuffer::new_checked(payload).context("invalid RTA_METRICS value")?,
+                    &NlaBuffer::new_checked(payload)
+                        .context("invalid RTA_METRICS value")?,
                 )
                 .context("invalid RTA_METRICS value")?,
             ),
@@ -289,10 +303,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
                 let mut next_hops = vec![];
                 let mut buf = payload;
                 loop {
-                    let nh_buf =
-                        NextHopBuffer::new_checked(&buf).context("invalid RTA_MULTIPATH value")?;
+                    let nh_buf = NextHopBuffer::new_checked(&buf)
+                        .context("invalid RTA_MULTIPATH value")?;
                     let len = nh_buf.length() as usize;
-                    let nh = NextHop::parse(&nh_buf).context("invalid RTA_MULTIPATH value")?;
+                    let nh = NextHop::parse(&nh_buf)
+                        .context("invalid RTA_MULTIPATH value")?;
                     next_hops.push(nh);
                     if buf.len() == len {
                         break;
@@ -301,7 +316,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
                 }
                 MultiPath(next_hops)
             }
-            _ => Other(DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?),
+            _ => Other(
+                DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?,
+            ),
         })
     }
 }

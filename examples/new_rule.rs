@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
-use netlink_packet_route::{constants::*, rule, RtnlMessage, RuleHeader, RuleMessage};
+use netlink_packet_route::{
+    constants::*, rule, RtnlMessage, RuleHeader, RuleMessage,
+};
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
 fn main() {
@@ -44,16 +46,15 @@ fn main() {
     let mut receive_buffer = vec![0; 4096];
 
     while let Ok(_size) = socket.recv(&mut receive_buffer, 0) {
-        loop {
-            let bytes = &receive_buffer[..];
-            let rx_packet = <NetlinkMessage<RtnlMessage>>::deserialize(bytes);
-            println!("<<< {:?}", rx_packet);
-            if let Ok(rx_packet) = rx_packet {
-                if let NetlinkPayload::Error(e) = rx_packet.payload {
-                    eprintln!("{:?}", e);
-                }
+        let bytes = &receive_buffer[..];
+        let rx_packet = <NetlinkMessage<RtnlMessage>>::deserialize(bytes);
+        println!("<<< {:?}", rx_packet);
+        if let Ok(rx_packet) = rx_packet {
+            if let NetlinkPayload::Error(e) = rx_packet.payload {
+                eprintln!("{:?}", e);
+            } else {
+                return;
             }
-            return;
         }
     }
 }

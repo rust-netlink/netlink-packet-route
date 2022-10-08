@@ -201,7 +201,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
                     let nla = nla.context("invalid AF_INET value")?;
-                    nlas.push(inet::Inet::parse(&nla).context("invalid AF_INET value")?);
+                    nlas.push(
+                        inet::Inet::parse(&nla)
+                            .context("invalid AF_INET value")?,
+                    );
                 }
                 Inet(nlas)
             }
@@ -209,7 +212,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
                     let nla = nla.context("invalid AF_INET6 value")?;
-                    nlas.push(inet6::Inet6::parse(&nla).context("invalid AF_INET6 value")?);
+                    nlas.push(
+                        inet6::Inet6::parse(&nla)
+                            .context("invalid AF_INET6 value")?,
+                    );
                 }
                 Inet6(nlas)
             }
@@ -247,7 +253,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
             AF_IEEE802154 => Ieee802154(payload.to_vec()),
             AF_CAIF => Caif(payload.to_vec()),
             AF_ALG => Alg(payload.to_vec()),
-            kind => Other(DefaultNla::parse(buf).context(format!("Unknown NLA type {}", kind))?),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("Unknown NLA type {}", kind))?,
+            ),
         })
     }
 }

@@ -49,17 +49,16 @@ impl nlas::Nla for Nla {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::Nla::*;
         match *self {
-            Unspec(ref bytes) | Parms(ref bytes) | Config(ref bytes) | Stats(ref bytes) => {
-                buffer.copy_from_slice(bytes.as_slice())
-            }
+            Unspec(ref bytes) | Parms(ref bytes) | Config(ref bytes)
+            | Stats(ref bytes) => buffer.copy_from_slice(bytes.as_slice()),
             Name(ref string) => {
                 buffer[..string.len()].copy_from_slice(string.as_bytes());
                 buffer[string.len()] = 0;
             }
             GcInterval(ref value) => NativeEndian::write_u64(buffer, *value),
-            Threshold1(ref value) | Threshold2(ref value) | Threshold3(ref value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
+            Threshold1(ref value)
+            | Threshold2(ref value)
+            | Threshold3(ref value) => NativeEndian::write_u32(buffer, *value),
             Other(ref attr) => attr.emit_value(buffer),
         }
     }
@@ -88,17 +87,28 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
         let payload = buf.value();
         Ok(match buf.kind() {
             NDTA_UNSPEC => Unspec(payload.to_vec()),
-            NDTA_NAME => Name(parse_string(payload).context("invalid NDTA_NAME value")?),
+            NDTA_NAME => {
+                Name(parse_string(payload).context("invalid NDTA_NAME value")?)
+            }
             NDTA_CONFIG => Config(payload.to_vec()),
             NDTA_STATS => Stats(payload.to_vec()),
             NDTA_PARMS => Parms(payload.to_vec()),
-            NDTA_GC_INTERVAL => {
-                GcInterval(parse_u64(payload).context("invalid NDTA_GC_INTERVAL value")?)
-            }
-            NDTA_THRESH1 => Threshold1(parse_u32(payload).context("invalid NDTA_THRESH1 value")?),
-            NDTA_THRESH2 => Threshold2(parse_u32(payload).context("invalid NDTA_THRESH2 value")?),
-            NDTA_THRESH3 => Threshold3(parse_u32(payload).context("invalid NDTA_THRESH3 value")?),
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            NDTA_GC_INTERVAL => GcInterval(
+                parse_u64(payload).context("invalid NDTA_GC_INTERVAL value")?,
+            ),
+            NDTA_THRESH1 => Threshold1(
+                parse_u32(payload).context("invalid NDTA_THRESH1 value")?,
+            ),
+            NDTA_THRESH2 => Threshold2(
+                parse_u32(payload).context("invalid NDTA_THRESH2 value")?,
+            ),
+            NDTA_THRESH3 => Threshold3(
+                parse_u32(payload).context("invalid NDTA_THRESH3 value")?,
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }

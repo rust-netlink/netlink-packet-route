@@ -3,20 +3,10 @@
 use crate::{
     constants::*,
     traits::{Emitable, ParseableParametrized},
-    AddressMessage,
-    DecodeError,
-    LinkMessage,
-    NeighbourMessage,
-    NeighbourTableMessage,
-    NetlinkDeserializable,
-    NetlinkHeader,
-    NetlinkPayload,
-    NetlinkSerializable,
-    NsidMessage,
-    RouteMessage,
-    RtnlMessageBuffer,
-    RuleMessage,
-    TcMessage,
+    AddressMessage, DecodeError, LinkMessage, NeighbourMessage,
+    NeighbourTableMessage, NetlinkDeserializable, NetlinkHeader,
+    NetlinkPayload, NetlinkSerializable, NsidMessage, RouteMessage,
+    RtnlMessageBuffer, RuleMessage, TcMessage,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -374,7 +364,10 @@ impl NetlinkSerializable for RtnlMessage {
 
 impl NetlinkDeserializable for RtnlMessage {
     type Error = DecodeError;
-    fn deserialize(header: &NetlinkHeader, payload: &[u8]) -> Result<Self, Self::Error> {
+    fn deserialize(
+        header: &NetlinkHeader,
+        payload: &[u8],
+    ) -> Result<Self, Self::Error> {
         let buf = RtnlMessageBuffer::new(payload);
         match RtnlMessage::parse_with_param(&buf, header.message_type) {
             Err(e) => Err(e),

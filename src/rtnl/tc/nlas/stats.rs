@@ -14,7 +14,8 @@ pub struct Stats {
     pub packets: u32,
     /// Packets dropped because of lack of resources
     pub drops: u32,
-    /// Number of throttle events when this flow goes out of allocated bandwidth
+    /// Number of throttle events when this flow goes out of allocated
+    /// bandwidth
     pub overlimits: u32,
     /// Current flow byte rate
     pub bps: u32,

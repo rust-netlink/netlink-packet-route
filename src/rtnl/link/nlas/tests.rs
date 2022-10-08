@@ -169,11 +169,13 @@ static BYTES: [u8; 748] = [
             0x00, 0x00, 0x00, 0x00];
 
 lazy_static! {
-    static ref BUFFER: NlaBuffer<&'static [u8]> = NlaBuffer::new_checked(&BYTES[..]).unwrap();
+    static ref BUFFER: NlaBuffer<&'static [u8]> =
+        NlaBuffer::new_checked(&BYTES[..]).unwrap();
 }
 
-fn get_nlas() -> impl Iterator<Item = Result<NlaBuffer<&'static [u8]>, DecodeError>> {
-    NlasIterator::new(&*BUFFER.value())
+fn get_nlas(
+) -> impl Iterator<Item = Result<NlaBuffer<&'static [u8]>, DecodeError>> {
+    NlasIterator::new(BUFFER.value())
 }
 
 fn get_byte_buffer(nla: &dyn Emitable) -> Vec<u8> {
@@ -335,7 +337,7 @@ lazy_static! {
 #[test]
 fn af_spec_header() {
     assert_eq!(BUFFER.length(), 748);
-    assert_eq!(BUFFER.kind(), IFLA_AF_SPEC as u16);
+    assert_eq!(BUFFER.kind(), IFLA_AF_SPEC);
 }
 
 #[test]
@@ -358,7 +360,8 @@ fn parse_af_inet() {
 fn emit_af_inet() {
     let mut bytes = vec![0xff; 132];
 
-    // Note: the value is a Vec of nlas, so the padding is automatically added for each nla.
+    // Note: the value is a Vec of nlas, so the padding is automatically added
+    // for each nla.
     assert_eq!(PARSED_AF_INET.value_len(), 128);
     assert_eq!(PARSED_AF_INET.buffer_len(), 128 + 4);
 
@@ -378,7 +381,8 @@ fn emit_af_inet() {
 fn emit_af_inet6() {
     let mut bytes = vec![0xff; 612];
 
-    // Note: the value is a Vec of nlas, so the padding is automatically added for each nla.
+    // Note: the value is a Vec of nlas, so the padding is automatically added
+    // for each nla.
     assert_eq!(PARSED_AF_INET6.value_len(), 608);
     assert_eq!(PARSED_AF_INET6.buffer_len(), 608 + 4);
     PARSED_AF_INET6.emit(&mut bytes[..]);

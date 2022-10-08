@@ -10,7 +10,8 @@ use crate::{
     DecodeError,
 };
 
-/// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to `LWTUNNEL_ENCAP_MPLS`.
+/// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to
+/// `LWTUNNEL_ENCAP_MPLS`.
 pub enum MplsIpTunnel {
     Destination(Vec<u8>),
     Ttl(u8),
@@ -52,8 +53,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for MplsIpTunnel {
         let payload = buf.value();
         Ok(match buf.kind() {
             MPLS_IPTUNNEL_DST => Destination(payload.to_vec()),
-            MPLS_IPTUNNEL_TTL => Ttl(parse_u8(payload).context("invalid MPLS_IPTUNNEL_TTL value")?),
-            _ => Other(DefaultNla::parse(buf).context("invalid NLA value (unknown type) value")?),
+            MPLS_IPTUNNEL_TTL => {
+                Ttl(parse_u8(payload)
+                    .context("invalid MPLS_IPTUNNEL_TTL value")?)
+            }
+            _ => Other(
+                DefaultNla::parse(buf)
+                    .context("invalid NLA value (unknown type) value")?,
+            ),
         })
     }
 }

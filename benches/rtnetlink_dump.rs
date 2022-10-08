@@ -8,7 +8,8 @@ use pcap_file::PcapReader;
 use netlink_packet_route::{NetlinkMessage, RtnlMessage};
 
 fn bench(c: &mut Criterion) {
-    let pcap_reader = PcapReader::new(File::open("data/rtnetlink.pcap").unwrap()).unwrap();
+    let pcap_reader =
+        PcapReader::new(File::open("data/rtnetlink.pcap").unwrap()).unwrap();
     let packets: Vec<Vec<u8>> = pcap_reader
         .map(|pkt| pkt.unwrap().data.into_owned().to_vec())
         .collect();

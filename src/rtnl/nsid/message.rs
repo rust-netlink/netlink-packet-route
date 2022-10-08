@@ -5,9 +5,7 @@ use anyhow::Context;
 use crate::{
     nlas::nsid::Nla,
     traits::{Emitable, Parseable},
-    DecodeError,
-    NsidHeader,
-    NsidMessageBuffer,
+    DecodeError, NsidHeader, NsidMessageBuffer,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -16,11 +14,15 @@ pub struct NsidMessage {
     pub nlas: Vec<Nla>,
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NsidMessageBuffer<&'a T>> for NsidMessage {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<NsidMessageBuffer<&'a T>>
+    for NsidMessage
+{
     fn parse(buf: &NsidMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(Self {
-            header: NsidHeader::parse(buf).context("failed to parse nsid message header")?,
-            nlas: Vec::<Nla>::parse(buf).context("failed to parse nsid message NLAs")?,
+            header: NsidHeader::parse(buf)
+                .context("failed to parse nsid message header")?,
+            nlas: Vec::<Nla>::parse(buf)
+                .context("failed to parse nsid message NLAs")?,
         })
     }
 }
@@ -51,16 +53,9 @@ impl Emitable for NsidMessage {
 #[cfg(test)]
 mod test {
     use crate::{
-        nlas::nsid::Nla,
-        traits::ParseableParametrized,
-        NetlinkBuffer,
-        NsidHeader,
-        NsidMessage,
-        RtnlMessage,
-        RtnlMessageBuffer,
-        NETNSA_NSID_NOT_ASSIGNED,
-        RTM_GETNSID,
-        RTM_NEWNSID,
+        nlas::nsid::Nla, traits::ParseableParametrized, NetlinkBuffer,
+        NsidHeader, NsidMessage, RtnlMessage, RtnlMessageBuffer,
+        NETNSA_NSID_NOT_ASSIGNED, RTM_GETNSID, RTM_NEWNSID,
     };
 
     #[rustfmt::skip]

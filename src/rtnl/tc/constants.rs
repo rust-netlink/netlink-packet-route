@@ -52,7 +52,8 @@ pub const TCA_ACT_STATS: u16 = 4;
 pub const TCA_ACT_PAD: u16 = 5;
 pub const TCA_ACT_COOKIE: u16 = 6;
 
-//TODO(wllenyj): Why not subtract 1? See `linux/pkt_cls.h` for original definition.
+//TODO(wllenyj): Why not subtract 1? See `linux/pkt_cls.h` for original
+// definition.
 pub const TCA_ACT_MAX: u16 = 7;
 pub const TCA_OLD_COMPAT: u16 = TCA_ACT_MAX + 1;
 pub const TCA_ACT_MAX_PRIO: u16 = 32;

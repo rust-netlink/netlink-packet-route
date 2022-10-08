@@ -55,7 +55,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Action {
             nlas.push(match buf.kind() {
                 TCA_ACT_UNSPEC => ActNla::Unspec(payload.to_vec()),
                 TCA_ACT_KIND => {
-                    kind = parse_string(payload).context("failed to parse TCA_ACT_KIND")?;
+                    kind = parse_string(payload)
+                        .context("failed to parse TCA_ACT_KIND")?;
                     ActNla::Kind(kind.clone())
                 }
                 TCA_ACT_OPTIONS => {
@@ -69,19 +70,26 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Action {
                     }
                     ActNla::Options(nlas)
                 }
-                TCA_ACT_INDEX => {
-                    ActNla::Index(parse_u32(payload).context("failed to parse TCA_ACT_INDEX")?)
-                }
+                TCA_ACT_INDEX => ActNla::Index(
+                    parse_u32(payload)
+                        .context("failed to parse TCA_ACT_INDEX")?,
+                ),
                 TCA_ACT_STATS => {
                     let mut nlas = vec![];
                     for nla in NlasIterator::new(payload) {
                         let nla = nla.context("invalid TCA_ACT_STATS")?;
-                        nlas.push(Stats2::parse(&nla).context("failed to parse TCA_ACT_STATS")?);
+                        nlas.push(
+                            Stats2::parse(&nla)
+                                .context("failed to parse TCA_ACT_STATS")?,
+                        );
                     }
                     ActNla::Stats(nlas)
                 }
                 TCA_ACT_COOKIE => ActNla::Cookie(payload.to_vec()),
-                _ => ActNla::Other(DefaultNla::parse(&buf).context("failed to parse action nla")?),
+                _ => ActNla::Other(
+                    DefaultNla::parse(&buf)
+                        .context("failed to parse action nla")?,
+                ),
             });
         }
         Ok(Self {
@@ -117,9 +125,12 @@ impl nlas::Nla for ActNla {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::ActNla::*;
         match self {
-            Unspec(bytes) | Cookie(bytes) => buffer.copy_from_slice(bytes.as_slice()),
+            Unspec(bytes) | Cookie(bytes) => {
+                buffer.copy_from_slice(bytes.as_slice())
+            }
             Kind(string) => {
-                buffer[..string.as_bytes().len()].copy_from_slice(string.as_bytes());
+                buffer[..string.as_bytes().len()]
+                    .copy_from_slice(string.as_bytes());
                 buffer[string.as_bytes().len()] = 0;
             }
             Options(opt) => opt.as_slice().emit(buffer),
@@ -180,12 +191,19 @@ where
     T: AsRef<[u8]> + ?Sized,
     S: AsRef<str>,
 {
-    fn parse_with_param(buf: &NlaBuffer<&'a T>, kind: S) -> Result<Self, DecodeError> {
+    fn parse_with_param(
+        buf: &NlaBuffer<&'a T>,
+        kind: S,
+    ) -> Result<Self, DecodeError> {
         Ok(match kind.as_ref() {
-            mirred::KIND => {
-                Self::Mirred(mirred::Nla::parse(buf).context("failed to parse mirred action")?)
-            }
-            _ => Self::Other(DefaultNla::parse(buf).context("failed to parse action options")?),
+            mirred::KIND => Self::Mirred(
+                mirred::Nla::parse(buf)
+                    .context("failed to parse mirred action")?,
+            ),
+            _ => Self::Other(
+                DefaultNla::parse(buf)
+                    .context("failed to parse action options")?,
+            ),
         })
     }
 }

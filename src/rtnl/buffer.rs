@@ -3,33 +3,18 @@
 use crate::{
     constants::*,
     traits::{Parseable, ParseableParametrized},
-    AddressHeader,
-    AddressMessage,
-    AddressMessageBuffer,
-    DecodeError,
-    LinkMessage,
-    LinkMessageBuffer,
-    NeighbourMessage,
-    NeighbourMessageBuffer,
-    NeighbourTableMessage,
-    NeighbourTableMessageBuffer,
-    NsidMessage,
-    NsidMessageBuffer,
-    RouteHeader,
-    RouteMessage,
-    RouteMessageBuffer,
-    RtnlMessage,
-    RuleMessage,
-    RuleMessageBuffer,
-    TcMessage,
-    TcMessageBuffer,
+    AddressHeader, AddressMessage, AddressMessageBuffer, DecodeError,
+    LinkMessage, LinkMessageBuffer, NeighbourMessage, NeighbourMessageBuffer,
+    NeighbourTableMessage, NeighbourTableMessageBuffer, NsidMessage,
+    NsidMessageBuffer, RouteHeader, RouteMessage, RouteMessageBuffer,
+    RtnlMessage, RuleMessage, RuleMessageBuffer, TcMessage, TcMessageBuffer,
 };
 use anyhow::Context;
 
 buffer!(RtnlMessageBuffer);
 
-impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<RtnlMessageBuffer<&'a T>, u16>
-    for RtnlMessage
+impl<'a, T: AsRef<[u8]> + ?Sized>
+    ParseableParametrized<RtnlMessageBuffer<&'a T>, u16> for RtnlMessage
 {
     #[rustfmt::skip]
     fn parse_with_param(buf: &RtnlMessageBuffer<&'a T>, message_type: u16) -> Result<Self, DecodeError> {

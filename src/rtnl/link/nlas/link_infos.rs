@@ -4,11 +4,12 @@ use super::bond::InfoBond;
 use crate::{
     constants::*,
     nlas::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_mac, parse_string, parse_u16, parse_u16_be, parse_u32, parse_u64, parse_u8},
+    parsers::{
+        parse_mac, parse_string, parse_u16, parse_u16_be, parse_u32, parse_u64,
+        parse_u8,
+    },
     traits::{Emitable, Parseable},
-    DecodeError,
-    LinkMessage,
-    LinkMessageBuffer,
+    DecodeError, LinkMessage, LinkMessageBuffer,
 };
 
 use anyhow::Context;
@@ -110,10 +111,18 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
         for nla in nlas {
             let nla = nla?;
             match nla.kind() {
-                IFLA_INFO_UNSPEC => res.push(Info::Unspec(nla.value().to_vec())),
-                IFLA_INFO_XSTATS => res.push(Info::Xstats(nla.value().to_vec())),
-                IFLA_INFO_SLAVE_KIND => res.push(Info::SlaveKind(nla.value().to_vec())),
-                IFLA_INFO_SLAVE_DATA => res.push(Info::SlaveData(nla.value().to_vec())),
+                IFLA_INFO_UNSPEC => {
+                    res.push(Info::Unspec(nla.value().to_vec()))
+                }
+                IFLA_INFO_XSTATS => {
+                    res.push(Info::Xstats(nla.value().to_vec()))
+                }
+                IFLA_INFO_SLAVE_KIND => {
+                    res.push(Info::SlaveKind(nla.value().to_vec()))
+                }
+                IFLA_INFO_SLAVE_DATA => {
+                    res.push(Info::SlaveData(nla.value().to_vec()))
+                }
                 IFLA_INFO_KIND => {
                     let parsed = InfoKind::parse(&nla)?;
                     res.push(Info::Kind(parsed.clone()));
@@ -123,7 +132,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                     if let Some(link_info_kind) = link_info_kind {
                         let payload = nla.value();
                         let info_data = match link_info_kind {
-                            InfoKind::Dummy => InfoData::Dummy(payload.to_vec()),
+                            InfoKind::Dummy => {
+                                InfoData::Dummy(payload.to_vec())
+                            }
                             InfoKind::Ifb => InfoData::Ifb(payload.to_vec()),
                             InfoKind::Bridge => {
                                 let mut v = Vec::new();
@@ -131,7 +142,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'bridge')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoBridge::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoBridge::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::Bridge(v)
@@ -142,18 +154,23 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'vlan')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoVlan::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoVlan::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::Vlan(v)
                             }
                             InfoKind::Tun => InfoData::Tun(payload.to_vec()),
-                            InfoKind::Nlmon => InfoData::Nlmon(payload.to_vec()),
+                            InfoKind::Nlmon => {
+                                InfoData::Nlmon(payload.to_vec())
+                            }
                             InfoKind::Veth => {
                                 let err =
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'veth')";
-                                let nla_buf = NlaBuffer::new_checked(&payload).context(err)?;
-                                let parsed = VethInfo::parse(&nla_buf).context(err)?;
+                                let nla_buf = NlaBuffer::new_checked(&payload)
+                                    .context(err)?;
+                                let parsed =
+                                    VethInfo::parse(&nla_buf).context(err)?;
                                 InfoData::Veth(parsed)
                             }
                             InfoKind::Vxlan => {
@@ -162,7 +179,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'vxlan')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoVxlan::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoVxlan::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::Vxlan(v)
@@ -173,7 +191,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'bond')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoBond::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoBond::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::Bond(v)
@@ -184,7 +203,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'ipvlan')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoIpVlan::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoIpVlan::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::IpVlan(v)
@@ -195,7 +215,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'macvlan')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoMacVlan::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoMacVlan::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::MacVlan(v)
@@ -206,17 +227,30 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'macvtap')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoMacVtap::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoMacVtap::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::MacVtap(v)
                             }
-                            InfoKind::GreTap => InfoData::GreTap(payload.to_vec()),
-                            InfoKind::GreTap6 => InfoData::GreTap6(payload.to_vec()),
-                            InfoKind::IpTun => InfoData::IpTun(payload.to_vec()),
-                            InfoKind::SitTun => InfoData::SitTun(payload.to_vec()),
-                            InfoKind::GreTun => InfoData::GreTun(payload.to_vec()),
-                            InfoKind::GreTun6 => InfoData::GreTun6(payload.to_vec()),
+                            InfoKind::GreTap => {
+                                InfoData::GreTap(payload.to_vec())
+                            }
+                            InfoKind::GreTap6 => {
+                                InfoData::GreTap6(payload.to_vec())
+                            }
+                            InfoKind::IpTun => {
+                                InfoData::IpTun(payload.to_vec())
+                            }
+                            InfoKind::SitTun => {
+                                InfoData::SitTun(payload.to_vec())
+                            }
+                            InfoKind::GreTun => {
+                                InfoData::GreTun(payload.to_vec())
+                            }
+                            InfoKind::GreTun6 => {
+                                InfoData::GreTun6(payload.to_vec())
+                            }
                             InfoKind::Vti => InfoData::Vti(payload.to_vec()),
                             InfoKind::Vrf => {
                                 let mut v = Vec::new();
@@ -224,7 +258,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'vrf')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoVrf::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoVrf::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::Vrf(v)
@@ -236,13 +271,18 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                     "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'ipoib')";
                                 for nla in NlasIterator::new(payload) {
                                     let nla = &nla.context(err)?;
-                                    let parsed = InfoIpoib::parse(nla).context(err)?;
+                                    let parsed =
+                                        InfoIpoib::parse(nla).context(err)?;
                                     v.push(parsed);
                                 }
                                 InfoData::Ipoib(v)
                             }
-                            InfoKind::Wireguard => InfoData::Wireguard(payload.to_vec()),
-                            InfoKind::Other(_) => InfoData::Other(payload.to_vec()),
+                            InfoKind::Wireguard => {
+                                InfoData::Wireguard(payload.to_vec())
+                            }
+                            InfoKind::Other(_) => {
+                                InfoData::Other(payload.to_vec())
+                            }
                         };
                         res.push(Info::Data(info_data));
                     } else {
@@ -250,7 +290,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                     }
                     link_info_kind = None;
                 }
-                _ => return Err(format!("unknown NLA type {}", nla.kind()).into()),
+                _ => {
+                    return Err(
+                        format!("unknown NLA type {}", nla.kind()).into()
+                    )
+                }
             }
         }
         Ok(VecInfo(res))
@@ -456,11 +500,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoKind, DecodeError> {
         use self::InfoKind::*;
         if buf.kind() != IFLA_INFO_KIND {
-            return Err(
-                format!("failed to parse IFLA_INFO_KIND: NLA type is {}", buf.kind()).into(),
-            );
+            return Err(format!(
+                "failed to parse IFLA_INFO_KIND: NLA type is {}",
+                buf.kind()
+            )
+            .into());
         }
-        let s = parse_string(buf.value()).context("invalid IFLA_INFO_KIND value")?;
+        let s = parse_string(buf.value())
+            .context("invalid IFLA_INFO_KIND value")?;
         Ok(match s.as_str() {
             DUMMY => Dummy,
             IFB => Ifb,
@@ -653,36 +700,54 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VLAN_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_VXLAN_ID => Id(parse_u32(payload).context("invalid IFLA_VXLAN_ID value")?),
+            IFLA_VXLAN_ID => {
+                Id(parse_u32(payload).context("invalid IFLA_VXLAN_ID value")?)
+            }
             IFLA_VXLAN_GROUP => Group(payload.to_vec()),
             IFLA_VXLAN_GROUP6 => Group6(payload.to_vec()),
-            IFLA_VXLAN_LINK => Link(parse_u32(payload).context("invalid IFLA_VXLAN_LINK value")?),
+            IFLA_VXLAN_LINK => Link(
+                parse_u32(payload).context("invalid IFLA_VXLAN_LINK value")?,
+            ),
             IFLA_VXLAN_LOCAL => Local(payload.to_vec()),
             IFLA_VXLAN_LOCAL6 => Local6(payload.to_vec()),
-            IFLA_VXLAN_TOS => Tos(parse_u8(payload).context("invalid IFLA_VXLAN_TOS value")?),
-            IFLA_VXLAN_TTL => Ttl(parse_u8(payload).context("invalid IFLA_VXLAN_TTL value")?),
-            IFLA_VXLAN_LABEL => {
-                Label(parse_u32(payload).context("invalid IFLA_VXLAN_LABEL value")?)
+            IFLA_VXLAN_TOS => {
+                Tos(parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_TOS value")?)
             }
-            IFLA_VXLAN_LEARNING => {
-                Learning(parse_u8(payload).context("invalid IFLA_VXLAN_LEARNING value")?)
+            IFLA_VXLAN_TTL => {
+                Ttl(parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_TTL value")?)
             }
-            IFLA_VXLAN_AGEING => {
-                Ageing(parse_u32(payload).context("invalid IFLA_VXLAN_AGEING value")?)
+            IFLA_VXLAN_LABEL => Label(
+                parse_u32(payload).context("invalid IFLA_VXLAN_LABEL value")?,
+            ),
+            IFLA_VXLAN_LEARNING => Learning(
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_LEARNING value")?,
+            ),
+            IFLA_VXLAN_AGEING => Ageing(
+                parse_u32(payload)
+                    .context("invalid IFLA_VXLAN_AGEING value")?,
+            ),
+            IFLA_VXLAN_LIMIT => Limit(
+                parse_u32(payload).context("invalid IFLA_VXLAN_LIMIT value")?,
+            ),
+            IFLA_VXLAN_PROXY => Proxy(
+                parse_u8(payload).context("invalid IFLA_VXLAN_PROXY value")?,
+            ),
+            IFLA_VXLAN_RSC => {
+                Rsc(parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_RSC value")?)
             }
-            IFLA_VXLAN_LIMIT => {
-                Limit(parse_u32(payload).context("invalid IFLA_VXLAN_LIMIT value")?)
-            }
-            IFLA_VXLAN_PROXY => Proxy(parse_u8(payload).context("invalid IFLA_VXLAN_PROXY value")?),
-            IFLA_VXLAN_RSC => Rsc(parse_u8(payload).context("invalid IFLA_VXLAN_RSC value")?),
-            IFLA_VXLAN_L2MISS => {
-                L2Miss(parse_u8(payload).context("invalid IFLA_VXLAN_L2MISS value")?)
-            }
-            IFLA_VXLAN_L3MISS => {
-                L3Miss(parse_u8(payload).context("invalid IFLA_VXLAN_L3MISS value")?)
-            }
+            IFLA_VXLAN_L2MISS => L2Miss(
+                parse_u8(payload).context("invalid IFLA_VXLAN_L2MISS value")?,
+            ),
+            IFLA_VXLAN_L3MISS => L3Miss(
+                parse_u8(payload).context("invalid IFLA_VXLAN_L3MISS value")?,
+            ),
             IFLA_VXLAN_COLLECT_METADATA => CollectMetadata(
-                parse_u8(payload).context("invalid IFLA_VXLAN_COLLECT_METADATA value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_COLLECT_METADATA value")?,
             ),
             IFLA_VXLAN_PORT_RANGE => {
                 let err = "invalid IFLA_VXLAN_PORT value";
@@ -693,33 +758,49 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                 let high = parse_u16(&payload[2..]).context(err)?;
                 PortRange((low, high))
             }
-            IFLA_VXLAN_PORT => {
-                Port(parse_u16_be(payload).context("invalid IFLA_VXLAN_PORT value")?)
-            }
-            IFLA_VXLAN_UDP_CSUM => {
-                UDPCsum(parse_u8(payload).context("invalid IFLA_VXLAN_UDP_CSUM value")?)
-            }
+            IFLA_VXLAN_PORT => Port(
+                parse_u16_be(payload)
+                    .context("invalid IFLA_VXLAN_PORT value")?,
+            ),
+            IFLA_VXLAN_UDP_CSUM => UDPCsum(
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_UDP_CSUM value")?,
+            ),
             IFLA_VXLAN_UDP_ZERO_CSUM6_TX => UDPZeroCsumTX(
-                parse_u8(payload).context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_TX value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_TX value")?,
             ),
             IFLA_VXLAN_UDP_ZERO_CSUM6_RX => UDPZeroCsumRX(
-                parse_u8(payload).context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_RX value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_RX value")?,
             ),
-            IFLA_VXLAN_REMCSUM_TX => {
-                RemCsumTX(parse_u8(payload).context("invalid IFLA_VXLAN_REMCSUM_TX value")?)
+            IFLA_VXLAN_REMCSUM_TX => RemCsumTX(
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_REMCSUM_TX value")?,
+            ),
+            IFLA_VXLAN_REMCSUM_RX => RemCsumRX(
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_REMCSUM_RX value")?,
+            ),
+            IFLA_VXLAN_DF => {
+                Df(parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?)
             }
-            IFLA_VXLAN_REMCSUM_RX => {
-                RemCsumRX(parse_u8(payload).context("invalid IFLA_VXLAN_REMCSUM_RX value")?)
+            IFLA_VXLAN_GBP => {
+                Gbp(parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_GBP value")?)
             }
-            IFLA_VXLAN_DF => Df(parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?),
-            IFLA_VXLAN_GBP => Gbp(parse_u8(payload).context("invalid IFLA_VXLAN_GBP value")?),
-            IFLA_VXLAN_GPE => Gpe(parse_u8(payload).context("invalid IFLA_VXLAN_GPE value")?),
+            IFLA_VXLAN_GPE => {
+                Gpe(parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_GPE value")?)
+            }
             IFLA_VXLAN_REMCSUM_NOPARTIAL => RemCsumNoPartial(
-                parse_u8(payload).context("invalid IFLA_VXLAN_REMCSUM_NO_PARTIAL")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_REMCSUM_NO_PARTIAL")?,
             ),
-            IFLA_VXLAN_TTL_INHERIT => {
-                TtlInherit(parse_u8(payload).context("invalid IFLA_VXLAN_TTL_INHERIT value")?)
-            }
+            IFLA_VXLAN_TTL_INHERIT => TtlInherit(
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_TTL_INHERIT value")?,
+            ),
             __IFLA_VXLAN_MAX => Unspec(payload.to_vec()),
             _ => return Err(format!("unknown NLA type {}", buf.kind()).into()),
         })
@@ -790,7 +871,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VLAN_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_VLAN_ID => Id(parse_u16(payload).context("invalid IFLA_VLAN_ID value")?),
+            IFLA_VLAN_ID => {
+                Id(parse_u16(payload).context("invalid IFLA_VLAN_ID value")?)
+            }
             IFLA_VLAN_FLAGS => {
                 let err = "invalid IFLA_VLAN_FLAGS value";
                 if payload.len() != 8 {
@@ -802,9 +885,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
             }
             IFLA_VLAN_EGRESS_QOS => EgressQos(payload.to_vec()),
             IFLA_VLAN_INGRESS_QOS => IngressQos(payload.to_vec()),
-            IFLA_VLAN_PROTOCOL => {
-                Protocol(parse_u16_be(payload).context("invalid IFLA_VLAN_PROTOCOL value")?)
-            }
+            IFLA_VLAN_PROTOCOL => Protocol(
+                parse_u16_be(payload)
+                    .context("invalid IFLA_VLAN_PROTOCOL value")?,
+            ),
             _ => return Err(format!("unknown NLA type {}", buf.kind()).into()),
         })
     }
@@ -1018,7 +1102,9 @@ impl Nla for InfoBridge {
             MulticastMembershipInterval(_) => IFLA_BR_MCAST_MEMBERSHIP_INTVL,
             MulticastQuerierInterval(_) => IFLA_BR_MCAST_QUERIER_INTVL,
             MulticastQueryInterval(_) => IFLA_BR_MCAST_QUERY_INTVL,
-            MulticastQueryResponseInterval(_) => IFLA_BR_MCAST_QUERY_RESPONSE_INTVL,
+            MulticastQueryResponseInterval(_) => {
+                IFLA_BR_MCAST_QUERY_RESPONSE_INTVL
+            }
             ForwardDelay(_) => IFLA_BR_FORWARD_DELAY,
             HelloTime(_) => IFLA_BR_HELLO_TIME,
             MaxAge(_) => IFLA_BR_MAX_AGE,
@@ -1029,7 +1115,9 @@ impl Nla for InfoBridge {
             MulticastLastMemberCount(_) => IFLA_BR_MCAST_LAST_MEMBER_CNT,
             MulticastStartupQueryCount(_) => IFLA_BR_MCAST_STARTUP_QUERY_CNT,
             MulticastLastMemberInterval(_) => IFLA_BR_MCAST_LAST_MEMBER_INTVL,
-            MulticastStartupQueryInterval(_) => IFLA_BR_MCAST_STARTUP_QUERY_INTVL,
+            MulticastStartupQueryInterval(_) => {
+                IFLA_BR_MCAST_STARTUP_QUERY_INTVL
+            }
             RootPathCost(_) => IFLA_BR_ROOT_PATH_COST,
             Priority(_) => IFLA_BR_PRIORITY,
             VlanProtocol(_) => IFLA_BR_VLAN_PROTOCOL,
@@ -1067,81 +1155,109 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             IFLA_BR_UNSPEC => Unspec(payload.to_vec()),
             IFLA_BR_FDB_FLUSH => FdbFlush(payload.to_vec()),
             IFLA_BR_PAD => Pad(payload.to_vec()),
-            IFLA_BR_HELLO_TIMER => {
-                HelloTimer(parse_u64(payload).context("invalid IFLA_BR_HELLO_TIMER value")?)
-            }
-            IFLA_BR_TCN_TIMER => {
-                TcnTimer(parse_u64(payload).context("invalid IFLA_BR_TCN_TIMER value")?)
-            }
-            IFLA_BR_TOPOLOGY_CHANGE_TIMER => TopologyChangeTimer(
-                parse_u64(payload).context("invalid IFLA_BR_TOPOLOGY_CHANGE_TIMER value")?,
+            IFLA_BR_HELLO_TIMER => HelloTimer(
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_HELLO_TIMER value")?,
             ),
-            IFLA_BR_GC_TIMER => {
-                GcTimer(parse_u64(payload).context("invalid IFLA_BR_GC_TIMER value")?)
-            }
+            IFLA_BR_TCN_TIMER => TcnTimer(
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_TCN_TIMER value")?,
+            ),
+            IFLA_BR_TOPOLOGY_CHANGE_TIMER => TopologyChangeTimer(
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_TOPOLOGY_CHANGE_TIMER value")?,
+            ),
+            IFLA_BR_GC_TIMER => GcTimer(
+                parse_u64(payload).context("invalid IFLA_BR_GC_TIMER value")?,
+            ),
             IFLA_BR_MCAST_LAST_MEMBER_INTVL => MulticastLastMemberInterval(
-                parse_u64(payload).context("invalid IFLA_BR_MCAST_LAST_MEMBER_INTVL value")?,
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_MCAST_LAST_MEMBER_INTVL value")?,
             ),
             IFLA_BR_MCAST_MEMBERSHIP_INTVL => MulticastMembershipInterval(
-                parse_u64(payload).context("invalid IFLA_BR_MCAST_MEMBERSHIP_INTVL value")?,
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_MCAST_MEMBERSHIP_INTVL value")?,
             ),
             IFLA_BR_MCAST_QUERIER_INTVL => MulticastQuerierInterval(
-                parse_u64(payload).context("invalid IFLA_BR_MCAST_QUERIER_INTVL value")?,
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_MCAST_QUERIER_INTVL value")?,
             ),
             IFLA_BR_MCAST_QUERY_INTVL => MulticastQueryInterval(
-                parse_u64(payload).context("invalid IFLA_BR_MCAST_QUERY_INTVL value")?,
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_MCAST_QUERY_INTVL value")?,
             ),
-            IFLA_BR_MCAST_QUERY_RESPONSE_INTVL => MulticastQueryResponseInterval(
-                parse_u64(payload).context("invalid IFLA_BR_MCAST_QUERY_RESPONSE_INTVL value")?,
+            IFLA_BR_MCAST_QUERY_RESPONSE_INTVL => {
+                MulticastQueryResponseInterval(parse_u64(payload).context(
+                    "invalid IFLA_BR_MCAST_QUERY_RESPONSE_INTVL value",
+                )?)
+            }
+            IFLA_BR_MCAST_STARTUP_QUERY_INTVL => {
+                MulticastStartupQueryInterval(parse_u64(payload).context(
+                    "invalid IFLA_BR_MCAST_STARTUP_QUERY_INTVL value",
+                )?)
+            }
+            IFLA_BR_FORWARD_DELAY => ForwardDelay(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_FORWARD_DELAY value")?,
             ),
-            IFLA_BR_MCAST_STARTUP_QUERY_INTVL => MulticastStartupQueryInterval(
-                parse_u64(payload).context("invalid IFLA_BR_MCAST_STARTUP_QUERY_INTVL value")?,
+            IFLA_BR_HELLO_TIME => HelloTime(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_HELLO_TIME value")?,
             ),
-            IFLA_BR_FORWARD_DELAY => {
-                ForwardDelay(parse_u32(payload).context("invalid IFLA_BR_FORWARD_DELAY value")?)
-            }
-            IFLA_BR_HELLO_TIME => {
-                HelloTime(parse_u32(payload).context("invalid IFLA_BR_HELLO_TIME value")?)
-            }
-            IFLA_BR_MAX_AGE => MaxAge(parse_u32(payload).context("invalid IFLA_BR_MAX_AGE value")?),
-            IFLA_BR_AGEING_TIME => {
-                AgeingTime(parse_u32(payload).context("invalid IFLA_BR_AGEING_TIME value")?)
-            }
-            IFLA_BR_STP_STATE => {
-                StpState(parse_u32(payload).context("invalid IFLA_BR_STP_STATE value")?)
-            }
+            IFLA_BR_MAX_AGE => MaxAge(
+                parse_u32(payload).context("invalid IFLA_BR_MAX_AGE value")?,
+            ),
+            IFLA_BR_AGEING_TIME => AgeingTime(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_AGEING_TIME value")?,
+            ),
+            IFLA_BR_STP_STATE => StpState(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_STP_STATE value")?,
+            ),
             IFLA_BR_MCAST_HASH_ELASTICITY => MulticastHashElasticity(
-                parse_u32(payload).context("invalid IFLA_BR_MCAST_HASH_ELASTICITY value")?,
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_MCAST_HASH_ELASTICITY value")?,
             ),
             IFLA_BR_MCAST_HASH_MAX => MulticastHashMax(
-                parse_u32(payload).context("invalid IFLA_BR_MCAST_HASH_MAX value")?,
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_MCAST_HASH_MAX value")?,
             ),
             IFLA_BR_MCAST_LAST_MEMBER_CNT => MulticastLastMemberCount(
-                parse_u32(payload).context("invalid IFLA_BR_MCAST_LAST_MEMBER_CNT value")?,
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_MCAST_LAST_MEMBER_CNT value")?,
             ),
             IFLA_BR_MCAST_STARTUP_QUERY_CNT => MulticastStartupQueryCount(
-                parse_u32(payload).context("invalid IFLA_BR_MCAST_STARTUP_QUERY_CNT value")?,
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_MCAST_STARTUP_QUERY_CNT value")?,
             ),
-            IFLA_BR_ROOT_PATH_COST => {
-                RootPathCost(parse_u32(payload).context("invalid IFLA_BR_ROOT_PATH_COST value")?)
-            }
-            IFLA_BR_PRIORITY => {
-                Priority(parse_u16(payload).context("invalid IFLA_BR_PRIORITY value")?)
-            }
-            IFLA_BR_VLAN_PROTOCOL => {
-                VlanProtocol(parse_u16_be(payload).context("invalid IFLA_BR_VLAN_PROTOCOL value")?)
-            }
-            IFLA_BR_GROUP_FWD_MASK => {
-                GroupFwdMask(parse_u16(payload).context("invalid IFLA_BR_GROUP_FWD_MASK value")?)
-            }
+            IFLA_BR_ROOT_PATH_COST => RootPathCost(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_ROOT_PATH_COST value")?,
+            ),
+            IFLA_BR_PRIORITY => Priority(
+                parse_u16(payload).context("invalid IFLA_BR_PRIORITY value")?,
+            ),
+            IFLA_BR_VLAN_PROTOCOL => VlanProtocol(
+                parse_u16_be(payload)
+                    .context("invalid IFLA_BR_VLAN_PROTOCOL value")?,
+            ),
+            IFLA_BR_GROUP_FWD_MASK => GroupFwdMask(
+                parse_u16(payload)
+                    .context("invalid IFLA_BR_GROUP_FWD_MASK value")?,
+            ),
             IFLA_BR_ROOT_ID | IFLA_BR_BRIDGE_ID => {
                 if payload.len() != 8 {
-                    return Err("invalid IFLA_BR_ROOT_ID or IFLA_BR_BRIDGE_ID value".into());
+                    return Err(
+                        "invalid IFLA_BR_ROOT_ID or IFLA_BR_BRIDGE_ID value"
+                            .into(),
+                    );
                 }
 
                 let priority = NativeEndian::read_u16(&payload[..2]);
-                let address = parse_mac(&payload[2..])
-                    .context("invalid IFLA_BR_ROOT_ID or IFLA_BR_BRIDGE_ID value")?;
+                let address = parse_mac(&payload[2..]).context(
+                    "invalid IFLA_BR_ROOT_ID or IFLA_BR_BRIDGE_ID value",
+                )?;
 
                 match buf.kind() {
                     IFLA_BR_ROOT_ID => RootId((priority, address)),
@@ -1149,67 +1265,86 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                     _ => unreachable!(),
                 }
             }
-            IFLA_BR_GROUP_ADDR => {
-                GroupAddr(parse_mac(payload).context("invalid IFLA_BR_GROUP_ADDR value")?)
-            }
-            IFLA_BR_ROOT_PORT => {
-                RootPort(parse_u16(payload).context("invalid IFLA_BR_ROOT_PORT value")?)
-            }
+            IFLA_BR_GROUP_ADDR => GroupAddr(
+                parse_mac(payload)
+                    .context("invalid IFLA_BR_GROUP_ADDR value")?,
+            ),
+            IFLA_BR_ROOT_PORT => RootPort(
+                parse_u16(payload)
+                    .context("invalid IFLA_BR_ROOT_PORT value")?,
+            ),
             IFLA_BR_VLAN_DEFAULT_PVID => VlanDefaultPvid(
-                parse_u16(payload).context("invalid IFLA_BR_VLAN_DEFAULT_PVID value")?,
+                parse_u16(payload)
+                    .context("invalid IFLA_BR_VLAN_DEFAULT_PVID value")?,
             ),
-            IFLA_BR_VLAN_FILTERING => {
-                VlanFiltering(parse_u8(payload).context("invalid IFLA_BR_VLAN_FILTERING value")?)
-            }
-            IFLA_BR_TOPOLOGY_CHANGE => {
-                TopologyChange(parse_u8(payload).context("invalid IFLA_BR_TOPOLOGY_CHANGE value")?)
-            }
-            IFLA_BR_TOPOLOGY_CHANGE_DETECTED => TopologyChangeDetected(
-                parse_u8(payload).context("invalid IFLA_BR_TOPOLOGY_CHANGE_DETECTED value")?,
+            IFLA_BR_VLAN_FILTERING => VlanFiltering(
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_VLAN_FILTERING value")?,
             ),
-            IFLA_BR_MCAST_ROUTER => {
-                MulticastRouter(parse_u8(payload).context("invalid IFLA_BR_MCAST_ROUTER value")?)
+            IFLA_BR_TOPOLOGY_CHANGE => TopologyChange(
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_TOPOLOGY_CHANGE value")?,
+            ),
+            IFLA_BR_TOPOLOGY_CHANGE_DETECTED => {
+                TopologyChangeDetected(parse_u8(payload).context(
+                    "invalid IFLA_BR_TOPOLOGY_CHANGE_DETECTED value",
+                )?)
             }
+            IFLA_BR_MCAST_ROUTER => MulticastRouter(
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_MCAST_ROUTER value")?,
+            ),
             IFLA_BR_MCAST_SNOOPING => MulticastSnooping(
-                parse_u8(payload).context("invalid IFLA_BR_MCAST_SNOOPING value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_MCAST_SNOOPING value")?,
             ),
             IFLA_BR_MCAST_QUERY_USE_IFADDR => MulticastQueryUseIfaddr(
-                parse_u8(payload).context("invalid IFLA_BR_MCAST_QUERY_USE_IFADDR value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_MCAST_QUERY_USE_IFADDR value")?,
             ),
-            IFLA_BR_MCAST_QUERIER => {
-                MulticastQuerier(parse_u8(payload).context("invalid IFLA_BR_MCAST_QUERIER value")?)
-            }
-            IFLA_BR_NF_CALL_IPTABLES => {
-                NfCallIpTables(parse_u8(payload).context("invalid IFLA_BR_NF_CALL_IPTABLES value")?)
-            }
+            IFLA_BR_MCAST_QUERIER => MulticastQuerier(
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_MCAST_QUERIER value")?,
+            ),
+            IFLA_BR_NF_CALL_IPTABLES => NfCallIpTables(
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_NF_CALL_IPTABLES value")?,
+            ),
             IFLA_BR_NF_CALL_IP6TABLES => NfCallIp6Tables(
-                parse_u8(payload).context("invalid IFLA_BR_NF_CALL_IP6TABLES value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_NF_CALL_IP6TABLES value")?,
             ),
             IFLA_BR_NF_CALL_ARPTABLES => NfCallArpTables(
-                parse_u8(payload).context("invalid IFLA_BR_NF_CALL_ARPTABLES value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_NF_CALL_ARPTABLES value")?,
             ),
             IFLA_BR_VLAN_STATS_ENABLED => VlanStatsEnabled(
-                parse_u8(payload).context("invalid IFLA_BR_VLAN_STATS_ENABLED value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_VLAN_STATS_ENABLED value")?,
             ),
             IFLA_BR_MCAST_STATS_ENABLED => MulticastStatsEnabled(
-                parse_u8(payload).context("invalid IFLA_BR_MCAST_STATS_ENABLED value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_MCAST_STATS_ENABLED value")?,
             ),
             IFLA_BR_MCAST_IGMP_VERSION => MulticastIgmpVersion(
-                parse_u8(payload).context("invalid IFLA_BR_MCAST_IGMP_VERSION value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_MCAST_IGMP_VERSION value")?,
             ),
             IFLA_BR_MCAST_MLD_VERSION => MulticastMldVersion(
-                parse_u8(payload).context("invalid IFLA_BR_MCAST_MLD_VERSION value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_MCAST_MLD_VERSION value")?,
             ),
             IFLA_BR_VLAN_STATS_PER_PORT => VlanStatsPerHost(
-                parse_u8(payload).context("invalid IFLA_BR_VLAN_STATS_PER_PORT value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BR_VLAN_STATS_PER_PORT value")?,
             ),
-            IFLA_BR_MULTI_BOOLOPT => {
-                MultiBoolOpt(parse_u64(payload).context("invalid IFLA_BR_MULTI_BOOLOPT value")?)
-            }
-            _ => Other(
-                DefaultNla::parse(buf)
-                    .context("invalid link info bridge NLA value (unknown type)")?,
+            IFLA_BR_MULTI_BOOLOPT => MultiBoolOpt(
+                parse_u64(payload)
+                    .context("invalid IFLA_BR_MULTI_BOOLOPT value")?,
             ),
+            _ => Other(DefaultNla::parse(buf).context(
+                "invalid link info bridge NLA value (unknown type)",
+            )?),
         })
     }
 }
@@ -1262,12 +1397,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpoib {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_IPOIB_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_IPOIB_PKEY => Pkey(parse_u16(payload).context("invalid IFLA_IPOIB_PKEY value")?),
-            IFLA_IPOIB_MODE => Mode(parse_u16(payload).context("invalid IFLA_IPOIB_MODE value")?),
-            IFLA_IPOIB_UMCAST => {
-                UmCast(parse_u16(payload).context("invalid IFLA_IPOIB_UMCAST value")?)
-            }
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            IFLA_IPOIB_PKEY => Pkey(
+                parse_u16(payload).context("invalid IFLA_IPOIB_PKEY value")?,
+            ),
+            IFLA_IPOIB_MODE => Mode(
+                parse_u16(payload).context("invalid IFLA_IPOIB_MODE value")?,
+            ),
+            IFLA_IPOIB_UMCAST => UmCast(
+                parse_u16(payload)
+                    .context("invalid IFLA_IPOIB_UMCAST value")?,
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
@@ -1316,10 +1459,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VethInfo {
             VETH_INFO_UNSPEC => Unspec(payload.to_vec()),
             VETH_INFO_PEER => {
                 let err = "failed to parse veth link info";
-                let buffer = LinkMessageBuffer::new_checked(&payload).context(err)?;
+                let buffer =
+                    LinkMessageBuffer::new_checked(&payload).context(err)?;
                 Peer(LinkMessage::parse(&buffer).context(err)?)
             }
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
@@ -1369,11 +1516,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_IPVLAN_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_IPVLAN_MODE => Mode(parse_u16(payload).context("invalid IFLA_IPVLAN_MODE value")?),
-            IFLA_IPVLAN_FLAGS => {
-                Flags(parse_u16(payload).context("invalid IFLA_IPVLAN_FLAGS value")?)
-            }
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            IFLA_IPVLAN_MODE => Mode(
+                parse_u16(payload).context("invalid IFLA_IPVLAN_MODE value")?,
+            ),
+            IFLA_IPVLAN_FLAGS => Flags(
+                parse_u16(payload)
+                    .context("invalid IFLA_IPVLAN_FLAGS value")?,
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
@@ -1415,8 +1568,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVrf {
         use self::InfoVrf::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VRF_TABLE => TableId(parse_u32(payload).context("invalid IFLA_VRF_TABLE value")?),
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            IFLA_VRF_TABLE => TableId(
+                parse_u32(payload).context("invalid IFLA_VRF_TABLE value")?,
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
@@ -1483,18 +1641,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_MACVLAN_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_MACVLAN_MODE => {
-                Mode(parse_u32(payload).context("invalid IFLA_MACVLAN_MODE value")?)
-            }
-            IFLA_MACVLAN_FLAGS => {
-                Flags(parse_u16(payload).context("invalid IFLA_MACVLAN_FLAGS value")?)
-            }
-            IFLA_MACVLAN_MACADDR_MODE => {
-                MacAddrMode(parse_u32(payload).context("invalid IFLA_MACVLAN_MACADDR_MODE value")?)
-            }
-            IFLA_MACVLAN_MACADDR => {
-                MacAddr(parse_mac(payload).context("invalid IFLA_MACVLAN_MACADDR value")?)
-            }
+            IFLA_MACVLAN_MODE => Mode(
+                parse_u32(payload)
+                    .context("invalid IFLA_MACVLAN_MODE value")?,
+            ),
+            IFLA_MACVLAN_FLAGS => Flags(
+                parse_u16(payload)
+                    .context("invalid IFLA_MACVLAN_FLAGS value")?,
+            ),
+            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(
+                parse_u32(payload)
+                    .context("invalid IFLA_MACVLAN_MACADDR_MODE value")?,
+            ),
+            IFLA_MACVLAN_MACADDR => MacAddr(
+                parse_mac(payload)
+                    .context("invalid IFLA_MACVLAN_MACADDR value")?,
+            ),
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
                 let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
@@ -1506,9 +1668,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
                 MacAddrData(mac_data)
             }
             IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(
-                parse_u32(payload).context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
+                parse_u32(payload)
+                    .context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
             ),
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
@@ -1575,18 +1741,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_MACVLAN_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_MACVLAN_MODE => {
-                Mode(parse_u32(payload).context("invalid IFLA_MACVLAN_MODE value")?)
-            }
-            IFLA_MACVLAN_FLAGS => {
-                Flags(parse_u16(payload).context("invalid IFLA_MACVLAN_FLAGS value")?)
-            }
-            IFLA_MACVLAN_MACADDR_MODE => {
-                MacAddrMode(parse_u32(payload).context("invalid IFLA_MACVLAN_MACADDR_MODE value")?)
-            }
-            IFLA_MACVLAN_MACADDR => {
-                MacAddr(parse_mac(payload).context("invalid IFLA_MACVLAN_MACADDR value")?)
-            }
+            IFLA_MACVLAN_MODE => Mode(
+                parse_u32(payload)
+                    .context("invalid IFLA_MACVLAN_MODE value")?,
+            ),
+            IFLA_MACVLAN_FLAGS => Flags(
+                parse_u16(payload)
+                    .context("invalid IFLA_MACVLAN_FLAGS value")?,
+            ),
+            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(
+                parse_u32(payload)
+                    .context("invalid IFLA_MACVLAN_MACADDR_MODE value")?,
+            ),
+            IFLA_MACVLAN_MACADDR => MacAddr(
+                parse_mac(payload)
+                    .context("invalid IFLA_MACVLAN_MACADDR value")?,
+            ),
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
                 let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
@@ -1598,9 +1768,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
                 MacAddrData(mac_data)
             }
             IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(
-                parse_u32(payload).context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
+                parse_u32(payload)
+                    .context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
             ),
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
@@ -1611,8 +1785,7 @@ mod tests {
     use crate::{
         nlas::link::{bond::*, Nla},
         traits::Emitable,
-        LinkHeader,
-        LinkMessage,
+        LinkHeader, LinkMessage,
     };
     use std::net::{Ipv4Addr, Ipv6Addr};
 

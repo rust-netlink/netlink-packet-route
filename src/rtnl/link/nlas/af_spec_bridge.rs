@@ -36,7 +36,7 @@ impl nlas::Nla for AfSpecBridge {
         match *self {
             Flags(value) => NativeEndian::write_u16(buffer, value),
             VlanInfo(ref info) => {
-                (&mut buffer[..4]).copy_from_slice(<[u8; 4]>::from(info).as_slice())
+                buffer[..4].copy_from_slice(<[u8; 4]>::from(info).as_slice())
             }
             Other(ref nla) => nla.emit_value(buffer),
         }
@@ -59,12 +59,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BRIDGE_VLAN_INFO => VlanInfo(
-                BridgeVlanInfo::try_from(payload).context("Invalid IFLA_BRIDGE_VLAN_INFO value")?,
+                BridgeVlanInfo::try_from(payload)
+                    .context("Invalid IFLA_BRIDGE_VLAN_INFO value")?,
             ),
-            IFLA_BRIDGE_FLAGS => {
-                Flags(parse_u16(payload).context("invalid IFLA_BRIDGE_FLAGS value")?)
-            }
-            kind => Other(DefaultNla::parse(buf).context(format!("Unknown NLA type {}", kind))?),
+            IFLA_BRIDGE_FLAGS => Flags(
+                parse_u16(payload)
+                    .context("invalid IFLA_BRIDGE_FLAGS value")?,
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("Unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
@@ -89,10 +94,14 @@ impl TryFrom<&[u8]> for BridgeVlanInfo {
     fn try_from(raw: &[u8]) -> Result<Self, DecodeError> {
         if raw.len() == 4 {
             Ok(Self {
-                flags: parse_u16(&raw[0..2])
-                    .context(format!("Invalid IFLA_BRIDGE_VLAN_INFO value: {:?}", raw))?,
-                vid: parse_u16(&raw[2..4])
-                    .context(format!("Invalid IFLA_BRIDGE_VLAN_INFO value: {:?}", raw))?,
+                flags: parse_u16(&raw[0..2]).context(format!(
+                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {:?}",
+                    raw
+                ))?,
+                vid: parse_u16(&raw[2..4]).context(format!(
+                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {:?}",
+                    raw
+                ))?,
             })
         } else {
             Err(DecodeError::from(format!(

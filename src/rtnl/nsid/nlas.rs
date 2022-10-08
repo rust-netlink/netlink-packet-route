@@ -34,7 +34,9 @@ impl nlas::Nla for Nla {
         use self::Nla::*;
         match *self {
             Unspec(ref bytes) => buffer.copy_from_slice(bytes.as_slice()),
-            Fd(ref value) | Pid(ref value) => NativeEndian::write_u32(buffer, *value),
+            Fd(ref value) | Pid(ref value) => {
+                NativeEndian::write_u32(buffer, *value)
+            }
             Id(ref value) => NativeEndian::write_i32(buffer, *value),
             Other(ref attr) => attr.emit_value(buffer),
         }
@@ -58,10 +60,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
         let payload = buf.value();
         Ok(match buf.kind() {
             NETNSA_NONE => Unspec(payload.to_vec()),
-            NETNSA_NSID => Id(parse_i32(payload).context("invalid NETNSA_NSID")?),
-            NETNSA_PID => Pid(parse_u32(payload).context("invalid NETNSA_PID")?),
+            NETNSA_NSID => {
+                Id(parse_i32(payload).context("invalid NETNSA_NSID")?)
+            }
+            NETNSA_PID => {
+                Pid(parse_u32(payload).context("invalid NETNSA_PID")?)
+            }
             NETNSA_FD => Fd(parse_u32(payload).context("invalid NETNSA_FD")?),
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }

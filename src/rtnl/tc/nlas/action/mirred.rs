@@ -37,7 +37,9 @@ impl nlas::Nla for Nla {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::Nla::*;
         match self {
-            Unspec(bytes) | Tm(bytes) => buffer.copy_from_slice(bytes.as_slice()),
+            Unspec(bytes) | Tm(bytes) => {
+                buffer.copy_from_slice(bytes.as_slice())
+            }
             Parms(p) => p.emit(buffer),
             Other(attr) => attr.emit_value(buffer),
         }
@@ -60,7 +62,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
         Ok(match buf.kind() {
             TCA_MIRRED_UNSPEC => Unspec(payload.to_vec()),
             TCA_MIRRED_TM => Tm(payload.to_vec()),
-            TCA_MIRRED_PARMS => Parms(TcMirred::parse(&TcMirredBuffer::new_checked(payload)?)?),
+            TCA_MIRRED_PARMS => {
+                Parms(TcMirred::parse(&TcMirredBuffer::new_checked(payload)?)?)
+            }
             _ => Other(DefaultNla::parse(buf)?),
         })
     }

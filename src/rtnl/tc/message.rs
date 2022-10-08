@@ -6,14 +6,11 @@ use crate::{
     constants::*,
     nlas::{
         tc::{Nla, Stats, Stats2, StatsBuffer, TcOpt},
-        DefaultNla,
-        NlasIterator,
+        DefaultNla, NlasIterator,
     },
     parsers::{parse_string, parse_u8},
     traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
-    TcMessageBuffer,
-    TC_HEADER_LEN,
+    DecodeError, TcMessageBuffer, TC_HEADER_LEN,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -98,8 +95,10 @@ impl<T: AsRef<[u8]>> Parseable<TcMessageBuffer<T>> for TcHeader {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for TcMessage {
     fn parse(buf: &TcMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(Self {
-            header: TcHeader::parse(buf).context("failed to parse tc message header")?,
-            nlas: Vec::<Nla>::parse(buf).context("failed to parse tc message NLAs")?,
+            header: TcHeader::parse(buf)
+                .context("failed to parse tc message header")?,
+            nlas: Vec::<Nla>::parse(buf)
+                .context("failed to parse tc message NLAs")?,
         })
     }
 }
@@ -130,8 +129,11 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for Vec<Nla> {
                     Nla::Options(nlas)
                 }
                 TCA_STATS => Nla::Stats(
-                    Stats::parse(&StatsBuffer::new_checked(payload).context("invalid TCA_STATS")?)
-                        .context("failed to parse TCA_STATS")?,
+                    Stats::parse(
+                        &StatsBuffer::new_checked(payload)
+                            .context("invalid TCA_STATS")?,
+                    )
+                    .context("failed to parse TCA_STATS")?,
                 ),
                 TCA_XSTATS => Nla::XStats(payload.to_vec()),
                 TCA_RATE => Nla::Rate(payload.to_vec()),
@@ -140,16 +142,23 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for Vec<Nla> {
                     let mut nlas = vec![];
                     for nla in NlasIterator::new(payload) {
                         let nla = nla.context("invalid TCA_STATS2")?;
-                        nlas.push(Stats2::parse(&nla).context("failed to parse TCA_STATS2")?);
+                        nlas.push(
+                            Stats2::parse(&nla)
+                                .context("failed to parse TCA_STATS2")?,
+                        );
                     }
                     Nla::Stats2(nlas)
                 }
                 TCA_STAB => Nla::Stab(payload.to_vec()),
                 TCA_CHAIN => Nla::Chain(payload.to_vec()),
-                TCA_HW_OFFLOAD => {
-                    Nla::HwOffload(parse_u8(payload).context("failed to parse TCA_HW_OFFLOAD")?)
-                }
-                _ => Nla::Other(DefaultNla::parse(&buf).context("failed to parse tc nla")?),
+                TCA_HW_OFFLOAD => Nla::HwOffload(
+                    parse_u8(payload)
+                        .context("failed to parse TCA_HW_OFFLOAD")?,
+                ),
+                _ => Nla::Other(
+                    DefaultNla::parse(&buf)
+                        .context("failed to parse tc nla")?,
+                ),
             };
 
             nlas.push(nla);

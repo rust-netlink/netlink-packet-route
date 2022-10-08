@@ -2,10 +2,11 @@
 
 /// U32 filter
 ///
-/// In its simplest form the U32 filter is a list of records, each consisting
-/// of two fields: a selector and an action. The selectors, described below,
-/// are compared with the currently processed IP packet until the first match
-/// occurs, and then the associated action is performed.
+/// In its simplest form the U32 filter is a list of records, each
+/// consisting of two fields: a selector and an action. The selectors,
+/// described below, are compared with the currently processed IP packet
+/// until the first match occurs, and then the associated action is
+/// performed.
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 
@@ -92,16 +93,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_U32_UNSPEC => Unspec(payload.to_vec()),
-            TCA_U32_CLASSID => {
-                ClassId(parse_u32(payload).context("failed to parse TCA_U32_UNSPEC")?)
-            }
-            TCA_U32_HASH => Hash(parse_u32(payload).context("failed to parse TCA_U32_HASH")?),
-            TCA_U32_LINK => Link(parse_u32(payload).context("failed to parse TCA_U32_LINK")?),
-            TCA_U32_DIVISOR => {
-                Divisor(parse_u32(payload).context("failed to parse TCA_U32_DIVISOR")?)
-            }
+            TCA_U32_CLASSID => ClassId(
+                parse_u32(payload).context("failed to parse TCA_U32_UNSPEC")?,
+            ),
+            TCA_U32_HASH => Hash(
+                parse_u32(payload).context("failed to parse TCA_U32_HASH")?,
+            ),
+            TCA_U32_LINK => Link(
+                parse_u32(payload).context("failed to parse TCA_U32_LINK")?,
+            ),
+            TCA_U32_DIVISOR => Divisor(
+                parse_u32(payload)
+                    .context("failed to parse TCA_U32_DIVISOR")?,
+            ),
             TCA_U32_SEL => Sel(self::Sel::parse(
-                &SelBuffer::new_checked(payload).context("invalid TCA_U32_SEL")?,
+                &SelBuffer::new_checked(payload)
+                    .context("invalid TCA_U32_SEL")?,
             )
             .context("failed to parse TCA_U32_SEL")?),
             TCA_U32_POLICE => Police(payload.to_vec()),
@@ -109,15 +116,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
                 let mut acts = vec![];
                 for act in NlasIterator::new(payload) {
                     let act = act.context("invalid TCA_U32_ACT")?;
-                    acts.push(Action::parse(&act).context("failed to parse TCA_U32_ACT")?);
+                    acts.push(
+                        Action::parse(&act)
+                            .context("failed to parse TCA_U32_ACT")?,
+                    );
                 }
                 Act(acts)
             }
             TCA_U32_INDEV => Indev(payload.to_vec()),
             TCA_U32_PCNT => Pcnt(payload.to_vec()),
             TCA_U32_MARK => Mark(payload.to_vec()),
-            TCA_U32_FLAGS => Flags(parse_u32(payload).context("failed to parse TCA_U32_FLAGS")?),
-            _ => Other(DefaultNla::parse(buf).context("failed to parse u32 nla")?),
+            TCA_U32_FLAGS => Flags(
+                parse_u32(payload).context("failed to parse TCA_U32_FLAGS")?,
+            ),
+            _ => Other(
+                DefaultNla::parse(buf).context("failed to parse u32 nla")?,
+            ),
         })
     }
 }
@@ -167,7 +181,10 @@ impl Emitable for Sel {
 
         let key_buf = packet.keys_mut();
         for (i, k) in self.keys.iter().enumerate() {
-            k.emit(&mut key_buf[(i * U32_KEY_BUF_LEN)..((i + 1) * U32_KEY_BUF_LEN)]);
+            k.emit(
+                &mut key_buf
+                    [(i * U32_KEY_BUF_LEN)..((i + 1) * U32_KEY_BUF_LEN)],
+            );
         }
     }
 }

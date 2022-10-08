@@ -6,11 +6,11 @@ use crate::{
     constants::*,
     nlas::Nla,
     parsers::parse_u32,
-    tc::{self, constants::*, mirred, u32, ActNla, ActOpt, Action, Stats2, TcOpt},
+    tc::{
+        self, constants::*, mirred, u32, ActNla, ActOpt, Action, Stats2, TcOpt,
+    },
     traits::{Emitable, Parseable},
-    TcHeader,
-    TcMessage,
-    TcMessageBuffer,
+    TcHeader, TcMessage, TcMessageBuffer,
 };
 
 #[rustfmt::skip]
@@ -121,7 +121,8 @@ fn tc_filter_u32_read() {
 
 #[test]
 fn tc_filter_u32_parse() {
-    let packet = TcMessageBuffer::new_checked(&FILTER_U32_ACTION_PACKET).unwrap();
+    let packet =
+        TcMessageBuffer::new_checked(&FILTER_U32_ACTION_PACKET).unwrap();
 
     // TcMessage
     let msg = TcMessage::parse(&packet).unwrap();
