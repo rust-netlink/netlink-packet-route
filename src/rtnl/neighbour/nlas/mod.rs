@@ -110,7 +110,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             NDA_MASTER => Master(payload.to_vec()),
             NDA_LINK_NETNSID => LinkNetNsId(payload.to_vec()),
             NDA_SRC_VNI => SourceVni(parse_u32(payload)?),
-            _ => Other(DefaultNla::parse(buf).context("invalid link NLA value (unknown type)")?),
+            _ => Other(
+                DefaultNla::parse(buf)
+                    .context("invalid link NLA value (unknown type)")?,
+            ),
         })
     }
 }

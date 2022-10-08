@@ -32,8 +32,12 @@ impl Nla for Inet {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::Inet::*;
         match *self {
-            Unspec(ref bytes) => buffer[..bytes.len()].copy_from_slice(bytes.as_slice()),
-            DevConf(ref dev_conf) => buffer[..dev_conf.len()].copy_from_slice(dev_conf.as_slice()),
+            Unspec(ref bytes) => {
+                buffer[..bytes.len()].copy_from_slice(bytes.as_slice())
+            }
+            DevConf(ref dev_conf) => {
+                buffer[..dev_conf.len()].copy_from_slice(dev_conf.as_slice())
+            }
             Other(ref nla) => nla.emit_value(buffer),
         }
     }
@@ -56,7 +60,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Inet {
         Ok(match buf.kind() {
             IFLA_INET_UNSPEC => Unspec(payload.to_vec()),
             IFLA_INET_CONF => DevConf(payload.to_vec()),
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }

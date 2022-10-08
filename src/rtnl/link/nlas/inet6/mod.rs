@@ -54,10 +54,16 @@ impl Nla for Inet6 {
         match *self {
             Unspec(ref bytes) => buffer.copy_from_slice(bytes.as_slice()),
             Flags(ref value) => NativeEndian::write_u32(buffer, *value),
-            CacheInfo(ref cache_info) => buffer.copy_from_slice(cache_info.as_slice()),
+            CacheInfo(ref cache_info) => {
+                buffer.copy_from_slice(cache_info.as_slice())
+            }
             DevConf(ref bytes) => buffer.copy_from_slice(bytes.as_slice()),
-            Stats(ref inet6_stats) => buffer.copy_from_slice(inet6_stats.as_slice()),
-            IcmpStats(ref icmp6_stats) => buffer.copy_from_slice(icmp6_stats.as_slice()),
+            Stats(ref inet6_stats) => {
+                buffer.copy_from_slice(inet6_stats.as_slice())
+            }
+            IcmpStats(ref icmp6_stats) => {
+                buffer.copy_from_slice(icmp6_stats.as_slice())
+            }
             Token(ref ipv6) => buffer.copy_from_slice(&ipv6[..]),
             AddrGenMode(value) => buffer[0] = value,
             Other(ref nla) => nla.emit_value(buffer),
@@ -86,20 +92,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Inet6 {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_INET6_UNSPEC => Unspec(payload.to_vec()),
-            IFLA_INET6_FLAGS => {
-                Flags(parse_u32(payload).context("invalid IFLA_INET6_FLAGS value")?)
-            }
+            IFLA_INET6_FLAGS => Flags(
+                parse_u32(payload).context("invalid IFLA_INET6_FLAGS value")?,
+            ),
             IFLA_INET6_CACHEINFO => CacheInfo(payload.to_vec()),
             IFLA_INET6_CONF => DevConf(payload.to_vec()),
             IFLA_INET6_STATS => Stats(payload.to_vec()),
             IFLA_INET6_ICMP6STATS => IcmpStats(payload.to_vec()),
-            IFLA_INET6_TOKEN => {
-                Token(parse_ipv6(payload).context("invalid IFLA_INET6_TOKEN value")?)
-            }
-            IFLA_INET6_ADDR_GEN_MODE => {
-                AddrGenMode(parse_u8(payload).context("invalid IFLA_INET6_ADDR_GEN_MODE value")?)
-            }
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            IFLA_INET6_TOKEN => Token(
+                parse_ipv6(payload)
+                    .context("invalid IFLA_INET6_TOKEN value")?,
+            ),
+            IFLA_INET6_ADDR_GEN_MODE => AddrGenMode(
+                parse_u8(payload)
+                    .context("invalid IFLA_INET6_ADDR_GEN_MODE value")?,
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }

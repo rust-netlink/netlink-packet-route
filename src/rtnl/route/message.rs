@@ -3,9 +3,7 @@
 use crate::{
     nlas::route::Nla,
     traits::{Emitable, Parseable},
-    DecodeError,
-    RouteHeader,
-    RouteMessageBuffer,
+    DecodeError, RouteHeader, RouteMessageBuffer,
 };
 use anyhow::Context;
 use std::net::IpAddr;
@@ -29,16 +27,22 @@ impl Emitable for RouteMessage {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<RouteMessageBuffer<&'a T>> for RouteMessage {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<RouteMessageBuffer<&'a T>>
+    for RouteMessage
+{
     fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(RouteMessage {
-            header: RouteHeader::parse(buf).context("failed to parse route message header")?,
-            nlas: Vec::<Nla>::parse(buf).context("failed to parse route message NLAs")?,
+            header: RouteHeader::parse(buf)
+                .context("failed to parse route message header")?,
+            nlas: Vec::<Nla>::parse(buf)
+                .context("failed to parse route message NLAs")?,
         })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<RouteMessageBuffer<&'a T>> for Vec<Nla> {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<RouteMessageBuffer<&'a T>>
+    for Vec<Nla>
+{
     fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla_buf in buf.nlas() {

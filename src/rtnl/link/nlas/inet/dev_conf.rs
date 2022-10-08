@@ -105,8 +105,10 @@ impl<T: AsRef<[u8]>> Parseable<InetDevConfBuffer<T>> for InetDevConf {
             src_vmark: buf.src_vmark(),
             proxy_arp_pvlan: buf.proxy_arp_pvlan(),
             route_localnet: buf.route_localnet(),
-            igmpv2_unsolicited_report_interval: buf.igmpv2_unsolicited_report_interval(),
-            igmpv3_unsolicited_report_interval: buf.igmpv3_unsolicited_report_interval(),
+            igmpv2_unsolicited_report_interval: buf
+                .igmpv2_unsolicited_report_interval(),
+            igmpv3_unsolicited_report_interval: buf
+                .igmpv3_unsolicited_report_interval(),
             ignore_routes_with_linkdown: buf.ignore_routes_with_linkdown(),
             drop_unicast_in_l2_multicast: buf.drop_unicast_in_l2_multicast(),
             drop_gratuitous_arp: buf.drop_gratuitous_arp(),
@@ -147,10 +149,17 @@ impl Emitable for InetDevConf {
         buffer.set_src_vmark(self.src_vmark);
         buffer.set_proxy_arp_pvlan(self.proxy_arp_pvlan);
         buffer.set_route_localnet(self.route_localnet);
-        buffer.set_igmpv2_unsolicited_report_interval(self.igmpv2_unsolicited_report_interval);
-        buffer.set_igmpv3_unsolicited_report_interval(self.igmpv3_unsolicited_report_interval);
-        buffer.set_ignore_routes_with_linkdown(self.ignore_routes_with_linkdown);
-        buffer.set_drop_unicast_in_l2_multicast(self.drop_unicast_in_l2_multicast);
+        buffer.set_igmpv2_unsolicited_report_interval(
+            self.igmpv2_unsolicited_report_interval,
+        );
+        buffer.set_igmpv3_unsolicited_report_interval(
+            self.igmpv3_unsolicited_report_interval,
+        );
+        buffer
+            .set_ignore_routes_with_linkdown(self.ignore_routes_with_linkdown);
+        buffer.set_drop_unicast_in_l2_multicast(
+            self.drop_unicast_in_l2_multicast,
+        );
         buffer.set_drop_gratuitous_arp(self.drop_gratuitous_arp);
     }
 }

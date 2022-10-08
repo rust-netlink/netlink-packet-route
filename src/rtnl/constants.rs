@@ -110,8 +110,8 @@ pub const RTPROT_BABEL: u8 = 42;
 
 /// The destination is globally valid.
 pub const RT_SCOPE_UNIVERSE: u8 = 0;
-/// (IPv6 only) the destination is site local, i.e. it is valid inside this site.  This is for interior
-/// routes in the local autonomous system
+/// (IPv6 only) the destination is site local, i.e. it is valid inside this
+/// site.  This is for interior routes in the local autonomous system
 pub const RT_SCOPE_SITE: u8 = 200;
 /// The destination is link local
 pub const RT_SCOPE_LINK: u8 = 253;
@@ -123,8 +123,8 @@ pub const RT_SCOPE_NOWHERE: u8 = 255;
 /// An unspecified routing table
 pub const RT_TABLE_UNSPEC: u8 = 0;
 
-/// A route table introduced for compatibility with old software which do not support table IDs
-/// greater than 255. See commit `709772e6e065` in the kernel:
+/// A route table introduced for compatibility with old software which do not
+/// support table IDs greater than 255. See commit `709772e6e065` in the kernel:
 ///
 /// ```no_rust
 /// commit 709772e6e06564ed94ba740de70185ac3d792773
@@ -149,9 +149,9 @@ pub const RT_TABLE_COMPAT: u8 = 252;
 
 /// The default routing table.
 ///
-/// The default table is empty and has little use. It has been kept when the current incarnation of
-/// advanced routing has been introduced in Linux 2.1.68 after a first tentative using "classes" in
-/// Linux 2.1.15.
+/// The default table is empty and has little use. It has been kept when the
+/// current incarnation of advanced routing has been introduced in Linux 2.1.68
+/// after a first tentative using "classes" in Linux 2.1.15.
 /// # Source
 ///
 /// This documentation is taken from [Vincent Bernat's excellent
@@ -160,15 +160,17 @@ pub const RT_TABLE_DEFAULT: u8 = 253;
 
 /// The main routing table.
 ///
-/// By default, apart from the local ones which are added to the local table, routes that are added
-/// to this table.
+/// By default, apart from the local ones which are added to the local table,
+/// routes that are added to this table.
 pub const RT_TABLE_MAIN: u8 = 254;
 
 /// The local table.
 ///
-/// This table is populated automatically by the kernel when addresses are configured.
+/// This table is populated automatically by the kernel when addresses are
+/// configured.
 ///
-/// On a machine that has `192.168.44.211/24` configured on `wlp58s0`, `iproute2` shows the following routes in the local table:
+/// On a machine that has `192.168.44.211/24` configured on `wlp58s0`,
+/// `iproute2` shows the following routes in the local table:
 ///
 /// ```no_rust
 /// $ ip route show table local
@@ -183,16 +185,18 @@ pub const RT_TABLE_MAIN: u8 = 254;
 /// broadcast 192.168.44.255 dev wlp58s0 proto kernel scope link src 192.168.44.211
 /// ```
 ///
-/// When the IP address `192.168.44.211` was configured on the `wlp58s0` interface, the kernel
-/// automatically added the appropriate routes:
+/// When the IP address `192.168.44.211` was configured on the `wlp58s0`
+/// interface, the kernel automatically added the appropriate routes:
 ///
 /// - a route for `192.168.44.211` for local unicast delivery to the IP address
-/// - a route for `192.168.44.255` for broadcast delivery to the broadcast address
+/// - a route for `192.168.44.255` for broadcast delivery to the broadcast
+///   address
 /// - a route for `192.168.44.0` for broadcast delivery to the network address
 ///
-/// When `127.0.0.1` was configured on the loopback interface, the same kind of routes were added to
-/// the local table. However, a loopback address receives a special treatment and the kernel also
-/// adds the whole subnet to the local table.
+/// When `127.0.0.1` was configured on the loopback interface, the same kind of
+/// routes were added to the local table. However, a loopback address receives a
+/// special treatment and the kernel also adds the whole subnet to the local
+/// table.
 ///
 /// Note that this is similar for IPv6:
 ///
@@ -211,9 +215,9 @@ pub const RT_TABLE_LOCAL: u8 = 255;
 
 /// If the route changes, notify the user via rtnetlink
 pub const RTM_F_NOTIFY: u32 = 256;
-/// This route is cloned. Cloned routes are routes coming from the cache instead of the FIB. For
-/// IPv4, the cache was removed in Linux 3.6 (see [IPv4 route lookup on Linux] for more information
-/// about IPv4 routing)
+/// This route is cloned. Cloned routes are routes coming from the cache instead
+/// of the FIB. For IPv4, the cache was removed in Linux 3.6 (see [IPv4 route
+/// lookup on Linux] for more information about IPv4 routing)
 ///
 /// [IPv4 route lookup on Linux]: https://vincent.bernat.ch/en/blog/2017-ipv4-route-lookup-linux
 pub const RTM_F_CLONED: u32 = 512;
@@ -221,13 +225,14 @@ pub const RTM_F_CLONED: u32 = 512;
 pub const RTM_F_EQUALIZE: u32 = 1024;
 /// Prefix addresses
 pub const RTM_F_PREFIX: u32 = 2048;
-/// Show the table from which the lookup result comes. Note that before commit `c36ba6603a11`, Linux
-/// would always hardcode [`RouteMessageHeader.table`] (known as `rtmsg.rtm_table` in the kernel) to
-/// `RT_TABLE_MAIN`.
+/// Show the table from which the lookup result comes. Note that before commit
+/// `c36ba6603a11`, Linux would always hardcode [`RouteMessageHeader.table`]
+/// (known as `rtmsg.rtm_table` in the kernel) to `RT_TABLE_MAIN`.
 ///
 /// [`RouteMessageHeader.table`]: ../struct.RouteMessageHeader.html#structfield.table
 pub const RTM_F_LOOKUP_TABLE: u32 = 4096;
-/// Return the full FIB lookup match (see commit `b61798130f1be5bff08712308126c2d7ebe390ef`)
+/// Return the full FIB lookup match (see commit
+/// `b61798130f1be5bff08712308126c2d7ebe390ef`)
 pub const RTM_F_FIB_MATCH: u32 = 8192;
 
 pub const AF_UNSPEC: u16 = libc::AF_UNSPEC as u16;
@@ -278,23 +283,26 @@ pub const NETNSA_NSID_NOT_ASSIGNED: i32 = -1;
 
 /// Neighbour cache entry state: the neighbour has not (yet) been resolved
 pub const NUD_INCOMPLETE: u16 = 1;
-/// Neighbour cache entry state: the neighbour entry is valid until its lifetime expires
+/// Neighbour cache entry state: the neighbour entry is valid until its lifetime
+/// expires
 pub const NUD_REACHABLE: u16 = 2;
 /// Neighbour cache entry state: the neighbour entry is valid but suspicious
 pub const NUD_STALE: u16 = 4;
-/// Neighbour cache entry state: the validation of this entry is currently delayed
+/// Neighbour cache entry state: the validation of this entry is currently
+/// delayed
 pub const NUD_DELAY: u16 = 8;
 /// Neighbour cache entry state: the neighbour entry is being probed
 pub const NUD_PROBE: u16 = 16;
 /// Neighbour cache entry state: the validation of this entry has failed
 pub const NUD_FAILED: u16 = 32;
-/// Neighbour cache entry state: entry is valid and the kernel will not try to validate or refresh
-/// it.
+/// Neighbour cache entry state: entry is valid and the kernel will not try to
+/// validate or refresh it.
 pub const NUD_NOARP: u16 = 64;
-/// Neighbour cache entry state: entry is valid forever and can only be removed explicitly from
-/// userspace.
+/// Neighbour cache entry state: entry is valid forever and can only be removed
+/// explicitly from userspace.
 pub const NUD_PERMANENT: u16 = 128;
-/// Neighbour cache entry state: pseudo state for fresh entries or before deleting entries
+/// Neighbour cache entry state: pseudo state for fresh entries or before
+/// deleting entries
 pub const NUD_NONE: u16 = 0;
 
 // Neighbour cache entry flags

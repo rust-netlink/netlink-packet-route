@@ -49,10 +49,15 @@ where
     T: AsRef<[u8]> + ?Sized,
     S: AsRef<str>,
 {
-    fn parse_with_param(buf: &NlaBuffer<&'a T>, kind: S) -> Result<Self, DecodeError> {
+    fn parse_with_param(
+        buf: &NlaBuffer<&'a T>,
+        kind: S,
+    ) -> Result<Self, DecodeError> {
         Ok(match kind.as_ref() {
             ingress::KIND => TcOpt::Ingress,
-            u32::KIND => Self::U32(u32::Nla::parse(buf).context("failed to parse u32 nlas")?),
+            u32::KIND => Self::U32(
+                u32::Nla::parse(buf).context("failed to parse u32 nlas")?,
+            ),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }

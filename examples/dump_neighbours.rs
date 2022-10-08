@@ -3,13 +3,8 @@
 use std::{convert::TryFrom, net::IpAddr, string::ToString};
 
 use netlink_packet_route::{
-    constants::*,
-    nlas::neighbour::Nla,
-    NeighbourMessage,
-    NetlinkHeader,
-    NetlinkMessage,
-    NetlinkPayload,
-    RtnlMessage,
+    constants::*, nlas::neighbour::Nla, NeighbourMessage, NetlinkHeader,
+    NetlinkMessage, NetlinkPayload, RtnlMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -23,7 +18,9 @@ fn main() {
             flags: NLM_F_DUMP | NLM_F_REQUEST,
             ..Default::default()
         },
-        payload: NetlinkPayload::from(RtnlMessage::GetNeighbour(NeighbourMessage::default())),
+        payload: NetlinkPayload::from(RtnlMessage::GetNeighbour(
+            NeighbourMessage::default(),
+        )),
     };
     // IMPORTANT: call `finalize()` to automatically set the
     // `message_type` and `length` fields to the appropriate values in
@@ -45,11 +42,14 @@ fn main() {
         loop {
             let bytes = &receive_buffer[offset..];
             // Parse the message
-            let msg: NetlinkMessage<RtnlMessage> = NetlinkMessage::deserialize(bytes).unwrap();
+            let msg: NetlinkMessage<RtnlMessage> =
+                NetlinkMessage::deserialize(bytes).unwrap();
 
             match msg.payload {
                 NetlinkPayload::Done => break 'outer,
-                NetlinkPayload::InnerMessage(RtnlMessage::NewNeighbour(entry)) => {
+                NetlinkPayload::InnerMessage(RtnlMessage::NewNeighbour(
+                    entry,
+                )) => {
                     let address_family = entry.header.family as u16;
                     if address_family == AF_INET || address_family == AF_INET6 {
                         print_entry(entry);

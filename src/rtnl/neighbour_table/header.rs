@@ -12,8 +12,12 @@ pub struct NeighbourTableHeader {
     pub family: u8,
 }
 
-impl<T: AsRef<[u8]>> Parseable<NeighbourTableMessageBuffer<T>> for NeighbourTableHeader {
-    fn parse(buf: &NeighbourTableMessageBuffer<T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]>> Parseable<NeighbourTableMessageBuffer<T>>
+    for NeighbourTableHeader
+{
+    fn parse(
+        buf: &NeighbourTableMessageBuffer<T>,
+    ) -> Result<Self, DecodeError> {
         Ok(Self {
             family: buf.family(),
         })

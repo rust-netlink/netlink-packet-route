@@ -18,8 +18,10 @@ pub enum State {
     Dormant,
     /// Up, ready to send packets
     Up,
-    /// Unrecognized value. This should go away when `TryFrom` is stable in Rust
-    // FIXME: there's not point in having this. When TryFrom is stable we'll remove it
+    /// Unrecognized value. This should go away when `TryFrom` is stable in
+    /// Rust
+    // FIXME: there's not point in having this. When TryFrom is stable we'll
+    // remove it
     Other(u8),
 }
 

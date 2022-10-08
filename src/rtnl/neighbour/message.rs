@@ -5,9 +5,7 @@ use anyhow::Context;
 use crate::{
     nlas::neighbour::Nla,
     traits::{Emitable, Parseable},
-    DecodeError,
-    NeighbourHeader,
-    NeighbourMessageBuffer,
+    DecodeError, NeighbourHeader, NeighbourMessageBuffer,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -29,17 +27,22 @@ impl Emitable for NeighbourMessage {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>> for NeighbourMessage {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>>
+    for NeighbourMessage
+{
     fn parse(buf: &NeighbourMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(NeighbourMessage {
             header: NeighbourHeader::parse(buf)
                 .context("failed to parse neighbour message header")?,
-            nlas: Vec::<Nla>::parse(buf).context("failed to parse neighbour message NLAs")?,
+            nlas: Vec::<Nla>::parse(buf)
+                .context("failed to parse neighbour message NLAs")?,
         })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>> for Vec<Nla> {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>>
+    for Vec<Nla>
+{
     fn parse(buf: &NeighbourMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla_buf in buf.nlas() {
@@ -52,10 +55,7 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>> for Vec<N
 #[cfg(test)]
 mod test {
     use crate::{
-        constants::*,
-        traits::Emitable,
-        NeighbourHeader,
-        NeighbourMessage,
+        constants::*, traits::Emitable, NeighbourHeader, NeighbourMessage,
         NeighbourMessageBuffer,
     };
 

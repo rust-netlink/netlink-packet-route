@@ -15,12 +15,12 @@ use crate::{
 bitflags! {
     pub struct NextHopFlags: u8 {
         const RTNH_F_EMPTY = 0;
-        const RTNH_F_DEAD = constants::RTNH_F_DEAD as u8;
-        const RTNH_F_PERVASIVE = constants::RTNH_F_PERVASIVE as u8;
-        const RTNH_F_ONLINK = constants::RTNH_F_ONLINK as u8;
-        const RTNH_F_OFFLOAD = constants::RTNH_F_OFFLOAD as u8;
-        const RTNH_F_LINKDOWN = constants::RTNH_F_LINKDOWN as u8;
-        const RTNH_F_UNRESOLVED = constants::RTNH_F_UNRESOLVED as u8;
+        const RTNH_F_DEAD = constants::RTNH_F_DEAD;
+        const RTNH_F_PERVASIVE = constants::RTNH_F_PERVASIVE;
+        const RTNH_F_ONLINK = constants::RTNH_F_ONLINK;
+        const RTNH_F_OFFLOAD = constants::RTNH_F_OFFLOAD;
+        const RTNH_F_LINKDOWN = constants::RTNH_F_LINKDOWN;
+        const RTNH_F_UNRESOLVED = constants::RTNH_F_UNRESOLVED;
     }
 }
 
@@ -44,9 +44,11 @@ impl<T: AsRef<[u8]>> NextHopBuffer<T> {
     fn check_buffer_length(&self) -> Result<(), DecodeError> {
         let len = self.buffer.as_ref().len();
         if len < PAYLOAD_OFFSET {
-            return Err(
-                format!("invalid NextHopBuffer: length {} < {}", len, PAYLOAD_OFFSET).into(),
-            );
+            return Err(format!(
+                "invalid NextHopBuffer: length {} < {}",
+                len, PAYLOAD_OFFSET
+            )
+            .into());
         }
         if len < self.length() as usize {
             return Err(format!(
@@ -61,8 +63,12 @@ impl<T: AsRef<[u8]>> NextHopBuffer<T> {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> NextHopBuffer<&'a T> {
-    pub fn nlas(&self) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(&self.payload()[..(self.length() as usize - PAYLOAD_OFFSET)])
+    pub fn nlas(
+        &self,
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+        NlasIterator::new(
+            &self.payload()[..(self.length() as usize - PAYLOAD_OFFSET)],
+        )
     }
 }
 

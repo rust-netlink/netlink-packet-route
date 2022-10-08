@@ -5,9 +5,7 @@ mod test_rich_nlas {
     use crate::{
         rtnl::route::{
             nlas::{NextHop, NextHopFlags, Nla},
-            RouteFlags,
-            RouteMessage,
-            RouteMessageBuffer,
+            RouteFlags, RouteMessage, RouteMessageBuffer,
         },
         utils::{Emitable, Parseable},
     };
@@ -76,14 +74,20 @@ mod test_rich_nlas {
         msg.header.kind = 0x01;
         msg.header.flags = RouteFlags::empty();
         msg.nlas = vec![
-            Nla::Destination("1001::".parse::<Ipv6Addr>().unwrap().octets().to_vec()),
+            Nla::Destination(
+                "1001::".parse::<Ipv6Addr>().unwrap().octets().to_vec(),
+            ),
             Nla::MultiPath(vec![
                 NextHop {
                     flags: NextHopFlags::empty(),
                     hops: 0,
                     interface_id: 0,
                     nlas: vec![Nla::Gateway(
-                        "fc00::1".parse::<Ipv6Addr>().unwrap().octets().to_vec(),
+                        "fc00::1"
+                            .parse::<Ipv6Addr>()
+                            .unwrap()
+                            .octets()
+                            .to_vec(),
                     )],
                 },
                 NextHop {
@@ -91,7 +95,11 @@ mod test_rich_nlas {
                     hops: 0,
                     interface_id: 0,
                     nlas: vec![Nla::Gateway(
-                        "fc01::1".parse::<Ipv6Addr>().unwrap().octets().to_vec(),
+                        "fc01::1"
+                            .parse::<Ipv6Addr>()
+                            .unwrap()
+                            .octets()
+                            .to_vec(),
                     )],
                 },
                 NextHop {
@@ -108,9 +116,10 @@ mod test_rich_nlas {
     #[test]
     fn parse_message_with_multipath_nla() {
         let expected = route_message();
-        let actual =
-            RouteMessage::parse(&RouteMessageBuffer::new_checked(&&ROUTE_MSG[..]).unwrap())
-                .unwrap();
+        let actual = RouteMessage::parse(
+            &RouteMessageBuffer::new_checked(&&ROUTE_MSG[..]).unwrap(),
+        )
+        .unwrap();
         assert_eq!(actual, expected);
     }
 

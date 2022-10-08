@@ -18,7 +18,9 @@ buffer!(LinkMessageBuffer(LINK_HEADER_LEN) {
 });
 
 impl<'a, T: AsRef<[u8]> + ?Sized> LinkMessageBuffer<&'a T> {
-    pub fn nlas(&self) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    pub fn nlas(
+        &self,
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
         NlasIterator::new(self.payload())
     }
 }

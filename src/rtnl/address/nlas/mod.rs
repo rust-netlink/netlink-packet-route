@@ -110,13 +110,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             IFA_UNSPEC => Unspec(payload.to_vec()),
             IFA_ADDRESS => Address(payload.to_vec()),
             IFA_LOCAL => Local(payload.to_vec()),
-            IFA_LABEL => Label(parse_string(payload).context("invalid IFA_LABEL value")?),
+            IFA_LABEL => {
+                Label(parse_string(payload).context("invalid IFA_LABEL value")?)
+            }
             IFA_BROADCAST => Broadcast(payload.to_vec()),
             IFA_ANYCAST => Anycast(payload.to_vec()),
             IFA_CACHEINFO => CacheInfo(payload.to_vec()),
             IFA_MULTICAST => Multicast(payload.to_vec()),
-            IFA_FLAGS => Flags(parse_u32(payload).context("invalid IFA_FLAGS value")?),
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            IFA_FLAGS => {
+                Flags(parse_u32(payload).context("invalid IFA_FLAGS value")?)
+            }
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }

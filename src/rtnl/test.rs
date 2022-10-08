@@ -5,17 +5,13 @@
 use crate::{
     nlas::link::{Info, InfoKind, Nla},
     traits::ParseableParametrized,
-    LinkHeader,
-    LinkMessage,
-    NetlinkBuffer,
-    RtnlMessage,
-    RtnlMessageBuffer,
+    LinkHeader, LinkMessage, NetlinkBuffer, RtnlMessage, RtnlMessageBuffer,
     RTM_NEWLINK,
 };
 
-// This test was added because one of the NLA's payload is a string that is not null
-// terminated. I'm not sure if we missed something in the IFLA_LINK_INFO spec, or if
-// linux/iproute2 is being a bit inconsistent here.
+// This test was added because one of the NLA's payload is a string that is not
+// null terminated. I'm not sure if we missed something in the IFLA_LINK_INFO
+// spec, or if linux/iproute2 is being a bit inconsistent here.
 //
 // This message was created using `ip link add qemu-br1 type bridge`.
 #[rustfmt::skip]

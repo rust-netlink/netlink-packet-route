@@ -59,7 +59,9 @@ impl Emitable for RuleHeader {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RuleMessageBuffer<&'a T>> for RuleHeader {
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RuleMessageBuffer<&'a T>>
+    for RuleHeader
+{
     fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(RuleHeader {
             family: buf.family(),

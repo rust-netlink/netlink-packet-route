@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_route::{
-    LinkMessage,
-    NetlinkHeader,
-    NetlinkMessage,
-    NetlinkPayload,
-    RtnlMessage,
-    NLM_F_DUMP,
-    NLM_F_REQUEST,
+    LinkMessage, NetlinkHeader, NetlinkMessage, NetlinkPayload, RtnlMessage,
+    NLM_F_DUMP, NLM_F_REQUEST,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -18,7 +13,9 @@ fn main() {
 
     let mut packet = NetlinkMessage {
         header: NetlinkHeader::default(),
-        payload: NetlinkPayload::from(RtnlMessage::GetLink(LinkMessage::default())),
+        payload: NetlinkPayload::from(RtnlMessage::GetLink(
+            LinkMessage::default(),
+        )),
     };
     packet.header.flags = NLM_F_DUMP | NLM_F_REQUEST;
     packet.header.sequence_number = 1;
@@ -26,8 +23,9 @@ fn main() {
 
     let mut buf = vec![0; packet.header.length as usize];
 
-    // Before calling serialize, it is important to check that the buffer in which we're emitting is big
-    // enough for the packet, other `serialize()` panics.
+    // Before calling serialize, it is important to check that the buffer in
+    // which we're emitting is big enough for the packet, other
+    // `serialize()` panics.
     assert!(buf.len() == packet.buffer_len());
     packet.serialize(&mut buf[..]);
 
@@ -37,21 +35,25 @@ fn main() {
     let mut receive_buffer = vec![0; 4096];
     let mut offset = 0;
 
-    // we set the NLM_F_DUMP flag so we expect a multipart rx_packet in response.
+    // we set the NLM_F_DUMP flag so we expect a multipart rx_packet in
+    // response.
     loop {
         let size = socket.recv(&mut &mut receive_buffer[..], 0).unwrap();
 
         loop {
             let bytes = &receive_buffer[offset..];
-            // Note that we're parsing a NetlinkBuffer<&&[u8]>, NOT a NetlinkBuffer<&[u8]> here.
-            // This is important because Parseable<NetlinkMessage> is only implemented for
-            // NetlinkBuffer<&'a T>, where T implements AsRef<[u8] + 'a. This is not
-            // particularly user friendly, but this is a low level library anyway.
+            // Note that we're parsing a NetlinkBuffer<&&[u8]>, NOT a
+            // NetlinkBuffer<&[u8]> here. This is important because
+            // Parseable<NetlinkMessage> is only implemented for
+            // NetlinkBuffer<&'a T>, where T implements AsRef<[u8] + 'a. This is
+            // not particularly user friendly, but this is a low
+            // level library anyway.
             //
             // Note also that the same could be written more explicitely with:
             //
             // let rx_packet =
-            //     <NetlinkBuffer<_> as Parseable<NetlinkMessage>>::parse(NetlinkBuffer::new(&bytes))
+            //     <NetlinkBuffer<_> as
+            // Parseable<NetlinkMessage>>::parse(NetlinkBuffer::new(&bytes))
             //         .unwrap();
             //
             let rx_packet: NetlinkMessage<RtnlMessage> =

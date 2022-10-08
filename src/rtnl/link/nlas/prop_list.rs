@@ -51,12 +51,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Prop {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_ALT_IFNAME => {
-                Prop::AltIfName(parse_string(payload).context("invalid IFLA_ALT_IFNAME value")?)
-            }
-            kind => {
-                Prop::Other(DefaultNla::parse(buf).context(format!("Unknown NLA type {}", kind))?)
-            }
+            IFLA_ALT_IFNAME => Prop::AltIfName(
+                parse_string(payload)
+                    .context("invalid IFLA_ALT_IFNAME value")?,
+            ),
+            kind => Prop::Other(
+                DefaultNla::parse(buf)
+                    .context(format!("Unknown NLA type {}", kind))?,
+            ),
         })
     }
 }

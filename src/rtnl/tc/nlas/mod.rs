@@ -129,7 +129,9 @@ impl nlas::Nla for Stats2 {
     fn value_len(&self) -> usize {
         use self::Stats2::*;
         match *self {
-            StatsBasic(ref bytes) | StatsQueue(ref bytes) | StatsApp(ref bytes) => bytes.len(),
+            StatsBasic(ref bytes)
+            | StatsQueue(ref bytes)
+            | StatsApp(ref bytes) => bytes.len(),
             Other(ref nla) => nla.value_len(),
         }
     }
@@ -137,9 +139,9 @@ impl nlas::Nla for Stats2 {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::Stats2::*;
         match *self {
-            StatsBasic(ref bytes) | StatsQueue(ref bytes) | StatsApp(ref bytes) => {
-                buffer.copy_from_slice(bytes.as_slice())
-            }
+            StatsBasic(ref bytes)
+            | StatsQueue(ref bytes)
+            | StatsApp(ref bytes) => buffer.copy_from_slice(bytes.as_slice()),
             Other(ref nla) => nla.emit_value(buffer),
         }
     }

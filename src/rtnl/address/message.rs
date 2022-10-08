@@ -5,9 +5,7 @@ use anyhow::Context;
 use crate::{
     nlas::address::Nla,
     traits::{Emitable, Parseable},
-    AddressMessageBuffer,
-    DecodeError,
-    ADDRESS_HEADER_LEN,
+    AddressMessageBuffer, DecodeError, ADDRESS_HEADER_LEN,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -65,16 +63,22 @@ impl<T: AsRef<[u8]>> Parseable<AddressMessageBuffer<T>> for AddressHeader {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<AddressMessageBuffer<&'a T>> for AddressMessage {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<AddressMessageBuffer<&'a T>>
+    for AddressMessage
+{
     fn parse(buf: &AddressMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(AddressMessage {
-            header: AddressHeader::parse(buf).context("failed to parse address message header")?,
-            nlas: Vec::<Nla>::parse(buf).context("failed to parse address message NLAs")?,
+            header: AddressHeader::parse(buf)
+                .context("failed to parse address message header")?,
+            nlas: Vec::<Nla>::parse(buf)
+                .context("failed to parse address message NLAs")?,
         })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<AddressMessageBuffer<&'a T>> for Vec<Nla> {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<AddressMessageBuffer<&'a T>>
+    for Vec<Nla>
+{
     fn parse(buf: &AddressMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla_buf in buf.nlas() {

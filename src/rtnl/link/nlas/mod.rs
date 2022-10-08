@@ -72,39 +72,42 @@ pub enum Nla {
     Info(Vec<Info>),
     Wireless(Vec<u8>),
     ProtoInfo(Vec<u8>),
-    /// A list of properties for the device. For additional context see the related linux kernel
-    /// threads<sup>[1][1],[2][2]</sup>. In particular see [this message][defining message] from
-    /// the first thread describing the design.
+    /// A list of properties for the device. For additional context see the
+    /// related linux kernel threads<sup>[1][1],[2][2]</sup>. In particular
+    /// see [this message][defining message] from the first thread
+    /// describing the design.
     ///
     /// [1]: https://lwn.net/ml/netdev/20190719110029.29466-1-jiri@resnulli.us/
     /// [2]: https://lwn.net/ml/netdev/20190930094820.11281-1-jiri@resnulli.us/
     /// [defining message]: https://lwn.net/ml/netdev/20190913145012.GB2276@nanopsycho.orion/
     PropList(Vec<Prop>),
-    /// `protodown` is a mechanism that allows protocols to hold an interface down.
-    /// This field is used to specify the reason why it is held down.
-    /// For additional context see the related linux kernel threads<sup>[1][1],[2][2]</sup>.
+    /// `protodown` is a mechanism that allows protocols to hold an interface
+    /// down. This field is used to specify the reason why it is held down.
+    /// For additional context see the related linux kernel
+    /// threads<sup>[1][1],[2][2]</sup>.
     ///
     /// [1]: https://lwn.net/ml/netdev/1595877677-45849-1-git-send-email-roopa%40cumulusnetworks.com/
     /// [2]: https://lwn.net/ml/netdev/1596242041-14347-1-git-send-email-roopa%40cumulusnetworks.com/
     ProtoDownReason(Vec<u8>),
-    // mac address (use to be [u8; 6] but it turns out MAC != HW address, for instance for IP over
-    // GRE where it's an IPv4!)
+    // mac address (use to be [u8; 6] but it turns out MAC != HW address, for
+    // instance for IP over GRE where it's an IPv4!)
     Address(Vec<u8>),
     Broadcast(Vec<u8>),
-    /// Permanent hardware address of the device. The provides the same information
-    /// as the ethtool ioctl interface.
+    /// Permanent hardware address of the device. The provides the same
+    /// information as the ethtool ioctl interface.
     PermAddress(Vec<u8>),
 
     // string
-    // FIXME: for empty string, should we encode the NLA as \0 or should we not set a payload? It
-    // seems that for certain attriutes, this matter:
-    // https://elixir.bootlin.com/linux/v4.17-rc5/source/net/core/rtnetlink.c#L1660
+    // FIXME: for empty string, should we encode the NLA as \0 or should we
+    // not set a payload? It seems that for certain attriutes, this
+    // matter: https://elixir.bootlin.com/linux/v4.17-rc5/source/net/core/rtnetlink.c#L1660
     IfName(String),
     Qdisc(String),
     IfAlias(String),
     PhysPortName(String),
     /// Alternate name for the device.
-    /// For additional context see the related linux kernel threads<sup>[1][1],[2][2]</sup>.
+    /// For additional context see the related linux kernel
+    /// threads<sup>[1][1],[2][2]</sup>.
     ///
     /// [1]: https://lwn.net/ml/netdev/20190719110029.29466-1-jiri@resnulli.us/
     /// [2]: https://lwn.net/ml/netdev/20190930094820.11281-1-jiri@resnulli.us/
@@ -146,7 +149,8 @@ pub enum Nla {
     Stats(Vec<u8>),
     Stats64(Vec<u8>),
     Map(Vec<u8>),
-    // AF_SPEC (the type of af_spec depends on the interface family of the message)
+    // AF_SPEC (the type of af_spec depends on the interface family of the
+    // message)
     AfSpecInet(Vec<AfSpecInet>),
     AfSpecBridge(Vec<AfSpecBridge>),
     //AfSpecBridge(Vec<u8>),
@@ -390,7 +394,9 @@ impl nlas::Nla for Nla {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> for Nla {
+impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16>
+    for Nla
+{
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         interface_family: u16,
@@ -429,63 +435,102 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> f
                 PropList(nlas)
             }
             IFLA_PROTO_DOWN_REASON => ProtoDownReason(payload.to_vec()),
-            // HW address (we parse them as Vec for now, because for IP over GRE, the HW address is
-            // an IP instead of a MAC for example
+            // HW address (we parse them as Vec for now, because for IP over
+            // GRE, the HW address is an IP instead of a MAC for
+            // example
             IFLA_ADDRESS => Address(payload.to_vec()),
             IFLA_BROADCAST => Broadcast(payload.to_vec()),
             IFLA_PERM_ADDRESS => PermAddress(payload.to_vec()),
             // String
-            IFLA_IFNAME => IfName(parse_string(payload).context("invalid IFLA_IFNAME value")?),
-            IFLA_QDISC => Qdisc(parse_string(payload).context("invalid IFLA_QDISC value")?),
-            IFLA_IFALIAS => IfAlias(parse_string(payload).context("invalid IFLA_IFALIAS value")?),
-            IFLA_PHYS_PORT_NAME => {
-                PhysPortName(parse_string(payload).context("invalid IFLA_PHYS_PORT_NAME value")?)
-            }
-            IFLA_ALT_IFNAME => {
-                AltIfName(parse_string(payload).context("invalid IFLA_ALT_IFNAME value")?)
-            }
+            IFLA_IFNAME => IfName(
+                parse_string(payload).context("invalid IFLA_IFNAME value")?,
+            ),
+            IFLA_QDISC => Qdisc(
+                parse_string(payload).context("invalid IFLA_QDISC value")?,
+            ),
+            IFLA_IFALIAS => IfAlias(
+                parse_string(payload).context("invalid IFLA_IFALIAS value")?,
+            ),
+            IFLA_PHYS_PORT_NAME => PhysPortName(
+                parse_string(payload)
+                    .context("invalid IFLA_PHYS_PORT_NAME value")?,
+            ),
+            IFLA_ALT_IFNAME => AltIfName(
+                parse_string(payload)
+                    .context("invalid IFLA_ALT_IFNAME value")?,
+            ),
 
             // u8
-            IFLA_LINKMODE => Mode(parse_u8(payload).context("invalid IFLA_LINKMODE value")?),
-            IFLA_CARRIER => Carrier(parse_u8(payload).context("invalid IFLA_CARRIER value")?),
-            IFLA_PROTO_DOWN => {
-                ProtoDown(parse_u8(payload).context("invalid IFLA_PROTO_DOWN value")?)
+            IFLA_LINKMODE => {
+                Mode(parse_u8(payload).context("invalid IFLA_LINKMODE value")?)
             }
+            IFLA_CARRIER => Carrier(
+                parse_u8(payload).context("invalid IFLA_CARRIER value")?,
+            ),
+            IFLA_PROTO_DOWN => ProtoDown(
+                parse_u8(payload).context("invalid IFLA_PROTO_DOWN value")?,
+            ),
 
-            IFLA_MTU => Mtu(parse_u32(payload).context("invalid IFLA_MTU value")?),
-            IFLA_LINK => Link(parse_u32(payload).context("invalid IFLA_LINK value")?),
-            IFLA_MASTER => Master(parse_u32(payload).context("invalid IFLA_MASTER value")?),
-            IFLA_TXQLEN => TxQueueLen(parse_u32(payload).context("invalid IFLA_TXQLEN value")?),
-            IFLA_NET_NS_PID => {
-                NetNsPid(parse_u32(payload).context("invalid IFLA_NET_NS_PID value")?)
+            IFLA_MTU => {
+                Mtu(parse_u32(payload).context("invalid IFLA_MTU value")?)
             }
-            IFLA_NUM_VF => NumVf(parse_u32(payload).context("invalid IFLA_NUM_VF value")?),
-            IFLA_GROUP => Group(parse_u32(payload).context("invalid IFLA_GROUP value")?),
-            IFLA_NET_NS_FD => NetNsFd(parse_i32(payload).context("invalid IFLA_NET_NS_FD value")?),
-            IFLA_EXT_MASK => ExtMask(parse_u32(payload).context("invalid IFLA_EXT_MASK value")?),
-            IFLA_PROMISCUITY => {
-                Promiscuity(parse_u32(payload).context("invalid IFLA_PROMISCUITY value")?)
+            IFLA_LINK => {
+                Link(parse_u32(payload).context("invalid IFLA_LINK value")?)
             }
-            IFLA_NUM_TX_QUEUES => {
-                NumTxQueues(parse_u32(payload).context("invalid IFLA_NUM_TX_QUEUES value")?)
+            IFLA_MASTER => {
+                Master(parse_u32(payload).context("invalid IFLA_MASTER value")?)
             }
-            IFLA_NUM_RX_QUEUES => {
-                NumRxQueues(parse_u32(payload).context("invalid IFLA_NUM_RX_QUEUES value")?)
+            IFLA_TXQLEN => TxQueueLen(
+                parse_u32(payload).context("invalid IFLA_TXQLEN value")?,
+            ),
+            IFLA_NET_NS_PID => NetNsPid(
+                parse_u32(payload).context("invalid IFLA_NET_NS_PID value")?,
+            ),
+            IFLA_NUM_VF => {
+                NumVf(parse_u32(payload).context("invalid IFLA_NUM_VF value")?)
             }
-            IFLA_CARRIER_CHANGES => {
-                CarrierChanges(parse_u32(payload).context("invalid IFLA_CARRIER_CHANGES value")?)
+            IFLA_GROUP => {
+                Group(parse_u32(payload).context("invalid IFLA_GROUP value")?)
             }
-            IFLA_GSO_MAX_SEGS => {
-                GsoMaxSegs(parse_u32(payload).context("invalid IFLA_GSO_MAX_SEGS value")?)
-            }
-            IFLA_GSO_MAX_SIZE => {
-                GsoMaxSize(parse_u32(payload).context("invalid IFLA_GSO_MAX_SIZE value")?)
-            }
-            IFLA_MIN_MTU => MinMtu(parse_u32(payload).context("invalid IFLA_MIN_MTU value")?),
-            IFLA_MAX_MTU => MaxMtu(parse_u32(payload).context("invalid IFLA_MAX_MTU value")?),
-            IFLA_LINK_NETNSID => {
-                NetnsId(parse_i32(payload).context("invalid IFLA_LINK_NETNSID value")?)
-            }
+            IFLA_NET_NS_FD => NetNsFd(
+                parse_i32(payload).context("invalid IFLA_NET_NS_FD value")?,
+            ),
+            IFLA_EXT_MASK => ExtMask(
+                parse_u32(payload).context("invalid IFLA_EXT_MASK value")?,
+            ),
+            IFLA_PROMISCUITY => Promiscuity(
+                parse_u32(payload).context("invalid IFLA_PROMISCUITY value")?,
+            ),
+            IFLA_NUM_TX_QUEUES => NumTxQueues(
+                parse_u32(payload)
+                    .context("invalid IFLA_NUM_TX_QUEUES value")?,
+            ),
+            IFLA_NUM_RX_QUEUES => NumRxQueues(
+                parse_u32(payload)
+                    .context("invalid IFLA_NUM_RX_QUEUES value")?,
+            ),
+            IFLA_CARRIER_CHANGES => CarrierChanges(
+                parse_u32(payload)
+                    .context("invalid IFLA_CARRIER_CHANGES value")?,
+            ),
+            IFLA_GSO_MAX_SEGS => GsoMaxSegs(
+                parse_u32(payload)
+                    .context("invalid IFLA_GSO_MAX_SEGS value")?,
+            ),
+            IFLA_GSO_MAX_SIZE => GsoMaxSize(
+                parse_u32(payload)
+                    .context("invalid IFLA_GSO_MAX_SIZE value")?,
+            ),
+            IFLA_MIN_MTU => MinMtu(
+                parse_u32(payload).context("invalid IFLA_MIN_MTU value")?,
+            ),
+            IFLA_MAX_MTU => MaxMtu(
+                parse_u32(payload).context("invalid IFLA_MAX_MTU value")?,
+            ),
+            IFLA_LINK_NETNSID => NetnsId(
+                parse_i32(payload)
+                    .context("invalid IFLA_LINK_NETNSID value")?,
+            ),
             IFLA_OPERSTATE => OperState(
                 parse_u8(payload)
                     .context("invalid IFLA_OPERSTATE value")?
@@ -494,13 +539,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> f
             IFLA_MAP => Map(payload.to_vec()),
             IFLA_STATS => Stats(payload.to_vec()),
             IFLA_STATS64 => Stats64(payload.to_vec()),
-            IFLA_AF_SPEC => match interface_family as u16 {
+            IFLA_AF_SPEC => match interface_family {
                 AF_INET | AF_INET6 | AF_UNSPEC => {
                     let mut nlas = vec![];
                     let err = "invalid IFLA_AF_SPEC value";
                     for nla in NlasIterator::new(payload) {
                         let nla = nla.context(err)?;
-                        nlas.push(af_spec_inet::AfSpecInet::parse(&nla).context(err)?);
+                        nlas.push(
+                            af_spec_inet::AfSpecInet::parse(&nla)
+                                .context(err)?,
+                        );
                     }
                     AfSpecInet(nlas)
                 }
@@ -509,7 +557,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> f
                     let err = "invalid IFLA_AF_SPEC value for AF_BRIDGE";
                     for nla in NlasIterator::new(payload) {
                         let nla = nla.context(err)?;
-                        nlas.push(af_spec_bridge::AfSpecBridge::parse(&nla).context(err)?);
+                        nlas.push(
+                            af_spec_bridge::AfSpecBridge::parse(&nla)
+                                .context(err)?,
+                        );
                     }
                     AfSpecBridge(nlas)
                 }
@@ -521,7 +572,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16> f
                 Info(VecInfo::parse(&buf).context(err)?.0)
             }
 
-            kind => Other(DefaultNla::parse(buf).context(format!("unknown NLA type {}", kind))?),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
         })
     }
 }
