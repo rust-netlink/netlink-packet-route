@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use super::{bond::InfoBond, bridge::InfoBridge};
+use super::{bond::InfoBond, bridge::InfoBridge, VecInfoBridge};
 use crate::{
     constants::*,
+    link::{
+        link_attr::links::{
+            Bridge, Device, IpVlan, MacVlan, Tuntap, Veth, Vlan,
+        },
+        Link,
+    },
     nlas::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::{
         parse_mac, parse_string, parse_u16, parse_u16_be, parse_u32, parse_u8,
@@ -297,6 +303,89 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
             }
         }
         Ok(VecInfo(res))
+    }
+}
+
+impl VecInfo {
+    pub fn get_link_info(self) -> Option<Box<dyn Link>> {
+        let mut link: Option<Box<dyn Link>> = None;
+        for info in self.0 {
+            match info {
+                Info::Kind(kind) => match kind {
+                    InfoKind::Tun => {
+                        if link.is_none() {
+                            link = Some(Box::new(Tuntap::default()));
+                        }
+                    }
+                    InfoKind::Veth => {
+                        if link.is_none() {
+                            link = Some(Box::new(Veth::default()));
+                        }
+                    }
+                    InfoKind::IpVlan => {
+                        if link.is_none() {
+                            link = Some(Box::new(IpVlan::default()));
+                        }
+                    }
+                    InfoKind::MacVlan => {
+                        if link.is_none() {
+                            link = Some(Box::new(MacVlan::default()));
+                        }
+                    }
+                    InfoKind::Vlan => {
+                        if link.is_none() {
+                            link = Some(Box::new(Vlan::default()));
+                        }
+                    }
+                    InfoKind::Bridge => {
+                        if link.is_none() {
+                            link = Some(Box::new(Bridge::default()));
+                        }
+                    }
+                    _ => {
+                        if link.is_none() {
+                            link = Some(Box::new(Device::default()));
+                        }
+                    }
+                },
+                Info::Data(data) => match data {
+                    InfoData::Tun(_) => {
+                        link = Some(Box::new(Tuntap::default()));
+                    }
+                    InfoData::Veth(_) => {
+                        link = Some(Box::new(Veth::default()));
+                    }
+                    InfoData::IpVlan(_) => {
+                        link = Some(Box::new(IpVlan::default()));
+                    }
+                    InfoData::MacVlan(_) => {
+                        link = Some(Box::new(MacVlan::default()));
+                    }
+                    InfoData::Vlan(_) => {
+                        link = Some(Box::new(Vlan::default()));
+                    }
+                    InfoData::Bridge(ibs) => {
+                        link =
+                            Some(Box::new(VecInfoBridge(ibs).parse_bridge()));
+                    }
+                    _ => {
+                        link = Some(Box::new(Device::default()));
+                    }
+                },
+                Info::SlaveKind(_sk) => {
+                    if link.is_none() {
+                        link = Some(Box::new(Device::default()));
+                    }
+                }
+                Info::SlaveData(_sd) => {
+                    link = Some(Box::new(Device::default()));
+                }
+                _ => {
+                    link = Some(Box::new(Device::default()));
+                }
+            }
+        }
+        link
     }
 }
 

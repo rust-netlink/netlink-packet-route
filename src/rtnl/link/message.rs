@@ -8,6 +8,8 @@ use crate::{
     DecodeError, LinkHeader, LinkMessageBuffer,
 };
 
+use super::{link_attr::links::Device, nlas::VecInfo, Link, LinkAttrs};
+
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct LinkMessage {
     pub header: LinkHeader,
@@ -66,14 +68,90 @@ impl<'a, T: AsRef<[u8]> + 'a>
     }
 }
 
+impl LinkMessage {
+    pub fn get_link_from_message(self) -> Box<dyn Link> {
+        let mut base = LinkAttrs {
+            index: self.header.index,
+            flags: self.header.flags,
+            link_layer_type: self.header.link_layer_type,
+            ..Default::default()
+        };
+        if self.header.flags & libc::IFF_PROMISC as u32 != 0 {
+            base.promisc = 1;
+        }
+        let mut link: Option<Box<dyn Link>> = None;
+        for attr in self.nlas {
+            match attr {
+                Nla::Info(infos) => {
+                    link = VecInfo(infos).get_link_info();
+                }
+                Nla::Address(a) => {
+                    base.hardware_addr = a;
+                }
+                Nla::IfName(i) => {
+                    base.name = i;
+                }
+                Nla::Mtu(m) => {
+                    base.mtu = m;
+                }
+                Nla::Link(l) => {
+                    base.parent_index = l;
+                }
+                Nla::Master(m) => {
+                    base.master_index = m;
+                }
+                Nla::TxQueueLen(t) => {
+                    base.txq_len = t;
+                }
+                Nla::IfAlias(a) => {
+                    base.alias = a;
+                }
+                Nla::Stats(_s) => {}
+                Nla::Stats64(_s) => {}
+                Nla::Xdp(_x) => {}
+                Nla::ProtoInfo(_) => {}
+                Nla::OperState(_) => {}
+                Nla::NetnsId(n) => {
+                    base.net_ns_id = n;
+                }
+                Nla::GsoMaxSize(i) => {
+                    base.gso_max_size = i;
+                }
+                Nla::GsoMaxSegs(e) => {
+                    base.gso_max_seqs = e;
+                }
+                Nla::VfInfoList(_) => {}
+                Nla::NumTxQueues(t) => {
+                    base.num_tx_queues = t;
+                }
+                Nla::NumRxQueues(r) => {
+                    base.num_rx_queues = r;
+                }
+                Nla::Group(g) => {
+                    base.group = g;
+                }
+                _ => {
+                    // skip unused attr
+                }
+            }
+        }
+        let mut ret = link.unwrap_or_else(|| Box::new(Device::default()));
+        ret.set_attrs(base);
+        ret
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::{
         constants::*,
-        nlas::link::{Nla, State},
+        link::LinkAttrs,
+        nlas::link::{InfoKind, Nla, State},
         traits::{Emitable, ParseableParametrized},
         LinkHeader, LinkMessage, LinkMessageBuffer,
     };
+
+    use crate::link::nlas::Info::Kind;
 
     #[rustfmt::skip]
     static HEADER: [u8; 96] = [
@@ -237,5 +315,46 @@ mod test {
 
         assert_eq!(packet.buffer_len(), 96);
         packet.emit(&mut buf[..]);
+    }
+
+    #[test]
+    fn test_get_link_from_message() {
+        let header = LinkHeader {
+            link_layer_type: ARPHRD_LOOPBACK,
+            index: 1,
+            flags: IFF_UP | IFF_LOOPBACK | IFF_RUNNING | IFF_LOWER_UP,
+            ..Default::default()
+        };
+
+        let nlas = vec![
+            Nla::IfName("lo".into()),
+            Nla::TxQueueLen(1000),
+            Nla::OperState(State::Unknown),
+            Nla::Mode(0),
+            Nla::Mtu(0x1_0000),
+            Nla::Group(0),
+            Nla::Promiscuity(0),
+            Nla::NumTxQueues(1),
+            Nla::GsoMaxSegs(0xffff),
+            Nla::GsoMaxSize(0x1_0000),
+            Nla::Info(vec![Kind(InfoKind::Veth)]),
+        ];
+
+        let link_attr = LinkAttrs {
+            name: "lo".to_string(),
+            txq_len: 1000,
+            mtu: 65536,
+            index: 1,
+            flags: IFF_UP | IFF_LOOPBACK | IFF_RUNNING | IFF_LOWER_UP,
+            link_layer_type: ARPHRD_LOOPBACK,
+            num_tx_queues: 1,
+            gso_max_size: 65536,
+            gso_max_seqs: 65535,
+            ..Default::default()
+        };
+        let packet = LinkMessage { header, nlas };
+        let link = packet.get_link_from_message();
+        assert_eq!(link.r#type(), "veth");
+        assert_eq!(link.attrs(), &link_attr);
     }
 }

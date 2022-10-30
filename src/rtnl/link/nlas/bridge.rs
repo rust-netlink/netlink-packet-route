@@ -2,6 +2,7 @@
 
 use crate::{
     constants::*,
+    link::link_attr::links::Bridge,
     nlas::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
     parsers::{
         parse_ip, parse_mac, parse_u16, parse_u16_be, parse_u32, parse_u64,
@@ -611,6 +612,28 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     }
 }
 
+pub(crate) struct VecInfoBridge(pub(crate) Vec<InfoBridge>);
+
+impl VecInfoBridge {
+    pub fn parse_bridge(self) -> Bridge {
+        let mut bridge = Bridge::default();
+        for ib in self.0 {
+            match ib {
+                InfoBridge::HelloTime(ht) => {
+                    bridge.hello_time = ht;
+                }
+                InfoBridge::MulticastSnooping(m) => {
+                    bridge.multicast_snooping = m == 1;
+                }
+                InfoBridge::VlanFiltering(v) => {
+                    bridge.vlan_filtering = v == 1;
+                }
+                _ => {}
+            }
+        }
+        bridge
+    }
+}
 #[cfg(test)]
 mod tests {
     use crate::{
