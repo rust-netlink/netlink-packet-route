@@ -37,6 +37,7 @@ const VRF: &str = "vrf";
 const GTP: &str = "gtp";
 const IPOIB: &str = "ipoib";
 const WIREGUARD: &str = "wireguard";
+const XFRM: &str = "xfrm";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Info {
@@ -282,6 +283,18 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                             InfoKind::Other(_) => {
                                 InfoData::Other(payload.to_vec())
                             }
+                            InfoKind::Xfrm => {
+                                let mut v = Vec::new();
+                                let err =
+                                    "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'Xfrm')";
+                                for nla in NlasIterator::new(payload) {
+                                    let nla = &nla.context(err)?;
+                                    let parsed =
+                                        InfoXfrmTun::parse(nla).context(err)?;
+                                    v.push(parsed);
+                                }
+                                InfoData::Xfrm(v)
+                            }
                         };
                         res.push(Info::Data(info_data));
                     } else {
@@ -325,6 +338,7 @@ pub enum InfoData {
     Gtp(Vec<u8>),
     Ipoib(Vec<InfoIpoib>),
     Wireguard(Vec<u8>),
+    Xfrm(Vec<InfoXfrmTun>),
     Other(Vec<u8>),
 }
 
@@ -343,6 +357,7 @@ impl Nla for InfoData {
             MacVtap(ref nlas) => nlas.as_slice().buffer_len(),
             Vrf(ref nlas) => nlas.as_slice().buffer_len(),
             Vxlan(ref nlas) => nlas.as_slice().buffer_len(),
+            Xfrm(ref nlas)  => nlas.as_slice().buffer_len(),
             Dummy(ref bytes)
                 | Tun(ref bytes)
                 | Nlmon(ref bytes)
@@ -375,6 +390,7 @@ impl Nla for InfoData {
             MacVtap(ref nlas) => nlas.as_slice().emit(buffer),
             Vrf(ref nlas) => nlas.as_slice().emit(buffer),
             Vxlan(ref nlas) => nlas.as_slice().emit(buffer),
+            Xfrm(ref nlas)  => nlas.as_slice().emit(buffer),
             Dummy(ref bytes)
                 | Tun(ref bytes)
                 | Nlmon(ref bytes)
@@ -423,6 +439,7 @@ pub enum InfoKind {
     Gtp,
     Ipoib,
     Wireguard,
+    Xfrm,
     Other(String),
 }
 
@@ -453,6 +470,7 @@ impl Nla for InfoKind {
             Gtp => GTP.len(),
             Ipoib => IPOIB.len(),
             Wireguard => WIREGUARD.len(),
+            Xfrm => XFRM.len(),
             Other(ref s) => s.len(),
         };
         len + 1
@@ -484,6 +502,7 @@ impl Nla for InfoKind {
             Gtp => GTP,
             Ipoib => IPOIB,
             Wireguard => WIREGUARD,
+            Xfrm => XFRM,
             Other(ref s) => s.as_str(),
         };
         buffer[..s.len()].copy_from_slice(s.as_bytes());
@@ -1066,6 +1085,66 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
             IFLA_IPVLAN_FLAGS => Flags(
                 parse_u16(payload)
                     .context("invalid IFLA_IPVLAN_FLAGS value")?,
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {}", kind))?,
+            ),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum InfoXfrmTun {
+    Unspec(Vec<u8>),
+    Link(u32),
+    IfId(u32),
+    Other(DefaultNla),
+}
+
+impl Nla for InfoXfrmTun {
+    fn value_len(&self) -> usize {
+        use self::InfoXfrmTun::*;
+        match self {
+            Unspec(bytes) => bytes.len(),
+            Link(_) => 4,
+            IfId(_) => 4,
+            Other(nla) => nla.value_len(),
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        use self::InfoXfrmTun::*;
+        match self {
+            Unspec(bytes) => buffer.copy_from_slice(bytes.as_slice()),
+            Link(value) => NativeEndian::write_u32(buffer, *value),
+            IfId(value) => NativeEndian::write_u32(buffer, *value),
+            Other(nla) => nla.emit_value(buffer),
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        use self::InfoXfrmTun::*;
+        match self {
+            Unspec(_) => IFLA_XFRM_UNSPEC,
+            Link(_) => IFLA_XFRM_LINK,
+            IfId(_) => IFLA_XFRM_IF_ID,
+            Other(nla) => nla.kind(),
+        }
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoXfrmTun {
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        use self::InfoXfrmTun::*;
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            IFLA_XFRM_UNSPEC => Unspec(payload.to_vec()),
+            IFLA_XFRM_LINK => Link(
+                parse_u32(payload).context("invalid IFLA_XFRM_IF_ID value")?,
+            ),
+            IFLA_XFRM_IF_ID => IfId(
+                parse_u32(payload).context("invalid IFLA_XFRM_IF_ID value")?,
             ),
             kind => Other(
                 DefaultNla::parse(buf)
@@ -1841,6 +1920,31 @@ mod tests {
         let mut vec = vec![0xff; 24];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &MACVLAN[..]);
+    }
+
+    lazy_static! {
+        static ref XFRMTUN_INFO: Vec<InfoXfrmTun> = vec![
+            InfoXfrmTun::IfId(4), // ifid
+        ];
+    }
+    #[rustfmt::skip]
+    static XFRMTUN: [u8; 24] = [
+        9, 0, 1, 0,  120,102,114,109,
+        0, 0, 0, 0,   12,  0,  2,  0,
+        8, 0, 2, 0,    4,  0,  0,  0
+    ];
+    #[test]
+    fn emit_info_xfrmtun() {
+        let nlas = vec![
+            Info::Kind(InfoKind::Xfrm),
+            Info::Data(InfoData::Xfrm(XFRMTUN_INFO.clone())),
+        ];
+
+        assert_eq!(nlas.as_slice().buffer_len(), 24);
+
+        let mut vec = vec![0xff; 24];
+        nlas.as_slice().emit(&mut vec);
+        assert_eq!(&vec[..], &XFRMTUN[..]);
     }
 
     #[rustfmt::skip]
