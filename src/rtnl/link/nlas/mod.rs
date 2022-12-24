@@ -36,6 +36,9 @@ pub use self::stats64::*;
 mod link_state;
 pub use self::link_state::*;
 
+mod link_xdp;
+pub use self::link_xdp::*;
+
 #[cfg(test)]
 mod tests;
 
@@ -65,7 +68,7 @@ pub enum Nla {
     PhysPortId(Vec<u8>),
     PhysSwitchId(Vec<u8>),
     Pad(Vec<u8>),
-    Xdp(Vec<u8>),
+    Xdp(Vec<Xdp>),
     Event(Vec<u8>),
     NewNetnsId(Vec<u8>),
     IfNetnsId(Vec<u8>),
@@ -177,7 +180,6 @@ impl nlas::Nla for Nla {
                 | PhysPortId(ref bytes)
                 | PhysSwitchId(ref bytes)
                 | Pad(ref bytes)
-                | Xdp(ref bytes)
                 | Event(ref bytes)
                 | NewNetnsId(ref bytes)
                 | IfNetnsId(ref bytes)
@@ -233,6 +235,7 @@ impl nlas::Nla for Nla {
             Stats(_) => LINK_STATS_LEN,
             Stats64(_) => LINK_STATS64_LEN,
             Info(ref nlas) => nlas.as_slice().buffer_len(),
+            Xdp(ref nlas) => nlas.as_slice().buffer_len(),
             PropList(ref nlas) => nlas.as_slice().buffer_len(),
             AfSpecInet(ref nlas) => nlas.as_slice().buffer_len(),
             AfSpecBridge(ref nlas) => nlas.as_slice().buffer_len(),
@@ -257,7 +260,6 @@ impl nlas::Nla for Nla {
                 | Wireless(ref bytes)
                 | ProtoInfo(ref bytes)
                 | Pad(ref bytes)
-                | Xdp(ref bytes)
                 | Event(ref bytes)
                 | NewNetnsId(ref bytes)
                 | IfNetnsId(ref bytes)
@@ -318,6 +320,7 @@ impl nlas::Nla for Nla {
 
             OperState(state) => buffer[0] = state.into(),
             Info(ref nlas) => nlas.as_slice().emit(buffer),
+            Xdp(ref nlas) => nlas.as_slice().emit(buffer),
             PropList(ref nlas) => nlas.as_slice().emit(buffer),
             AfSpecInet(ref nlas) => nlas.as_slice().emit(buffer),
             AfSpecBridge(ref nlas) => nlas.as_slice().emit(buffer),
@@ -420,7 +423,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16>
             IFLA_WIRELESS => Wireless(payload.to_vec()),
             IFLA_PROTINFO => ProtoInfo(payload.to_vec()),
             IFLA_PAD => Pad(payload.to_vec()),
-            IFLA_XDP => Xdp(payload.to_vec()),
             IFLA_EVENT => Event(payload.to_vec()),
             IFLA_NEW_NETNSID => NewNetnsId(payload.to_vec()),
             IFLA_IF_NETNSID => IfNetnsId(payload.to_vec()),
@@ -573,6 +575,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16>
                 let err = "invalid IFLA_LINKINFO value";
                 let buf = NlaBuffer::new_checked(payload).context(err)?;
                 Info(VecInfo::parse(&buf).context(err)?.0)
+            }
+            IFLA_XDP => {
+                let err = "invalid IFLA_XDP value";
+                let buf = NlaBuffer::new_checked(payload).context(err)?;
+                Xdp(VecXdp::parse(&buf).context(err)?.0)
             }
 
             kind => Other(
