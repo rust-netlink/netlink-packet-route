@@ -80,8 +80,8 @@ impl Nla for Xdp {
 
 pub(crate) struct VecXdp(pub(crate) Vec<Xdp>);
 
-// These NLAs are nested, meaning they are NLAs that contain NLAs. These NLAs can contain more nested NLAs
-// nla->type     // IFLA_XDP
+// These NLAs are nested, meaning they are NLAs that contain NLAs. These NLAs
+// can contain more nested NLAs nla->type     // IFLA_XDP
 // nla->len
 // nla->data[]   // <- You are here == Vec<Xdp>
 //  nla->data[0].type   <- nla.kind()
@@ -213,57 +213,41 @@ mod tests {
 
     #[test]
     fn emit_xdp_attached() {
-
         // None
-        let nlas = vec![
-            Xdp::Attached(XdpAttached::None)
-        ];
+        let nlas = vec![Xdp::Attached(XdpAttached::None)];
         assert_eq!(nlas.as_slice().buffer_len(), 8);
-        
 
         let mut vec = vec![0xff; 8];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &ATTACHED[..8]);
 
         // Driver
-        let nlas = vec![
-            Xdp::Attached(XdpAttached::Driver)
-        ];
+        let nlas = vec![Xdp::Attached(XdpAttached::Driver)];
         assert_eq!(nlas.as_slice().buffer_len(), 8);
-        
 
         let mut vec = vec![0xff; 8];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &ATTACHED[8..16]);
 
         // SocketBuffer/skb
-        let nlas = vec![
-            Xdp::Attached(XdpAttached::SocketBuffer)
-        ];
+        let nlas = vec![Xdp::Attached(XdpAttached::SocketBuffer)];
         assert_eq!(nlas.as_slice().buffer_len(), 8);
-        
 
         let mut vec = vec![0xff; 8];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &ATTACHED[16..24]);
 
         // Hardware
-        let nlas = vec![
-            Xdp::Attached(XdpAttached::Hardware)
-        ];
+        let nlas = vec![Xdp::Attached(XdpAttached::Hardware)];
         assert_eq!(nlas.as_slice().buffer_len(), 8);
-        
 
         let mut vec = vec![0xff; 8];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &ATTACHED[24..32]);
 
         // Multiple
-        let nlas = vec![
-            Xdp::Attached(XdpAttached::Multiple)
-        ];
+        let nlas = vec![Xdp::Attached(XdpAttached::Multiple)];
         assert_eq!(nlas.as_slice().buffer_len(), 8);
-        
 
         let mut vec = vec![0xff; 8];
         nlas.as_slice().emit(&mut vec);
@@ -319,7 +303,6 @@ mod tests {
 
     #[test]
     fn emit_xdp() {
-
         let nlas = vec![
             Xdp::Unspec(vec![1, 2, 3, 4, 5]),
             Xdp::Fd(29856),
@@ -331,12 +314,9 @@ mod tests {
             Xdp::ExpectedFd(29857),
         ];
         assert_eq!(nlas.as_slice().buffer_len(), XDP.len());
-        
 
         let mut vec = vec![0xff; XDP.len()];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &XDP[..]);
-
     }
-
 }

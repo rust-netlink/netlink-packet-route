@@ -575,12 +575,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, u16>
                 let err = "invalid IFLA_LINKINFO value";
                 let buf = NlaBuffer::new_checked(payload).context(err)?;
                 Info(VecInfo::parse(&buf).context(err)?.0)
-            },
+            }
             IFLA_XDP => {
                 let err = "invalid IFLA_XDP value";
                 let buf = NlaBuffer::new_checked(payload).context(err)?;
                 Xdp(VecXdp::parse(&buf).context(err)?.0)
-            },
+            }
 
             kind => Other(
                 DefaultNla::parse(buf)
