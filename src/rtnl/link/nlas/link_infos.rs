@@ -972,7 +972,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpoib {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -1028,7 +1028,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VethInfo {
             }
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -1088,7 +1088,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -1148,7 +1148,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoXfrmTun {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -1196,7 +1196,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVrf {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -1296,7 +1296,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -1396,7 +1396,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }

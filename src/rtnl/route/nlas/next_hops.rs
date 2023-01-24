@@ -45,8 +45,7 @@ impl<T: AsRef<[u8]>> NextHopBuffer<T> {
         let len = self.buffer.as_ref().len();
         if len < PAYLOAD_OFFSET {
             return Err(format!(
-                "invalid NextHopBuffer: length {} < {}",
-                len, PAYLOAD_OFFSET
+                "invalid NextHopBuffer: length {len} < {PAYLOAD_OFFSET}"
             )
             .into());
         }

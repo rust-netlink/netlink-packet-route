@@ -559,14 +559,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 Ok(v) => {
                     return Err(DecodeError::from(format!(
                         "Invalid BRIDGE_QUERIER_IP_ADDRESS, \
-                        expecting IPv4 address, but got {}",
-                        v
+                        expecting IPv4 address, but got {v}"
                     )))
                 }
                 Err(e) => {
                     return Err(DecodeError::from(format!(
-                        "Invalid BRIDGE_QUERIER_IP_ADDRESS {}",
-                        e
+                        "Invalid BRIDGE_QUERIER_IP_ADDRESS {e}"
                     )))
                 }
             },
@@ -575,14 +573,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 Ok(v) => {
                     return Err(DecodeError::from(format!(
                         "Invalid BRIDGE_QUERIER_IPV6_ADDRESS, \
-                        expecting IPv6 address, but got {}",
-                        v
+                        expecting IPv6 address, but got {v}"
                     )));
                 }
                 Err(e) => {
                     return Err(DecodeError::from(format!(
-                        "Invalid BRIDGE_QUERIER_IPV6_ADDRESS {}",
-                        e
+                        "Invalid BRIDGE_QUERIER_IPV6_ADDRESS {e}"
                     )));
                 }
             },
@@ -605,7 +601,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }

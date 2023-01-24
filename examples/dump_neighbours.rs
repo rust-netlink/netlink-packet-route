@@ -30,7 +30,7 @@ fn main() {
     let mut buf = vec![0; req.header.length as usize];
     req.serialize(&mut buf[..]);
 
-    println!(">>> {:?}", req);
+    println!(">>> {req:?}");
     socket.send(&buf[..], 0).unwrap();
 
     let mut receive_buffer = vec![0; 4096];
@@ -56,7 +56,7 @@ fn main() {
                     }
                 }
                 NetlinkPayload::Error(err) => {
-                    eprintln!("Received a netlink error message: {:?}", err);
+                    eprintln!("Received a netlink error message: {err:?}");
                     return;
                 }
                 _ => {}
@@ -129,5 +129,5 @@ fn print_entry(entry: NeighbourMessage) {
         })
         .unwrap();
 
-    println!("{:<30} {:<20} ({})", dest, lladdr, state);
+    println!("{dest:<30} {lladdr:<20} ({state})");
 }

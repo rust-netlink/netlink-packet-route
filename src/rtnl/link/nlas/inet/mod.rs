@@ -62,7 +62,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Inet {
             IFLA_INET_CONF => DevConf(payload.to_vec()),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }

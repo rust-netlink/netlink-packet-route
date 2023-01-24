@@ -69,7 +69,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             NETNSA_FD => Fd(parse_u32(payload).context("invalid NETNSA_FD")?),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }

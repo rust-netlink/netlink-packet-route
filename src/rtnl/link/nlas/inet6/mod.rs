@@ -109,7 +109,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Inet6 {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", kind))?,
+                    .context(format!("unknown NLA type {kind}"))?,
             ),
         })
     }
