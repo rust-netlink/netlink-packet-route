@@ -8,7 +8,8 @@ use crate::{
 
 bitflags! {
     /// Flags that can be set in a `RTM_GETROUTE` ([`RtnlMessage::GetRoute`]) message.
-    pub struct RouteFlags: u32 {
+    #[non_exhaustive]
+pub struct RouteFlags: u32 {
         /// If the route changes, notify the user via rtnetlink
         const RTM_F_NOTIFY = RTM_F_NOTIFY;
         /// This route is cloned. Cloned routes are routes coming from the cache instead of the
@@ -82,6 +83,7 @@ impl Default for RouteFlags {
 /// }
 /// ```
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
+#[non_exhaustive]
 pub struct RouteHeader {
     /// Address family of the route: either [`AF_INET`] for IPv4 prefixes, or
     /// [`AF_INET6`] for IPv6 prefixes.

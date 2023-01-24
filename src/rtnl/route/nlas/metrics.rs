@@ -13,6 +13,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Metrics {
     Unspec(Vec<u8>),
     Lock(u32),

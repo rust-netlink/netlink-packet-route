@@ -9,12 +9,14 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct AddressMessage {
     pub header: AddressHeader,
     pub nlas: Vec<Nla>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct AddressHeader {
     pub family: u8,
     pub prefix_len: u8,

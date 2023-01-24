@@ -16,6 +16,7 @@ use crate::{
 pub const TC_GEN_BUF_LEN: usize = 20;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub struct Action {
     pub tab: u16,
     pub nlas: Vec<ActNla>,
@@ -100,6 +101,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Action {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum ActNla {
     Unspec(Vec<u8>),
     Kind(String),
@@ -154,6 +156,7 @@ impl nlas::Nla for ActNla {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum ActOpt {
     Mirred(mirred::Nla),
     // Other options
@@ -209,6 +212,7 @@ where
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct TcGen {
     pub index: u32,
     pub capab: u32,

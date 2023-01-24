@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[non_exhaustive]
 pub struct CacheInfo {
     pub ifa_preferred: i32,
     pub ifa_valid: i32,

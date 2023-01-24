@@ -53,6 +53,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Nla {
     // Vec<u8>
     Unspec(Vec<u8>),

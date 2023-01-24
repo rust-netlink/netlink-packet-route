@@ -7,6 +7,7 @@ use crate::{
 
 /// Generic queue statistics
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 pub struct Stats {
     /// Number of enqueued bytes
     pub bytes: u64,

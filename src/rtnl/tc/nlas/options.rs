@@ -9,6 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum TcOpt {
     // Qdisc specific options
     Ingress,

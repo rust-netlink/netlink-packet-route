@@ -16,6 +16,7 @@ use std::{
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum BondAdInfo {
     Aggregator(u16),
     NumPorts(u16),
@@ -152,6 +153,7 @@ impl Nla for BondIpAddrNla {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoBond {
     Mode(u8),
     ActiveSlave(u32),

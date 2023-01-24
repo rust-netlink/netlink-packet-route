@@ -8,6 +8,7 @@ use crate::{
 use anyhow::Context;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct RuleMessage {
     pub header: RuleHeader,
     pub nlas: Vec<Nla>,

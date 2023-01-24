@@ -11,6 +11,7 @@ use crate::{
 };
 
 #[derive(Clone, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub enum AfSpecInet {
     Unspec(Vec<u8>),
     Unix(Vec<u8>),

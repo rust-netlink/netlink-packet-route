@@ -17,6 +17,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Nla {
     Unspec(Vec<u8>),
     Address(Vec<u8>),

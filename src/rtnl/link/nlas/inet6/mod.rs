@@ -21,6 +21,7 @@ mod stats;
 pub use self::stats::*;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub enum Inet6 {
     Flags(u32),
     CacheInfo(Vec<u8>),

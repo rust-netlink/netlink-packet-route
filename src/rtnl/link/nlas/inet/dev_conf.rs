@@ -42,6 +42,7 @@ buffer!(InetDevConfBuffer(DEV_CONF_LEN) {
 });
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub struct InetDevConf {
     pub forwarding: i32,
     pub mc_forwarding: i32,

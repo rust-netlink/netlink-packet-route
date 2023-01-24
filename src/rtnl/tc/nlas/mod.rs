@@ -32,6 +32,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Nla {
     /// Unspecified
     Unspec(Vec<u8>),
@@ -118,6 +119,7 @@ impl nlas::Nla for Nla {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Stats2 {
     StatsApp(Vec<u8>),
     StatsBasic(Vec<u8>),

@@ -11,6 +11,7 @@ use crate::{
 use anyhow::Context;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Prop {
     AltIfName(String),
     Other(DefaultNla),

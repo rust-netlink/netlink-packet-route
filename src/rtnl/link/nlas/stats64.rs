@@ -34,6 +34,7 @@ buffer!(Stats64Buffer(LINK_STATS64_LEN) {
 });
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct Stats64 {
     /// total packets received
     pub rx_packets: u64,

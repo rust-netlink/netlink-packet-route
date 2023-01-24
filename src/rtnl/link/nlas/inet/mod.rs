@@ -13,6 +13,7 @@ mod dev_conf;
 pub use self::dev_conf::*;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub enum Inet {
     DevConf(Vec<u8>),
     Unspec(Vec<u8>),
