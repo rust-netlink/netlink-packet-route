@@ -68,7 +68,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
             ),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("Unknown NLA type {}", kind))?,
+                    .context(format!("Unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -95,18 +95,15 @@ impl TryFrom<&[u8]> for BridgeVlanInfo {
         if raw.len() == 4 {
             Ok(Self {
                 flags: parse_u16(&raw[0..2]).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {:?}",
-                    raw
+                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}"
                 ))?,
                 vid: parse_u16(&raw[2..4]).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {:?}",
-                    raw
+                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}"
                 ))?,
             })
         } else {
             Err(DecodeError::from(format!(
-                "Invalid IFLA_BRIDGE_VLAN_INFO value, expecting [u8;4], but got {:?}",
-                raw
+                "Invalid IFLA_BRIDGE_VLAN_INFO value, expecting [u8;4], but got {raw:?}"
             )))
         }
     }

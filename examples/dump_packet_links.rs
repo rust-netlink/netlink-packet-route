@@ -29,7 +29,7 @@ fn main() {
     assert!(buf.len() == packet.buffer_len());
     packet.serialize(&mut buf[..]);
 
-    println!(">>> {:?}", packet);
+    println!(">>> {packet:?}");
     socket.send(&buf[..], 0).unwrap();
 
     let mut receive_buffer = vec![0; 4096];
@@ -59,7 +59,7 @@ fn main() {
             let rx_packet: NetlinkMessage<RtnlMessage> =
                 NetlinkMessage::deserialize(bytes).unwrap();
 
-            println!("<<< {:?}", rx_packet);
+            println!("<<< {rx_packet:?}");
 
             if rx_packet.payload == NetlinkPayload::Done {
                 println!("Done!");

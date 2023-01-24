@@ -255,7 +255,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
             AF_ALG => Alg(payload.to_vec()),
             kind => Other(
                 DefaultNla::parse(buf)
-                    .context(format!("Unknown NLA type {}", kind))?,
+                    .context(format!("Unknown NLA type {kind}"))?,
             ),
         })
     }

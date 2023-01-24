@@ -33,9 +33,9 @@ fn main() {
 
     packet.serialize(&mut buf[..]);
 
-    println!(">>> {:?}", packet);
+    println!(">>> {packet:?}");
     if let Err(e) = socket.send(&buf[..], 0) {
-        println!("SEND ERROR {}", e);
+        println!("SEND ERROR {e}");
     }
 
     let mut receive_buffer = vec![0; 4096];
@@ -48,7 +48,7 @@ fn main() {
             let bytes = &receive_buffer[offset..];
             let rx_packet =
                 <NetlinkMessage<RtnlMessage>>::deserialize(bytes).unwrap();
-            println!("<<< {:?}", rx_packet);
+            println!("<<< {rx_packet:?}");
 
             if rx_packet.payload == NetlinkPayload::Done {
                 println!("Done!");

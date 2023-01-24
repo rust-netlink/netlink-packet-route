@@ -37,7 +37,7 @@ fn main() {
 
     msg.serialize(&mut buf[..msg.buffer_len()]);
 
-    println!(">>> {:?}", msg);
+    println!(">>> {msg:?}");
 
     socket
         .send(&buf, 0)
@@ -48,10 +48,10 @@ fn main() {
     while let Ok(_size) = socket.recv(&mut receive_buffer, 0) {
         let bytes = &receive_buffer[..];
         let rx_packet = <NetlinkMessage<RtnlMessage>>::deserialize(bytes);
-        println!("<<< {:?}", rx_packet);
+        println!("<<< {rx_packet:?}");
         if let Ok(rx_packet) = rx_packet {
             if let NetlinkPayload::Error(e) = rx_packet.payload {
-                eprintln!("{:?}", e);
+                eprintln!("{e:?}");
             } else {
                 return;
             }

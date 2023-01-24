@@ -174,7 +174,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
 
-            _ => return Err(format!("Unknown message type: {}", message_type).into()),
+            _ => return Err(format!("Unknown message type: {message_type}").into()),
         };
         Ok(message)
     }
