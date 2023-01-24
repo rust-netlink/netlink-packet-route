@@ -9,6 +9,7 @@ use anyhow::Context;
 use std::net::IpAddr;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct RouteMessage {
     pub header: RouteHeader,
     pub nlas: Vec<Nla>,

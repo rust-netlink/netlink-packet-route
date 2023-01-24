@@ -16,6 +16,7 @@ buffer!(MapBuffer(LINK_MAP_LEN) {
 });
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct Map {
     pub memory_start: u64,
     pub memory_end: u64,

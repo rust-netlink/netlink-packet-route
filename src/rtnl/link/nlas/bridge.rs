@@ -24,6 +24,7 @@ const BRIDGE_QUERIER_IPV6_PORT: u16 = 6;
 const BRIDGE_QUERIER_IPV6_OTHER_TIMER: u16 = 7;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoBridge {
     Unspec(Vec<u8>),
     GroupAddr([u8; 6]),
@@ -498,6 +499,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum BridgeQuerierState {
     Ipv4Address(Ipv4Addr),
     Ipv4Port(u32),

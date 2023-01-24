@@ -46,6 +46,7 @@ buffer!(Inet6StatsBuffer(INET6_STATS_LEN) {
 });
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub struct Inet6Stats {
     pub num: i64,
     pub in_pkts: i64,

@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub struct Inet6CacheInfo {
     pub max_reasm_len: i32,
     pub tstamp: i32,

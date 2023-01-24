@@ -17,6 +17,7 @@ pub const KIND: &str = "mirred";
 pub const TC_MIRRED_BUF_LEN: usize = TC_GEN_BUF_LEN + 8;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Nla {
     Unspec(Vec<u8>),
     Tm(Vec<u8>),
@@ -71,6 +72,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct TcMirred {
     pub index: u32,
     pub capab: u32,

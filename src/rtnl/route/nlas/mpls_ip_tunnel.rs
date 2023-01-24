@@ -12,6 +12,7 @@ use crate::{
 
 /// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to
 /// `LWTUNNEL_ENCAP_MPLS`.
+#[non_exhaustive]
 pub enum MplsIpTunnel {
     Destination(Vec<u8>),
     Ttl(u8),

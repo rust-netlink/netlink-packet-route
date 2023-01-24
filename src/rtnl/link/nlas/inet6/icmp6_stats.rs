@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub struct Icmp6Stats {
     pub num: i64,
     pub in_msgs: i64,

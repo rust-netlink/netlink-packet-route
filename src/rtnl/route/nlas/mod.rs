@@ -32,6 +32,7 @@ use crate::traits::Emitable;
 /// Netlink attributes for `RTM_NEWROUTE`, `RTM_DELROUTE`,
 /// `RTM_GETROUTE` messages.
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Nla {
     #[cfg(not(feature = "rich_nlas"))]
     Metrics(Vec<u8>),

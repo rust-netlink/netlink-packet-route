@@ -11,25 +11,26 @@ fn main() {
     let _port_number = socket.bind_auto().unwrap().port_number();
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
+    let mut rule_msg_hdr = RuleHeader::default();
+    rule_msg_hdr.family = AF_INET as u8;
+    rule_msg_hdr.table = RT_TABLE_DEFAULT;
+    rule_msg_hdr.action = FR_ACT_TO_TBL;
+
+    let mut rule_msg = RuleMessage::default();
+    rule_msg.header = rule_msg_hdr;
+    rule_msg.nlas = vec![
+        rule::Nla::Table(254),
+        rule::Nla::SuppressPrefixLen(4294967295),
+        rule::Nla::Priority(1000),
+        rule::Nla::Protocol(2),
+    ];
+
     let mut msg = NetlinkMessage {
         header: NetlinkHeader {
             flags: NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK,
             ..Default::default()
         },
-        payload: NetlinkPayload::from(RtnlMessage::NewRule(RuleMessage {
-            header: RuleHeader {
-                family: AF_INET as u8,
-                table: RT_TABLE_DEFAULT,
-                action: FR_ACT_TO_TBL,
-                ..Default::default()
-            },
-            nlas: vec![
-                rule::Nla::Table(254),
-                rule::Nla::SuppressPrefixLen(4294967295),
-                rule::Nla::Priority(1000),
-                rule::Nla::Protocol(2),
-            ],
-        })),
+        payload: NetlinkPayload::from(RtnlMessage::NewRule(rule_msg)),
     };
 
     msg.finalize();

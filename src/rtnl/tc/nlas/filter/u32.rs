@@ -24,6 +24,7 @@ const U32_SEL_BUF_LEN: usize = 16;
 const U32_KEY_BUF_LEN: usize = 16;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Nla {
     Unspec(Vec<u8>),
     ClassId(u32),
@@ -137,6 +138,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct Sel {
     pub flags: u8,
     pub offshift: u8,
@@ -218,6 +220,7 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<SelBuffer<&T>> for Sel {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct Key {
     pub mask: u32,
     pub val: u32,

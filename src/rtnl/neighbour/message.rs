@@ -9,6 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct NeighbourMessage {
     pub header: NeighbourHeader,
     pub nlas: Vec<Nla>,

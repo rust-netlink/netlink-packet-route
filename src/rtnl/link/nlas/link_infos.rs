@@ -40,6 +40,7 @@ const WIREGUARD: &str = "wireguard";
 const XFRM: &str = "xfrm";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum Info {
     Unspec(Vec<u8>),
     Xstats(Vec<u8>),
@@ -314,6 +315,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoData {
     Bridge(Vec<InfoBridge>),
     Tun(Vec<u8>),
@@ -415,6 +417,7 @@ impl Nla for InfoData {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoKind {
     Dummy,
     Ifb,
@@ -557,6 +560,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
 
 // https://elixir.bootlin.com/linux/v5.9.8/source/drivers/net/vxlan.c#L3332
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoVxlan {
     Unspec(Vec<u8>),
     Id(u32),
@@ -827,6 +831,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
 
 // https://elixir.bootlin.com/linux/latest/source/net/8021q/vlan_netlink.c#L21
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoVlan {
     Unspec(Vec<u8>),
     Id(u16),
@@ -913,6 +918,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoIpoib {
     Unspec(Vec<u8>),
     Pkey(u16),
@@ -979,6 +985,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpoib {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum VethInfo {
     Unspec(Vec<u8>),
     Peer(LinkMessage),
@@ -1035,6 +1042,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VethInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoIpVlan {
     Unspec(Vec<u8>),
     Mode(u16),
@@ -1095,6 +1103,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoXfrmTun {
     Unspec(Vec<u8>),
     Link(u32),
@@ -1155,6 +1164,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoXfrmTun {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoVrf {
     TableId(u32),
     Other(DefaultNla),
@@ -1203,6 +1213,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVrf {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoMacVlan {
     Unspec(Vec<u8>),
     Mode(u32),
@@ -1303,6 +1314,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum InfoMacVtap {
     Unspec(Vec<u8>),
     Mode(u32),

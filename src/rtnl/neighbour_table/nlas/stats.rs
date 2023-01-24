@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct Stats {
     pub allocs: u64,
     pub destroys: u64,

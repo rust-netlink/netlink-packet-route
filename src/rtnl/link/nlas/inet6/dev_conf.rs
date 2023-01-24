@@ -189,6 +189,7 @@ impl Emitable for Inet6DevConf {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub struct Inet6DevConf {
     pub forwarding: i32,
     pub hoplimit: i32,

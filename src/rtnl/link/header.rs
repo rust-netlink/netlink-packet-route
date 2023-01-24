@@ -25,6 +25,7 @@ use crate::{
 ///
 /// `LinkHeader` exposes all these fields except for the "reserved" one.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct LinkHeader {
     /// Address family: one of the `AF_*` constants.
     pub interface_family: u8,

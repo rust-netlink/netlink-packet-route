@@ -3,6 +3,7 @@
 use crate::constants::*;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum State {
     /// Status can't be determined
     Unknown,

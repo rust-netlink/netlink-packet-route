@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct Config {
     pub key_len: u16,
     pub entry_size: u16,

@@ -14,6 +14,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct TcMessage {
     pub header: TcHeader,
     pub nlas: Vec<Nla>,
@@ -41,6 +42,7 @@ impl TcMessage {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct TcHeader {
     pub family: u8,
     // Interface index

@@ -9,6 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct NsidMessage {
     pub header: NsidHeader,
     pub nlas: Vec<Nla>,

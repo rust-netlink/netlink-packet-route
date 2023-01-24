@@ -15,6 +15,7 @@ use crate::{
 use byteorder::{ByteOrder, NativeEndian};
 
 #[derive(Clone, Eq, PartialEq, Debug)]
+#[non_exhaustive]
 pub enum AfSpecBridge {
     Flags(u16),
     VlanInfo(BridgeVlanInfo),
@@ -75,6 +76,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[non_exhaustive]
 pub struct BridgeVlanInfo {
     pub flags: u16,
     pub vid: u16,

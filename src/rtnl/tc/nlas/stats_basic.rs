@@ -7,6 +7,7 @@ use crate::{
 
 /// Byte/Packet throughput statistics
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 pub struct StatsBasic {
     /// number of seen bytes
     pub bytes: u64,

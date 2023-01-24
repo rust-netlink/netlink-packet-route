@@ -7,6 +7,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct NsidHeader {
     pub rtgen_family: u8,
 }

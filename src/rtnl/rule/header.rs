@@ -8,7 +8,8 @@ use crate::{
 };
 
 bitflags! {
-    pub struct RuleFlags: u32 {
+    #[non_exhaustive]
+pub struct RuleFlags: u32 {
         const FIB_RULE_PERMANENT = FIB_RULE_PERMANENT;
         const FIB_RULE_INVERT = FIB_RULE_INVERT;
         const FIB_RULE_UNRESOLVED = FIB_RULE_UNRESOLVED;
@@ -28,6 +29,7 @@ impl Default for RuleFlags {
 // see https://github.com/torvalds/linux/blob/master/include/uapi/linux/fib_rules.h
 // see https://github.com/torvalds/linux/blob/master/include/net/fib_rules.h
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct RuleHeader {
     /// Address family: one of the `AF_*` constants.
     pub family: u8,
