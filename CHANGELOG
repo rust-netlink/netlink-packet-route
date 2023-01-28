@@ -1,0 +1,17 @@
+# Changelog
+## [0.14.0] - 2023-01-28
+### Breaking changes
+ - All public struct and enum are marked as `non_exhaustive`. Please check
+   https://doc.rust-lang.org/reference/attributes/type_system.html for more
+   detail. (0b98180)
+
+ - Removed the reexport `netlink-packet-core::utils`, please use
+   `netlink_packet_utils` directly. (a76010a)
+
+### New features
+ - LinkAddRequest: Allow adding XFRM tunnel with if_id mark. (5507d97)
+ - Bridge: Add support of `IFLA_BR_MCAST_QUERIER_STATE. (3d91fdf)
+ - LinkAddRequest: Allow adding macvtap on a link. (dabd5dc)
+
+### Bug fixes
+ - Fix panics when using iif or oif with ip rule. (dab602e)
