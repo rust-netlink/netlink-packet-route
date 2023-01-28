@@ -11,12 +11,10 @@ fn main() {
     let _port_number = socket.bind_auto().unwrap().port_number();
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
-    let mut packet = NetlinkMessage {
-        header: NetlinkHeader::default(),
-        payload: NetlinkPayload::from(RtnlMessage::GetLink(
-            LinkMessage::default(),
-        )),
-    };
+    let mut packet = NetlinkMessage::new(
+        NetlinkHeader::default(),
+        NetlinkPayload::from(RtnlMessage::GetLink(LinkMessage::default())),
+    );
     packet.header.flags = NLM_F_DUMP | NLM_F_REQUEST;
     packet.header.sequence_number = 1;
     packet.finalize();

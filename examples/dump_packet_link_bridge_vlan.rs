@@ -17,10 +17,10 @@ fn main() {
     message
         .nlas
         .push(Nla::ExtMask(RTEXT_FILTER_BRVLAN_COMPRESSED));
-    let mut packet = NetlinkMessage {
-        header: NetlinkHeader::default(),
-        payload: NetlinkPayload::from(RtnlMessage::GetLink(message)),
-    };
+    let mut packet = NetlinkMessage::new(
+        NetlinkHeader::default(),
+        NetlinkPayload::from(RtnlMessage::GetLink(message)),
+    );
     packet.header.flags = NLM_F_DUMP | NLM_F_REQUEST;
     packet.header.sequence_number = 1;
     packet.finalize();
