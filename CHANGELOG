@@ -1,4 +1,22 @@
 # Changelog
+## [0.15.0] - 2023-01-28
+### Breaking changes
+ - Removed these reexports. (8784586)
+    * `netlink_packet_route::ErrorMessage`
+    * `netlink_packet_route::NetlinkBuffer`
+    * `netlink_packet_route::NetlinkHeader`
+    * `netlink_packet_route::NetlinkMessage`
+    * `netlink_packet_route::NetlinkPayload`
+    * `netlink_packet_route::traits`
+    * `netlink_packet_route::DecodeError`
+ - Remove internal fuzz sub-crate. (f2ffa9d)
+
+### New features
+ - N/A
+
+### Bug fixes
+ - N/A
+
 ## [0.14.1] - 2023-01-28
 ### Breaking changes
  - N/A
