@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-
-use crate::{
-    nlas::neighbour::Nla,
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
-    DecodeError, NeighbourHeader, NeighbourMessageBuffer,
+    DecodeError,
 };
+
+use crate::{nlas::neighbour::Nla, NeighbourHeader, NeighbourMessageBuffer};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -56,9 +56,9 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>>
 #[cfg(test)]
 mod test {
     use crate::{
-        constants::*, traits::Emitable, NeighbourHeader, NeighbourMessage,
-        NeighbourMessageBuffer,
+        constants::*, NeighbourHeader, NeighbourMessage, NeighbourMessageBuffer,
     };
+    use netlink_packet_utils::traits::Emitable;
 
     // 0020   0a 00 00 00 02 00 00 00 02 00 80 01 14 00 01 00
     // 0030   2a 02 80 10 66 d5 00 00 f6 90 ea ff fe 00 2d 83

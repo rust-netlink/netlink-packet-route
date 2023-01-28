@@ -4,13 +4,16 @@
 
 use crate::{
     constants::*,
-    nlas::Nla,
-    parsers::parse_u32,
     tc::{
         self, constants::*, mirred, u32, ActNla, ActOpt, Action, Stats2, TcOpt,
     },
-    traits::{Emitable, Parseable},
     TcHeader, TcMessage, TcMessageBuffer,
+};
+
+use netlink_packet_utils::{
+    nla::Nla,
+    parsers::parse_u32,
+    traits::{Emitable, Parseable},
 };
 
 #[rustfmt::skip]

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-
-use crate::{
-    nlas::link::Nla,
+use netlink_packet_utils::{
     traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError, LinkHeader, LinkMessageBuffer,
+    DecodeError,
 };
+
+use crate::{nlas::link::Nla, LinkHeader, LinkMessageBuffer};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -72,9 +72,10 @@ mod test {
     use crate::{
         constants::*,
         nlas::link::{Nla, State},
-        traits::{Emitable, ParseableParametrized},
         LinkHeader, LinkMessage, LinkMessageBuffer,
     };
+
+    use netlink_packet_utils::traits::{Emitable, ParseableParametrized};
 
     #[rustfmt::skip]
     static HEADER: [u8; 96] = [

@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    constants::*,
+use netlink_packet_utils::{
     traits::{Emitable, ParseableParametrized},
-    AddressMessage, DecodeError, LinkMessage, NeighbourMessage,
-    NeighbourTableMessage, NetlinkDeserializable, NetlinkHeader,
-    NetlinkPayload, NetlinkSerializable, NsidMessage, RouteMessage,
-    RtnlMessageBuffer, RuleMessage, TcMessage,
+    DecodeError,
+};
+
+use netlink_packet_core::{
+    NetlinkDeserializable, NetlinkHeader, NetlinkPayload, NetlinkSerializable,
+};
+
+use crate::{
+    constants::*, AddressMessage, LinkMessage, NeighbourMessage,
+    NeighbourTableMessage, NsidMessage, RouteMessage, RtnlMessageBuffer,
+    RuleMessage, TcMessage,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]

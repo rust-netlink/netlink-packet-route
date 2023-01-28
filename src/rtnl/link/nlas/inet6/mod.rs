@@ -3,9 +3,10 @@
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 
-use crate::{
-    constants::*,
-    nlas::{DefaultNla, Nla, NlaBuffer},
+use crate::constants::*;
+
+use netlink_packet_utils::{
+    nla::{DefaultNla, Nla, NlaBuffer},
     parsers::{parse_ipv6, parse_u32, parse_u8},
     traits::Parseable,
     DecodeError,

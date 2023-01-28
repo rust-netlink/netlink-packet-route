@@ -2,9 +2,16 @@
 
 use std::{convert::TryFrom, net::IpAddr, string::ToString};
 
+use netlink_packet_core::{
+    NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
+};
 use netlink_packet_route::{
-    constants::*, nlas::neighbour::Nla, NeighbourMessage, NetlinkHeader,
-    NetlinkMessage, NetlinkPayload, RtnlMessage,
+    constants::{
+        NUD_DELAY, NUD_FAILED, NUD_INCOMPLETE, NUD_NOARP, NUD_NONE,
+        NUD_PERMANENT, NUD_PROBE, NUD_REACHABLE, NUD_STALE,
+    },
+    nlas::neighbour::Nla,
+    NeighbourMessage, RtnlMessage, AF_INET, AF_INET6,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 

@@ -18,16 +18,17 @@ pub use self::next_hops::*;
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 
-use crate::{
-    constants::*,
-    nlas::{self, DefaultNla, NlaBuffer},
+use crate::constants::*;
+
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer},
     parsers::{parse_u16, parse_u32},
     traits::Parseable,
     DecodeError,
 };
 
 #[cfg(feature = "rich_nlas")]
-use crate::traits::Emitable;
+use netlink_packet_utils::traits::Emitable;
 
 /// Netlink attributes for `RTM_NEWROUTE`, `RTM_DELROUTE`,
 /// `RTM_GETROUTE` messages.
@@ -77,7 +78,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     #[rustfmt::skip]
     fn value_len(&self) -> usize {
         use self::Nla::*;

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-
-use super::{inet, inet6};
-use crate::{
-    constants::*,
-    nlas::{self, DefaultNla, NlaBuffer, NlasIterator},
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
 };
+
+use super::{inet, inet6};
+use crate::constants::*;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 #[non_exhaustive]
@@ -53,7 +53,7 @@ pub enum AfSpecInet {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for AfSpecInet {
+impl nla::Nla for AfSpecInet {
     #[rustfmt::skip]
     fn value_len(&self) -> usize {
         use self::AfSpecInet::*;

@@ -3,14 +3,14 @@
 use std::convert::TryFrom;
 
 use anyhow::Context;
-
-use crate::{
-    constants::*,
-    nlas::{self, DefaultNla, NlaBuffer},
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer},
     parsers::parse_u16,
     traits::Parseable,
     DecodeError,
 };
+
+use crate::constants::*;
 
 use byteorder::{ByteOrder, NativeEndian};
 
@@ -22,7 +22,7 @@ pub enum AfSpecBridge {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for AfSpecBridge {
+impl nla::Nla for AfSpecBridge {
     fn value_len(&self) -> usize {
         use self::AfSpecBridge::*;
         match *self {

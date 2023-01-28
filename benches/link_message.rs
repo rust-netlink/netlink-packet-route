@@ -3,10 +3,9 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use netlink_packet_route::{
-    nlas::link::Nla,
-    traits::{Parseable, ParseableParametrized},
-    LinkHeader, LinkMessage, LinkMessageBuffer,
+    nlas::link::Nla, LinkHeader, LinkMessage, LinkMessageBuffer,
 };
+use netlink_packet_utils::traits::{Parseable, ParseableParametrized};
 
 const LINKMSG1: [u8; 96] = [
     0x00, // address family

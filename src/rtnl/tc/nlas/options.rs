@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
-use anyhow::Context;
 
-use crate::{
-    nlas::{self, DefaultNla, NlaBuffer},
-    tc::{ingress, u32},
+use anyhow::Context;
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer},
     traits::{Parseable, ParseableParametrized},
     DecodeError,
 };
+
+use crate::tc::{ingress, u32};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -19,7 +20,7 @@ pub enum TcOpt {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for TcOpt {
+impl nla::Nla for TcOpt {
     fn value_len(&self) -> usize {
         match self {
             Self::Ingress => 0,

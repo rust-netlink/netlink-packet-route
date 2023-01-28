@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
+use netlink_packet_utils::{
+    nla::{DefaultNla, NlasIterator},
+    parsers::{parse_string, parse_u8},
+    traits::{Emitable, Parseable, ParseableParametrized},
+    DecodeError,
+};
 
 use crate::{
     constants::*,
-    nlas::{
-        tc::{Nla, Stats, Stats2, StatsBuffer, TcOpt},
-        DefaultNla, NlasIterator,
-    },
-    parsers::{parse_string, parse_u8},
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError, TcMessageBuffer, TC_HEADER_LEN,
+    nlas::tc::{Nla, Stats, Stats2, StatsBuffer, TcOpt},
+    TcMessageBuffer, TC_HEADER_LEN,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]

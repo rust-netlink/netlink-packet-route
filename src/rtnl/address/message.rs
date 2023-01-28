@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-
-use crate::{
-    nlas::address::Nla,
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
-    AddressMessageBuffer, DecodeError, ADDRESS_HEADER_LEN,
+    DecodeError,
 };
+
+use crate::{nlas::address::Nla, AddressMessageBuffer, ADDRESS_HEADER_LEN};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]

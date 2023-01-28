@@ -24,9 +24,10 @@ pub use self::action::*;
 #[cfg(test)]
 mod test;
 
-use crate::{
-    constants::*,
-    nlas::{self, DefaultNla, NlaBuffer},
+use crate::constants::*;
+
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer},
     traits::{Emitable, Parseable},
     DecodeError,
 };
@@ -54,7 +55,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     #[rustfmt::skip]
     fn value_len(&self) -> usize {
         use self::Nla::*;
@@ -127,7 +128,7 @@ pub enum Stats2 {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Stats2 {
+impl nla::Nla for Stats2 {
     fn value_len(&self) -> usize {
         use self::Stats2::*;
         match *self {

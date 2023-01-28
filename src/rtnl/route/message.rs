@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    nlas::route::Nla,
-    traits::{Emitable, Parseable},
-    DecodeError, RouteHeader, RouteMessageBuffer,
-};
-use anyhow::Context;
 use std::net::IpAddr;
+
+use anyhow::Context;
+use netlink_packet_utils::{
+    traits::{Emitable, Parseable},
+    DecodeError,
+};
+
+use crate::{nlas::route::Nla, RouteHeader, RouteMessageBuffer};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]

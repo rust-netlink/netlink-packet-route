@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    constants::*,
-    nlas::{Nla, NlaBuffer, NlasIterator},
+use std::{
+    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+    ops::Deref,
+};
+
+use anyhow::Context;
+use byteorder::{ByteOrder, NativeEndian};
+use netlink_packet_utils::{
+    nla::{Nla, NlaBuffer, NlasIterator},
     parsers::{parse_ip, parse_mac, parse_u16, parse_u32, parse_u8},
     traits::{Emitable, Parseable},
     DecodeError,
 };
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use std::{
-    net::{IpAddr, Ipv4Addr, Ipv6Addr},
-    ops::Deref,
-};
+use crate::constants::*;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]

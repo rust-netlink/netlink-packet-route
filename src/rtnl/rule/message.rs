@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-use super::{buffer::RuleMessageBuffer, header::RuleHeader, nlas::Nla};
-use crate::{
-    utils::{Emitable, Parseable},
+use anyhow::Context;
+use netlink_packet_utils::{
+    traits::{Emitable, Parseable},
     DecodeError,
 };
-use anyhow::Context;
+
+use super::{buffer::RuleMessageBuffer, header::RuleHeader, nlas::Nla};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]

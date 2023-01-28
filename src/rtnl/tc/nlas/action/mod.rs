@@ -5,13 +5,14 @@ pub mod mirred;
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 
-use crate::{
-    nlas::{self, DefaultNla, NlaBuffer, NlasIterator},
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer, NlasIterator},
     parsers::{parse_string, parse_u32},
-    tc::{constants::*, Stats2},
     traits::{Emitable, Parseable, ParseableParametrized},
     DecodeError,
 };
+
+use crate::tc::{constants::*, Stats2};
 
 pub const TC_GEN_BUF_LEN: usize = 20;
 
@@ -31,7 +32,7 @@ impl Default for Action {
     }
 }
 
-impl nlas::Nla for Action {
+impl nla::Nla for Action {
     fn value_len(&self) -> usize {
         self.nlas.as_slice().buffer_len()
     }
@@ -112,7 +113,7 @@ pub enum ActNla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for ActNla {
+impl nla::Nla for ActNla {
     fn value_len(&self) -> usize {
         use self::ActNla::*;
         match self {
@@ -163,7 +164,7 @@ pub enum ActOpt {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for ActOpt {
+impl nla::Nla for ActOpt {
     fn value_len(&self) -> usize {
         use self::ActOpt::*;
         match self {

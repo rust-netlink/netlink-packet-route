@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
-    DecodeError, NeighbourMessageBuffer, NEIGHBOUR_HEADER_LEN,
+    DecodeError,
 };
+
+use crate::{NeighbourMessageBuffer, NEIGHBOUR_HEADER_LEN};
 
 /// Neighbour headers have the following structure:
 ///

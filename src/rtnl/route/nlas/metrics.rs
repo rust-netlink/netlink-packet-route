@@ -4,9 +4,10 @@ use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use std::mem::size_of;
 
-use crate::{
-    constants::*,
-    nlas::{DefaultNla, Nla, NlaBuffer},
+use crate::constants::*;
+
+use netlink_packet_utils::{
+    nla::{DefaultNla, Nla, NlaBuffer},
     parsers::parse_u32,
     traits::Parseable,
     DecodeError,

@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: MIT
 
+use anyhow::Context;
+use netlink_packet_utils::{
+    byteorder::{ByteOrder, NativeEndian},
+    nla::{self, DefaultNla, NlaBuffer},
+    parsers::{parse_string, parse_u32, parse_u8},
+    DecodeError, Parseable,
+};
+
 use crate::{
-    nlas,
-    nlas::DefaultNla,
-    utils::{
-        byteorder::{ByteOrder, NativeEndian},
-        nla::NlaBuffer,
-        parsers::{parse_string, parse_u32, parse_u8},
-        Parseable,
-    },
-    DecodeError, FRA_DPORT_RANGE, FRA_DST, FRA_FLOW, FRA_FWMARK, FRA_FWMASK,
-    FRA_GOTO, FRA_IIFNAME, FRA_IP_PROTO, FRA_L3MDEV, FRA_OIFNAME, FRA_PAD,
-    FRA_PRIORITY, FRA_PROTOCOL, FRA_SPORT_RANGE, FRA_SRC, FRA_SUPPRESS_IFGROUP,
+    FRA_DPORT_RANGE, FRA_DST, FRA_FLOW, FRA_FWMARK, FRA_FWMASK, FRA_GOTO,
+    FRA_IIFNAME, FRA_IP_PROTO, FRA_L3MDEV, FRA_OIFNAME, FRA_PAD, FRA_PRIORITY,
+    FRA_PROTOCOL, FRA_SPORT_RANGE, FRA_SRC, FRA_SUPPRESS_IFGROUP,
     FRA_SUPPRESS_PREFIXLEN, FRA_TABLE, FRA_TUN_ID, FRA_UID_RANGE, FRA_UNSPEC,
 };
-use anyhow::Context;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -52,7 +51,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     fn value_len(&self) -> usize {
         use self::Nla::*;
         match self {

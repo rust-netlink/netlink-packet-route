@@ -3,9 +3,10 @@
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 
-use crate::{
-    constants::*,
-    nlas::{self, DefaultNla, NlaBuffer},
+use crate::constants::*;
+
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer},
     parsers::{parse_i32, parse_u32},
     traits::Parseable,
     DecodeError,
@@ -21,7 +22,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     fn value_len(&self) -> usize {
         use self::Nla::*;
         match *self {

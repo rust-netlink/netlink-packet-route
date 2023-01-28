@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-
-use crate::{
-    constants::*,
-    nlas::{DefaultNla, Nla, NlaBuffer},
+use netlink_packet_utils::{
+    nla::{DefaultNla, Nla, NlaBuffer},
     parsers::parse_u8,
     traits::Parseable,
     DecodeError,
 };
+
+use crate::constants::*;
 
 /// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to
 /// `LWTUNNEL_ENCAP_MPLS`.

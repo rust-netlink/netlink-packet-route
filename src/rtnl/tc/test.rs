@@ -4,10 +4,13 @@
 
 use crate::{
     constants::*,
-    nlas::NlasIterator,
     tc::{ingress, Nla, Stats, Stats2, StatsBuffer, TC_HEADER_LEN},
-    traits::{Emitable, Parseable},
     TcHeader, TcMessage, TcMessageBuffer,
+};
+
+use netlink_packet_utils::{
+    nla::NlasIterator,
+    traits::{Emitable, Parseable},
 };
 
 #[rustfmt::skip]

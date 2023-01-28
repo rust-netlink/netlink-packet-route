@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
-    DecodeError, LinkMessageBuffer, LINK_HEADER_LEN,
+    DecodeError,
 };
+
+use crate::{LinkMessageBuffer, LINK_HEADER_LEN};
 
 /// High level representation of `RTM_GETLINK`, `RTM_SETLINK`, `RTM_NEWLINK` and
 /// `RTM_DELLINK` messages headers.
