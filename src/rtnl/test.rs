@@ -2,11 +2,12 @@
 
 #![cfg(test)]
 
+use netlink_packet_core::NetlinkBuffer;
+use netlink_packet_utils::traits::ParseableParametrized;
+
 use crate::{
     nlas::link::{Info, InfoKind, Nla},
-    traits::ParseableParametrized,
-    LinkHeader, LinkMessage, NetlinkBuffer, RtnlMessage, RtnlMessageBuffer,
-    RTM_NEWLINK,
+    LinkHeader, LinkMessage, RtnlMessage, RtnlMessageBuffer, RTM_NEWLINK,
 };
 
 // This test was added because one of the NLA's payload is a string that is not

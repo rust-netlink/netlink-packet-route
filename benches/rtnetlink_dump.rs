@@ -5,7 +5,8 @@ use std::fs::File;
 use criterion::{criterion_group, criterion_main, Criterion};
 use pcap_file::PcapReader;
 
-use netlink_packet_route::{NetlinkMessage, RtnlMessage};
+use netlink_packet_core::NetlinkMessage;
+use netlink_packet_route::RtnlMessage;
 
 fn bench(c: &mut Criterion) {
     let pcap_reader =

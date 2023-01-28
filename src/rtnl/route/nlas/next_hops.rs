@@ -3,11 +3,11 @@
 use anyhow::Context;
 use std::net::IpAddr;
 
-use crate::{
-    constants,
-    nlas::{NlaBuffer, NlasIterator},
+use crate::{constants, route::nlas::Nla};
+
+use netlink_packet_utils::{
+    nla::{NlaBuffer, NlasIterator},
     parsers::parse_ip,
-    route::nlas::Nla,
     traits::{Emitable, Parseable},
     DecodeError,
 };

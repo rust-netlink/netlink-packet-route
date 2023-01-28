@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_core::{
+    NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
+};
 use netlink_packet_route::{
-    nlas::link::Nla, LinkMessage, NetlinkHeader, NetlinkMessage,
-    NetlinkPayload, RtnlMessage, AF_BRIDGE, NLM_F_DUMP, NLM_F_REQUEST,
+    nlas::link::Nla, LinkMessage, RtnlMessage, AF_BRIDGE,
     RTEXT_FILTER_BRVLAN_COMPRESSED,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};

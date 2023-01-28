@@ -2,9 +2,10 @@
 
 use anyhow::Context;
 
-use crate::{
-    constants::{IFLA_INET_CONF, IFLA_INET_UNSPEC},
-    nlas::{DefaultNla, Nla, NlaBuffer},
+use crate::constants::{IFLA_INET_CONF, IFLA_INET_UNSPEC};
+
+use netlink_packet_utils::{
+    nla::{DefaultNla, Nla, NlaBuffer},
     traits::Parseable,
     DecodeError,
 };

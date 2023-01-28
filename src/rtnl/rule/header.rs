@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-use super::{buffer::RuleMessageBuffer, RULE_HEADER_LEN};
-use crate::{
-    constants::*,
-    utils::{Emitable, Parseable},
+use netlink_packet_utils::{
+    traits::{Emitable, Parseable},
     DecodeError,
 };
+
+use super::{buffer::RuleMessageBuffer, RULE_HEADER_LEN};
+use crate::constants::*;
 
 bitflags! {
     #[non_exhaustive]

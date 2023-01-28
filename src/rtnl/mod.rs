@@ -50,7 +50,6 @@ pub mod nlas {
         nsid::nlas as nsid, route::nlas as route, rule::nlas as rule,
         tc::nlas as tc,
     };
-    pub use crate::utils::nla::*;
 }
 
 #[cfg(test)]

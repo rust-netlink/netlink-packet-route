@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-pub use netlink_packet_core::constants::*;
-
 pub const RTM_BASE: u16 = 16;
 pub const RTM_NEWLINK: u16 = 16;
 pub const RTM_DELLINK: u16 = 17;

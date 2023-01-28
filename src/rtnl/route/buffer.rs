@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    nlas::{NlaBuffer, NlasIterator},
+use netlink_packet_utils::{
+    nla::{NlaBuffer, NlasIterator},
     DecodeError,
 };
 

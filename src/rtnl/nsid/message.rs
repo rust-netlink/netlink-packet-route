@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-
-use crate::{
-    nlas::nsid::Nla,
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
-    DecodeError, NsidHeader, NsidMessageBuffer,
+    DecodeError,
 };
+
+use crate::{nlas::nsid::Nla, NsidHeader, NsidMessageBuffer};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -54,10 +54,11 @@ impl Emitable for NsidMessage {
 #[cfg(test)]
 mod test {
     use crate::{
-        nlas::nsid::Nla, traits::ParseableParametrized, NetlinkBuffer,
-        NsidHeader, NsidMessage, RtnlMessage, RtnlMessageBuffer,
-        NETNSA_NSID_NOT_ASSIGNED, RTM_GETNSID, RTM_NEWNSID,
+        nlas::nsid::Nla, NsidHeader, NsidMessage, RtnlMessage,
+        RtnlMessageBuffer, NETNSA_NSID_NOT_ASSIGNED, RTM_GETNSID, RTM_NEWNSID,
     };
+    use netlink_packet_core::NetlinkBuffer;
+    use netlink_packet_utils::traits::ParseableParametrized;
 
     #[rustfmt::skip]
     #[test]

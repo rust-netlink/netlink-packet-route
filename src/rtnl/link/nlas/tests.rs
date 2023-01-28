@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{utils::nla::Nla, DecodeError};
+use netlink_packet_utils::{nla::Nla, DecodeError};
 
 use super::*;
 // https://lists.infradead.org/pipermail/libnl/2015-November/002034.html

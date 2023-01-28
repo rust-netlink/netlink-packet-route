@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    constants::*,
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
-    DecodeError, RouteMessageBuffer, ROUTE_HEADER_LEN,
+    DecodeError,
 };
+
+use crate::{constants::*, RouteMessageBuffer, ROUTE_HEADER_LEN};
 
 bitflags! {
     /// Flags that can be set in a `RTM_GETROUTE` ([`RtnlMessage::GetRoute`]) message.

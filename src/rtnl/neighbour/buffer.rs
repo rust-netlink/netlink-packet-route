@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    nlas::{NlaBuffer, NlasIterator},
-    DecodeError,
-};
+use netlink_packet_utils::DecodeError;
+
+use netlink_packet_utils::nla::{NlaBuffer, NlasIterator};
 
 pub const NEIGHBOUR_HEADER_LEN: usize = 12;
 buffer!(NeighbourMessageBuffer(NEIGHBOUR_HEADER_LEN) {

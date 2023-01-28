@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
+use netlink_packet_core::{
+    NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_ACK, NLM_F_CREATE,
+    NLM_F_EXCL, NLM_F_REQUEST,
+};
 use netlink_packet_route::{
-    constants::*, rule, RtnlMessage, RuleHeader, RuleMessage,
+    constants::{AF_INET, FR_ACT_TO_TBL, RT_TABLE_DEFAULT},
+    rule, RtnlMessage, RuleHeader, RuleMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 

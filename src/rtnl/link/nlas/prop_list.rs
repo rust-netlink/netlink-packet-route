@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    constants::*,
-    nlas::{DefaultNla, Nla, NlaBuffer},
+use anyhow::Context;
+use netlink_packet_utils::{
+    nla::{DefaultNla, Nla, NlaBuffer},
     parsers::parse_string,
     traits::Parseable,
     DecodeError,
 };
 
-use anyhow::Context;
+use crate::constants::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]

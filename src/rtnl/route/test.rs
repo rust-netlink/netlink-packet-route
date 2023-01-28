@@ -2,13 +2,11 @@
 
 #[cfg(feature = "rich_nlas")]
 mod test_rich_nlas {
-    use crate::{
-        rtnl::route::{
-            nlas::{NextHop, NextHopFlags, Nla},
-            RouteFlags, RouteMessage, RouteMessageBuffer,
-        },
-        utils::{Emitable, Parseable},
+    use crate::rtnl::route::{
+        nlas::{NextHop, NextHopFlags, Nla},
+        RouteFlags, RouteMessage, RouteMessageBuffer,
     };
+    use netlink_packet_utils::traits::{Emitable, Parseable};
     use std::net::Ipv6Addr;
 
     #[rustfmt::skip]

@@ -9,15 +9,14 @@
 /// performed.
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
-
-use crate::{
-    nlas::{self, DefaultNla, NlaBuffer, NlasIterator},
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer, NlasIterator},
     parsers::parse_u32,
-    tc::{constants::*, Action},
     traits::{Emitable, Parseable},
     DecodeError,
 };
 
+use crate::tc::{constants::*, Action};
 pub const KIND: &str = "u32";
 
 const U32_SEL_BUF_LEN: usize = 16;
@@ -41,7 +40,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     fn value_len(&self) -> usize {
         use self::Nla::*;
         match self {

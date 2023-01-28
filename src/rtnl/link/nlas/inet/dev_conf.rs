@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
     DecodeError,
 };

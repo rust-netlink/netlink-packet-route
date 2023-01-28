@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    nlas::neighbour_table::Nla,
-    traits::{Emitable, Parseable},
-    DecodeError, NeighbourTableHeader, NeighbourTableMessageBuffer,
-};
 use anyhow::Context;
+use netlink_packet_utils::{
+    traits::{Emitable, Parseable},
+    DecodeError,
+};
+
+use crate::{
+    nlas::neighbour_table::Nla, NeighbourTableHeader,
+    NeighbourTableMessageBuffer,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]

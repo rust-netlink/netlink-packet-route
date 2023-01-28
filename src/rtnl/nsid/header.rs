@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use super::{NsidMessageBuffer, NSID_HEADER_LEN};
-use crate::{
+use netlink_packet_utils::{
     traits::{Emitable, Parseable},
     DecodeError,
 };
+
+use super::{NsidMessageBuffer, NSID_HEADER_LEN};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]

@@ -8,14 +8,14 @@ pub use stats::*;
 
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
-
-use crate::{
-    constants::*,
-    nlas::{self, DefaultNla, NlaBuffer},
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer},
     parsers::{parse_string, parse_u32, parse_u64},
     traits::Parseable,
     DecodeError,
 };
+
+use crate::constants::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -33,7 +33,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     #[rustfmt::skip]
     fn value_len(&self) -> usize {
         use self::Nla::*;

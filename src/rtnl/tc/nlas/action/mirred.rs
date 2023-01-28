@@ -6,12 +6,13 @@
 /// redirecting (stealing) the packet it receives. Mirroring is what
 /// is sometimes referred to as Switch Port Analyzer (SPAN) and is
 /// commonly used to analyze and/or debug flows.
-use crate::{
-    nlas::{self, DefaultNla, NlaBuffer},
-    tc::{constants::*, TC_GEN_BUF_LEN},
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer},
     traits::{Emitable, Parseable},
     DecodeError,
 };
+
+use crate::tc::{constants::*, TC_GEN_BUF_LEN};
 
 pub const KIND: &str = "mirred";
 pub const TC_MIRRED_BUF_LEN: usize = TC_GEN_BUF_LEN + 8;
@@ -25,7 +26,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     fn value_len(&self) -> usize {
         use self::Nla::*;
         match self {

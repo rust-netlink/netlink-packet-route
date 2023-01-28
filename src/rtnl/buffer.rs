@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-use crate::{
-    constants::*,
+use anyhow::Context;
+use netlink_packet_utils::{
     traits::{Parseable, ParseableParametrized},
-    AddressHeader, AddressMessage, AddressMessageBuffer, DecodeError,
+    DecodeError,
+};
+
+use crate::{
+    constants::*, AddressHeader, AddressMessage, AddressMessageBuffer,
     LinkMessage, LinkMessageBuffer, NeighbourMessage, NeighbourMessageBuffer,
     NeighbourTableMessage, NeighbourTableMessageBuffer, NsidMessage,
     NsidMessageBuffer, RouteHeader, RouteMessage, RouteMessageBuffer,
     RtnlMessage, RuleMessage, RuleMessageBuffer, TcMessage, TcMessageBuffer,
 };
-use anyhow::Context;
 
 buffer!(RtnlMessageBuffer);
 

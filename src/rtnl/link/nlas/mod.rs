@@ -43,14 +43,14 @@ use std::os::unix::io::RawFd;
 
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
-
-use crate::{
-    constants::*,
-    nlas::{self, DefaultNla, NlaBuffer, NlasIterator, NLA_F_NESTED},
+use netlink_packet_utils::{
+    nla::{self, DefaultNla, NlaBuffer, NlasIterator, NLA_F_NESTED},
     parsers::{parse_i32, parse_string, parse_u32, parse_u8},
     traits::{Emitable, Parseable, ParseableParametrized},
     DecodeError,
 };
+
+use crate::constants::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -162,7 +162,7 @@ pub enum Nla {
     Other(DefaultNla),
 }
 
-impl nlas::Nla for Nla {
+impl nla::Nla for Nla {
     #[rustfmt::skip]
     fn value_len(&self) -> usize {
         use self::Nla::*;
