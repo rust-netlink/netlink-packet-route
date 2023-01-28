@@ -24,14 +24,13 @@ fn main() {
         rule::Nla::Priority(1000),
         rule::Nla::Protocol(2),
     ];
+    let mut nl_hdr = NetlinkHeader::default();
+    nl_hdr.flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK;
 
-    let mut msg = NetlinkMessage {
-        header: NetlinkHeader {
-            flags: NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK,
-            ..Default::default()
-        },
-        payload: NetlinkPayload::from(RtnlMessage::NewRule(rule_msg)),
-    };
+    let mut msg = NetlinkMessage::new(
+        nl_hdr,
+        NetlinkPayload::from(RtnlMessage::NewRule(rule_msg)),
+    );
 
     msg.finalize();
     let mut buf = vec![0; 1024 * 8];

@@ -13,15 +13,15 @@ fn main() {
     let _port_number = socket.bind_auto().unwrap().port_number();
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
-    let mut req = NetlinkMessage {
-        header: NetlinkHeader {
-            flags: NLM_F_DUMP | NLM_F_REQUEST,
-            ..Default::default()
-        },
-        payload: NetlinkPayload::from(RtnlMessage::GetNeighbour(
+    let mut nl_hdr = NetlinkHeader::default();
+    nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
+
+    let mut req = NetlinkMessage::new(
+        nl_hdr,
+        NetlinkPayload::from(RtnlMessage::GetNeighbour(
             NeighbourMessage::default(),
         )),
-    };
+    );
     // IMPORTANT: call `finalize()` to automatically set the
     // `message_type` and `length` fields to the appropriate values in
     // the netlink header.
