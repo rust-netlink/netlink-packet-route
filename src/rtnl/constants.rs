@@ -1172,16 +1172,21 @@ pub const RTNLGRP_IPV6_MROUTE_R: u32 = 31;
 // pub const IFLA_OFFLOAD_XSTATS_UNSPEC: int = 0;
 // pub const IFLA_OFFLOAD_XSTATS_CPU_HIT: int = 1;
 //
-// pub const XDP_ATTACHED_NONE: int = 0;
-// pub const XDP_ATTACHED_DRV: int = 1;
-// pub const XDP_ATTACHED_SKB: int = 2;
-// pub const XDP_ATTACHED_HW: int = 3;
+pub const XDP_ATTACHED_NONE: u8 = 0;
+pub const XDP_ATTACHED_DRV: u8 = 1;
+pub const XDP_ATTACHED_SKB: u8 = 2;
+pub const XDP_ATTACHED_HW: u8 = 3;
+pub const XDP_ATTACHED_MULTI: u8 = 4;
 
 pub const IFLA_XDP_UNSPEC: u32 = 0;
 pub const IFLA_XDP_FD: u32 = 1;
 pub const IFLA_XDP_ATTACHED: u32 = 2;
 pub const IFLA_XDP_FLAGS: u32 = 3;
 pub const IFLA_XDP_PROG_ID: u32 = 4;
+pub const IFLA_XDP_DRV_PROG_ID: u32 = 5;
+pub const IFLA_XDP_SKB_PROG_ID: u32 = 6;
+pub const IFLA_XDP_HW_PROG_ID: u32 = 7;
+pub const IFLA_XDP_EXPECTED_FD: u32 = 8;
 
 // pub const IFLA_EVENT_NONE: int = 0;
 // pub const IFLA_EVENT_REBOOT: int = 1;
