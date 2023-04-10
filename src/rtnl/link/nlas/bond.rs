@@ -187,6 +187,7 @@ pub enum InfoBond {
     AdLacpActive(u8),
     MissedMax(u8),
     NsIp6Target(Vec<Ipv6Addr>),
+    PortPriority(u32),
 }
 
 impl Nla for InfoBond {
@@ -223,6 +224,7 @@ impl Nla for InfoBond {
                 | LpInterval(_)
                 | PacketsPerSlave(_)
                 | PeerNotifDelay(_)
+                | PortPriority(_)
                 => 4,
             ArpIpTarget(ref addrs)
                 => {
@@ -271,6 +273,7 @@ impl Nla for InfoBond {
                 | LpInterval(value)
                 | PacketsPerSlave(value)
                 | PeerNotifDelay(value)
+                | PortPriority(value)
              => NativeEndian::write_u32(buffer, *value),
             AdActorSystem(bytes) => buffer.copy_from_slice(bytes),
             ArpIpTarget(addrs) => {
@@ -318,6 +321,7 @@ impl Nla for InfoBond {
             AdLacpActive(_) => IFLA_BOND_AD_LACP_ACTIVE,
             MissedMax(_) => IFLA_BOND_MISSED_MAX,
             NsIp6Target(_) => IFLA_BOND_NS_IP6_TARGET,
+            PortPriority(_) => IFLA_BOND_PORT_PRIORITY,
         }
     }
 }
@@ -469,6 +473,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                 }
                 NsIp6Target(addrs)
             }
+            IFLA_BOND_PORT_PRIORITY => PortPriority(
+                parse_u32(payload)
+                    .context("invalid IFLA_BOND_PORT_PRIORITY value")?,
+            ),
             _ => return Err(format!("unknown NLA type {}", buf.kind()).into()),
         })
     }
