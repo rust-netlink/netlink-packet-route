@@ -7,7 +7,7 @@ use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 
 use netlink_packet_utils::{
-    nla::{self, DefaultNla, NlaBuffer, NlasIterator},
+    nla::{self, DefaultNla, NlaBuffer, NlasIterator, NLA_F_NESTED},
     parsers::{parse_string, parse_u32},
     traits::{Emitable, Parseable, ParseableParametrized},
     DecodeError,
@@ -148,7 +148,7 @@ impl nla::Nla for ActNla {
         match self {
             Unspec(_) => TCA_ACT_UNSPEC,
             Kind(_) => TCA_ACT_KIND,
-            Options(_) => TCA_ACT_OPTIONS,
+            Options(_) => TCA_ACT_OPTIONS | NLA_F_NESTED,
             Index(_) => TCA_ACT_INDEX,
             Stats(_) => TCA_ACT_STATS,
             Cookie(_) => TCA_ACT_COOKIE,
