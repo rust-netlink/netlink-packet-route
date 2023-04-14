@@ -7,7 +7,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use crate::tc::{ingress, u32};
+use crate::tc::{ingress, matchall, u32};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -16,6 +16,8 @@ pub enum TcOpt {
     Ingress,
     // Filter specific options
     U32(u32::Nla),
+    // matchall options
+    Matchall(matchall::Nla),
     // Other options
     Other(DefaultNla),
 }
@@ -25,6 +27,7 @@ impl nla::Nla for TcOpt {
         match self {
             Self::Ingress => 0,
             Self::U32(u) => u.value_len(),
+            Self::Matchall(m) => m.value_len(),
             Self::Other(o) => o.value_len(),
         }
     }
@@ -33,6 +36,7 @@ impl nla::Nla for TcOpt {
         match self {
             Self::Ingress => unreachable!(),
             Self::U32(u) => u.emit_value(buffer),
+            Self::Matchall(m) => m.emit_value(buffer),
             Self::Other(o) => o.emit_value(buffer),
         }
     }
@@ -41,6 +45,7 @@ impl nla::Nla for TcOpt {
         match self {
             Self::Ingress => unreachable!(),
             Self::U32(u) => u.kind(),
+            Self::Matchall(m) => m.kind(),
             Self::Other(o) => o.kind(),
         }
     }
@@ -59,6 +64,10 @@ where
             ingress::KIND => TcOpt::Ingress,
             u32::KIND => Self::U32(
                 u32::Nla::parse(buf).context("failed to parse u32 nlas")?,
+            ),
+            matchall::KIND => Self::Matchall(
+                matchall::Nla::parse(buf)
+                    .context("failed to parse matchall nlas")?,
             ),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })

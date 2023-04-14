@@ -20,6 +20,15 @@ pub const TC_H_MIN_PRIORITY: u32 = 0xFFE0;
 pub const TC_H_MIN_INGRESS: u32 = 0xFFF2;
 pub const TC_H_MIN_EGRESS: u32 = 0xFFF3;
 
+// matchall filters
+pub const TCA_MATCHALL_UNSPEC: u16 = 0;
+pub const TCA_MATCHALL_CLASSID: u16 = 1;
+pub const TCA_MATCHALL_ACT: u16 = 2;
+pub const TCA_MATCHALL_FLAGS: u16 = 3;
+pub const TCA_MATCHALL_PCNT: u16 = 4;
+pub const TCA_MATCHALL_PAD: u16 = 5;
+pub const TCA_MATCHALL_MAX: u16 = TCA_MATCHALL_PAD;
+
 /// U32 filters
 pub const TCA_U32_UNSPEC: u16 = 0;
 pub const TCA_U32_CLASSID: u16 = 1;
