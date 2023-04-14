@@ -26,8 +26,6 @@ pub const TCA_MATCHALL_CLASSID: u16 = 1;
 pub const TCA_MATCHALL_ACT: u16 = 2;
 pub const TCA_MATCHALL_FLAGS: u16 = 3;
 pub const TCA_MATCHALL_PCNT: u16 = 4;
-pub const TCA_MATCHALL_PAD: u16 = 5;
-pub const TCA_MATCHALL_MAX: u16 = TCA_MATCHALL_PAD;
 
 /// U32 filters
 pub const TCA_U32_UNSPEC: u16 = 0;
