@@ -93,3 +93,10 @@ pub const TCA_EGRESS_REDIR: i32 = 1; /* packet redirect to EGRESS */
 pub const TCA_EGRESS_MIRROR: i32 = 2; /* mirror packet to EGRESS */
 pub const TCA_INGRESS_REDIR: i32 = 3; /* packet redirect to INGRESS */
 pub const TCA_INGRESS_MIRROR: i32 = 4; /* mirror packet to INGRESS */
+
+/// NAT action attr
+pub const TCA_NAT_UNSPEC: u16 = 0;
+pub const TCA_NAT_PARMS: u16 = 1;
+pub const TCA_NAT_TM: u16 = 2;
+
+pub const TCA_NAT_FLAG_EGRESS: u32 = 1;

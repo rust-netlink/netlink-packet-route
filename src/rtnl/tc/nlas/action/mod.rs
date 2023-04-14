@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pub mod mirred;
+pub mod nat;
 
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
@@ -160,6 +161,7 @@ impl nla::Nla for ActNla {
 #[non_exhaustive]
 pub enum ActOpt {
     Mirred(mirred::Nla),
+    Nat(nat::Nla),
     // Other options
     Other(DefaultNla),
 }
@@ -169,6 +171,7 @@ impl nla::Nla for ActOpt {
         use self::ActOpt::*;
         match self {
             Mirred(nla) => nla.value_len(),
+            Nat(nla) => nla.value_len(),
             Other(nla) => nla.value_len(),
         }
     }
@@ -177,6 +180,7 @@ impl nla::Nla for ActOpt {
         use self::ActOpt::*;
         match self {
             Mirred(nla) => nla.emit_value(buffer),
+            Nat(nla) => nla.emit_value(buffer),
             Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -185,6 +189,7 @@ impl nla::Nla for ActOpt {
         use self::ActOpt::*;
         match self {
             Mirred(nla) => nla.kind(),
+            Nat(nla) => nla.kind(),
             Other(nla) => nla.kind(),
         }
     }
@@ -203,6 +208,9 @@ where
             mirred::KIND => Self::Mirred(
                 mirred::Nla::parse(buf)
                     .context("failed to parse mirred action")?,
+            ),
+            nat::KIND => Self::Nat(
+                nat::Nla::parse(buf).context("failed to parse nat action")?,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf)
