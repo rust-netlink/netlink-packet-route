@@ -122,6 +122,11 @@ impl TcNat {
 
         self
     }
+
+    pub fn egress(mut self) -> Self {
+        self.flags = TCA_NAT_FLAG_EGRESS;
+        self
+    }
 }
 impl Emitable for TcNat {
     fn buffer_len(&self) -> usize {
