@@ -69,7 +69,7 @@ use netlink_packet_utils::{
                         3, 0, // TCA_STATS_QUEUE
                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                     72, 0,
-                    2, 0, // TCA_ACT_OPTIONS
+                    2, 128, // TCA_ACT_OPTIONS, NLM_F_NESTED
                         32, 0,
                         2, 0, // TCA_MIRRED_PARMS
                             1, 0, 0, 0,
