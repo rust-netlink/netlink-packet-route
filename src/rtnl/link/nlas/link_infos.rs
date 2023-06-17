@@ -944,8 +944,8 @@ pub enum InfoVlan {
     Unspec(Vec<u8>),
     Id(u16),
     Flags((u32, u32)),
-    EgressQos(Vec<u8>),
-    IngressQos(Vec<u8>),
+    EgressQos(Vec<VlanQosMapping>),
+    IngressQos(Vec<VlanQosMapping>),
     Protocol(u16),
 }
 
@@ -956,10 +956,10 @@ impl Nla for InfoVlan {
         match self {
             Id(_) | Protocol(_) => 2,
             Flags(_) => 8,
-            Unspec(bytes)
-                | EgressQos(bytes)
-                | IngressQos(bytes)
-                => bytes.len(),
+            Unspec(bytes) => bytes.len(),
+            EgressQos(mappings)
+                | IngressQos(mappings)
+            => mappings.as_slice().buffer_len(),
         }
     }
 
@@ -968,10 +968,9 @@ impl Nla for InfoVlan {
         use self::InfoVlan::*;
         match self {
             Unspec(ref bytes)
-                | EgressQos(ref bytes)
-                | IngressQos(ref bytes)
-                => buffer.copy_from_slice(bytes),
-
+            => buffer.copy_from_slice(bytes),
+            EgressQos(ref mappings)
+                | IngressQos(ref mappings) => mappings.as_slice().emit(buffer),
             Id(ref value)
                 | Protocol(ref value)
                 => NativeEndian::write_u16(buffer, *value),
@@ -996,6 +995,16 @@ impl Nla for InfoVlan {
     }
 }
 
+fn parse_mappings(payload: &[u8]) -> Result<Vec<VlanQosMapping>, DecodeError> {
+    let mut mappings = Vec::new();
+    for nla in NlasIterator::new(payload) {
+        let nla = nla?;
+        let parsed = VlanQosMapping::parse(&nla)?;
+        mappings.push(parsed);
+    }
+    Ok(mappings)
+}
+
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         use self::InfoVlan::*;
@@ -1014,8 +1023,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
                 let mask = parse_u32(&payload[4..]).context(err)?;
                 Flags((flags, mask))
             }
-            IFLA_VLAN_EGRESS_QOS => EgressQos(payload.to_vec()),
-            IFLA_VLAN_INGRESS_QOS => IngressQos(payload.to_vec()),
+            IFLA_VLAN_EGRESS_QOS => EgressQos(
+                parse_mappings(payload)
+                    .context("failed to parse IFLA_VLAN_EGRESS_QOS")?,
+            ),
+            IFLA_VLAN_INGRESS_QOS => IngressQos(
+                parse_mappings(payload)
+                    .context("failed to parse IFLA_VLAN_INGRESS_QOS")?,
+            ),
             IFLA_VLAN_PROTOCOL => Protocol(
                 parse_u16_be(payload)
                     .context("invalid IFLA_VLAN_PROTOCOL value")?,
@@ -1514,6 +1529,66 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
             ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {kind}"))?,
+            ),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
+pub enum VlanQosMapping {
+    Unspec(Vec<u8>),
+    Mapping { from: u32, to: u32 },
+    Other(DefaultNla),
+}
+
+impl Nla for VlanQosMapping {
+    fn value_len(&self) -> usize {
+        match self {
+            VlanQosMapping::Unspec(bytes) => bytes.len(),
+            VlanQosMapping::Mapping { .. } => 8,
+            VlanQosMapping::Other(nla) => nla.value_len(),
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        match self {
+            VlanQosMapping::Unspec(_) => IFLA_VLAN_QOS_UNSPEC,
+            VlanQosMapping::Mapping { .. } => IFLA_VLAN_QOS_MAPPING,
+            VlanQosMapping::Other(nla) => nla.kind(),
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        use VlanQosMapping::*;
+        match self {
+            Unspec(payload) => buffer.copy_from_slice(payload),
+            Mapping { from, to } => {
+                NativeEndian::write_u32(buffer, *from);
+                NativeEndian::write_u32(&mut buffer[4..], *to);
+            }
+            Other(nla) => nla.emit_value(buffer),
+        }
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+    for VlanQosMapping
+{
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        use VlanQosMapping::*;
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            IFLA_VLAN_QOS_UNSPEC => Unspec(payload.to_vec()),
+            IFLA_VLAN_QOS_MAPPING => Mapping {
+                from: parse_u32(&payload[..4])
+                    .context("expected u32 from value")?,
+                to: parse_u32(&payload[4..])
+                    .context("expected u32 to value")?,
+            },
             kind => Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
@@ -2205,5 +2280,74 @@ mod tests {
         let mut vec = vec![0xff; 424];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &BRIDGE[..]);
+    }
+
+    #[rustfmt::skip]
+    static VLAN: [u8; 68] = [
+        0x09, 0x00, // length = 9
+        0x01, 0x00, // type = 1 = IFLA_INFO_KIND
+            0x76, 0x6c, 0x61, 0x6e, 0x00, // V = "vlan\0"
+            0x00, 0x00, 0x00, // padding
+        0x38, 0x00, // length = 56
+        0x02, 0x00, // type = 2 = IFLA_INFO_DATA
+            0x06, 0x00, // length - 6
+            0x01, 0x00, // type = 1 = IFLA_VLAN_ID
+                0x4b, 0x00, // id = 0x4b = 75
+                0x00, 0x00, // padding
+            0x10, 0x00, // length = 16
+            0x03, 0x00, // type = 3 = IFLA_VLAN_EGRESS_QOS_MAPPING
+                0x0c, 0x00, // length = 12
+                0x01, 0x00, // type = 1 = IFLA_VLAN_QOS_MAPPING
+                    0x03, 0x00, 0x00, 0x00, // from = 3
+                    0x04, 0x00, 0x00, 0x00, // to = 4
+            0x1c, 0x00, // length = 44
+            0x04, 0x00, // type = 4 = IFLA_VLAN_INGRESS_QOS_MAPPING
+                0x0c, 0x00, // length = 12
+                0x01, 0x00, // type = 1 = IFLA_VLAN_QOS_MAPPING
+                    0x00, 0x00, 0x00, 0x00, // from = 0
+                    0x01, 0x00, 0x00, 0x00, // to = 1
+                0x0c, 0x00, // length = 12
+                0x01, 0x00, // type = 1 = IFLA_VLAN_QOS_MAPPING
+                    0x01, 0x00, 0x00, 0x00, // from = 1
+                    0x02, 0x00, 0x00, 0x00, // to = 2
+    ];
+
+    lazy_static! {
+        static ref VLAN_INFO: Vec<InfoVlan> = vec![
+            InfoVlan::Id(75),
+            InfoVlan::EgressQos(vec![VlanQosMapping::Mapping {
+                from: 3,
+                to: 4
+            }]),
+            InfoVlan::IngressQos(vec![
+                VlanQosMapping::Mapping { from: 0, to: 1 },
+                VlanQosMapping::Mapping { from: 1, to: 2 }
+            ]),
+        ];
+    }
+
+    #[test]
+    fn parse_info_vlan() {
+        let nla = NlaBuffer::new_checked(&VLAN[..]).unwrap();
+        let parsed = VecInfo::parse(&nla).unwrap().0;
+        let expected = vec![
+            Info::Kind(InfoKind::Vlan),
+            Info::Data(InfoData::Vlan(VLAN_INFO.clone())),
+        ];
+        assert_eq!(expected, parsed);
+    }
+
+    #[test]
+    fn emit_info_vlan() {
+        let nlas = vec![
+            Info::Kind(InfoKind::Vlan),
+            Info::Data(InfoData::Vlan(VLAN_INFO.clone())),
+        ];
+
+        assert_eq!(nlas.as_slice().buffer_len(), VLAN.len());
+
+        let mut vec = vec![0xff; VLAN.len()];
+        nlas.as_slice().emit(&mut vec);
+        assert_eq!(&vec[..], &VLAN[..]);
     }
 }
