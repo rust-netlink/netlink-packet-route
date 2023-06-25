@@ -1,4 +1,25 @@
 # Changelog
+### [0.16.0] - 2023-06-25
+### Breaking changes
+ - Replaced all `slave` to `port`. (bfa1ec3)
+    * `InfoBond::ActiveSlave` -> `InfoBond::ActivePort`
+    * `InfoBond::AllSlavesActive` -> `InfoBond::AllPortsActive`
+    * `InfoBond::PacketsPerSlave` -> `InfoBond::PacketsPerPort`
+    * `SlaveState` -> `BondPortState`
+    * `link_infos::Info::SlaveKind` -> `link_info::Info::PortKind`
+    * `link_infos::Info::SlaveData` -> `link_info::Info::PortData`
+    * `link_infos::InfoSlaveData` -> `link_info::InfoPortData`
+
+### New features
+ - Add support of bond port settings. (83c9689)
+ - Add support of TC matchall filter. (d71b961)
+ - Add egress builder for TcNat type. (62d2411)
+ - Add the nat action to tc. (c80c678)
+ - Add XDP nlas structure support. (75ce74c)
+
+### Bug fixes
+ - Set `NLM_F_NESTED` for `TCA_ACT_OPTIONS` type. (a93b651)
+
 ## [0.15.0] - 2023-01-28
 ### Breaking changes
  - Removed these reexports. (8784586)
