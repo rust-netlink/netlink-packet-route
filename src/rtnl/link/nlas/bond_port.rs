@@ -12,29 +12,29 @@ use crate::constants::*;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
-pub enum SlaveState {
+pub enum BondPortState {
     Active,
     Backup,
     Other(u8),
 }
 
-impl From<u8> for SlaveState {
+impl From<u8> for BondPortState {
     fn from(value: u8) -> Self {
-        use self::SlaveState::*;
+        use self::BondPortState::*;
         match value {
-            IFLA_BOND_SLAVE_STATE_ACTIVE => Active,
-            IFLA_BOND_SLAVE_STATE_BACKUP => Backup,
+            IFLA_BOND_PORT_STATE_ACTIVE => Active,
+            IFLA_BOND_PORT_STATE_BACKUP => Backup,
             _ => Other(value),
         }
     }
 }
 
-impl From<SlaveState> for u8 {
-    fn from(value: SlaveState) -> Self {
-        use self::SlaveState::*;
+impl From<BondPortState> for u8 {
+    fn from(value: BondPortState) -> Self {
+        use self::BondPortState::*;
         match value {
-            Active => IFLA_BOND_SLAVE_STATE_ACTIVE,
-            Backup => IFLA_BOND_SLAVE_STATE_BACKUP,
+            Active => IFLA_BOND_PORT_STATE_ACTIVE,
+            Backup => IFLA_BOND_PORT_STATE_BACKUP,
             Other(other) => other,
         }
     }
@@ -54,10 +54,10 @@ impl From<u8> for MiiStatus {
     fn from(value: u8) -> Self {
         use self::MiiStatus::*;
         match value {
-            IFLA_BOND_SLAVE_MII_STATUS_UP => Up,
-            IFLA_BOND_SLAVE_MII_STATUS_GOING_DOWN => GoingDown,
-            IFLA_BOND_SLAVE_MII_STATUS_DOWN => Down,
-            IFLA_BOND_SLAVE_MII_STATUS_GOING_BACK => GoingBack,
+            IFLA_BOND_PORT_MII_STATUS_UP => Up,
+            IFLA_BOND_PORT_MII_STATUS_GOING_DOWN => GoingDown,
+            IFLA_BOND_PORT_MII_STATUS_DOWN => Down,
+            IFLA_BOND_PORT_MII_STATUS_GOING_BACK => GoingBack,
             _ => Other(value),
         }
     }
@@ -67,10 +67,10 @@ impl From<MiiStatus> for u8 {
     fn from(value: MiiStatus) -> Self {
         use self::MiiStatus::*;
         match value {
-            Up => IFLA_BOND_SLAVE_MII_STATUS_UP,
-            GoingDown => IFLA_BOND_SLAVE_MII_STATUS_GOING_DOWN,
-            Down => IFLA_BOND_SLAVE_MII_STATUS_DOWN,
-            GoingBack => IFLA_BOND_SLAVE_MII_STATUS_GOING_BACK,
+            Up => IFLA_BOND_PORT_MII_STATUS_UP,
+            GoingDown => IFLA_BOND_PORT_MII_STATUS_GOING_DOWN,
+            Down => IFLA_BOND_PORT_MII_STATUS_DOWN,
+            GoingBack => IFLA_BOND_PORT_MII_STATUS_GOING_BACK,
             Other(other) => other,
         }
     }
@@ -84,7 +84,7 @@ pub enum InfoBondPort {
     PermHwaddr(Vec<u8>),
     Prio(i32),
     QueueId(u16),
-    SlaveState(SlaveState),
+    BondPortState(BondPortState),
     Other(DefaultNla),
 }
 
@@ -101,7 +101,7 @@ impl Nla for InfoBondPort {
             PermHwaddr(ref bytes)
             => bytes.len(),
             MiiStatus(_) => 1,
-            SlaveState(_) => 1,
+            BondPortState(_) => 1,
             Other(nla)
                 => nla.value_len(),
         }
@@ -120,7 +120,7 @@ impl Nla for InfoBondPort {
             LinkFailureCount(value)
              => NativeEndian::write_u32(buffer, *value),
             MiiStatus(state) => buffer[0] = (*state).into(),
-            SlaveState(state) => buffer[0] = (*state).into(),
+            BondPortState(state) => buffer[0] = (*state).into(),
             Other(nla)
              => nla.emit_value(buffer),
         }
@@ -130,12 +130,12 @@ impl Nla for InfoBondPort {
         use self::InfoBondPort::*;
 
         match self {
-            LinkFailureCount(_) => IFLA_BOND_SLAVE_LINK_FAILURE_COUNT,
-            MiiStatus(_) => IFLA_BOND_SLAVE_MII_STATUS,
-            PermHwaddr(_) => IFLA_BOND_SLAVE_PERM_HWADDR,
-            Prio(_) => IFLA_BOND_SLAVE_PRIO,
-            QueueId(_) => IFLA_BOND_SLAVE_QUEUE_ID,
-            SlaveState(_) => IFLA_BOND_SLAVE_STATE,
+            LinkFailureCount(_) => IFLA_BOND_PORT_LINK_FAILURE_COUNT,
+            MiiStatus(_) => IFLA_BOND_PORT_MII_STATUS,
+            PermHwaddr(_) => IFLA_BOND_PORT_PERM_HWADDR,
+            Prio(_) => IFLA_BOND_PORT_PRIO,
+            QueueId(_) => IFLA_BOND_PORT_QUEUE_ID,
+            BondPortState(_) => IFLA_BOND_PORT_STATE,
             Other(nla) => nla.kind(),
         }
     }
@@ -146,28 +146,28 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBondPort {
         use self::InfoBondPort::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BOND_SLAVE_LINK_FAILURE_COUNT => {
+            IFLA_BOND_PORT_LINK_FAILURE_COUNT => {
                 LinkFailureCount(parse_u32(payload).context(
-                    "invalid IFLA_BOND_SLAVE_LINK_FAILURE_COUNT value",
+                    "invalid IFLA_BOND_PORT_LINK_FAILURE_COUNT value",
                 )?)
             }
-            IFLA_BOND_SLAVE_MII_STATUS => MiiStatus(
+            IFLA_BOND_PORT_MII_STATUS => MiiStatus(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_SLAVE_MII_STATUS value")?
+                    .context("invalid IFLA_BOND_PORT_MII_STATUS value")?
                     .into(),
             ),
-            IFLA_BOND_SLAVE_PERM_HWADDR => PermHwaddr(payload.to_vec()),
-            IFLA_BOND_SLAVE_PRIO => Prio(
+            IFLA_BOND_PORT_PERM_HWADDR => PermHwaddr(payload.to_vec()),
+            IFLA_BOND_PORT_PRIO => Prio(
                 parse_i32(payload)
-                    .context("invalid IFLA_BOND_SLAVE_PRIO value")?,
+                    .context("invalid IFLA_BOND_PORT_PRIO value")?,
             ),
-            IFLA_BOND_SLAVE_QUEUE_ID => QueueId(
+            IFLA_BOND_PORT_QUEUE_ID => QueueId(
                 parse_u16(payload)
-                    .context("invalid IFLA_BOND_SLAVE_QUEUE_ID value")?,
+                    .context("invalid IFLA_BOND_PORT_QUEUE_ID value")?,
             ),
-            IFLA_BOND_SLAVE_STATE => SlaveState(
+            IFLA_BOND_PORT_STATE => BondPortState(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_SLAVE_STATE value")?
+                    .context("invalid IFLA_BOND_PORT_STATE value")?
                     .into(),
             ),
             kind => Other(

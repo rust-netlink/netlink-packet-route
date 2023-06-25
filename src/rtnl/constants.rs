@@ -398,8 +398,8 @@ pub const IFLA_INFO_UNSPEC: u16 = 0;
 pub const IFLA_INFO_KIND: u16 = 1;
 pub const IFLA_INFO_DATA: u16 = 2;
 pub const IFLA_INFO_XSTATS: u16 = 3;
-pub const IFLA_INFO_SLAVE_KIND: u16 = 4;
-pub const IFLA_INFO_SLAVE_DATA: u16 = 5;
+pub const IFLA_INFO_PORT_KIND: u16 = 4;
+pub const IFLA_INFO_PORT_DATA: u16 = 5;
 // Bridge flags
 pub const IFLA_BRIDGE_FLAGS: u16 = 0;
 pub const BRIDGE_FLAGS_MASTER: u16 = 1; /* Bridge command to/from master */
@@ -663,8 +663,6 @@ pub const IFF_NOARP: u32 = libc::IFF_NOARP as u32;
 pub const IFF_PROMISC: u32 = libc::IFF_PROMISC as u32;
 /// Master of a load balancer (bonding)
 pub const IFF_MASTER: u32 = libc::IFF_MASTER as u32;
-/// Slave of a load balancer
-pub const IFF_SLAVE: u32 = libc::IFF_SLAVE as u32;
 /// Link selects port automatically (only used by ARM ethernet)
 pub const IFF_PORTSEL: u32 = libc::IFF_PORTSEL as u32;
 /// Driver supports setting media type (only used by ARM ethernet)
@@ -994,7 +992,7 @@ pub const __IFLA_VXLAN_MAX: u16 = 30;
 
 pub const IFLA_BOND_UNSPEC: u16 = 0;
 pub const IFLA_BOND_MODE: u16 = 1;
-pub const IFLA_BOND_ACTIVE_SLAVE: u16 = 2;
+pub const IFLA_BOND_ACTIVE_PORT: u16 = 2;
 pub const IFLA_BOND_MIIMON: u16 = 3;
 pub const IFLA_BOND_UPDELAY: u16 = 4;
 pub const IFLA_BOND_DOWNDELAY: u16 = 5;
@@ -1009,10 +1007,10 @@ pub const IFLA_BOND_FAIL_OVER_MAC: u16 = 13;
 pub const IFLA_BOND_XMIT_HASH_POLICY: u16 = 14;
 pub const IFLA_BOND_RESEND_IGMP: u16 = 15;
 pub const IFLA_BOND_NUM_PEER_NOTIF: u16 = 16;
-pub const IFLA_BOND_ALL_SLAVES_ACTIVE: u16 = 17;
+pub const IFLA_BOND_ALL_PORTS_ACTIVE: u16 = 17;
 pub const IFLA_BOND_MIN_LINKS: u16 = 18;
 pub const IFLA_BOND_LP_INTERVAL: u16 = 19;
-pub const IFLA_BOND_PACKETS_PER_SLAVE: u16 = 20;
+pub const IFLA_BOND_PACKETS_PER_PORT: u16 = 20;
 pub const IFLA_BOND_AD_LACP_RATE: u16 = 21;
 pub const IFLA_BOND_AD_SELECT: u16 = 22;
 pub const IFLA_BOND_AD_INFO: u16 = 23;
@@ -1032,24 +1030,24 @@ pub const IFLA_BOND_AD_INFO_ACTOR_KEY: u16 = 3;
 pub const IFLA_BOND_AD_INFO_PARTNER_KEY: u16 = 4;
 pub const IFLA_BOND_AD_INFO_PARTNER_MAC: u16 = 5;
 
-pub const IFLA_BOND_SLAVE_UNSPEC: u16 = 0;
-pub const IFLA_BOND_SLAVE_STATE: u16 = 1;
-pub const IFLA_BOND_SLAVE_MII_STATUS: u16 = 2;
-pub const IFLA_BOND_SLAVE_LINK_FAILURE_COUNT: u16 = 3;
-pub const IFLA_BOND_SLAVE_PERM_HWADDR: u16 = 4;
-pub const IFLA_BOND_SLAVE_QUEUE_ID: u16 = 5;
-pub const IFLA_BOND_SLAVE_AD_AGGREGATOR_ID: u16 = 6;
-pub const IFLA_BOND_SLAVE_AD_ACTOR_OPER_PORT_STATE: u16 = 7;
-pub const IFLA_BOND_SLAVE_AD_PARTNER_OPER_PORT_STATE: u16 = 8;
-pub const IFLA_BOND_SLAVE_PRIO: u16 = 9;
+pub const IFLA_BOND_PORT_UNSPEC: u16 = 0;
+pub const IFLA_BOND_PORT_STATE: u16 = 1;
+pub const IFLA_BOND_PORT_MII_STATUS: u16 = 2;
+pub const IFLA_BOND_PORT_LINK_FAILURE_COUNT: u16 = 3;
+pub const IFLA_BOND_PORT_PERM_HWADDR: u16 = 4;
+pub const IFLA_BOND_PORT_QUEUE_ID: u16 = 5;
+pub const IFLA_BOND_PORT_AD_AGGREGATOR_ID: u16 = 6;
+pub const IFLA_BOND_PORT_AD_ACTOR_OPER_PORT_STATE: u16 = 7;
+pub const IFLA_BOND_PORT_AD_PARTNER_OPER_PORT_STATE: u16 = 8;
+pub const IFLA_BOND_PORT_PRIO: u16 = 9;
 
-pub const IFLA_BOND_SLAVE_STATE_ACTIVE: u8 = 0;
-pub const IFLA_BOND_SLAVE_STATE_BACKUP: u8 = 1;
+pub const IFLA_BOND_PORT_STATE_ACTIVE: u8 = 0;
+pub const IFLA_BOND_PORT_STATE_BACKUP: u8 = 1;
 
-pub const IFLA_BOND_SLAVE_MII_STATUS_UP: u8 = 0;
-pub const IFLA_BOND_SLAVE_MII_STATUS_GOING_DOWN: u8 = 1;
-pub const IFLA_BOND_SLAVE_MII_STATUS_DOWN: u8 = 2;
-pub const IFLA_BOND_SLAVE_MII_STATUS_GOING_BACK: u8 = 3;
+pub const IFLA_BOND_PORT_MII_STATUS_UP: u8 = 0;
+pub const IFLA_BOND_PORT_MII_STATUS_GOING_DOWN: u8 = 1;
+pub const IFLA_BOND_PORT_MII_STATUS_DOWN: u8 = 2;
+pub const IFLA_BOND_PORT_MII_STATUS_GOING_BACK: u8 = 3;
 
 // pub const IFLA_VF_INFO_UNSPEC: int = 0;
 // pub const IFLA_VF_INFO: int = 1;
@@ -1161,8 +1159,8 @@ pub const RTNLGRP_IPV6_MROUTE_R: u32 = 31;
 // pub const IPOIB_MODE_CONNECTED: int = 1;
 //
 // pub const IFLA_HSR_UNSPEC: int = 0;
-// pub const IFLA_HSR_SLAVE1: int = 1;
-// pub const IFLA_HSR_SLAVE2: int = 2;
+// pub const IFLA_HSR_PORT1: int = 1;
+// pub const IFLA_HSR_PORT2: int = 2;
 // pub const IFLA_HSR_MULTICAST_SPEC: int = 3;
 // pub const IFLA_HSR_SUPERVISION_ADDR: int = 4;
 // pub const IFLA_HSR_SEQ_NR: int = 5;
@@ -1171,7 +1169,7 @@ pub const RTNLGRP_IPV6_MROUTE_R: u32 = 31;
 // pub const IFLA_STATS_UNSPEC: int = 0;
 // pub const IFLA_STATS_LINK_64: int = 1;
 // pub const IFLA_STATS_LINK_XSTATS: int = 2;
-// pub const IFLA_STATS_LINK_XSTATS_SLAVE: int = 3;
+// pub const IFLA_STATS_LINK_XSTATS_PORT: int = 3;
 // pub const IFLA_STATS_LINK_OFFLOAD_XSTATS: int = 4;
 // pub const IFLA_STATS_AF_SPEC: int = 5;
 //
