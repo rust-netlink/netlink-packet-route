@@ -157,7 +157,7 @@ impl Nla for BondIpAddrNla {
 #[non_exhaustive]
 pub enum InfoBond {
     Mode(u8),
-    ActiveSlave(u32),
+    ActivePort(u32),
     MiiMon(u32),
     UpDelay(u32),
     DownDelay(u32),
@@ -172,10 +172,10 @@ pub enum InfoBond {
     XmitHashPolicy(u8),
     ResendIgmp(u32),
     NumPeerNotif(u8),
-    AllSlavesActive(u8),
+    AllPortsActive(u8),
     MinLinks(u32),
     LpInterval(u32),
-    PacketsPerSlave(u32),
+    PacketsPerPort(u32),
     AdLacpRate(u8),
     AdSelect(u8),
     AdInfo(Vec<BondAdInfo>),
@@ -200,7 +200,7 @@ impl Nla for InfoBond {
                 | FailOverMac(_)
                 | XmitHashPolicy(_)
                 | NumPeerNotif(_)
-                | AllSlavesActive(_)
+                | AllPortsActive(_)
                 | AdLacpActive(_)
                 | AdLacpRate(_)
                 | AdSelect(_)
@@ -210,7 +210,7 @@ impl Nla for InfoBond {
             AdActorSysPrio(_)
                 | AdUserPortKey(_)
             => 2,
-            ActiveSlave(_)
+            ActivePort(_)
                 | MiiMon(_)
                 | UpDelay(_)
                 | DownDelay(_)
@@ -221,7 +221,7 @@ impl Nla for InfoBond {
                 | ResendIgmp(_)
                 | MinLinks(_)
                 | LpInterval(_)
-                | PacketsPerSlave(_)
+                | PacketsPerPort(_)
                 | PeerNotifDelay(_)
                 => 4,
             ArpIpTarget(ref addrs)
@@ -248,7 +248,7 @@ impl Nla for InfoBond {
                 | FailOverMac(value)
                 | XmitHashPolicy(value)
                 | NumPeerNotif(value)
-                | AllSlavesActive(value)
+                | AllPortsActive(value)
                 | AdLacpActive(value)
                 | AdLacpRate(value)
                 | AdSelect(value)
@@ -258,7 +258,7 @@ impl Nla for InfoBond {
             AdActorSysPrio(value)
                 | AdUserPortKey(value)
             => NativeEndian::write_u16(buffer, *value),
-            ActiveSlave(value)
+            ActivePort(value)
                 | MiiMon(value)
                 | UpDelay(value)
                 | DownDelay(value)
@@ -269,7 +269,7 @@ impl Nla for InfoBond {
                 | ResendIgmp(value)
                 | MinLinks(value)
                 | LpInterval(value)
-                | PacketsPerSlave(value)
+                | PacketsPerPort(value)
                 | PeerNotifDelay(value)
              => NativeEndian::write_u32(buffer, *value),
             AdActorSystem(bytes) => buffer.copy_from_slice(bytes),
@@ -288,7 +288,7 @@ impl Nla for InfoBond {
 
         match self {
             Mode(_) => IFLA_BOND_MODE,
-            ActiveSlave(_) => IFLA_BOND_ACTIVE_SLAVE,
+            ActivePort(_) => IFLA_BOND_ACTIVE_PORT,
             MiiMon(_) => IFLA_BOND_MIIMON,
             UpDelay(_) => IFLA_BOND_UPDELAY,
             DownDelay(_) => IFLA_BOND_DOWNDELAY,
@@ -303,10 +303,10 @@ impl Nla for InfoBond {
             XmitHashPolicy(_) => IFLA_BOND_XMIT_HASH_POLICY,
             ResendIgmp(_) => IFLA_BOND_RESEND_IGMP,
             NumPeerNotif(_) => IFLA_BOND_NUM_PEER_NOTIF,
-            AllSlavesActive(_) => IFLA_BOND_ALL_SLAVES_ACTIVE,
+            AllPortsActive(_) => IFLA_BOND_ALL_PORTS_ACTIVE,
             MinLinks(_) => IFLA_BOND_MIN_LINKS,
             LpInterval(_) => IFLA_BOND_LP_INTERVAL,
-            PacketsPerSlave(_) => IFLA_BOND_PACKETS_PER_SLAVE,
+            PacketsPerPort(_) => IFLA_BOND_PACKETS_PER_PORT,
             AdLacpRate(_) => IFLA_BOND_AD_LACP_RATE,
             AdSelect(_) => IFLA_BOND_AD_SELECT,
             AdInfo(_) => IFLA_BOND_AD_INFO,
@@ -330,9 +330,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             IFLA_BOND_MODE => Mode(
                 parse_u8(payload).context("invalid IFLA_BOND_MODE value")?,
             ),
-            IFLA_BOND_ACTIVE_SLAVE => ActiveSlave(
+            IFLA_BOND_ACTIVE_PORT => ActivePort(
                 parse_u32(payload)
-                    .context("invalid IFLA_BOND_ACTIVE_SLAVE value")?,
+                    .context("invalid IFLA_BOND_ACTIVE_PORT value")?,
             ),
             IFLA_BOND_MIIMON => MiiMon(
                 parse_u32(payload).context("invalid IFLA_BOND_MIIMON value")?,
@@ -396,9 +396,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_NUM_PEER_NOTIF value")?,
             ),
-            IFLA_BOND_ALL_SLAVES_ACTIVE => AllSlavesActive(
+            IFLA_BOND_ALL_PORTS_ACTIVE => AllPortsActive(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_ALL_SLAVES_ACTIVE value")?,
+                    .context("invalid IFLA_BOND_ALL_PORTS_ACTIVE value")?,
             ),
             IFLA_BOND_MIN_LINKS => MinLinks(
                 parse_u32(payload)
@@ -408,9 +408,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_LP_INTERVAL value")?,
             ),
-            IFLA_BOND_PACKETS_PER_SLAVE => PacketsPerSlave(
+            IFLA_BOND_PACKETS_PER_PORT => PacketsPerPort(
                 parse_u32(payload)
-                    .context("invalid IFLA_BOND_PACKETS_PER_SLAVE value")?,
+                    .context("invalid IFLA_BOND_PACKETS_PER_PORT value")?,
             ),
             IFLA_BOND_AD_LACP_RATE => AdLacpRate(
                 parse_u8(payload)
