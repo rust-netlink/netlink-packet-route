@@ -47,7 +47,7 @@ fn main() {
                 <NetlinkMessage<RtnlMessage>>::deserialize(bytes).unwrap();
             println!("<<< {rx_packet:?}");
 
-            if rx_packet.payload == NetlinkPayload::Done {
+            if matches!(rx_packet.payload, NetlinkPayload::Done(_)) {
                 println!("Done!");
                 return;
             }
