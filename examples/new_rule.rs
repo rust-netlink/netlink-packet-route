@@ -55,10 +55,12 @@ fn main() {
         println!("<<< {rx_packet:?}");
         if let Ok(rx_packet) = rx_packet {
             if let NetlinkPayload::Error(e) = rx_packet.payload {
-                eprintln!("{e:?}");
-            } else {
-                return;
+                if e.code.is_some() {
+                    eprintln!("{e:?}");
+                }
             }
+
+            return;
         }
     }
 }

@@ -62,7 +62,7 @@ fn main() {
                         print_entry(entry);
                     }
                 }
-                NetlinkPayload::Error(err) => {
+                NetlinkPayload::Error(err) if err.code.is_some() => {
                     eprintln!("Received a netlink error message: {err:?}");
                     return;
                 }
