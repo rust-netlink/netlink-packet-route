@@ -1,4 +1,18 @@
 # Changelog
+## [0.17.0] - 2023-07-10
+### Breaking changes
+ - `InfoVlan::EgressQos(Vec<u8>)` changed to
+   `InfoVlan::EgressQos(Vec<VlanQosMapping>)`. (2d33edb)
+ - `InfoVlan::IngressQos(Vec<u8>)` changed to
+   `InfoVlan::IngressQos(Vec<VlanQosMapping>)`. (2d33edb)
+
+### New features
+ - Added rich representation for VLAN QOS mapping. (2d33edb)
+ - Added MacVlan IFLA_MACVLAN_BC_ options. (640be35)
+
+### Bug fixes
+ - N/A
+
 ## [0.16.1] - 2023-07-10
 ### Breaking changes
  - N/A
