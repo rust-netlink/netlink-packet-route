@@ -15,7 +15,6 @@ use netlink_packet_utils::{
 bitflags! {
     #[non_exhaustive]
 pub struct NextHopFlags: u8 {
-        const RTNH_F_EMPTY = 0;
         const RTNH_F_DEAD = constants::RTNH_F_DEAD;
         const RTNH_F_PERVASIVE = constants::RTNH_F_PERVASIVE;
         const RTNH_F_ONLINK = constants::RTNH_F_ONLINK;

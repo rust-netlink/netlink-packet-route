@@ -53,7 +53,7 @@ fn main() {
                 NetlinkMessage::deserialize(bytes).unwrap();
 
             match msg.payload {
-                NetlinkPayload::Done => break 'outer,
+                NetlinkPayload::Done(_) => break 'outer,
                 NetlinkPayload::InnerMessage(RtnlMessage::NewNeighbour(
                     entry,
                 )) => {

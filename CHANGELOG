@@ -1,5 +1,15 @@
 # Changelog
-### [0.16.0] - 2023-06-25
+## [0.16.1] - 2023-07-10
+### Breaking changes
+ - N/A
+
+### New features
+ - N/A
+
+### Bug fixes
+ - Use latest rust-netlink crates. (2eda618)
+
+## [0.16.0] - 2023-06-25
 ### Breaking changes
  - Replaced all `slave` to `port`. (bfa1ec3)
     * `InfoBond::ActiveSlave` -> `InfoBond::ActivePort`
