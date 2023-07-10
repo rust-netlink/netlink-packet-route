@@ -115,7 +115,7 @@ mod test {
 
         let nlas = vec![];
         let packet = NeighbourMessage { header, nlas };
-        let mut buf = vec![0; 12];
+        let mut buf = [0; 12];
 
         assert_eq!(packet.buffer_len(), 12);
         packet.emit(&mut buf[..]);

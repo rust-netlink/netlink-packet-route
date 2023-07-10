@@ -358,7 +358,7 @@ fn parse_af_inet() {
 
 #[test]
 fn emit_af_inet() {
-    let mut bytes = vec![0xff; 132];
+    let mut bytes = [0xff; 132];
 
     // Note: the value is a Vec of nlas, so the padding is automatically added
     // for each nla.
