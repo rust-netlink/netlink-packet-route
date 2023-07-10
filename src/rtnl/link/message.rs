@@ -235,7 +235,7 @@ mod test {
 
         let packet = LinkMessage { header, nlas };
 
-        let mut buf = vec![0; 96];
+        let mut buf = [0; 96];
 
         assert_eq!(packet.buffer_len(), 96);
         packet.emit(&mut buf[..]);

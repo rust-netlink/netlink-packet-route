@@ -1885,8 +1885,7 @@ mod tests {
     #[rustfmt::skip]
     #[test]
     fn parse_veth_info() {
-        let data = vec![
-            0x08, 0x00, // length = 8
+        let data = [0x08, 0x00, // length = 8
             0x01, 0x00, // type = 1 = IFLA_INFO_KIND
             0x76, 0x65, 0x74, 0x68, // VETH
 
@@ -1909,8 +1908,7 @@ mod tests {
                     // NLA
                     0x08, 0x00, // length = 8
                     0x0d, 0x00, // type = IFLA_TXQLEN
-                    0x00, 0x00, 0x00, 0x00,
-        ];
+                    0x00, 0x00, 0x00, 0x00];
         let nla = NlaBuffer::new_checked(&data[..]).unwrap();
         let parsed = VecInfo::parse(&nla).unwrap().0;
         let expected = vec![
@@ -1935,8 +1933,7 @@ mod tests {
     #[rustfmt::skip]
     #[test]
     fn parse_info_bondport() {
-        let data = vec![
-            0x09, 0x00,                         // length
+        let data = [0x09, 0x00,                         // length
             0x04, 0x00,                         // IFLA_INFO_PORT_KIND
             0x62, 0x6f, 0x6e, 0x64, 0x00,       // V = "bond\0"
             0x00, 0x00, 0x00,                   // padding
@@ -1950,9 +1947,7 @@ mod tests {
 
                 0x08, 0x00,             // length
                 0x09, 0x00,             // IFLA_BOND_PORT_PRIO
-                0x32, 0x00, 0x00, 0x00, // 50
-
-        ];
+                0x32, 0x00, 0x00, 0x00];
         let nla = NlaBuffer::new_checked(&data[..]).unwrap();
         let parsed = VecInfo::parse(&nla).unwrap().0;
         let expected = vec![
@@ -1967,8 +1962,7 @@ mod tests {
     #[rustfmt::skip]
     #[test]
     fn parse_info_bond() {
-        let data = vec![
-            0x08, 0x00,                // length
+        let data = [0x08, 0x00,                // length
             0x01, 0x00,                // IFLA_INFO_KIND
             0x62, 0x6f, 0x6e, 0x64,    // "bond"
 
@@ -2031,8 +2025,7 @@ mod tests {
                     0x05, 0x00,             // IFLA_BOND_AD_INFO_PARTNER_MAC
                     0x00, 0x11, 0x22,       // 00:11:22:33:44:55
                     0x33, 0x44, 0x55,
-                    0x00, 0x00,             // padding
-        ];
+                    0x00, 0x00];
         let nla = NlaBuffer::new_checked(&data[..]).unwrap();
         let parsed = VecInfo::parse(&nla).unwrap().0;
         let expected = vec![
