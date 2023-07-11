@@ -8,7 +8,6 @@ use netlink_packet_utils::{
 use super::{NsidMessageBuffer, NSID_HEADER_LEN};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
-#[non_exhaustive]
 pub struct NsidHeader {
     pub rtgen_family: u8,
 }
