@@ -8,7 +8,6 @@ use netlink_packet_utils::{
 use super::buffer::{NeighbourTableMessageBuffer, NEIGHBOUR_TABLE_HEADER_LEN};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-#[non_exhaustive]
 pub struct NeighbourTableHeader {
     pub family: u8,
 }

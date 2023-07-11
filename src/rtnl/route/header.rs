@@ -84,7 +84,6 @@ impl Default for RouteFlags {
 /// }
 /// ```
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
-#[non_exhaustive]
 pub struct RouteHeader {
     /// Address family of the route: either [`AF_INET`] for IPv4 prefixes, or
     /// [`AF_INET6`] for IPv6 prefixes.

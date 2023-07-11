@@ -22,7 +22,6 @@ use crate::{NeighbourMessageBuffer, NEIGHBOUR_HEADER_LEN};
 ///
 /// `NeighbourHeader` exposes all these fields.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
-#[non_exhaustive]
 pub struct NeighbourHeader {
     pub family: u8,
     pub ifindex: u32,
