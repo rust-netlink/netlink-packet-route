@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
+use byteorder::{BigEndian, ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::{
@@ -779,7 +779,7 @@ impl Nla for InfoVxlan {
                 | Group6(ref value)
                 | Local6(ref value)
             => buffer.copy_from_slice(value.as_slice()),
-            Port(ref value) => NativeEndian::write_u16(buffer, *value),
+            Port(ref value) => BigEndian::write_u16(buffer, *value),
             PortRange(ref range) => {
                 NativeEndian::write_u16(buffer, range.0);
                 NativeEndian::write_u16(buffer, range.1)
@@ -2449,5 +2449,53 @@ mod tests {
         let mut vec = vec![0xff; VLAN.len()];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &VLAN[..]);
+    }
+
+    #[rustfmt::skip]
+    static VXLAN: [u8; 32] = [
+        0x0a, 0x00, // length = 10
+        0x01, 0x00, // type = 1 = IFLA_INFO_KIND
+            0x76, 0x78, 0x6C, 0x61, 0x6E, // V = "vxlan\0"
+            0x00, 0x00, 0x00, // padding
+        0x14, 0x00, // length = 20
+        0x02, 0x00, // type = 2 = IFLA_INFO_DATA
+            0x08, 0x00, // length - 8
+            0x01, 0x00, // type = 1 = IFLA_VXLAN_ID
+                0x0A, 0x00, // id = 0x0A = 10
+                0x00, 0x00, // padding
+        0x06, 0x00, // length = 6
+        0x0F, 0x00, // type = 15 = IFLA_VXLAN_PORT
+            0x12, 0xB5, // port = 4789
+            0x00, 0x00 // padding
+    ];
+
+    lazy_static! {
+        static ref VXLAN_INFO: Vec<InfoVxlan> =
+            vec![InfoVxlan::Id(10), InfoVxlan::Port(4789),];
+    }
+
+    #[test]
+    fn parse_info_vxlan() {
+        let nla = NlaBuffer::new_checked(&VXLAN[..]).unwrap();
+        let parsed = VecInfo::parse(&nla).unwrap().0;
+        let expected = vec![
+            Info::Kind(InfoKind::Vxlan),
+            Info::Data(InfoData::Vxlan(VXLAN_INFO.clone())),
+        ];
+        assert_eq!(expected, parsed);
+    }
+
+    #[test]
+    fn emit_info_vxlan() {
+        let nlas = vec![
+            Info::Kind(InfoKind::Vxlan),
+            Info::Data(InfoData::Vxlan(VXLAN_INFO.clone())),
+        ];
+
+        assert_eq!(nlas.as_slice().buffer_len(), VXLAN.len());
+
+        let mut vec = vec![0xff; VXLAN.len()];
+        nlas.as_slice().emit(&mut vec);
+        assert_eq!(&vec[..], &VXLAN[..]);
     }
 }
