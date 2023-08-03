@@ -781,8 +781,8 @@ impl Nla for InfoVxlan {
             => buffer.copy_from_slice(value.as_slice()),
             Port(ref value) => BigEndian::write_u16(buffer, *value),
             PortRange(ref range) => {
-                NativeEndian::write_u16(buffer, range.0);
-                NativeEndian::write_u16(buffer, range.1)
+                BigEndian::write_u16(buffer, range.0);
+                BigEndian::write_u16(buffer, range.1)
             }
         }
     }
@@ -885,8 +885,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                 if payload.len() != 4 {
                     return Err(err.into());
                 }
-                let low = parse_u16(&payload[0..2]).context(err)?;
-                let high = parse_u16(&payload[2..]).context(err)?;
+                let low = parse_u16_be(&payload[0..2]).context(err)?;
+                let high = parse_u16_be(&payload[2..]).context(err)?;
                 PortRange((low, high))
             }
             IFLA_VXLAN_PORT => Port(
