@@ -782,7 +782,7 @@ impl Nla for InfoVxlan {
             Port(ref value) => BigEndian::write_u16(buffer, *value),
             PortRange(ref range) => {
                 BigEndian::write_u16(buffer, range.0);
-                BigEndian::write_u16(buffer, range.1)
+                BigEndian::write_u16(&mut buffer[2..], range.1)
             }
         }
     }
@@ -2497,5 +2497,53 @@ mod tests {
         let mut vec = vec![0xff; VXLAN.len()];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &VXLAN[..]);
+    }
+
+    lazy_static! {
+        static ref VXLAN_INFO_WITH_PORT_RANGE: Vec<InfoVxlan> =
+            vec![InfoVxlan::Id(10), InfoVxlan::PortRange((9000, 9050)),];
+    }
+
+    #[rustfmt::skip]
+    static VXLAN_WITH_PORT_RANGE: [u8; 32] = [
+        0x0a, 0x00, // length = 10
+        0x01, 0x00, // type = 1 = IFLA_INFO_KIND
+            0x76, 0x78, 0x6C, 0x61, 0x6E, // V = "vxlan\0"
+            0x00, 0x00, 0x00, // padding
+        0x14, 0x00, // length = 20
+        0x02, 0x00, // type = 2 = IFLA_INFO_DATA
+            0x08, 0x00, // length - 8
+            0x01, 0x00, // type = 1 = IFLA_VXLAN_ID
+                0x0A, 0x00, // id = 0x0A = 10
+                0x00, 0x00, // padding
+            0x08, 0x00, // length = 6
+            0x0A, 0x00, // type = 10 = IFLA_VXLAN_PORT_RANGE
+                0x23, 0x28, // min port: 9000
+                0x23, 0x5a  // max port: 9050
+    ];
+
+    #[test]
+    fn emit_info_vxlan_with_port_range() {
+        let nlas = vec![
+            Info::Kind(InfoKind::Vxlan),
+            Info::Data(InfoData::Vxlan(VXLAN_INFO_WITH_PORT_RANGE.clone())),
+        ];
+
+        assert_eq!(nlas.as_slice().buffer_len(), VXLAN_WITH_PORT_RANGE.len());
+
+        let mut vec = vec![0xff; VXLAN_WITH_PORT_RANGE.len()];
+        nlas.as_slice().emit(&mut vec);
+        assert_eq!(&vec[..], &VXLAN_WITH_PORT_RANGE[..]);
+    }
+
+    #[test]
+    fn parse_info_vxlan_with_port_range() {
+        let nla = NlaBuffer::new_checked(&VXLAN_WITH_PORT_RANGE[..]).unwrap();
+        let parsed = VecInfo::parse(&nla).unwrap().0;
+        let expected = vec![
+            Info::Kind(InfoKind::Vxlan),
+            Info::Data(InfoData::Vxlan(VXLAN_INFO_WITH_PORT_RANGE.clone())),
+        ];
+        assert_eq!(expected, parsed);
     }
 }
