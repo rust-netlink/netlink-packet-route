@@ -630,6 +630,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
             IPOIB => Ipoib,
             WIREGUARD => Wireguard,
             MACSEC => MacSec,
+            XFRM => Xfrm,
             _ => Other(s),
         })
     }
@@ -2522,14 +2523,28 @@ mod tests {
     lazy_static! {
         static ref XFRMTUN_INFO: Vec<InfoXfrmTun> = vec![
             InfoXfrmTun::IfId(4), // ifid
+            InfoXfrmTun::Link(2),
         ];
     }
     #[rustfmt::skip]
-    static XFRMTUN: [u8; 24] = [
+    static XFRMTUN: [u8; 32] = [
         9, 0, 1, 0,  120,102,114,109,
-        0, 0, 0, 0,   12,  0,  2,  0,
-        8, 0, 2, 0,    4,  0,  0,  0
+        0, 0, 0, 0,   20,  0,  2,  0,
+        8, 0, 2, 0,    4,  0,  0,  0,
+        8, 0, 1, 0,    2,  0,  0,  0,
     ];
+
+    #[test]
+    fn parse_info_xfrmtun() {
+        let nla = NlaBuffer::new_checked(&XFRMTUN[..]).unwrap();
+        let parsed = VecInfo::parse(&nla).unwrap().0;
+        let expected = vec![
+            Info::Kind(InfoKind::Xfrm),
+            Info::Data(InfoData::Xfrm(XFRMTUN_INFO.clone())),
+        ];
+        assert_eq!(expected, parsed);
+    }
+
     #[test]
     fn emit_info_xfrmtun() {
         let nlas = vec![
@@ -2537,9 +2552,9 @@ mod tests {
             Info::Data(InfoData::Xfrm(XFRMTUN_INFO.clone())),
         ];
 
-        assert_eq!(nlas.as_slice().buffer_len(), 24);
+        assert_eq!(nlas.as_slice().buffer_len(), 32);
 
-        let mut vec = vec![0xff; 24];
+        let mut vec = vec![0xff; 32];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &XFRMTUN[..]);
     }
