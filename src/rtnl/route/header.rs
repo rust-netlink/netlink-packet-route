@@ -31,6 +31,11 @@ pub struct RouteFlags: u32 {
         const RTM_F_LOOKUP_TABLE = RTM_F_LOOKUP_TABLE;
         /// Return the full FIB lookup match (see commit `b61798130f1be5bff08712308126c2d7ebe390ef`)
         const RTM_F_FIB_MATCH = RTM_F_FIB_MATCH;
+
+        /// Do recursive gateway lookup
+        const RTNH_F_PERVASIVE = RTNH_F_PERVASIVE as u32;
+        /// Gateway is forced on link
+        const RTNH_F_ONLINK = RTNH_F_ONLINK as u32;
     }
 }
 
