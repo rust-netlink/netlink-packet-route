@@ -11,6 +11,7 @@ use netlink_packet_utils::{
 use crate::{
     constants::*,
     nlas::tc::{Nla, Stats, Stats2, StatsBuffer, TcOpt},
+    tc::*,
     TcMessageBuffer, TC_HEADER_LEN,
 };
 
@@ -109,6 +110,7 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for Vec<Nla> {
     fn parse(buf: &TcMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         let mut kind = String::new();
+        let mut options_buf = vec![];
 
         for nla_buf in buf.nlas() {
             let buf = nla_buf.context("invalid tc nla")?;
@@ -120,6 +122,7 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for Vec<Nla> {
                     Nla::Kind(kind.clone())
                 }
                 TCA_OPTIONS => {
+                    options_buf = payload.to_vec();
                     let mut nlas = vec![];
                     for nla in NlasIterator::new(payload) {
                         let nla = nla.context("invalid TCA_OPTIONS")?;
@@ -163,8 +166,26 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for Vec<Nla> {
                 ),
             };
 
+            // Populate fields from options buffer
+            if buf.kind() == TCA_OPTIONS && options_buf.len() > 0 {
+                nlas.extend(unmarshal_options(&kind, &options_buf)?)
+            }
+
             nlas.push(nla);
         }
         Ok(nlas)
     }
+}
+
+fn unmarshal_options(kind: &str, buf: &[u8]) -> Result<Vec<Nla>, DecodeError> {
+    let mut nlas = vec![];
+    match kind {
+        FQ_CODEL => {
+            let fq_codel = unmarshal(kind, buf)?;
+            nlas.push(Nla::QDisc(fq_codel));
+        },
+        _ => (),
+    };
+
+    Ok(nlas)
 }
