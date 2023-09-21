@@ -32,6 +32,15 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
+const NLA_ALIGNTO: usize = 4;
+
+const fn nla_align(len: usize) -> usize {
+    (len + NLA_ALIGNTO - 1) & !(NLA_ALIGNTO - 1)
+}
+
+const ATTR_LEN: usize = 4;
+const NLA_HEADER_LEN: usize = nla_align(ATTR_LEN);
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum Nla {
