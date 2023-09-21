@@ -61,6 +61,10 @@ pub enum Nla {
     Stab(Vec<u8>),
     Chain(Vec<u8>),
     HwOffload(u8),
+
+    /// Classless
+    QDisc(QDisc),
+
     Other(DefaultNla),
 }
 
@@ -77,6 +81,14 @@ impl nla::Nla for Nla {
             Stats(_) => STATS_LEN,
             Kind(ref string) => string.as_bytes().len() + 1,
             Options(ref opt) => opt.as_slice().buffer_len(),
+
+            // Classless
+            QDisc(ref qdisc) => {
+                match qdisc {
+                    qdisc::QDisc::FqCodel(_) => FQ_CODEL_LEN,
+                }
+            },
+
             // Defaults
             Other(ref attr) => attr.value_len(),
         }
@@ -104,6 +116,13 @@ impl nla::Nla for Nla {
             }
             Options(ref opt) => opt.as_slice().emit(buffer),
 
+            // Classless
+            QDisc(ref qdisc) => {
+                match qdisc {
+                    qdisc::QDisc::FqCodel(ref fq_codel) => fq_codel.emit(buffer),
+                }
+            },
+
             // Default
             Other(ref attr) => attr.emit_value(buffer),
         }
@@ -123,6 +142,11 @@ impl nla::Nla for Nla {
             Stab(_) => TCA_STAB,
             Chain(_) => TCA_CHAIN,
             HwOffload(_) => TCA_HW_OFFLOAD,
+            QDisc(ref qdisc) => {
+                match qdisc {
+                    qdisc::QDisc::FqCodel(_) => TCA_FQ_CODEL,
+                }
+            }
             Other(ref nla) => nla.kind(),
         }
     }
