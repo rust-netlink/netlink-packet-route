@@ -142,11 +142,9 @@ impl nla::Nla for Nla {
             Stab(_) => TCA_STAB,
             Chain(_) => TCA_CHAIN,
             HwOffload(_) => TCA_HW_OFFLOAD,
-            QDisc(ref qdisc) => {
-                match qdisc {
-                    qdisc::QDisc::FqCodel(_) => TCA_FQ_CODEL,
-                }
-            }
+            QDisc(ref qdisc) => match qdisc {
+                qdisc::QDisc::FqCodel(_) => TCA_FQ_CODEL,
+            },
             Other(ref nla) => nla.kind(),
         }
     }

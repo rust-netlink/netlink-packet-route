@@ -183,7 +183,7 @@ fn unmarshal_options(kind: &str, buf: &[u8]) -> Result<Vec<Nla>, DecodeError> {
         FQ_CODEL => {
             let fq_codel = unmarshal(kind, buf)?;
             nlas.push(Nla::QDisc(fq_codel));
-        },
+        }
         _ => (),
     };
 

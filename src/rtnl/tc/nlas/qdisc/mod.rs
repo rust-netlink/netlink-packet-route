@@ -20,7 +20,7 @@ pub fn unmarshal(kind: &str, data: &[u8]) -> Result<QDisc, DecodeError> {
         FQ_CODEL => {
             let fq = fq_codel::unmarshal_fq_codel(data)?;
             Ok(QDisc::FqCodel(fq))
-        },
+        }
         _ => Err(DecodeError::from("Unknown classless kind")),
     }
 }

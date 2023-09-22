@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    traits::Emitable,
-    DecodeError,
-};
+use netlink_packet_utils::{traits::Emitable, DecodeError};
 
-use crate::nlas::tc::{NLA_HEADER_LEN, ATTR_LEN};
+use crate::nlas::tc::{ATTR_LEN, NLA_HEADER_LEN};
 
 pub const FQ_CODEL: &str = "fq_codel";
 pub const FQ_CODEL_LEN: usize = 36;
