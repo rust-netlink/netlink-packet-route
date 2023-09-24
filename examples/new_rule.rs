@@ -15,10 +15,12 @@ fn main() {
     let _port_number = socket.bind_auto().unwrap().port_number();
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
-    let mut rule_msg_hdr = RuleHeader::default();
-    rule_msg_hdr.family = AF_INET as u8;
-    rule_msg_hdr.table = RT_TABLE_DEFAULT;
-    rule_msg_hdr.action = FR_ACT_TO_TBL;
+    let rule_msg_hdr = RuleHeader {
+        family: AF_INET as u8,
+        table: RT_TABLE_DEFAULT,
+        action: FR_ACT_TO_TBL,
+        ..Default::default()
+    };
 
     let mut rule_msg = RuleMessage::default();
     rule_msg.header = rule_msg_hdr;
