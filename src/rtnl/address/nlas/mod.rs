@@ -30,7 +30,7 @@ pub enum Nla {
     Anycast(Vec<u8>),
     CacheInfo(Vec<u8>),
     Multicast(Vec<u8>),
-    Flags(Inet6AddrFlags),
+    Flags(Vec<Inet6AddrFlag>),
     Other(DefaultNla),
 }
 
@@ -81,8 +81,9 @@ impl nla::Nla for Nla {
             }
 
             // u32
-            Flags(ref value) => NativeEndian::write_u32(buffer, value.into()),
-
+            Flags(ref value) => NativeEndian::write_u32(
+                buffer,
+                u32::from(&_Inet6AddrFlags(value.to_vec()))),
 
             // Default
             Other(ref attr) => attr.emit_value(buffer),
@@ -122,9 +123,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Nla {
             IFA_CACHEINFO => CacheInfo(payload.to_vec()),
             IFA_MULTICAST => Multicast(payload.to_vec()),
             IFA_FLAGS => Flags(
-                parse_u32(payload)
-                    .context("invalid IFA_FLAGS value")?
-                    .into(),
+                _Inet6AddrFlags::from(
+                    parse_u32(payload).context("invalid IFA_FLAGS value")?,
+                )
+                .0,
             ),
             kind => Other(
                 DefaultNla::parse(buf)
@@ -181,9 +183,9 @@ const ALL_INET6_FLAGS: [Inet6AddrFlag; 12] = [
 ];
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Inet6AddrFlags(Vec<Inet6AddrFlag>);
+struct _Inet6AddrFlags(Vec<Inet6AddrFlag>);
 
-impl From<u32> for Inet6AddrFlags {
+impl From<u32> for _Inet6AddrFlags {
     fn from(d: u32) -> Self {
         let mut got: u32 = 0;
         let mut ret = Vec::new();
@@ -200,8 +202,8 @@ impl From<u32> for Inet6AddrFlags {
     }
 }
 
-impl From<&Inet6AddrFlags> for u32 {
-    fn from(v: &Inet6AddrFlags) -> u32 {
+impl From<&_Inet6AddrFlags> for u32 {
+    fn from(v: &_Inet6AddrFlags) -> u32 {
         let mut d: u32 = 0;
         for flag in &v.0 {
             d += *flag as u32;
