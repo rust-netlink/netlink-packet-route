@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use crate::rtnl::address::nlas::{Inet6AddrFlag, Inet6AddrFlags, Nla};
+use crate::rtnl::address::nlas::{Inet6AddrFlag, Nla};
 use netlink_packet_utils::{nla::NlaBuffer, Emitable, Parseable};
 
 #[test]
 fn test_ipv6_addr_flags() {
-    let nla = Nla::Flags(Inet6AddrFlags(vec![
+    let nla = Nla::Flags(vec![
         Inet6AddrFlag::Permanent,
         Inet6AddrFlag::StablePrivacy,
-    ]));
+    ]);
 
     let raw: [u8; 8] = [
         0x08, 0x00, // length 8
