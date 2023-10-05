@@ -352,7 +352,9 @@ fn test_fq_codel_emit() {
         if nla.kind() == TCA_OPTIONS {
             // set up expected
             let length = 68;
-            let expected = &mut std::iter::repeat(0u8).take(length).collect::<Vec<u8>>()[..];
+            let expected = &mut std::iter::repeat(0u8)
+                .take(length)
+                .collect::<Vec<u8>>()[..];
             expected[..2].copy_from_slice(&(length as u16).to_ne_bytes()); // length
             expected[2..4].copy_from_slice(&TCA_FQ_CODEL.to_ne_bytes()); // kind
             expected[4..].copy_from_slice(nla.value()); // value
@@ -367,7 +369,6 @@ fn test_fq_codel_emit() {
         }
     }
 }
-
 
 #[test]
 fn test_fq_codel_parse() {

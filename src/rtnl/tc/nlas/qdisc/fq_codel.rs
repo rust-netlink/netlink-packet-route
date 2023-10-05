@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{DecodeError, nla::Nla};
+use netlink_packet_utils::{nla::Nla, DecodeError};
 
-use crate::{nlas::tc::{ATTR_LEN, NLA_HEADER_LEN}, TCA_FQ_CODEL};
+use crate::{
+    nlas::tc::{ATTR_LEN, NLA_HEADER_LEN},
+    TCA_FQ_CODEL,
+};
 
 pub const FQ_CODEL: &str = "fq_codel";
 pub const FQ_CODEL_LEN: usize = 64;
@@ -73,7 +76,8 @@ impl Nla for FqCodel {
                 TcaFqCodel::MemoryLimit => values[8],
                 _ => unreachable!(),
             };
-            buffer[offset..offset + ATTR_LEN].copy_from_slice(&value.to_ne_bytes());
+            buffer[offset..offset + ATTR_LEN]
+                .copy_from_slice(&value.to_ne_bytes());
             offset += ATTR_LEN;
         }
     }
