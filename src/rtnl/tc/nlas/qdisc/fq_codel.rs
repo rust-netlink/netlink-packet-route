@@ -5,7 +5,7 @@ use netlink_packet_utils::{DecodeError, nla::Nla};
 use crate::{nlas::tc::{ATTR_LEN, NLA_HEADER_LEN}, TCA_FQ_CODEL};
 
 pub const FQ_CODEL: &str = "fq_codel";
-pub const FQ_CODEL_LEN: usize = 36;
+pub const FQ_CODEL_LEN: usize = 64;
 
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct FqCodel {
@@ -18,6 +18,10 @@ pub struct FqCodel {
     pub ce_threshold: u32,
     pub drop_batch_size: u32,
     pub memory_limit: u32,
+
+    // The order of the fields is not as per the enum `TcaFqCodel`
+    // Thus, we need to track the order in order to reproduce the buffer in `emit`.
+    pub order: Vec<TcaFqCodel>,
 }
 
 impl FqCodel {
@@ -48,14 +52,36 @@ impl Nla for FqCodel {
             self.drop_batch_size,
             self.memory_limit,
         ];
-        for value in values.iter() {
+        let length = 8u16;
+        for field in &self.order {
+            // length
+            buffer[offset..offset + 2].copy_from_slice(&length.to_ne_bytes());
+            // kind
+            let kind = field.clone() as u16;
+            buffer[offset + 2..offset + 4].copy_from_slice(&kind.to_ne_bytes());
+            offset += 4;
+            // value
+            let value = match *field {
+                TcaFqCodel::Target => values[0],
+                TcaFqCodel::Limit => values[1],
+                TcaFqCodel::Interval => values[2],
+                TcaFqCodel::Ecn => values[3],
+                TcaFqCodel::Flows => values[4],
+                TcaFqCodel::Quantum => values[5],
+                TcaFqCodel::CeThreshold => values[6],
+                TcaFqCodel::DropBatchSize => values[7],
+                TcaFqCodel::MemoryLimit => values[8],
+                _ => unreachable!(),
+            };
             buffer[offset..offset + ATTR_LEN].copy_from_slice(&value.to_ne_bytes());
             offset += ATTR_LEN;
         }
     }
 }
 
-enum TcaFqCodel {
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
+pub enum TcaFqCodel {
+    #[default]
     Unspec = 0,
     Target,
     Limit,
@@ -125,7 +151,9 @@ pub fn unmarshal_fq_codel(data: &[u8]) -> Result<FqCodel, DecodeError> {
     while offset < length {
         let buf = &data[offset..];
         let (kind, attr) = unmarshal_fq_codel_attr(buf)?;
-        match TcaFqCodel::from(kind) {
+        let kind = TcaFqCodel::from(kind);
+        fq.order.push(kind.clone());
+        match kind {
             TcaFqCodel::Target => fq.target = attr,
             TcaFqCodel::Limit => fq.limit = attr,
             TcaFqCodel::Interval => fq.interval = attr,
