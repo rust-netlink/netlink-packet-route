@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{traits::Emitable, DecodeError};
+use netlink_packet_utils::{DecodeError, nla::Nla};
 
-use crate::nlas::tc::{ATTR_LEN, NLA_HEADER_LEN};
+use crate::{nlas::tc::{ATTR_LEN, NLA_HEADER_LEN}, TCA_FQ_CODEL};
 
 pub const FQ_CODEL: &str = "fq_codel";
 pub const FQ_CODEL_LEN: usize = 36;
@@ -20,40 +20,38 @@ pub struct FqCodel {
     pub memory_limit: u32,
 }
 
-buffer!(FqCodelBuffer(FQ_CODEL_LEN) {
-    target: (u32, 0..4),
-    limit: (u32, 4..8),
-    interval: (u32, 8..12),
-    ecn: (u32, 12..16),
-    flows: (u32, 16..20),
-    quantum: (u32, 20..24),
-    ce_threshold: (u32, 24..28),
-    drop_batch_size: (u32, 28..32),
-    memory_limit: (u32, 32..36),
-});
-
 impl FqCodel {
     pub fn new(data: &[u8]) -> Result<Self, DecodeError> {
         unmarshal_fq_codel(data)
     }
 }
 
-impl Emitable for FqCodel {
-    fn buffer_len(&self) -> usize {
+impl Nla for FqCodel {
+    fn value_len(&self) -> usize {
         FQ_CODEL_LEN
     }
 
-    fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = FqCodelBuffer::new(buffer);
-        buffer.set_target(self.target);
-        buffer.set_limit(self.limit);
-        buffer.set_interval(self.interval);
-        buffer.set_ecn(self.ecn);
-        buffer.set_flows(self.flows);
-        buffer.set_quantum(self.quantum);
-        buffer.set_ce_threshold(self.ce_threshold);
-        buffer.set_drop_batch_size(self.drop_batch_size);
-        buffer.set_memory_limit(self.memory_limit);
+    fn kind(&self) -> u16 {
+        TCA_FQ_CODEL
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        let mut offset = 0;
+        let values = [
+            self.target,
+            self.limit,
+            self.interval,
+            self.ecn,
+            self.flows,
+            self.quantum,
+            self.ce_threshold,
+            self.drop_batch_size,
+            self.memory_limit,
+        ];
+        for value in values.iter() {
+            buffer[offset..offset + ATTR_LEN].copy_from_slice(&value.to_ne_bytes());
+            offset += ATTR_LEN;
+        }
     }
 }
 
