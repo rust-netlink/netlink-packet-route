@@ -337,7 +337,7 @@ pub const TCA_STATS_PAD: u16 = 6;
 pub const TCA_STATS_BASIC_HW: u16 = 7;
 
 // Classless qdiscs
-pub const TCA_FQ_CODEL: u16 = 1;
+pub const TCA_FQ_CODEL: u16 = 2;
 
 pub const NDTA_UNSPEC: u16 = 0;
 pub const NDTA_NAME: u16 = 1;
