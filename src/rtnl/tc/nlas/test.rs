@@ -15,6 +15,7 @@ use netlink_packet_utils::{
     parsers::parse_u32,
     traits::{Emitable, Parseable},
 };
+use tc::nlas::TcaFqCodel;
 
 #[rustfmt::skip]
     static FILTER_U32_ACTION_PACKET: [u8; 260] = [
@@ -341,7 +342,35 @@ fn tc_filter_u32_emit() {
 }
 
 #[test]
-fn test_fq_codel() {
+fn test_fq_codel_emit() {
+    let packet = TcMessageBuffer::new(&QDISC_FQ_CODEL_PACKET);
+    assert_eq!(packet.nlas().count(), 6);
+
+    let mut nlas = packet.nlas();
+    while let Some(Ok(nla)) = nlas.next() {
+        nla.check_buffer_length().unwrap();
+        if nla.kind() == TCA_OPTIONS {
+            // set up expected
+            let length = 68;
+            let expected = &mut std::iter::repeat(0u8).take(length).collect::<Vec<u8>>()[..];
+            expected[..2].copy_from_slice(&(length as u16).to_ne_bytes()); // length
+            expected[2..4].copy_from_slice(&TCA_FQ_CODEL.to_ne_bytes()); // kind
+            expected[4..].copy_from_slice(nla.value()); // value
+
+            let fq_codel = tc::FqCodel::new(nla.value()).unwrap();
+            let length = fq_codel.buffer_len();
+            let mut buf = vec![0u8; length];
+            let actual = &mut buf[..];
+            fq_codel.emit(actual);
+
+            assert_eq!(actual, expected);
+        }
+    }
+}
+
+
+#[test]
+fn test_fq_codel_parse() {
     let packet = TcMessageBuffer::new(&QDISC_FQ_CODEL_PACKET);
     assert_eq!(packet.nlas().count(), 6);
 
@@ -359,6 +388,16 @@ fn test_fq_codel() {
                 ce_threshold: 0,
                 drop_batch_size: 64,
                 memory_limit: 33554432,
+                order: vec![
+                    TcaFqCodel::Target,
+                    TcaFqCodel::Limit,
+                    TcaFqCodel::Interval,
+                    TcaFqCodel::Ecn,
+                    TcaFqCodel::Quantum,
+                    TcaFqCodel::DropBatchSize,
+                    TcaFqCodel::MemoryLimit,
+                    TcaFqCodel::Flows,
+                ],
             };
 
             let actual = tc::FqCodel::new(nla.value()).unwrap();
