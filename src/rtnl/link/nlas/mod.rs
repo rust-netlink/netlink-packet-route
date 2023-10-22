@@ -42,6 +42,9 @@ pub use self::link_state::*;
 mod link_xdp;
 pub use self::link_xdp::*;
 
+mod vxlan;
+pub use self::vxlan::InfoVxlan;
+
 #[cfg(test)]
 mod tests;
 
