@@ -42,6 +42,7 @@ const IPOIB: &str = "ipoib";
 const WIREGUARD: &str = "wireguard";
 const XFRM: &str = "xfrm";
 const MACSEC: &str = "macsec";
+const HSR: &str = "hsr";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -337,6 +338,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecInfo {
                                 }
                                 InfoData::MacSec(v)
                             }
+                            InfoKind::Hsr => {
+                                let mut v = Vec::new();
+                                let err = "failed to parse IFLA_INFO_DATA (IFLA_INFO_KIND is 'hsr')";
+                                for nla in NlasIterator::new(payload) {
+                                    let nla = &nla.context(err)?;
+                                    let parsed =
+                                        InfoHsr::parse(nla).context(err)?;
+                                    v.push(parsed);
+                                }
+                                InfoData::Hsr(v)
+                            }
                         };
                         res.push(Info::Data(info_data));
                     } else {
@@ -383,6 +395,7 @@ pub enum InfoData {
     Wireguard(Vec<u8>),
     Xfrm(Vec<InfoXfrmTun>),
     MacSec(Vec<InfoMacSec>),
+    Hsr(Vec<InfoHsr>),
     Other(Vec<u8>),
 }
 
@@ -403,6 +416,7 @@ impl Nla for InfoData {
             Vxlan(ref nlas) => nlas.as_slice().buffer_len(),
             Xfrm(ref nlas)  => nlas.as_slice().buffer_len(),
             MacSec(ref nlas) => nlas.as_slice().buffer_len(),
+            Hsr(ref nlas) => nlas.as_slice().buffer_len(),
             Dummy(ref bytes)
                 | Tun(ref bytes)
                 | Nlmon(ref bytes)
@@ -437,6 +451,7 @@ impl Nla for InfoData {
             Vxlan(ref nlas) => nlas.as_slice().emit(buffer),
             Xfrm(ref nlas)  => nlas.as_slice().emit(buffer),
             MacSec(ref nlas) => nlas.as_slice().emit(buffer),
+            Hsr(ref nlas) => nlas.as_slice().emit(buffer),
             Dummy(ref bytes)
                 | Tun(ref bytes)
                 | Nlmon(ref bytes)
@@ -519,6 +534,7 @@ pub enum InfoKind {
     Wireguard,
     Xfrm,
     MacSec,
+    Hsr,
     Other(String),
 }
 
@@ -551,6 +567,7 @@ impl Nla for InfoKind {
             Wireguard => WIREGUARD.len(),
             Xfrm => XFRM.len(),
             MacSec => MACSEC.len(),
+            Hsr => HSR.len(),
             Other(ref s) => s.len(),
         };
         len + 1
@@ -584,6 +601,7 @@ impl Nla for InfoKind {
             Wireguard => WIREGUARD,
             Xfrm => XFRM,
             MacSec => MACSEC,
+            Hsr => HSR,
             Other(ref s) => s.as_str(),
         };
         buffer[..s.len()].copy_from_slice(s.as_bytes());
@@ -633,6 +651,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
             WIREGUARD => Wireguard,
             MACSEC => MacSec,
             XFRM => Xfrm,
+            HSR => Hsr,
             _ => Other(s),
         })
     }
@@ -1218,6 +1237,131 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacSec {
             IFLA_MACSEC_OFFLOAD => Offload(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_OFFLOAD value")?
+                    .into(),
+            ),
+            kind => Other(
+                DefaultNla::parse(buf)
+                    .context(format!("unknown NLA type {kind}"))?,
+            ),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum HsrProtocol {
+    Hsr,
+    Prp,
+    Other(u8),
+}
+
+impl From<u8> for HsrProtocol {
+    fn from(d: u8) -> Self {
+        match d {
+            HSR_PROTOCOL_HSR => Self::Hsr,
+            HSR_PROTOCOL_PRP => Self::Prp,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<HsrProtocol> for u8 {
+    fn from(d: HsrProtocol) -> Self {
+        match d {
+            HsrProtocol::Hsr => HSR_PROTOCOL_HSR,
+            HsrProtocol::Prp => HSR_PROTOCOL_PRP,
+            HsrProtocol::Other(value) => value,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
+pub enum InfoHsr {
+    Unspec(Vec<u8>),
+    Port1(u32),
+    Port2(u32),
+    MulticastSpec(u8),
+    SupervisionAddr([u8; 6]),
+    Version(u8),
+    SeqNr(u16),
+    Protocol(HsrProtocol),
+    Other(DefaultNla),
+}
+
+impl Nla for InfoHsr {
+    fn value_len(&self) -> usize {
+        use self::InfoHsr::*;
+        match self {
+            Unspec(bytes) => bytes.len(),
+            SupervisionAddr(_) => 6,
+            Port1(_) | Port2(_) => 4,
+            SeqNr(_) => 2,
+            MulticastSpec(_) | Version(_) | Protocol(_) => 1,
+            Other(nla) => nla.value_len(),
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        use self::InfoHsr::*;
+        match self {
+            Unspec(bytes) => buffer.copy_from_slice(bytes.as_slice()),
+            Port1(value) | Port2(value) => {
+                NativeEndian::write_u32(buffer, *value)
+            }
+            MulticastSpec(value) | Version(value) => buffer[0] = *value,
+            SeqNr(value) => NativeEndian::write_u16(buffer, *value),
+            Protocol(value) => buffer[0] = (*value).into(),
+            SupervisionAddr(ref value) => buffer.copy_from_slice(&value[..]),
+            Other(nla) => nla.emit_value(buffer),
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        use self::InfoHsr::*;
+        match self {
+            Unspec(_) => IFLA_HSR_UNSPEC,
+            Port1(_) => IFLA_HSR_SLAVE1,
+            Port2(_) => IFLA_HSR_SLAVE2,
+            MulticastSpec(_) => IFLA_HSR_MULTICAST_SPEC,
+            SupervisionAddr(_) => IFLA_HSR_SUPERVISION_ADDR,
+            SeqNr(_) => IFLA_HSR_SEQ_NR,
+            Version(_) => IFLA_HSR_VERSION,
+            Protocol(_) => IFLA_HSR_PROTOCOL,
+            Other(nla) => nla.kind(),
+        }
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoHsr {
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        use self::InfoHsr::*;
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            IFLA_HSR_UNSPEC => Unspec(payload.to_vec()),
+            IFLA_HSR_SLAVE1 => Port1(
+                parse_u32(payload).context("invalid IFLA_HSR_SLAVE1 value")?,
+            ),
+            IFLA_HSR_SLAVE2 => Port2(
+                parse_u32(payload).context("invalid IFLA_HSR_SLAVE2 value")?,
+            ),
+            IFLA_HSR_MULTICAST_SPEC => MulticastSpec(
+                parse_u8(payload)
+                    .context("invalid IFLA_HSR_MULTICAST_SPEC value")?,
+            ),
+            IFLA_HSR_SUPERVISION_ADDR => SupervisionAddr(
+                parse_mac(payload)
+                    .context("invalid IFLA_HSR_SUPERVISION_ADDR value")?,
+            ),
+            IFLA_HSR_SEQ_NR => SeqNr(
+                parse_u16(payload).context("invalid IFLA_HSR_SEQ_NR value")?,
+            ),
+            IFLA_HSR_VERSION => Version(
+                parse_u8(payload).context("invalid IFLA_HSR_VERSION value")?,
+            ),
+            IFLA_HSR_PROTOCOL => Protocol(
+                parse_u8(payload)
+                    .context("invalid IFLA_HSR_PROTOCOL value")?
                     .into(),
             ),
             kind => Other(
@@ -2673,5 +2817,73 @@ mod tests {
         let mut vec = vec![0xff; MACSEC.len()];
         nlas.as_slice().emit(&mut vec);
         assert_eq!(&vec[..], &MACSEC[..]);
+    }
+
+    #[rustfmt::skip]
+    static HSR: [u8; 56] = [
+        0x08, 0x00, // L = 8
+        0x01, 0x00, // T = 1 (IFLA_INFO_KIND)
+        0x68, 0x73, 0x72, 0x00, // V = "hsr"
+
+        0x30, 0x00, // L = 48
+        0x02, 0x00, // T = 2 (IFLA_INFO_DATA)
+        
+        0x08, 0x00, // L = 8
+        0x01, 0x00, // T = 1 (IFLA_HSR_SLAVE1)
+        0x18, 0x00, 0x00, 0x00, // V = 24
+
+        0x08, 0x00, // L = 8
+        0x02, 0x00, // T = 2 (IFLA_HSR_SLAVE2)
+        0x1a, 0x00, 0x00, 0x00, // V = 26
+        
+        0x0a, 0x00, // L = 10
+        0x04, 0x00, // T = 4 (IFLA_HSR_SUPERVISION_ADDR)
+        0x01, 0x15, 0x4e, 0x00, 0x01, 0x2d, // V =  "01:15:4e:00:01:2d"
+        0x00, 0x00, // padding
+        
+        0x06, 0x00, // L = 6
+        0x05, 0x00, // T = 5 (IFLA_HSR_SEQ_NR)
+        0x4b, 0xfc, // V = 64587
+        0x00, 0x00, // padding
+
+        0x05, 0x00, // L = 5
+        0x07, 0x00, // T = 7 (IFLA_HSR_PROTOCOL)
+        0x01, // V = 1 (HSR_PROTOCOL_PRP)
+        0x00, 0x00, 0x00 // padding
+    ];
+
+    lazy_static! {
+        static ref HSR_INFO: Vec<InfoHsr> = vec![
+            InfoHsr::Port1(24),
+            InfoHsr::Port2(26),
+            InfoHsr::SupervisionAddr([0x01, 0x15, 0x4e, 0x00, 0x01, 0x2d]),
+            InfoHsr::SeqNr(64587),
+            InfoHsr::Protocol(HsrProtocol::Prp),
+        ];
+    }
+
+    #[test]
+    fn parse_info_hsr() {
+        let nla = NlaBuffer::new_checked(&HSR[..]).unwrap();
+        let parsed = VecInfo::parse(&nla).unwrap().0;
+        let expected = vec![
+            Info::Kind(InfoKind::Hsr),
+            Info::Data(InfoData::Hsr(HSR_INFO.clone())),
+        ];
+        assert_eq!(expected, parsed);
+    }
+
+    #[test]
+    fn emit_info_hsr() {
+        let nlas = vec![
+            Info::Kind(InfoKind::Hsr),
+            Info::Data(InfoData::Hsr(HSR_INFO.clone())),
+        ];
+
+        assert_eq!(nlas.as_slice().buffer_len(), HSR.len());
+
+        let mut vec = vec![0xff; HSR.len()];
+        nlas.as_slice().emit(&mut vec);
+        assert_eq!(&vec[..], &HSR[..]);
     }
 }

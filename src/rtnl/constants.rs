@@ -523,6 +523,16 @@ pub const VETH_INFO_PEER: u16 = 1;
 pub const IFLA_XFRM_UNSPEC: u16 = 0;
 pub const IFLA_XFRM_LINK: u16 = 1;
 pub const IFLA_XFRM_IF_ID: u16 = 2;
+pub const IFLA_HSR_UNSPEC: u16 = 0;
+pub const IFLA_HSR_SLAVE1: u16 = 1;
+pub const IFLA_HSR_SLAVE2: u16 = 2;
+pub const IFLA_HSR_MULTICAST_SPEC: u16 = 3;
+pub const IFLA_HSR_SUPERVISION_ADDR: u16 = 4;
+pub const IFLA_HSR_SEQ_NR: u16 = 5;
+pub const IFLA_HSR_VERSION: u16 = 6;
+pub const IFLA_HSR_PROTOCOL: u16 = 7;
+pub const HSR_PROTOCOL_HSR: u8 = 0;
+pub const HSR_PROTOCOL_PRP: u8 = 1;
 
 pub const ARPHRD_NETROM: u16 = 0;
 pub const ARPHRD_ETHER: u16 = 1;
