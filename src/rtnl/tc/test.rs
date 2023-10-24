@@ -4,7 +4,7 @@
 
 use crate::{
     constants::*,
-    tc::{ingress, Nla, Stats, Stats2, StatsBuffer, TC_HEADER_LEN},
+    tc::{ingress, Nla, Stats, Stats2, StatsBuffer, TcOpt, TC_HEADER_LEN},
     TcHeader, TcMessage, TcMessageBuffer,
 };
 
@@ -167,7 +167,7 @@ fn tc_qdisc_ingress_read() {
     assert_eq!(nla, &Nla::Kind(String::from(ingress::KIND)));
 
     let nla = iter.next().unwrap();
-    assert_eq!(nla, &Nla::Options(vec![]));
+    assert_eq!(nla, &Nla::Options(vec![TcOpt::Ingress]));
 
     let nla = iter.next().unwrap();
     assert_eq!(nla, &Nla::HwOffload(0));

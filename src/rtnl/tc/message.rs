@@ -8,9 +8,10 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
+use super::nlas::VecTcOpt;
 use crate::{
     constants::*,
-    nlas::tc::{Nla, Stats, Stats2, StatsBuffer, TcOpt},
+    nlas::tc::{Nla, Stats, Stats2, StatsBuffer},
     TcMessageBuffer, TC_HEADER_LEN,
 };
 
@@ -119,17 +120,11 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for Vec<Nla> {
                     kind = parse_string(payload).context("invalid TCA_KIND")?;
                     Nla::Kind(kind.clone())
                 }
-                TCA_OPTIONS => {
-                    let mut nlas = vec![];
-                    for nla in NlasIterator::new(payload) {
-                        let nla = nla.context("invalid TCA_OPTIONS")?;
-                        nlas.push(
-                            TcOpt::parse_with_param(&nla, &kind)
-                                .context("failed to parse TCA_OPTIONS")?,
-                        )
-                    }
-                    Nla::Options(nlas)
-                }
+                TCA_OPTIONS => Nla::Options(
+                    VecTcOpt::parse_with_param(&buf, &kind)
+                        .context(format!("Invalid TCA_OPTIONS for {kind}"))?
+                        .0,
+                ),
                 TCA_STATS => Nla::Stats(
                     Stats::parse(
                         &StatsBuffer::new_checked(payload)

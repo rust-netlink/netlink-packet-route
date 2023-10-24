@@ -10,6 +10,7 @@ mod stats_basic;
 pub use self::stats_basic::*;
 
 mod options;
+pub(crate) use self::options::VecTcOpt;
 pub use self::options::*;
 
 mod qdisc;

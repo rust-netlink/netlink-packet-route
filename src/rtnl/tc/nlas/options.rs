@@ -2,7 +2,7 @@
 
 use anyhow::Context;
 use netlink_packet_utils::{
-    nla::{self, DefaultNla, NlaBuffer},
+    nla::{self, DefaultNla, NlaBuffer, NlasIterator},
     traits::{Parseable, ParseableParametrized},
     DecodeError,
 };
@@ -70,6 +70,44 @@ where
                     .context("failed to parse matchall nlas")?,
             ),
             _ => Self::Other(DefaultNla::parse(buf)?),
+        })
+    }
+}
+
+pub(crate) struct VecTcOpt(pub(crate) Vec<TcOpt>);
+
+impl<'a, T, S> ParseableParametrized<NlaBuffer<&'a T>, S> for VecTcOpt
+where
+    T: AsRef<[u8]> + ?Sized,
+    S: AsRef<str>,
+{
+    fn parse_with_param(
+        buf: &NlaBuffer<&'a T>,
+        kind: S,
+    ) -> Result<VecTcOpt, DecodeError> {
+        Ok(match kind.as_ref() {
+            ingress::KIND => {
+                Self(vec![TcOpt::parse_with_param(buf, &kind).context(
+                    format!("Failed to pase TCA_OPTIONS for {}", ingress::KIND),
+                )?])
+            }
+            u32::KIND | matchall::KIND => {
+                let mut nlas = vec![];
+                for nla in NlasIterator::new(buf.value()) {
+                    let nla = nla.context(format!(
+                        "invalid TCA_OPTIONS for {}",
+                        kind.as_ref()
+                    ))?;
+                    nlas.push(TcOpt::parse_with_param(&nla, &kind).context(
+                        format!(
+                            "failed to parse TCA_OPTIONS for {}",
+                            kind.as_ref()
+                        ),
+                    )?)
+                }
+                Self(nlas)
+            }
+            _ => Self(vec![TcOpt::Other(DefaultNla::parse(buf)?)]),
         })
     }
 }
