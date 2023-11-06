@@ -4,8 +4,8 @@ use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    nlas::link::Nla, LinkMessage, RtnlMessage, AF_BRIDGE,
-    RTEXT_FILTER_BRVLAN_COMPRESSED,
+    link::{LinkAttribute, LinkMessage},
+    AddressFamily, RtnlMessage, RTEXT_FILTER_BRVLAN_COMPRESSED,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -15,10 +15,10 @@ fn main() {
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
     let mut message = LinkMessage::default();
-    message.header.interface_family = AF_BRIDGE as u8;
+    message.header.interface_family = AddressFamily::Bridge;
     message
-        .nlas
-        .push(Nla::ExtMask(RTEXT_FILTER_BRVLAN_COMPRESSED));
+        .attributes
+        .push(LinkAttribute::ExtMask(RTEXT_FILTER_BRVLAN_COMPRESSED));
     let mut packet = NetlinkMessage::new(
         NetlinkHeader::default(),
         NetlinkPayload::from(RtnlMessage::GetLink(message)),

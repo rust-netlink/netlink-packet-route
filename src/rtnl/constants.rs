@@ -233,46 +233,6 @@ pub const RTM_F_LOOKUP_TABLE: u32 = 4096;
 /// `b61798130f1be5bff08712308126c2d7ebe390ef`)
 pub const RTM_F_FIB_MATCH: u32 = 8192;
 
-pub const AF_UNSPEC: u16 = libc::AF_UNSPEC as u16;
-pub const AF_UNIX: u16 = libc::AF_UNIX as u16;
-// pub const AF_LOCAL: u16 = libc::AF_LOCAL as u16;
-pub const AF_INET: u16 = libc::AF_INET as u16;
-pub const AF_AX25: u16 = libc::AF_AX25 as u16;
-pub const AF_IPX: u16 = libc::AF_IPX as u16;
-pub const AF_APPLETALK: u16 = libc::AF_APPLETALK as u16;
-pub const AF_NETROM: u16 = libc::AF_NETROM as u16;
-pub const AF_BRIDGE: u16 = libc::AF_BRIDGE as u16;
-pub const AF_ATMPVC: u16 = libc::AF_ATMPVC as u16;
-pub const AF_X25: u16 = libc::AF_X25 as u16;
-pub const AF_INET6: u16 = libc::AF_INET6 as u16;
-pub const AF_ROSE: u16 = libc::AF_ROSE as u16;
-pub const AF_DECNET: u16 = libc::AF_DECnet as u16;
-pub const AF_NETBEUI: u16 = libc::AF_NETBEUI as u16;
-pub const AF_SECURITY: u16 = libc::AF_SECURITY as u16;
-pub const AF_KEY: u16 = libc::AF_KEY as u16;
-pub const AF_NETLINK: u16 = libc::AF_NETLINK as u16;
-// pub const AF_ROUTE: u16 = libc::AF_ROUTE as u16;
-pub const AF_PACKET: u16 = libc::AF_PACKET as u16;
-pub const AF_ASH: u16 = libc::AF_ASH as u16;
-pub const AF_ECONET: u16 = libc::AF_ECONET as u16;
-pub const AF_ATMSVC: u16 = libc::AF_ATMSVC as u16;
-pub const AF_RDS: u16 = libc::AF_RDS as u16;
-pub const AF_SNA: u16 = libc::AF_SNA as u16;
-pub const AF_IRDA: u16 = libc::AF_IRDA as u16;
-pub const AF_PPPOX: u16 = libc::AF_PPPOX as u16;
-pub const AF_WANPIPE: u16 = libc::AF_WANPIPE as u16;
-pub const AF_LLC: u16 = libc::AF_LLC as u16;
-pub const AF_CAN: u16 = libc::AF_CAN as u16;
-pub const AF_TIPC: u16 = libc::AF_TIPC as u16;
-pub const AF_BLUETOOTH: u16 = libc::AF_BLUETOOTH as u16;
-pub const AF_IUCV: u16 = libc::AF_IUCV as u16;
-pub const AF_RXRPC: u16 = libc::AF_RXRPC as u16;
-pub const AF_ISDN: u16 = libc::AF_ISDN as u16;
-pub const AF_PHONET: u16 = libc::AF_PHONET as u16;
-pub const AF_IEEE802154: u16 = libc::AF_IEEE802154 as u16;
-pub const AF_CAIF: u16 = libc::AF_CAIF as u16;
-pub const AF_ALG: u16 = libc::AF_ALG as u16;
-
 pub const NETNSA_NONE: u16 = 0;
 pub const NETNSA_NSID: u16 = 1;
 pub const NETNSA_PID: u16 = 2;
@@ -679,43 +639,6 @@ pub const IFLA_INET6_CACHEINFO: u16 = 5;
 pub const IFLA_INET6_ICMP6STATS: u16 = 6;
 pub const IFLA_INET6_TOKEN: u16 = 7;
 pub const IFLA_INET6_ADDR_GEN_MODE: u16 = 8;
-
-/// Link is up (administratively).
-pub const IFF_UP: u32 = libc::IFF_UP as u32;
-/// Link is up and carrier is OK (RFC2863 OPER_UP)
-pub const IFF_RUNNING: u32 = libc::IFF_RUNNING as u32;
-/// Link layer is operational
-pub const IFF_LOWER_UP: u32 = libc::IFF_LOWER_UP as u32;
-/// Driver signals IFF_DORMANT
-pub const IFF_DORMANT: u32 = libc::IFF_DORMANT as u32;
-/// Link supports broadcasting
-pub const IFF_BROADCAST: u32 = libc::IFF_BROADCAST as u32;
-/// Link supports multicasting
-pub const IFF_MULTICAST: u32 = libc::IFF_MULTICAST as u32;
-/// Link supports multicast routing
-pub const IFF_ALLMULTI: u32 = libc::IFF_ALLMULTI as u32;
-/// Tell driver to do debugging (currently unused)
-pub const IFF_DEBUG: u32 = libc::IFF_DEBUG as u32;
-/// Link loopback network
-pub const IFF_LOOPBACK: u32 = libc::IFF_LOOPBACK as u32;
-/// u32erface is point-to-point link
-pub const IFF_POINTOPOINT: u32 = libc::IFF_POINTOPOINT as u32;
-/// ARP is not supported
-pub const IFF_NOARP: u32 = libc::IFF_NOARP as u32;
-/// Receive all packets.
-pub const IFF_PROMISC: u32 = libc::IFF_PROMISC as u32;
-/// Master of a load balancer (bonding)
-pub const IFF_MASTER: u32 = libc::IFF_MASTER as u32;
-/// Link selects port automatically (only used by ARM ethernet)
-pub const IFF_PORTSEL: u32 = libc::IFF_PORTSEL as u32;
-/// Driver supports setting media type (only used by ARM ethernet)
-pub const IFF_AUTOMEDIA: u32 = libc::IFF_AUTOMEDIA as u32;
-// /// Echo sent packets (testing feature, CAN only)
-// pub const IFF_ECHO: u32 = libc::IFF_ECHO as u32;
-// /// Dialup device with changing addresses (unused, BSD compatibility)
-// pub const IFF_DYNAMIC: u32 = libc::IFF_DYNAMIC as u32;
-// /// Avoid use of trailers (unused, BSD compatibility)
-// pub const IFF_NOTRAILERS: u32 = libc::IFF_NOTRAILERS as u32;
 
 pub const IF_OPER_UNKNOWN: u8 = 0;
 pub const IF_OPER_NOTPRESENT: u8 = 1;
