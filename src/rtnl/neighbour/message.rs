@@ -56,7 +56,8 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>>
 #[cfg(test)]
 mod test {
     use crate::{
-        constants::*, NeighbourHeader, NeighbourMessage, NeighbourMessageBuffer,
+        constants::*, AddressFamily, NeighbourHeader, NeighbourMessage,
+        NeighbourMessageBuffer,
     };
     use netlink_packet_utils::traits::Emitable;
 
@@ -82,7 +83,7 @@ mod test {
     #[test]
     fn packet_header_read() {
         let packet = NeighbourMessageBuffer::new(&HEADER[0..12]);
-        assert_eq!(packet.family(), AF_INET6 as u8);
+        assert_eq!(packet.family(), u8::from(AddressFamily::Inet6));
         assert_eq!(packet.ifindex(), 1);
         assert_eq!(packet.state(), NUD_REACHABLE);
         assert_eq!(packet.flags(), NTF_ROUTER);
@@ -94,7 +95,7 @@ mod test {
         let mut buf = vec![0xff; 12];
         {
             let mut packet = NeighbourMessageBuffer::new(&mut buf);
-            packet.set_family(AF_INET6 as u8);
+            packet.set_family(u8::from(AddressFamily::Inet6));
             packet.set_ifindex(1);
             packet.set_state(NUD_REACHABLE);
             packet.set_flags(NTF_ROUTER);
@@ -106,7 +107,7 @@ mod test {
     #[test]
     fn emit() {
         let header = NeighbourHeader {
-            family: AF_INET6 as u8,
+            family: u8::from(AddressFamily::Inet6),
             ifindex: 1,
             state: NUD_REACHABLE,
             flags: NTF_ROUTER,

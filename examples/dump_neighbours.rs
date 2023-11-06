@@ -11,7 +11,7 @@ use netlink_packet_route::{
         NUD_PERMANENT, NUD_PROBE, NUD_REACHABLE, NUD_STALE,
     },
     nlas::neighbour::Nla,
-    NeighbourMessage, RtnlMessage, AF_INET, AF_INET6,
+    AddressFamily, NeighbourMessage, RtnlMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -58,7 +58,10 @@ fn main() {
                     entry,
                 )) => {
                     let address_family = entry.header.family as u16;
-                    if address_family == AF_INET || address_family == AF_INET6 {
+                    if address_family == u8::from(AddressFamily::Inet) as u16
+                        || address_family
+                            == u8::from(AddressFamily::Inet6) as u16
+                    {
                         print_entry(entry);
                     }
                 }

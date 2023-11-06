@@ -94,7 +94,7 @@ fn tc_packet_nlas_read() {
     nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 4);
     assert_eq!(nla.kind(), TCA_OPTIONS);
-    assert_eq!(nla.value(), []);
+    assert!(nla.value().is_empty());
 
     let nla = nlas.next().unwrap().unwrap();
     nla.check_buffer_length().unwrap();

@@ -5,8 +5,8 @@ use netlink_packet_core::{
     NLM_F_EXCL, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    constants::{AF_INET, FR_ACT_TO_TBL, RT_TABLE_DEFAULT},
-    rule, RtnlMessage, RuleHeader, RuleMessage,
+    constants::{FR_ACT_TO_TBL, RT_TABLE_DEFAULT},
+    rule, AddressFamily, RtnlMessage, RuleHeader, RuleMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -16,7 +16,7 @@ fn main() {
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
     let rule_msg_hdr = RuleHeader {
-        family: AF_INET as u8,
+        family: u8::from(AddressFamily::Inet),
         table: RT_TABLE_DEFAULT,
         action: FR_ACT_TO_TBL,
         ..Default::default()
