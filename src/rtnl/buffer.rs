@@ -7,13 +7,13 @@ use netlink_packet_utils::{
 };
 
 use crate::{
+    address::{AddressHeader, AddressMessage, AddressMessageBuffer},
     constants::*,
     link::{LinkMessage, LinkMessageBuffer},
-    AddressHeader, AddressMessage, AddressMessageBuffer, NeighbourMessage,
-    NeighbourMessageBuffer, NeighbourTableMessage, NeighbourTableMessageBuffer,
-    NsidMessage, NsidMessageBuffer, RouteHeader, RouteMessage,
-    RouteMessageBuffer, RtnlMessage, RuleMessage, RuleMessageBuffer, TcMessage,
-    TcMessageBuffer,
+    NeighbourMessage, NeighbourMessageBuffer, NeighbourTableMessage,
+    NeighbourTableMessageBuffer, NsidMessage, NsidMessageBuffer, RouteHeader,
+    RouteMessage, RouteMessageBuffer, RtnlMessage, RuleMessage,
+    RuleMessageBuffer, TcMessage, TcMessageBuffer,
 };
 
 buffer!(RtnlMessageBuffer);
@@ -61,9 +61,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         if buf.inner().len() == 4 && message_type == RTM_GETADDR {
                             let mut msg = AddressMessage {
                                 header: AddressHeader::default(),
-                                nlas: vec![],
+                                attributes: vec![],
                             };
-                            msg.header.family = buf.inner()[0];
+                            msg.header.family = buf.inner()[0].into();
                             msg
                         } else {
                             return Err(e);
