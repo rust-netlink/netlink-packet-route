@@ -8,18 +8,19 @@ use netlink_packet_utils::{
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub struct CacheInfo {
-    pub ifa_preferred: i32,
-    pub ifa_valid: i32,
-    pub cstamp: i32,
-    pub tstamp: i32,
+    pub ifa_preferred: u32,
+    pub ifa_valid: u32,
+    pub cstamp: u32,
+    pub tstamp: u32,
 }
 
-pub const ADDRESSS_CACHE_INFO_LEN: usize = 16;
+const ADDRESSS_CACHE_INFO_LEN: usize = 16;
+
 buffer!(CacheInfoBuffer(ADDRESSS_CACHE_INFO_LEN) {
-    ifa_preferred: (i32, 0..4),
-    ifa_valid: (i32, 4..8),
-    cstamp: (i32, 8..12),
-    tstamp: (i32, 12..16),
+    ifa_preferred: (u32, 0..4),
+    ifa_valid: (u32, 4..8),
+    cstamp: (u32, 8..12),
+    tstamp: (u32, 12..16),
 });
 
 impl<T: AsRef<[u8]>> Parseable<CacheInfoBuffer<T>> for CacheInfo {
