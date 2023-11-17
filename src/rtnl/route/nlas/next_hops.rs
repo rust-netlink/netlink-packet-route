@@ -13,7 +13,6 @@ use netlink_packet_utils::{
 };
 
 bitflags! {
-    #[non_exhaustive]
 pub struct NextHopFlags: u8 {
         const RTNH_F_DEAD = constants::RTNH_F_DEAD;
         const RTNH_F_PERVASIVE = constants::RTNH_F_PERVASIVE;
@@ -72,7 +71,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> NextHopBuffer<&'a T> {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-#[non_exhaustive]
 pub struct NextHop {
     /// Next-hop flags (see [`NextHopFlags`])
     pub flags: NextHopFlags,
