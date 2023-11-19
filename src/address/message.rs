@@ -8,9 +8,7 @@ use netlink_packet_utils::{
 };
 
 use crate::{
-    address::{
-        AddressAttribute, AddressHeaderFlag, AddressHeaderFlags, AddressScope,
-    },
+    address::{AddressAttribute, AddressHeaderFlags, AddressScope},
     AddressFamily,
 };
 
@@ -44,7 +42,7 @@ pub struct AddressMessage {
 pub struct AddressHeader {
     pub family: AddressFamily,
     pub prefix_len: u8,
-    pub flags: Vec<AddressHeaderFlag>,
+    pub flags: AddressHeaderFlags,
     pub scope: AddressScope,
     pub index: u32,
 }
@@ -58,7 +56,7 @@ impl Emitable for AddressHeader {
         let mut packet = AddressMessageBuffer::new(buffer);
         packet.set_family(self.family.into());
         packet.set_prefix_len(self.prefix_len);
-        packet.set_flags(u8::from(&AddressHeaderFlags(self.flags.to_vec())));
+        packet.set_flags(self.flags.bits());
         packet.set_scope(self.scope.into());
         packet.set_index(self.index);
     }
@@ -82,7 +80,7 @@ impl<T: AsRef<[u8]>> Parseable<AddressMessageBuffer<T>> for AddressHeader {
         Ok(Self {
             family: buf.family().into(),
             prefix_len: buf.prefix_len(),
-            flags: AddressHeaderFlags::from(buf.flags()).0,
+            flags: AddressHeaderFlags::from_bits_retain(buf.flags()),
             scope: buf.scope().into(),
             index: buf.index(),
         })
