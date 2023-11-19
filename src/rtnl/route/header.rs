@@ -10,7 +10,8 @@ use crate::{constants::*, RouteMessageBuffer, ROUTE_HEADER_LEN};
 bitflags! {
     /// Flags that can be set in a `RTM_GETROUTE` ([`RtnlMessage::GetRoute`]) message.
     #[non_exhaustive]
-pub struct RouteFlags: u32 {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct RouteFlags: u32 {
         /// If the route changes, notify the user via rtnetlink
         const RTM_F_NOTIFY = RTM_F_NOTIFY;
         /// This route is cloned. Cloned routes are routes coming from the cache instead of the
