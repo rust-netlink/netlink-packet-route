@@ -10,9 +10,9 @@ use netlink_packet_core::{
 };
 
 use crate::{
-    address::AddressMessage, constants::*, link::LinkMessage, NeighbourMessage,
-    NeighbourTableMessage, NsidMessage, RouteMessage, RtnlMessageBuffer,
-    RuleMessage, TcMessage,
+    address::AddressMessage, constants::*, link::LinkMessage, tc::TcMessage,
+    NeighbourMessage, NeighbourTableMessage, NsidMessage, RouteMessage,
+    RtnlMessageBuffer, RuleMessage,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]

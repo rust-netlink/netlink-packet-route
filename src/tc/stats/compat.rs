@@ -8,7 +8,7 @@ use netlink_packet_utils::{
 /// Generic queue statistics
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
-pub struct Stats {
+pub struct TcStats {
     /// Number of enqueued bytes
     pub bytes: u64,
     /// Number of enqueued packets
@@ -26,9 +26,10 @@ pub struct Stats {
     pub backlog: u32,
 }
 
-pub const STATS_LEN: usize = 36;
+// real size is 36, but kernel is align to 64bits(8 bytes)
+const STATS_LEN: usize = 40;
 
-buffer!(StatsBuffer(STATS_LEN) {
+buffer!(TcStatsBuffer(STATS_LEN) {
     bytes: (u64, 0..8),
     packets: (u32, 8..12),
     drops: (u32, 12..16),
@@ -39,8 +40,8 @@ buffer!(StatsBuffer(STATS_LEN) {
     backlog: (u32, 32..36),
 });
 
-impl<T: AsRef<[u8]>> Parseable<StatsBuffer<T>> for Stats {
-    fn parse(buf: &StatsBuffer<T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]>> Parseable<TcStatsBuffer<T>> for TcStats {
+    fn parse(buf: &TcStatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             bytes: buf.bytes(),
             packets: buf.packets(),
@@ -54,13 +55,13 @@ impl<T: AsRef<[u8]>> Parseable<StatsBuffer<T>> for Stats {
     }
 }
 
-impl Emitable for Stats {
+impl Emitable for TcStats {
     fn buffer_len(&self) -> usize {
         STATS_LEN
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = StatsBuffer::new(buffer);
+        let mut buffer = TcStatsBuffer::new(buffer);
         buffer.set_bytes(self.bytes);
         buffer.set_packets(self.packets);
         buffer.set_drops(self.drops);

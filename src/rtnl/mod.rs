@@ -23,9 +23,6 @@ pub use route::{
 pub mod rule;
 pub use rule::{RuleHeader, RuleMessage, RuleMessageBuffer, RULE_HEADER_LEN};
 
-pub mod tc;
-pub use tc::{TcHeader, TcMessage, TcMessageBuffer, TC_HEADER_LEN};
-
 pub mod constants;
 pub use self::constants::*;
 
@@ -39,6 +36,5 @@ pub mod nlas {
     pub use super::{
         neighbour::nlas as neighbour, neighbour_table::nlas as neighbour_table,
         nsid::nlas as nsid, route::nlas as route, rule::nlas as rule,
-        tc::nlas as tc,
     };
 }
