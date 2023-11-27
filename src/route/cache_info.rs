@@ -7,7 +7,7 @@ use netlink_packet_utils::{
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
-pub struct CacheInfo {
+pub struct RouteCacheInfo {
     pub clntref: u32,
     pub last_use: u32,
     pub expires: u32,
@@ -18,9 +18,9 @@ pub struct CacheInfo {
     pub ts_age: u32,
 }
 
-pub const CACHE_INFO_LEN: usize = 32;
+const CACHE_INFO_LEN: usize = 32;
 
-buffer!(CacheInfoBuffer(CACHE_INFO_LEN) {
+buffer!(RouteCacheInfoBuffer(CACHE_INFO_LEN) {
     clntref: (u32, 0..4),
     last_use: (u32, 4..8),
     expires: (u32, 8..12),
@@ -31,8 +31,8 @@ buffer!(CacheInfoBuffer(CACHE_INFO_LEN) {
     ts_age: (u32, 28..32),
 });
 
-impl<T: AsRef<[u8]>> Parseable<CacheInfoBuffer<T>> for CacheInfo {
-    fn parse(buf: &CacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]>> Parseable<RouteCacheInfoBuffer<T>> for RouteCacheInfo {
+    fn parse(buf: &RouteCacheInfoBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             clntref: buf.clntref(),
             last_use: buf.last_use(),
@@ -46,13 +46,13 @@ impl<T: AsRef<[u8]>> Parseable<CacheInfoBuffer<T>> for CacheInfo {
     }
 }
 
-impl Emitable for CacheInfo {
+impl Emitable for RouteCacheInfo {
     fn buffer_len(&self) -> usize {
         CACHE_INFO_LEN
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = CacheInfoBuffer::new(buffer);
+        let mut buffer = RouteCacheInfoBuffer::new(buffer);
         buffer.set_clntref(self.clntref);
         buffer.set_last_use(self.last_use);
         buffer.set_expires(self.expires);

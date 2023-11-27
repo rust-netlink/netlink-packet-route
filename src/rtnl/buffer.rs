@@ -10,11 +10,11 @@ use crate::{
     address::{AddressHeader, AddressMessage, AddressMessageBuffer},
     constants::*,
     link::{LinkMessage, LinkMessageBuffer},
+    route::{RouteHeader, RouteMessage, RouteMessageBuffer},
     tc::{TcMessage, TcMessageBuffer},
     NeighbourMessage, NeighbourMessageBuffer, NeighbourTableMessage,
-    NeighbourTableMessageBuffer, NsidMessage, NsidMessageBuffer, RouteHeader,
-    RouteMessage, RouteMessageBuffer, RtnlMessage, RuleMessage,
-    RuleMessageBuffer,
+    NeighbourTableMessageBuffer, NsidMessage, NsidMessageBuffer, RtnlMessage,
+    RuleMessage, RuleMessageBuffer,
 };
 
 buffer!(RtnlMessageBuffer);
@@ -117,9 +117,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         if (buf.inner().len() == 4 || buf.inner().len() == 1) && message_type == RTM_GETROUTE {
                             let mut msg = RouteMessage {
                                 header: RouteHeader::default(),
-                                nlas: vec![],
+                                attributes: vec![],
                             };
-                            msg.header.address_family = buf.inner()[0];
+                            msg.header.address_family = buf.inner()[0].into();
                             msg
                         } else {
                             return Err(e);
