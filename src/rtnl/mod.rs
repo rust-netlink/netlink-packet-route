@@ -15,11 +15,6 @@ pub use neighbour_table::{
 pub mod nsid;
 pub use nsid::{NsidHeader, NsidMessage, NsidMessageBuffer, NSID_HEADER_LEN};
 
-pub mod route;
-pub use route::{
-    RouteFlags, RouteHeader, RouteMessage, RouteMessageBuffer, ROUTE_HEADER_LEN,
-};
-
 pub mod rule;
 pub use rule::{RuleHeader, RuleMessage, RuleMessageBuffer, RULE_HEADER_LEN};
 
@@ -35,6 +30,6 @@ pub use self::message::*;
 pub mod nlas {
     pub use super::{
         neighbour::nlas as neighbour, neighbour_table::nlas as neighbour_table,
-        nsid::nlas as nsid, route::nlas as route, rule::nlas as rule,
+        nsid::nlas as nsid, rule::nlas as rule,
     };
 }

@@ -5,6 +5,7 @@ pub use self::rtnl::*;
 
 pub mod address;
 pub mod link;
+pub mod route;
 pub mod tc;
 
 #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
