@@ -5,7 +5,6 @@ mod attribute;
 mod cache_info;
 pub(crate) mod flags;
 mod header;
-pub(crate) mod ip;
 mod lwtunnel;
 mod message;
 pub(crate) mod metrics;

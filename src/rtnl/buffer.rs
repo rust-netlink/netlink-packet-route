@@ -11,10 +11,10 @@ use crate::{
     constants::*,
     link::{LinkMessage, LinkMessageBuffer},
     route::{RouteHeader, RouteMessage, RouteMessageBuffer},
+    rule::{RuleMessage, RuleMessageBuffer},
     tc::{TcMessage, TcMessageBuffer},
     NeighbourMessage, NeighbourMessageBuffer, NeighbourTableMessage,
     NeighbourTableMessageBuffer, NsidMessage, NsidMessageBuffer, RtnlMessage,
-    RuleMessage, RuleMessageBuffer,
 };
 
 buffer!(RtnlMessageBuffer);

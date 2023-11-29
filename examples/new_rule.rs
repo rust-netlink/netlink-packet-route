@@ -5,8 +5,9 @@ use netlink_packet_core::{
     NLM_F_EXCL, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    constants::{FR_ACT_TO_TBL, RT_TABLE_DEFAULT},
-    rule, AddressFamily, RtnlMessage, RuleHeader, RuleMessage,
+    route::RouteProtocol,
+    rule::{RuleAction, RuleAttribute, RuleHeader, RuleMessage},
+    AddressFamily, RtnlMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -16,19 +17,19 @@ fn main() {
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
     let rule_msg_hdr = RuleHeader {
-        family: u8::from(AddressFamily::Inet),
-        table: RT_TABLE_DEFAULT,
-        action: FR_ACT_TO_TBL,
+        family: AddressFamily::Inet,
+        table: 254,
+        action: RuleAction::ToTable,
         ..Default::default()
     };
 
     let mut rule_msg = RuleMessage::default();
     rule_msg.header = rule_msg_hdr;
-    rule_msg.nlas = vec![
-        rule::Nla::Table(254),
-        rule::Nla::SuppressPrefixLen(4294967295),
-        rule::Nla::Priority(1000),
-        rule::Nla::Protocol(2),
+    rule_msg.attributes = vec![
+        RuleAttribute::Table(254),
+        RuleAttribute::SuppressPrefixLen(4294967295),
+        RuleAttribute::Priority(1000),
+        RuleAttribute::Protocol(RouteProtocol::Kernel),
     ];
     let mut nl_hdr = NetlinkHeader::default();
     nl_hdr.flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK;
