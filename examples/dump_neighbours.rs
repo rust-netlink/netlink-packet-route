@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use std::{convert::TryFrom, net::IpAddr, string::ToString};
+use std::string::ToString;
 
 use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    constants::{
-        NUD_DELAY, NUD_FAILED, NUD_INCOMPLETE, NUD_NOARP, NUD_NONE,
-        NUD_PERMANENT, NUD_PROBE, NUD_REACHABLE, NUD_STALE,
-    },
-    nlas::neighbour::Nla,
-    AddressFamily, NeighbourMessage, RtnlMessage,
+    neighbour::{NeighbourAddress, NeighbourAttribute, NeighbourMessage},
+    AddressFamily, RtnlMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -57,10 +53,9 @@ fn main() {
                 NetlinkPayload::InnerMessage(RtnlMessage::NewNeighbour(
                     entry,
                 )) => {
-                    let address_family = entry.header.family as u16;
-                    if address_family == u8::from(AddressFamily::Inet) as u16
-                        || address_family
-                            == u8::from(AddressFamily::Inet6) as u16
+                    let address_family = entry.header.family;
+                    if address_family == AddressFamily::Inet
+                        || address_family == AddressFamily::Inet6
                     {
                         print_entry(entry);
                     }
@@ -81,63 +76,45 @@ fn main() {
     }
 }
 
-fn format_ip(buf: &[u8]) -> String {
-    if let Ok(bytes) = <&[u8; 4]>::try_from(buf) {
-        IpAddr::from(*bytes).to_string()
-    } else if let Ok(bytes) = <&[u8; 16]>::try_from(buf) {
-        IpAddr::from(*bytes).to_string()
+fn format_ip(addr: &NeighbourAddress) -> String {
+    if let NeighbourAddress::Inet(ip) = addr {
+        ip.to_string()
+    } else if let NeighbourAddress::Inet6(ip) = addr {
+        ip.to_string()
     } else {
         panic!("Invalid IP Address");
     }
 }
 
 fn format_mac(buf: &[u8]) -> String {
-    assert_eq!(buf.len(), 6);
-    format!(
-        "{:<02x}:{:<02x}:{:<02x}:{:<02x}:{:<02x}:{:<02x}",
-        buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]
-    )
-}
-
-fn state_str(value: u16) -> &'static str {
-    match value {
-        NUD_INCOMPLETE => "INCOMPLETE",
-        NUD_REACHABLE => "REACHABLE",
-        NUD_STALE => "STALE",
-        NUD_DELAY => "DELAY",
-        NUD_PROBE => "PROBE",
-        NUD_FAILED => "FAILED",
-        NUD_NOARP => "NOARP",
-        NUD_PERMANENT => "PERMANENT",
-        NUD_NONE => "NONE",
-        _ => "UNKNOWN",
+    if buf.len() == 6 {
+        format!(
+            "{:<02x}:{:<02x}:{:<02x}:{:<02x}:{:<02x}:{:<02x}",
+            buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]
+        )
+    } else {
+        "00:00:00:00:00:00".into()
     }
 }
 
 fn print_entry(entry: NeighbourMessage) {
-    let state = state_str(entry.header.state);
-    let dest = entry
-        .nlas
-        .iter()
-        .find_map(|nla| {
-            if let Nla::Destination(addr) = nla {
-                Some(format_ip(&addr[..]))
+    let state = entry.header.state;
+    if let (Some(dest), Some(lladdr)) = (
+        entry.attributes.iter().find_map(|nla| {
+            if let NeighbourAttribute::Destination(addr) = nla {
+                Some(format_ip(addr))
             } else {
                 None
             }
-        })
-        .unwrap();
-    let lladdr = entry
-        .nlas
-        .iter()
-        .find_map(|nla| {
-            if let Nla::LinkLocalAddress(addr) = nla {
-                Some(format_mac(&addr[..]))
+        }),
+        entry.attributes.iter().find_map(|nla| {
+            if let NeighbourAttribute::LinkLocalAddress(addr) = nla {
+                Some(format_mac(addr))
             } else {
                 None
             }
-        })
-        .unwrap();
-
-    println!("{dest:<30} {lladdr:<20} ({state})");
+        }),
+    ) {
+        println!("{dest:<30} {lladdr:<20} ({state})");
+    }
 }

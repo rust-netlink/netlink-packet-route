@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-pub mod neighbour;
-pub use neighbour::{
-    NeighbourHeader, NeighbourMessage, NeighbourMessageBuffer,
-    NEIGHBOUR_HEADER_LEN,
-};
-
 pub mod neighbour_table;
 pub use neighbour_table::{
     NeighbourTableHeader, NeighbourTableMessage, NeighbourTableMessageBuffer,
@@ -26,7 +20,6 @@ pub use self::message::*;
 
 pub mod nlas {
     pub use super::{
-        neighbour::nlas as neighbour, neighbour_table::nlas as neighbour_table,
-        nsid::nlas as nsid,
+        neighbour_table::nlas as neighbour_table, nsid::nlas as nsid,
     };
 }
