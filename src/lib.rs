@@ -5,6 +5,7 @@ pub use self::rtnl::*;
 
 pub mod address;
 pub mod link;
+pub mod neighbour;
 pub mod route;
 pub mod rule;
 pub mod tc;

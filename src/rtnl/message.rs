@@ -11,8 +11,8 @@ use netlink_packet_core::{
 
 use crate::{
     address::AddressMessage, constants::*, link::LinkMessage,
-    route::RouteMessage, rule::RuleMessage, tc::TcMessage, NeighbourMessage,
-    NeighbourTableMessage, NsidMessage, RtnlMessageBuffer,
+    neighbour::NeighbourMessage, route::RouteMessage, rule::RuleMessage,
+    tc::TcMessage, NeighbourTableMessage, NsidMessage, RtnlMessageBuffer,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]

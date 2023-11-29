@@ -240,6 +240,29 @@ impl Default for RouteProtocol {
     }
 }
 
+impl Parseable<[u8]> for RouteProtocol {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        if buf.len() == 1 {
+            Ok(Self::from(buf[0]))
+        } else {
+            Err(DecodeError::from(format!(
+                "Expecting single u8 for route protocol, but got {:?}",
+                buf
+            )))
+        }
+    }
+}
+
+impl Emitable for RouteProtocol {
+    fn buffer_len(&self) -> usize {
+        1
+    }
+
+    fn emit(&self, buffer: &mut [u8]) {
+        buffer[0] = u8::from(*self);
+    }
+}
+
 const RT_SCOPE_UNIVERSE: u8 = 0;
 const RT_SCOPE_SITE: u8 = 200;
 const RT_SCOPE_LINK: u8 = 253;

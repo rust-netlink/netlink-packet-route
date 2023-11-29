@@ -1,11 +1,32 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_utils::{
+    nla::{NlaBuffer, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
 };
 
-use crate::{NeighbourMessageBuffer, NEIGHBOUR_HEADER_LEN};
+use super::{flags::VecNeighbourFlag, NeighbourFlag, NeighbourState};
+use crate::{route::RouteType, AddressFamily};
+
+const NEIGHBOUR_HEADER_LEN: usize = 12;
+
+buffer!(NeighbourMessageBuffer(NEIGHBOUR_HEADER_LEN) {
+    family: (u8, 0),
+    ifindex: (u32, 4..8),
+    state: (u16, 8..10),
+    flags: (u8, 10),
+    kind: (u8, 11),
+    payload:(slice, NEIGHBOUR_HEADER_LEN..),
+});
+
+impl<'a, T: AsRef<[u8]> + ?Sized> NeighbourMessageBuffer<&'a T> {
+    pub fn attributes(
+        &self,
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+        NlasIterator::new(self.payload())
+    }
+}
 
 /// Neighbour headers have the following structure:
 ///
@@ -21,29 +42,29 @@ use crate::{NeighbourMessageBuffer, NEIGHBOUR_HEADER_LEN};
 /// ```
 ///
 /// `NeighbourHeader` exposes all these fields.
+// Linux kernel struct `struct ndmsg`
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct NeighbourHeader {
-    pub family: u8,
+    pub family: AddressFamily,
     pub ifindex: u32,
-    /// Neighbour cache entry state. It should be set to one of the
-    /// `NUD_*` constants
-    pub state: u16,
+    /// Neighbour cache entry state.
+    pub state: NeighbourState,
     /// Neighbour cache entry flags. It should be set to a combination
     /// of the `NTF_*` constants
-    pub flags: u8,
+    pub flags: Vec<NeighbourFlag>,
     /// Neighbour cache entry type. It should be set to one of the
     /// `NDA_*` constants.
-    pub ntype: u8,
+    pub kind: RouteType,
 }
 
 impl<T: AsRef<[u8]>> Parseable<NeighbourMessageBuffer<T>> for NeighbourHeader {
     fn parse(buf: &NeighbourMessageBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
-            family: buf.family(),
+            family: buf.family().into(),
             ifindex: buf.ifindex(),
-            state: buf.state(),
-            flags: buf.flags(),
-            ntype: buf.ntype(),
+            state: buf.state().into(),
+            flags: VecNeighbourFlag::from(buf.flags()).0,
+            kind: buf.kind().into(),
         })
     }
 }
@@ -55,10 +76,10 @@ impl Emitable for NeighbourHeader {
 
     fn emit(&self, buffer: &mut [u8]) {
         let mut packet = NeighbourMessageBuffer::new(buffer);
-        packet.set_family(self.family);
+        packet.set_family(self.family.into());
         packet.set_ifindex(self.ifindex);
-        packet.set_state(self.state);
-        packet.set_flags(self.flags);
-        packet.set_ntype(self.ntype);
+        packet.set_state(self.state.into());
+        packet.set_flags(u8::from(&VecNeighbourFlag(self.flags.to_vec())));
+        packet.set_kind(self.kind.into());
     }
 }
