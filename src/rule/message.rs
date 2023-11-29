@@ -6,23 +6,23 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{buffer::RuleMessageBuffer, header::RuleHeader, nlas::Nla};
+use super::{RuleAttribute, RuleHeader, RuleMessageBuffer};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct RuleMessage {
     pub header: RuleHeader,
-    pub nlas: Vec<Nla>,
+    pub attributes: Vec<RuleAttribute>,
 }
 
 impl Emitable for RuleMessage {
     fn buffer_len(&self) -> usize {
-        self.header.buffer_len() + self.nlas.as_slice().buffer_len()
+        self.header.buffer_len() + self.attributes.as_slice().buffer_len()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
         self.header.emit(buffer);
-        self.nlas
+        self.attributes
             .as_slice()
             .emit(&mut buffer[self.header.buffer_len()..]);
     }
@@ -34,18 +34,20 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>>
     fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let header = RuleHeader::parse(buf)
             .context("failed to parse link message header")?;
-        let nlas = Vec::<Nla>::parse(buf)
+        let attributes = Vec::<RuleAttribute>::parse(buf)
             .context("failed to parse link message NLAs")?;
-        Ok(RuleMessage { header, nlas })
+        Ok(RuleMessage { header, attributes })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>> for Vec<Nla> {
+impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>>
+    for Vec<RuleAttribute>
+{
     fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        for nla_buf in buf.nlas() {
-            nlas.push(Nla::parse(&nla_buf?)?);
+        let mut attributes = vec![];
+        for nla_buf in buf.attributes() {
+            attributes.push(RuleAttribute::parse(&nla_buf?)?);
         }
-        Ok(nlas)
+        Ok(attributes)
     }
 }

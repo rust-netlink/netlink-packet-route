@@ -6,7 +6,10 @@ pub use self::rtnl::*;
 pub mod address;
 pub mod link;
 pub mod route;
+pub mod rule;
 pub mod tc;
+
+pub(crate) mod ip;
 
 #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
 mod address_family_linux;
@@ -31,6 +34,8 @@ mod address_family_fallback;
 )))]
 pub use self::address_family_fallback::AddressFamily;
 
+pub use self::ip::IpProtocol;
+
 /// The `netlink-packet-route` crate is designed to abstract Netlink route
 /// protocol(`rtnetlink`) packet into Rust data types. The goal of this crate is
 /// saving netlink user from reading Kernel Netlink codes.
@@ -52,8 +57,7 @@ pub use self::address_family_fallback::AddressFamily;
 /// crate directly.
 ///
 /// [rtnetlink_url]: https://docs.rs/rtnetlink
-#[macro_use]
-extern crate bitflags;
+
 #[macro_use]
 extern crate netlink_packet_utils;
 

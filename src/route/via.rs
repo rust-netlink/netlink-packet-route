@@ -7,7 +7,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::ip::{
+use crate::ip::{
     parse_ipv4_addr, parse_ipv6_addr, IPV4_ADDR_LEN, IPV6_ADDR_LEN,
 };
 use crate::AddressFamily;

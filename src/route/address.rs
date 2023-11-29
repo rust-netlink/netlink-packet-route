@@ -4,13 +4,13 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_utils::{DecodeError, Emitable};
 
-use super::{
-    super::AddressFamily,
+use crate::{
     ip::{
         emit_ip_to_buffer, parse_ipv4_addr, parse_ipv6_addr, IPV4_ADDR_LEN,
         IPV6_ADDR_LEN,
     },
-    MplsLabel,
+    route::MplsLabel,
+    AddressFamily,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
