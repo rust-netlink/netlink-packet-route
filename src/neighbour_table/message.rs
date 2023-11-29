@@ -6,26 +6,27 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use crate::{
-    nlas::neighbour_table::Nla, NeighbourTableHeader,
-    NeighbourTableMessageBuffer,
+use super::{
+    NeighbourTableAttribute, NeighbourTableHeader, NeighbourTableMessageBuffer,
 };
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct NeighbourTableMessage {
     pub header: NeighbourTableHeader,
-    pub nlas: Vec<Nla>,
+    pub attributes: Vec<NeighbourTableAttribute>,
 }
 
 impl Emitable for NeighbourTableMessage {
     fn buffer_len(&self) -> usize {
-        self.header.buffer_len() + self.nlas.as_slice().buffer_len()
+        self.header.buffer_len() + self.attributes.as_slice().buffer_len()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
         self.header.emit(buffer);
-        self.nlas.as_slice().emit(buffer);
+        self.attributes
+            .as_slice()
+            .emit(&mut buffer[self.header.buffer_len()..]);
     }
 }
 
@@ -38,22 +39,22 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
         Ok(NeighbourTableMessage {
             header: NeighbourTableHeader::parse(buf)
                 .context("failed to parse neighbour table message header")?,
-            nlas: Vec::<Nla>::parse(buf)
+            attributes: Vec::<NeighbourTableAttribute>::parse(buf)
                 .context("failed to parse neighbour table message NLAs")?,
         })
     }
 }
 
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
-    for Vec<Nla>
+    for Vec<NeighbourTableAttribute>
 {
     fn parse(
         buf: &NeighbourTableMessageBuffer<&'a T>,
     ) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        for nla_buf in buf.nlas() {
-            nlas.push(Nla::parse(&nla_buf?)?);
+        let mut attributes = vec![];
+        for nla_buf in buf.attributes() {
+            attributes.push(NeighbourTableAttribute::parse(&nla_buf?)?);
         }
-        Ok(nlas)
+        Ok(attributes)
     }
 }

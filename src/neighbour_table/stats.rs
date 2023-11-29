@@ -7,7 +7,7 @@ use netlink_packet_utils::{
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
-pub struct Stats {
+pub struct NeighbourTableStats {
     pub allocs: u64,
     pub destroys: u64,
     pub hash_grows: u64,
@@ -18,10 +18,11 @@ pub struct Stats {
     pub unicast_probes_received: u64,
     pub periodic_gc_runs: u64,
     pub forced_gc_runs: u64,
+    pub table_fulls: u64,
 }
 
-pub const STATS_LEN: usize = 80;
-buffer!(StatsBuffer(STATS_LEN) {
+pub const STATS_LEN: usize = 88;
+buffer!(NeighbourTableStatsBuffer(STATS_LEN) {
     allocs: (u64, 0..8),
     destroys: (u64, 8..16),
     hash_grows: (u64, 16..24),
@@ -32,10 +33,13 @@ buffer!(StatsBuffer(STATS_LEN) {
     unicast_probes_received: (u64, 56..64),
     periodic_gc_runs: (u64, 64..72),
     forced_gc_runs: (u64, 72..80),
+    table_fulls: (u64, 80..88),
 });
 
-impl<T: AsRef<[u8]>> Parseable<StatsBuffer<T>> for Stats {
-    fn parse(buf: &StatsBuffer<T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]>> Parseable<NeighbourTableStatsBuffer<T>>
+    for NeighbourTableStats
+{
+    fn parse(buf: &NeighbourTableStatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             allocs: buf.allocs(),
             destroys: buf.destroys(),
@@ -47,17 +51,18 @@ impl<T: AsRef<[u8]>> Parseable<StatsBuffer<T>> for Stats {
             unicast_probes_received: buf.unicast_probes_received(),
             periodic_gc_runs: buf.periodic_gc_runs(),
             forced_gc_runs: buf.forced_gc_runs(),
+            table_fulls: buf.table_fulls(),
         })
     }
 }
 
-impl Emitable for Stats {
+impl Emitable for NeighbourTableStats {
     fn buffer_len(&self) -> usize {
         STATS_LEN
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = StatsBuffer::new(buffer);
+        let mut buffer = NeighbourTableStatsBuffer::new(buffer);
         buffer.set_allocs(self.allocs);
         buffer.set_destroys(self.destroys);
         buffer.set_hash_grows(self.hash_grows);
@@ -68,5 +73,6 @@ impl Emitable for Stats {
         buffer.set_unicast_probes_received(self.unicast_probes_received);
         buffer.set_periodic_gc_runs(self.periodic_gc_runs);
         buffer.set_forced_gc_runs(self.forced_gc_runs);
+        buffer.set_table_fulls(self.table_fulls);
     }
 }
