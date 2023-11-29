@@ -11,7 +11,7 @@ mod message;
 pub(crate) mod metrics;
 mod mfc_stats;
 mod mpls;
-mod next_hops;
+pub(crate) mod next_hops;
 mod preference;
 mod realm;
 mod via;

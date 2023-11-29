@@ -11,13 +11,13 @@ use super::{
     super::AddressFamily, RouteAttribute, RouteLwEnCapType, RouteType,
 };
 
-const RTNH_F_DEAD: u8 = 1;
-const RTNH_F_PERVASIVE: u8 = 2;
-const RTNH_F_ONLINK: u8 = 4;
-const RTNH_F_OFFLOAD: u8 = 8;
-const RTNH_F_LINKDOWN: u8 = 16;
-const RTNH_F_UNRESOLVED: u8 = 32;
-const RTNH_F_TRAP: u8 = 64;
+pub(crate) const RTNH_F_DEAD: u8 = 1;
+pub(crate) const RTNH_F_PERVASIVE: u8 = 2;
+pub(crate) const RTNH_F_ONLINK: u8 = 4;
+pub(crate) const RTNH_F_OFFLOAD: u8 = 8;
+pub(crate) const RTNH_F_LINKDOWN: u8 = 16;
+pub(crate) const RTNH_F_UNRESOLVED: u8 = 32;
+pub(crate) const RTNH_F_TRAP: u8 = 64;
 
 #[derive(Clone, Eq, PartialEq, Debug, Copy)]
 #[non_exhaustive]

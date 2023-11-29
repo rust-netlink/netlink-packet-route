@@ -11,8 +11,10 @@ mod mpls;
 #[cfg(test)]
 mod multipath;
 #[cfg(test)]
+mod realm;
+#[cfg(test)]
+mod route_flags;
+#[cfg(test)]
 mod uid;
 #[cfg(test)]
 mod via;
-#[cfg(test)]
-mod realm;
