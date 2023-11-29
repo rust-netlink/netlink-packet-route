@@ -7,7 +7,7 @@ use netlink_packet_utils::{
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
-pub struct Config {
+pub struct NeighbourTableConfig {
     pub key_len: u16,
     pub entry_size: u16,
     pub entries: u32,
@@ -21,7 +21,7 @@ pub struct Config {
 
 pub const CONFIG_LEN: usize = 32;
 
-buffer!(ConfigBuffer(CONFIG_LEN) {
+buffer!(NeighbourTableConfigBuffer(CONFIG_LEN) {
     key_len: (u16, 0..2),
     entry_size: (u16, 2..4),
     entries: (u32, 4..8),
@@ -33,8 +33,10 @@ buffer!(ConfigBuffer(CONFIG_LEN) {
     proxy_qlen: (u32, 28..32),
 });
 
-impl<T: AsRef<[u8]>> Parseable<ConfigBuffer<T>> for Config {
-    fn parse(buf: &ConfigBuffer<T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]>> Parseable<NeighbourTableConfigBuffer<T>>
+    for NeighbourTableConfig
+{
+    fn parse(buf: &NeighbourTableConfigBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             key_len: buf.key_len(),
             entry_size: buf.entry_size(),
@@ -49,13 +51,13 @@ impl<T: AsRef<[u8]>> Parseable<ConfigBuffer<T>> for Config {
     }
 }
 
-impl Emitable for Config {
+impl Emitable for NeighbourTableConfig {
     fn buffer_len(&self) -> usize {
         CONFIG_LEN
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = ConfigBuffer::new(buffer);
+        let mut buffer = NeighbourTableConfigBuffer::new(buffer);
         buffer.set_key_len(self.key_len);
         buffer.set_entry_size(self.entry_size);
         buffer.set_entries(self.entries);
