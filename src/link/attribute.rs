@@ -16,8 +16,8 @@ use super::af_spec::VecAfSpecBridge;
 use super::{
     af_spec::VecAfSpecUnspec, buffer_tool::expand_buffer_if_small,
     link_info::VecLinkInfo, stats::LINK_STATS_LEN, stats64::LINK_STATS64_LEN,
-    xdp::VecXdp, LinkInfo, Map, MapBuffer, Prop, State, Stats, Stats64,
-    Stats64Buffer, StatsBuffer, Xdp,
+    xdp::VecXdp, AfSpecBridge, AfSpecUnspec, LinkInfo, Map, MapBuffer, Prop,
+    State, Stats, Stats64, Stats64Buffer, StatsBuffer, Xdp,
 };
 use crate::AddressFamily;
 
@@ -115,22 +115,16 @@ pub enum LinkAttribute {
     /// Permanent hardware address of the device. The provides the same
     /// information as the ethtool ioctl interface.
     PermAddress(Vec<u8>),
-    // string
-    // FIXME: for empty string, should we encode the NLA as \0 or should we
-    // not set a payload? It seems that for certain attriutes, this
-    // matter: https://elixir.bootlin.com/linux/v4.17-rc5/source/net/core/rtnetlink.c#L1660
     IfName(String),
     Qdisc(String),
     IfAlias(String),
     PhysPortName(String),
-    // byte
     Mode(u8),
     Carrier(u8),
     ProtoDown(u8),
-    // u32
     Mtu(u32),
     Link(u32),
-    Master(u32),
+    Controller(u32),
     TxQueueLen(u32),
     NetNsPid(u32),
     NumVf(u32),
@@ -147,7 +141,6 @@ pub enum LinkAttribute {
     MinMtu(u32),
     /// The maximum MTU for the device.
     MaxMtu(u32),
-    // i32
     NetnsId(i32),
     OperState(State),
     Stats(Stats),
@@ -155,213 +148,205 @@ pub enum LinkAttribute {
     Map(Map),
     // AF_SPEC (the type of af_spec depends on the interface family of the
     // message)
-    AfSpecUnspec(Vec<super::AfSpecUnspec>),
-    AfSpecBridge(Vec<super::AfSpecBridge>),
+    AfSpecUnspec(Vec<AfSpecUnspec>),
+    AfSpecBridge(Vec<AfSpecBridge>),
     AfSpecUnknown(Vec<u8>),
     Other(DefaultNla),
 }
 
 impl Nla for LinkAttribute {
     fn value_len(&self) -> usize {
-        use self::LinkAttribute::*;
-        match *self {
-            Priority(ref bytes)
-            | Weight(ref bytes)
-            | VfInfoList(ref bytes)
-            | VfPorts(ref bytes)
-            | PortSelf(ref bytes)
-            | PhysPortId(ref bytes)
-            | PhysSwitchId(ref bytes)
-            | Pad(ref bytes)
-            | Event(ref bytes)
-            | NewNetnsId(ref bytes)
-            | IfNetnsId(ref bytes)
-            | Wireless(ref bytes)
-            | ProtoInfo(ref bytes)
-            | CarrierUpCount(ref bytes)
-            | CarrierDownCount(ref bytes)
-            | NewIfIndex(ref bytes)
-            | Address(ref bytes)
-            | Broadcast(ref bytes)
-            | PermAddress(ref bytes)
-            | AfSpecUnknown(ref bytes)
-            | ProtoDownReason(ref bytes) => bytes.len(),
+        match self {
+            Self::Priority(bytes)
+            | Self::Weight(bytes)
+            | Self::VfInfoList(bytes)
+            | Self::VfPorts(bytes)
+            | Self::PortSelf(bytes)
+            | Self::PhysPortId(bytes)
+            | Self::PhysSwitchId(bytes)
+            | Self::Pad(bytes)
+            | Self::Event(bytes)
+            | Self::NewNetnsId(bytes)
+            | Self::IfNetnsId(bytes)
+            | Self::Wireless(bytes)
+            | Self::ProtoInfo(bytes)
+            | Self::CarrierUpCount(bytes)
+            | Self::CarrierDownCount(bytes)
+            | Self::NewIfIndex(bytes)
+            | Self::Address(bytes)
+            | Self::Broadcast(bytes)
+            | Self::PermAddress(bytes)
+            | Self::AfSpecUnknown(bytes)
+            | Self::ProtoDownReason(bytes) => bytes.len(),
 
-            // strings: +1 because we need to append a nul byte
-            IfName(ref string)
-            | Qdisc(ref string)
-            | IfAlias(ref string)
-            | PhysPortName(ref string) => string.as_bytes().len() + 1,
+            Self::IfName(string)
+            | Self::Qdisc(string)
+            | Self::IfAlias(string)
+            | Self::PhysPortName(string) => string.as_bytes().len() + 1,
 
-            // u8
-            Mode(_) | Carrier(_) | ProtoDown(_) => 1,
+            Self::Mode(_) | Self::Carrier(_) | Self::ProtoDown(_) => 1,
 
-            // u32 and i32
-            Mtu(_) | Link(_) | Master(_) | TxQueueLen(_) | NetNsPid(_)
-            | NumVf(_) | Group(_) | NetNsFd(_) | ExtMask(_)
-            | Promiscuity(_) | NumTxQueues(_) | NumRxQueues(_)
-            | CarrierChanges(_) | GsoMaxSegs(_) | GsoMaxSize(_)
-            | NetnsId(_) | MinMtu(_) | MaxMtu(_) => 4,
+            Self::Mtu(_)
+            | Self::Link(_)
+            | Self::Controller(_)
+            | Self::TxQueueLen(_)
+            | Self::NetNsPid(_)
+            | Self::NumVf(_)
+            | Self::Group(_)
+            | Self::NetNsFd(_)
+            | Self::ExtMask(_)
+            | Self::Promiscuity(_)
+            | Self::NumTxQueues(_)
+            | Self::NumRxQueues(_)
+            | Self::CarrierChanges(_)
+            | Self::GsoMaxSegs(_)
+            | Self::GsoMaxSize(_)
+            | Self::NetnsId(_)
+            | Self::MinMtu(_)
+            | Self::MaxMtu(_) => 4,
 
-            OperState(_) => 1,
-            Stats(_) => LINK_STATS_LEN,
-            Stats64(_) => LINK_STATS64_LEN,
-            Map(ref nla) => nla.buffer_len(),
-            LinkInfo(ref nlas) => nlas.as_slice().buffer_len(),
-            Xdp(ref nlas) => nlas.as_slice().buffer_len(),
-            PropList(ref nlas) => nlas.as_slice().buffer_len(),
-            AfSpecUnspec(ref nlas) => nlas.as_slice().buffer_len(),
-            AfSpecBridge(ref nlas) => nlas.as_slice().buffer_len(),
-            Other(ref attr) => attr.value_len(),
+            Self::OperState(_) => 1,
+            Self::Stats(_) => LINK_STATS_LEN,
+            Self::Stats64(_) => LINK_STATS64_LEN,
+            Self::Map(nla) => nla.buffer_len(),
+            Self::LinkInfo(nlas) => nlas.as_slice().buffer_len(),
+            Self::Xdp(nlas) => nlas.as_slice().buffer_len(),
+            Self::PropList(nlas) => nlas.as_slice().buffer_len(),
+            Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
+            Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
+            Self::Other(attr) => attr.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::LinkAttribute::*;
-        match *self {
-            // Vec<u8>
-                Priority(ref bytes)
-                | Weight(ref bytes)
-                | VfInfoList(ref bytes)
-                | VfPorts(ref bytes)
-                | PortSelf(ref bytes)
-                | PhysPortId(ref bytes)
-                | PhysSwitchId(ref bytes)
-                | Wireless(ref bytes)
-                | ProtoInfo(ref bytes)
-                | Pad(ref bytes)
-                | Event(ref bytes)
-                | NewNetnsId(ref bytes)
-                | IfNetnsId(ref bytes)
-                | CarrierUpCount(ref bytes)
-                | CarrierDownCount(ref bytes)
-                | NewIfIndex(ref bytes)
-                // mac address (could be [u8; 6] or [u8; 4] for example. Not
-                // sure if we should have a separate type for them
-                | Address(ref bytes)
-                | Broadcast(ref bytes)
-                | PermAddress(ref bytes)
-                | AfSpecUnknown(ref bytes)
-                | ProtoDownReason(ref bytes)
-                => buffer.copy_from_slice(bytes.as_slice()),
+        match self {
+            Self::Priority(bytes)
+            | Self::Weight(bytes)
+            | Self::VfInfoList(bytes)
+            | Self::VfPorts(bytes)
+            | Self::PortSelf(bytes)
+            | Self::PhysPortId(bytes)
+            | Self::PhysSwitchId(bytes)
+            | Self::Wireless(bytes)
+            | Self::ProtoInfo(bytes)
+            | Self::Pad(bytes)
+            | Self::Event(bytes)
+            | Self::NewNetnsId(bytes)
+            | Self::IfNetnsId(bytes)
+            | Self::CarrierUpCount(bytes)
+            | Self::CarrierDownCount(bytes)
+            | Self::NewIfIndex(bytes)
+            | Self::Address(bytes)
+            | Self::Broadcast(bytes)
+            | Self::PermAddress(bytes)
+            | Self::AfSpecUnknown(bytes)
+            | Self::ProtoDownReason(bytes) => {
+                buffer.copy_from_slice(bytes.as_slice())
+            }
 
-            // String
-            IfName(ref string)
-                | Qdisc(ref string)
-                | IfAlias(ref string)
-                | PhysPortName(ref string)
-                => {
-                    buffer[..string.len()].copy_from_slice(string.as_bytes());
-                    buffer[string.len()] = 0;
-                }
+            Self::IfName(string)
+            | Self::Qdisc(string)
+            | Self::IfAlias(string)
+            | Self::PhysPortName(string) => {
+                buffer[..string.len()].copy_from_slice(string.as_bytes());
+                buffer[string.len()] = 0;
+            }
 
-            // u8
-            Mode(ref val)
-                | Carrier(ref val)
-                | ProtoDown(ref val)
-                => buffer[0] = *val,
+            Self::Mode(val) | Self::Carrier(val) | Self::ProtoDown(val) => {
+                buffer[0] = *val
+            }
 
-            // u32
-            Mtu(ref value)
-                | Link(ref value)
-                | Master(ref value)
-                | TxQueueLen(ref value)
-                | NetNsPid(ref value)
-                | NumVf(ref value)
-                | Group(ref value)
-                | ExtMask(ref value)
-                | Promiscuity(ref value)
-                | NumTxQueues(ref value)
-                | NumRxQueues(ref value)
-                | CarrierChanges(ref value)
-                | GsoMaxSegs(ref value)
-                | GsoMaxSize(ref value)
-                | MinMtu(ref value)
-                | MaxMtu(ref value)
-                => NativeEndian::write_u32(buffer, *value),
+            Self::Mtu(value)
+            | Self::Link(value)
+            | Self::Controller(value)
+            | Self::TxQueueLen(value)
+            | Self::NetNsPid(value)
+            | Self::NumVf(value)
+            | Self::Group(value)
+            | Self::ExtMask(value)
+            | Self::Promiscuity(value)
+            | Self::NumTxQueues(value)
+            | Self::NumRxQueues(value)
+            | Self::CarrierChanges(value)
+            | Self::GsoMaxSegs(value)
+            | Self::GsoMaxSize(value)
+            | Self::MinMtu(value)
+            | Self::MaxMtu(value) => NativeEndian::write_u32(buffer, *value),
 
-            NetnsId(ref value)
-                | NetNsFd(ref value)
-                => NativeEndian::write_i32(buffer, *value),
-            Stats(ref nla) => nla.emit(buffer),
-            Map(ref nla) => nla.emit(buffer),
-            Stats64(ref nla) => nla.emit(buffer),
-            OperState(state) => buffer[0] = state.into(),
-            LinkInfo(ref nlas) => nlas.as_slice().emit(buffer),
-            Xdp(ref nlas) => nlas.as_slice().emit(buffer),
-            PropList(ref nlas) => nlas.as_slice().emit(buffer),
-            AfSpecUnspec(ref nlas) => nlas.as_slice().emit(buffer),
-            AfSpecBridge(ref nlas) => nlas.as_slice().emit(buffer),
-            // default nlas
-            Other(ref attr) => attr.emit_value(buffer),
+            Self::NetnsId(value) | Self::NetNsFd(value) => {
+                NativeEndian::write_i32(buffer, *value)
+            }
+            Self::Stats(nla) => nla.emit(buffer),
+            Self::Map(nla) => nla.emit(buffer),
+            Self::Stats64(nla) => nla.emit(buffer),
+            Self::OperState(state) => buffer[0] = (*state).into(),
+            Self::LinkInfo(nlas) => nlas.as_slice().emit(buffer),
+            Self::Xdp(nlas) => nlas.as_slice().emit(buffer),
+            Self::PropList(nlas) => nlas.as_slice().emit(buffer),
+            Self::AfSpecUnspec(nlas) => nlas.as_slice().emit(buffer),
+            Self::AfSpecBridge(nlas) => nlas.as_slice().emit(buffer),
+            Self::Other(attr) => attr.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::LinkAttribute::*;
-        match *self {
-            Priority(_) => IFLA_PRIORITY,
-            Weight(_) => IFLA_WEIGHT,
-            VfInfoList(_) => IFLA_VFINFO_LIST,
-            VfPorts(_) => IFLA_VF_PORTS,
-            PortSelf(_) => IFLA_PORT_SELF,
-            PhysPortId(_) => IFLA_PHYS_PORT_ID,
-            PhysSwitchId(_) => IFLA_PHYS_SWITCH_ID,
-            LinkInfo(_) => IFLA_LINKINFO,
-            Wireless(_) => IFLA_WIRELESS,
-            ProtoInfo(_) => IFLA_PROTINFO,
-            Pad(_) => IFLA_PAD,
-            Xdp(_) => IFLA_XDP,
-            Event(_) => IFLA_EVENT,
-            NewNetnsId(_) => IFLA_NEW_NETNSID,
-            IfNetnsId(_) => IFLA_IF_NETNSID,
-            CarrierUpCount(_) => IFLA_CARRIER_UP_COUNT,
-            CarrierDownCount(_) => IFLA_CARRIER_DOWN_COUNT,
-            NewIfIndex(_) => IFLA_NEW_IFINDEX,
-            PropList(_) => IFLA_PROP_LIST | NLA_F_NESTED,
-            ProtoDownReason(_) => IFLA_PROTO_DOWN_REASON,
-            // Mac address
-            Address(_) => IFLA_ADDRESS,
-            Broadcast(_) => IFLA_BROADCAST,
-            PermAddress(_) => IFLA_PERM_ADDRESS,
-            // String
-            IfName(_) => IFLA_IFNAME,
-            Qdisc(_) => IFLA_QDISC,
-            IfAlias(_) => IFLA_IFALIAS,
-            PhysPortName(_) => IFLA_PHYS_PORT_NAME,
-            // u8
-            Mode(_) => IFLA_LINKMODE,
-            Carrier(_) => IFLA_CARRIER,
-            ProtoDown(_) => IFLA_PROTO_DOWN,
-            // u32
-            Mtu(_) => IFLA_MTU,
-            Link(_) => IFLA_LINK,
-            Master(_) => IFLA_MASTER,
-            TxQueueLen(_) => IFLA_TXQLEN,
-            NetNsPid(_) => IFLA_NET_NS_PID,
-            NumVf(_) => IFLA_NUM_VF,
-            Group(_) => IFLA_GROUP,
-            NetNsFd(_) => IFLA_NET_NS_FD,
-            ExtMask(_) => IFLA_EXT_MASK,
-            Promiscuity(_) => IFLA_PROMISCUITY,
-            NumTxQueues(_) => IFLA_NUM_TX_QUEUES,
-            NumRxQueues(_) => IFLA_NUM_RX_QUEUES,
-            CarrierChanges(_) => IFLA_CARRIER_CHANGES,
-            GsoMaxSegs(_) => IFLA_GSO_MAX_SEGS,
-            GsoMaxSize(_) => IFLA_GSO_MAX_SIZE,
-            MinMtu(_) => IFLA_MIN_MTU,
-            MaxMtu(_) => IFLA_MAX_MTU,
-            // i32
-            NetnsId(_) => IFLA_LINK_NETNSID,
-            // custom
-            OperState(_) => IFLA_OPERSTATE,
-            Map(_) => IFLA_MAP,
-            Stats(_) => IFLA_STATS,
-            Stats64(_) => IFLA_STATS64,
-            AfSpecUnspec(_) | AfSpecBridge(_) | AfSpecUnknown(_) => {
-                IFLA_AF_SPEC
-            }
-            Other(ref attr) => attr.kind(),
+        match self {
+            Self::Priority(_) => IFLA_PRIORITY,
+            Self::Weight(_) => IFLA_WEIGHT,
+            Self::VfInfoList(_) => IFLA_VFINFO_LIST,
+            Self::VfPorts(_) => IFLA_VF_PORTS,
+            Self::PortSelf(_) => IFLA_PORT_SELF,
+            Self::PhysPortId(_) => IFLA_PHYS_PORT_ID,
+            Self::PhysSwitchId(_) => IFLA_PHYS_SWITCH_ID,
+            Self::LinkInfo(_) => IFLA_LINKINFO,
+            Self::Wireless(_) => IFLA_WIRELESS,
+            Self::ProtoInfo(_) => IFLA_PROTINFO,
+            Self::Pad(_) => IFLA_PAD,
+            Self::Xdp(_) => IFLA_XDP,
+            Self::Event(_) => IFLA_EVENT,
+            Self::NewNetnsId(_) => IFLA_NEW_NETNSID,
+            Self::IfNetnsId(_) => IFLA_IF_NETNSID,
+            Self::CarrierUpCount(_) => IFLA_CARRIER_UP_COUNT,
+            Self::CarrierDownCount(_) => IFLA_CARRIER_DOWN_COUNT,
+            Self::NewIfIndex(_) => IFLA_NEW_IFINDEX,
+            Self::PropList(_) => IFLA_PROP_LIST | NLA_F_NESTED,
+            Self::ProtoDownReason(_) => IFLA_PROTO_DOWN_REASON,
+            Self::Address(_) => IFLA_ADDRESS,
+            Self::Broadcast(_) => IFLA_BROADCAST,
+            Self::PermAddress(_) => IFLA_PERM_ADDRESS,
+            Self::IfName(_) => IFLA_IFNAME,
+            Self::Qdisc(_) => IFLA_QDISC,
+            Self::IfAlias(_) => IFLA_IFALIAS,
+            Self::PhysPortName(_) => IFLA_PHYS_PORT_NAME,
+            Self::Mode(_) => IFLA_LINKMODE,
+            Self::Carrier(_) => IFLA_CARRIER,
+            Self::ProtoDown(_) => IFLA_PROTO_DOWN,
+            Self::Mtu(_) => IFLA_MTU,
+            Self::Link(_) => IFLA_LINK,
+            Self::Controller(_) => IFLA_MASTER,
+            Self::TxQueueLen(_) => IFLA_TXQLEN,
+            Self::NetNsPid(_) => IFLA_NET_NS_PID,
+            Self::NumVf(_) => IFLA_NUM_VF,
+            Self::Group(_) => IFLA_GROUP,
+            Self::NetNsFd(_) => IFLA_NET_NS_FD,
+            Self::ExtMask(_) => IFLA_EXT_MASK,
+            Self::Promiscuity(_) => IFLA_PROMISCUITY,
+            Self::NumTxQueues(_) => IFLA_NUM_TX_QUEUES,
+            Self::NumRxQueues(_) => IFLA_NUM_RX_QUEUES,
+            Self::CarrierChanges(_) => IFLA_CARRIER_CHANGES,
+            Self::GsoMaxSegs(_) => IFLA_GSO_MAX_SEGS,
+            Self::GsoMaxSize(_) => IFLA_GSO_MAX_SIZE,
+            Self::MinMtu(_) => IFLA_MIN_MTU,
+            Self::MaxMtu(_) => IFLA_MAX_MTU,
+            Self::NetnsId(_) => IFLA_LINK_NETNSID,
+            Self::OperState(_) => IFLA_OPERSTATE,
+            Self::Map(_) => IFLA_MAP,
+            Self::Stats(_) => IFLA_STATS,
+            Self::Stats64(_) => IFLA_STATS64,
+            Self::AfSpecUnspec(_)
+            | Self::AfSpecBridge(_)
+            | Self::AfSpecUnknown(_) => IFLA_AF_SPEC,
+            Self::Other(attr) => attr.kind(),
         }
     }
 }
@@ -373,25 +358,24 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
         buf: &NlaBuffer<&'a T>,
         interface_family: AddressFamily,
     ) -> Result<Self, DecodeError> {
-        use self::LinkAttribute::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_PRIORITY => Priority(payload.to_vec()),
-            IFLA_WEIGHT => Weight(payload.to_vec()),
-            IFLA_VFINFO_LIST => VfInfoList(payload.to_vec()),
-            IFLA_VF_PORTS => VfPorts(payload.to_vec()),
-            IFLA_PORT_SELF => PortSelf(payload.to_vec()),
-            IFLA_PHYS_PORT_ID => PhysPortId(payload.to_vec()),
-            IFLA_PHYS_SWITCH_ID => PhysSwitchId(payload.to_vec()),
-            IFLA_WIRELESS => Wireless(payload.to_vec()),
-            IFLA_PROTINFO => ProtoInfo(payload.to_vec()),
-            IFLA_PAD => Pad(payload.to_vec()),
-            IFLA_EVENT => Event(payload.to_vec()),
-            IFLA_NEW_NETNSID => NewNetnsId(payload.to_vec()),
-            IFLA_IF_NETNSID => IfNetnsId(payload.to_vec()),
-            IFLA_CARRIER_UP_COUNT => CarrierUpCount(payload.to_vec()),
-            IFLA_CARRIER_DOWN_COUNT => CarrierDownCount(payload.to_vec()),
-            IFLA_NEW_IFINDEX => NewIfIndex(payload.to_vec()),
+            IFLA_PRIORITY => Self::Priority(payload.to_vec()),
+            IFLA_WEIGHT => Self::Weight(payload.to_vec()),
+            IFLA_VFINFO_LIST => Self::VfInfoList(payload.to_vec()),
+            IFLA_VF_PORTS => Self::VfPorts(payload.to_vec()),
+            IFLA_PORT_SELF => Self::PortSelf(payload.to_vec()),
+            IFLA_PHYS_PORT_ID => Self::PhysPortId(payload.to_vec()),
+            IFLA_PHYS_SWITCH_ID => Self::PhysSwitchId(payload.to_vec()),
+            IFLA_WIRELESS => Self::Wireless(payload.to_vec()),
+            IFLA_PROTINFO => Self::ProtoInfo(payload.to_vec()),
+            IFLA_PAD => Self::Pad(payload.to_vec()),
+            IFLA_EVENT => Self::Event(payload.to_vec()),
+            IFLA_NEW_NETNSID => Self::NewNetnsId(payload.to_vec()),
+            IFLA_IF_NETNSID => Self::IfNetnsId(payload.to_vec()),
+            IFLA_CARRIER_UP_COUNT => Self::CarrierUpCount(payload.to_vec()),
+            IFLA_CARRIER_DOWN_COUNT => Self::CarrierDownCount(payload.to_vec()),
+            IFLA_NEW_IFINDEX => Self::NewIfIndex(payload.to_vec()),
             IFLA_PROP_LIST => {
                 let error_msg = "invalid IFLA_PROP_LIST value";
                 let mut nlas = vec![];
@@ -400,119 +384,121 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     let parsed = Prop::parse(nla).context(error_msg)?;
                     nlas.push(parsed);
                 }
-                PropList(nlas)
+                Self::PropList(nlas)
             }
-            IFLA_PROTO_DOWN_REASON => ProtoDownReason(payload.to_vec()),
+            IFLA_PROTO_DOWN_REASON => Self::ProtoDownReason(payload.to_vec()),
             // HW address (we parse them as Vec for now, because for IP over
             // GRE, the HW address is an IP instead of a MAC for
             // example
-            IFLA_ADDRESS => Address(payload.to_vec()),
-            IFLA_BROADCAST => Broadcast(payload.to_vec()),
-            IFLA_PERM_ADDRESS => PermAddress(payload.to_vec()),
+            IFLA_ADDRESS => Self::Address(payload.to_vec()),
+            IFLA_BROADCAST => Self::Broadcast(payload.to_vec()),
+            IFLA_PERM_ADDRESS => Self::PermAddress(payload.to_vec()),
             // String
-            IFLA_IFNAME => IfName(
+            IFLA_IFNAME => Self::IfName(
                 parse_string(payload).context("invalid IFLA_IFNAME value")?,
             ),
-            IFLA_QDISC => Qdisc(
+            IFLA_QDISC => Self::Qdisc(
                 parse_string(payload).context("invalid IFLA_QDISC value")?,
             ),
-            IFLA_IFALIAS => IfAlias(
+            IFLA_IFALIAS => Self::IfAlias(
                 parse_string(payload).context("invalid IFLA_IFALIAS value")?,
             ),
-            IFLA_PHYS_PORT_NAME => PhysPortName(
+            IFLA_PHYS_PORT_NAME => Self::PhysPortName(
                 parse_string(payload)
                     .context("invalid IFLA_PHYS_PORT_NAME value")?,
             ),
             // u8
-            IFLA_LINKMODE => {
-                Mode(parse_u8(payload).context("invalid IFLA_LINKMODE value")?)
-            }
-            IFLA_CARRIER => Carrier(
+            IFLA_LINKMODE => Self::Mode(
+                parse_u8(payload).context("invalid IFLA_LINKMODE value")?,
+            ),
+            IFLA_CARRIER => Self::Carrier(
                 parse_u8(payload).context("invalid IFLA_CARRIER value")?,
             ),
-            IFLA_PROTO_DOWN => ProtoDown(
+            IFLA_PROTO_DOWN => Self::ProtoDown(
                 parse_u8(payload).context("invalid IFLA_PROTO_DOWN value")?,
             ),
 
             IFLA_MTU => {
-                Mtu(parse_u32(payload).context("invalid IFLA_MTU value")?)
+                Self::Mtu(parse_u32(payload).context("invalid IFLA_MTU value")?)
             }
-            IFLA_LINK => {
-                Link(parse_u32(payload).context("invalid IFLA_LINK value")?)
-            }
-            IFLA_MASTER => {
-                Master(parse_u32(payload).context("invalid IFLA_MASTER value")?)
-            }
-            IFLA_TXQLEN => TxQueueLen(
+            IFLA_LINK => Self::Link(
+                parse_u32(payload).context("invalid IFLA_LINK value")?,
+            ),
+            IFLA_MASTER => Self::Controller(
+                parse_u32(payload).context("invalid IFLA_MASTER value")?,
+            ),
+            IFLA_TXQLEN => Self::TxQueueLen(
                 parse_u32(payload).context("invalid IFLA_TXQLEN value")?,
             ),
-            IFLA_NET_NS_PID => NetNsPid(
+            IFLA_NET_NS_PID => Self::NetNsPid(
                 parse_u32(payload).context("invalid IFLA_NET_NS_PID value")?,
             ),
-            IFLA_NUM_VF => {
-                NumVf(parse_u32(payload).context("invalid IFLA_NUM_VF value")?)
-            }
-            IFLA_GROUP => {
-                Group(parse_u32(payload).context("invalid IFLA_GROUP value")?)
-            }
-            IFLA_NET_NS_FD => NetNsFd(
+            IFLA_NUM_VF => Self::NumVf(
+                parse_u32(payload).context("invalid IFLA_NUM_VF value")?,
+            ),
+            IFLA_GROUP => Self::Group(
+                parse_u32(payload).context("invalid IFLA_GROUP value")?,
+            ),
+            IFLA_NET_NS_FD => Self::NetNsFd(
                 parse_i32(payload).context("invalid IFLA_NET_NS_FD value")?,
             ),
-            IFLA_EXT_MASK => ExtMask(
+            IFLA_EXT_MASK => Self::ExtMask(
                 parse_u32(payload).context("invalid IFLA_EXT_MASK value")?,
             ),
-            IFLA_PROMISCUITY => Promiscuity(
+            IFLA_PROMISCUITY => Self::Promiscuity(
                 parse_u32(payload).context("invalid IFLA_PROMISCUITY value")?,
             ),
-            IFLA_NUM_TX_QUEUES => NumTxQueues(
+            IFLA_NUM_TX_QUEUES => Self::NumTxQueues(
                 parse_u32(payload)
                     .context("invalid IFLA_NUM_TX_QUEUES value")?,
             ),
-            IFLA_NUM_RX_QUEUES => NumRxQueues(
+            IFLA_NUM_RX_QUEUES => Self::NumRxQueues(
                 parse_u32(payload)
                     .context("invalid IFLA_NUM_RX_QUEUES value")?,
             ),
-            IFLA_CARRIER_CHANGES => CarrierChanges(
+            IFLA_CARRIER_CHANGES => Self::CarrierChanges(
                 parse_u32(payload)
                     .context("invalid IFLA_CARRIER_CHANGES value")?,
             ),
-            IFLA_GSO_MAX_SEGS => GsoMaxSegs(
+            IFLA_GSO_MAX_SEGS => Self::GsoMaxSegs(
                 parse_u32(payload)
                     .context("invalid IFLA_GSO_MAX_SEGS value")?,
             ),
-            IFLA_GSO_MAX_SIZE => GsoMaxSize(
+            IFLA_GSO_MAX_SIZE => Self::GsoMaxSize(
                 parse_u32(payload)
                     .context("invalid IFLA_GSO_MAX_SIZE value")?,
             ),
-            IFLA_MIN_MTU => MinMtu(
+            IFLA_MIN_MTU => Self::MinMtu(
                 parse_u32(payload).context("invalid IFLA_MIN_MTU value")?,
             ),
-            IFLA_MAX_MTU => MaxMtu(
+            IFLA_MAX_MTU => Self::MaxMtu(
                 parse_u32(payload).context("invalid IFLA_MAX_MTU value")?,
             ),
-            IFLA_LINK_NETNSID => NetnsId(
+            IFLA_LINK_NETNSID => Self::NetnsId(
                 parse_i32(payload)
                     .context("invalid IFLA_LINK_NETNSID value")?,
             ),
-            IFLA_OPERSTATE => OperState(
+            IFLA_OPERSTATE => Self::OperState(
                 parse_u8(payload)
                     .context("invalid IFLA_OPERSTATE value")?
                     .into(),
             ),
-            IFLA_MAP => Map(super::Map::parse(&MapBuffer::new(payload))
-                .context(format!("Invalid IFLA_MAP value {:?}", payload))?),
-            IFLA_STATS => {
-                Stats(super::Stats::parse(&StatsBuffer::new(payload)).context(
+            IFLA_MAP => Self::Map(
+                super::Map::parse(&MapBuffer::new(payload))
+                    .context(format!("Invalid IFLA_MAP value {:?}", payload))?,
+            ),
+            IFLA_STATS => Self::Stats(
+                super::Stats::parse(&StatsBuffer::new(payload)).context(
                     format!("Invalid IFLA_STATS value {:?}", payload),
-                )?)
-            }
+                )?,
+            ),
             IFLA_STATS64 => {
                 let payload = expand_buffer_if_small(
                     payload,
                     LINK_STATS64_LEN,
                     "IFLA_STATS64",
                 );
-                Stats64(
+                Self::Stats64(
                     super::Stats64::parse(&Stats64Buffer::new(
                         payload.as_slice(),
                     ))
@@ -523,20 +509,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 )
             }
             IFLA_AF_SPEC => match interface_family {
-                AddressFamily::Unspec => AfSpecUnspec(
+                AddressFamily::Unspec => Self::AfSpecUnspec(
                     VecAfSpecUnspec::parse(&NlaBuffer::new(&buf.value()))
                         .context("invalid IFLA_AF_SPEC value for AF_UNSPEC")?
                         .0,
                 ),
                 #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
-                AddressFamily::Bridge => AfSpecBridge(
+                AddressFamily::Bridge => Self::AfSpecBridge(
                     VecAfSpecBridge::parse(&NlaBuffer::new(&buf.value()))
                         .context("invalid IFLA_AF_SPEC value for AF_BRIDGE")?
                         .0,
                 ),
-                _ => AfSpecUnknown(payload.to_vec()),
+                _ => Self::AfSpecUnknown(payload.to_vec()),
             },
-            IFLA_LINKINFO => LinkInfo(
+            IFLA_LINKINFO => Self::LinkInfo(
                 VecLinkInfo::parse(&NlaBuffer::new(&buf.value()))
                     .context("invalid IFLA_LINKINFO value")?
                     .0,
@@ -544,9 +530,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_XDP => {
                 let err = "invalid IFLA_XDP value";
                 let buf = NlaBuffer::new_checked(payload).context(err)?;
-                Xdp(VecXdp::parse(&buf).context(err)?.0)
+                Self::Xdp(VecXdp::parse(&buf).context(err)?.0)
             }
-            kind => Other(
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
             ),
