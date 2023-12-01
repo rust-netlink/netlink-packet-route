@@ -5,9 +5,11 @@ use netlink_packet_core::{
 };
 use netlink_packet_route::{
     link::{LinkAttribute, LinkMessage},
-    AddressFamily, RtnlMessage, RTEXT_FILTER_BRVLAN_COMPRESSED,
+    AddressFamily, RouteNetlinkMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
+
+const RTEXT_FILTER_BRVLAN_COMPRESSED: u32 = 1 << 2;
 
 fn main() {
     let mut socket = Socket::new(NETLINK_ROUTE).unwrap();
@@ -21,7 +23,7 @@ fn main() {
         .push(LinkAttribute::ExtMask(RTEXT_FILTER_BRVLAN_COMPRESSED));
     let mut packet = NetlinkMessage::new(
         NetlinkHeader::default(),
-        NetlinkPayload::from(RtnlMessage::GetLink(message)),
+        NetlinkPayload::from(RouteNetlinkMessage::GetLink(message)),
     );
     packet.header.flags = NLM_F_DUMP | NLM_F_REQUEST;
     packet.header.sequence_number = 1;
@@ -62,7 +64,7 @@ fn main() {
             // Parseable<NetlinkMessage>>::parse(NetlinkBuffer::new(&bytes))
             //         .unwrap();
             //
-            let rx_packet: NetlinkMessage<RtnlMessage> =
+            let rx_packet: NetlinkMessage<RouteNetlinkMessage> =
                 NetlinkMessage::deserialize(bytes).unwrap();
 
             println!("<<< {rx_packet:?}");

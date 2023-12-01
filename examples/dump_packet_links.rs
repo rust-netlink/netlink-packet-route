@@ -3,7 +3,7 @@
 use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
-use netlink_packet_route::{link::LinkMessage, RtnlMessage};
+use netlink_packet_route::{link::LinkMessage, RouteNetlinkMessage};
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
 fn main() {
@@ -13,7 +13,9 @@ fn main() {
 
     let mut packet = NetlinkMessage::new(
         NetlinkHeader::default(),
-        NetlinkPayload::from(RtnlMessage::GetLink(LinkMessage::default())),
+        NetlinkPayload::from(RouteNetlinkMessage::GetLink(
+            LinkMessage::default(),
+        )),
     );
     packet.header.flags = NLM_F_DUMP | NLM_F_REQUEST;
     packet.header.sequence_number = 1;
@@ -54,7 +56,7 @@ fn main() {
             // Parseable<NetlinkMessage>>::parse(NetlinkBuffer::new(&bytes))
             //         .unwrap();
             //
-            let rx_packet: NetlinkMessage<RtnlMessage> =
+            let rx_packet: NetlinkMessage<RouteNetlinkMessage> =
                 NetlinkMessage::deserialize(bytes).unwrap();
 
             println!("<<< {rx_packet:?}");

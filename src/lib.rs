@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-pub mod rtnl;
-pub use self::rtnl::*;
-
 pub mod address;
 pub mod link;
 pub mod neighbour;
 pub mod neighbour_table;
+pub mod nsid;
 pub mod route;
 pub mod rule;
 pub mod tc;
+
+mod message;
+#[cfg(test)]
+mod tests;
 
 pub(crate) mod ip;
 
@@ -37,6 +39,7 @@ mod address_family_fallback;
 pub use self::address_family_fallback::AddressFamily;
 
 pub use self::ip::IpProtocol;
+pub use self::message::{RouteNetlinkMessage, RouteNetlinkMessageBuffer};
 
 /// The `netlink-packet-route` crate is designed to abstract Netlink route
 /// protocol(`rtnetlink`) packet into Rust data types. The goal of this crate is
