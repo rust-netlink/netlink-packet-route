@@ -30,7 +30,8 @@ const IFLA_QDISC: u16 = 6;
 const IFLA_STATS: u16 = 7;
 // No kernel is using IFLA_COST
 // const IFLA_COST: u16 = 8;
-const IFLA_PRIORITY: u16 = 9;
+// No kernel is using IFLA_PRIORITY
+// const IFLA_PRIORITY: u16 = 9;
 const IFLA_MASTER: u16 = 10;
 const IFLA_WIRELESS: u16 = 11;
 const IFLA_PROTINFO: u16 = 12;
@@ -90,7 +91,6 @@ const IFLA_DEVLINK_PORT: u16 = 62;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum LinkAttribute {
-    Priority(Vec<u8>),
     Weight(Vec<u8>),
     VfInfoList(Vec<u8>),
     VfPorts(Vec<u8>),
@@ -157,8 +157,7 @@ pub enum LinkAttribute {
 impl Nla for LinkAttribute {
     fn value_len(&self) -> usize {
         match self {
-            Self::Priority(bytes)
-            | Self::Weight(bytes)
+            Self::Weight(bytes)
             | Self::VfInfoList(bytes)
             | Self::VfPorts(bytes)
             | Self::PortSelf(bytes)
@@ -220,8 +219,7 @@ impl Nla for LinkAttribute {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Priority(bytes)
-            | Self::Weight(bytes)
+            Self::Weight(bytes)
             | Self::VfInfoList(bytes)
             | Self::VfPorts(bytes)
             | Self::PortSelf(bytes)
@@ -291,7 +289,6 @@ impl Nla for LinkAttribute {
 
     fn kind(&self) -> u16 {
         match self {
-            Self::Priority(_) => IFLA_PRIORITY,
             Self::Weight(_) => IFLA_WEIGHT,
             Self::VfInfoList(_) => IFLA_VFINFO_LIST,
             Self::VfPorts(_) => IFLA_VF_PORTS,
@@ -360,7 +357,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
     ) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_PRIORITY => Self::Priority(payload.to_vec()),
             IFLA_WEIGHT => Self::Weight(payload.to_vec()),
             IFLA_VFINFO_LIST => Self::VfInfoList(payload.to_vec()),
             IFLA_VF_PORTS => Self::VfPorts(payload.to_vec()),
