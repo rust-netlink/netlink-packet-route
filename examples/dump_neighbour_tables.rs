@@ -4,7 +4,7 @@ use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    neighbour_table::NeighbourTableMessage, RtnlMessage,
+    neighbour_table::NeighbourTableMessage, RouteNetlinkMessage,
 };
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
@@ -18,7 +18,7 @@ fn main() {
 
     let mut req = NetlinkMessage::new(
         nl_hdr,
-        NetlinkPayload::from(RtnlMessage::GetNeighbourTable(
+        NetlinkPayload::from(RouteNetlinkMessage::GetNeighbourTable(
             NeighbourTableMessage::default(),
         )),
     );
@@ -42,13 +42,13 @@ fn main() {
         loop {
             let bytes = &receive_buffer[offset..];
             // Parse the message
-            let msg: NetlinkMessage<RtnlMessage> =
+            let msg: NetlinkMessage<RouteNetlinkMessage> =
                 NetlinkMessage::deserialize(bytes).unwrap();
 
             match msg.payload {
                 NetlinkPayload::Done(_) => break 'outer,
                 NetlinkPayload::InnerMessage(
-                    RtnlMessage::NewNeighbourTable(entry),
+                    RouteNetlinkMessage::NewNeighbourTable(entry),
                 ) => {
                     println!("HAHA {:?}", entry);
                 }
