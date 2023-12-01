@@ -28,16 +28,17 @@ const IFLA_MTU: u16 = 4;
 const IFLA_LINK: u16 = 5;
 const IFLA_QDISC: u16 = 6;
 const IFLA_STATS: u16 = 7;
-// No kernel is using IFLA_COST
+// No kernel code is using IFLA_COST
 // const IFLA_COST: u16 = 8;
-// No kernel is using IFLA_PRIORITY
+// No kernel code is using IFLA_PRIORITY
 // const IFLA_PRIORITY: u16 = 9;
 const IFLA_MASTER: u16 = 10;
 const IFLA_WIRELESS: u16 = 11;
 const IFLA_PROTINFO: u16 = 12;
 const IFLA_TXQLEN: u16 = 13;
 const IFLA_MAP: u16 = 14;
-const IFLA_WEIGHT: u16 = 15;
+// No kernel code is using IFLA_WEIGHT
+// const IFLA_WEIGHT: u16 = 15;
 const IFLA_OPERSTATE: u16 = 16;
 const IFLA_LINKMODE: u16 = 17;
 const IFLA_LINKINFO: u16 = 18;
@@ -91,7 +92,6 @@ const IFLA_DEVLINK_PORT: u16 = 62;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum LinkAttribute {
-    Weight(Vec<u8>),
     VfInfoList(Vec<u8>),
     VfPorts(Vec<u8>),
     PortSelf(Vec<u8>),
@@ -157,8 +157,7 @@ pub enum LinkAttribute {
 impl Nla for LinkAttribute {
     fn value_len(&self) -> usize {
         match self {
-            Self::Weight(bytes)
-            | Self::VfInfoList(bytes)
+            Self::VfInfoList(bytes)
             | Self::VfPorts(bytes)
             | Self::PortSelf(bytes)
             | Self::PhysPortId(bytes)
@@ -219,8 +218,7 @@ impl Nla for LinkAttribute {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Weight(bytes)
-            | Self::VfInfoList(bytes)
+            Self::VfInfoList(bytes)
             | Self::VfPorts(bytes)
             | Self::PortSelf(bytes)
             | Self::PhysPortId(bytes)
@@ -289,7 +287,6 @@ impl Nla for LinkAttribute {
 
     fn kind(&self) -> u16 {
         match self {
-            Self::Weight(_) => IFLA_WEIGHT,
             Self::VfInfoList(_) => IFLA_VFINFO_LIST,
             Self::VfPorts(_) => IFLA_VF_PORTS,
             Self::PortSelf(_) => IFLA_PORT_SELF,
@@ -357,7 +354,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
     ) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_WEIGHT => Self::Weight(payload.to_vec()),
             IFLA_VFINFO_LIST => Self::VfInfoList(payload.to_vec()),
             IFLA_VF_PORTS => Self::VfPorts(payload.to_vec()),
             IFLA_PORT_SELF => Self::PortSelf(payload.to_vec()),
