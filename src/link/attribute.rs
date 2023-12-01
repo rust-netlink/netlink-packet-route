@@ -65,7 +65,7 @@ const IFLA_PHYS_PORT_NAME: u16 = 38;
 const IFLA_PROTO_DOWN: u16 = 39;
 const IFLA_GSO_MAX_SEGS: u16 = 40;
 const IFLA_GSO_MAX_SIZE: u16 = 41;
-const IFLA_PAD: u16 = 42;
+// const IFLA_PAD: u16 = 42;
 const IFLA_XDP: u16 = 43;
 const IFLA_EVENT: u16 = 44;
 const IFLA_NEW_NETNSID: u16 = 45;
@@ -97,7 +97,6 @@ pub enum LinkAttribute {
     PortSelf(Vec<u8>),
     PhysPortId(Vec<u8>),
     PhysSwitchId(Vec<u8>),
-    Pad(Vec<u8>),
     Xdp(Vec<Xdp>),
     Event(Vec<u8>),
     NewNetnsId(Vec<u8>),
@@ -162,7 +161,6 @@ impl Nla for LinkAttribute {
             | Self::PortSelf(bytes)
             | Self::PhysPortId(bytes)
             | Self::PhysSwitchId(bytes)
-            | Self::Pad(bytes)
             | Self::Event(bytes)
             | Self::NewNetnsId(bytes)
             | Self::IfNetnsId(bytes)
@@ -225,7 +223,6 @@ impl Nla for LinkAttribute {
             | Self::PhysSwitchId(bytes)
             | Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
-            | Self::Pad(bytes)
             | Self::Event(bytes)
             | Self::NewNetnsId(bytes)
             | Self::IfNetnsId(bytes)
@@ -295,7 +292,6 @@ impl Nla for LinkAttribute {
             Self::LinkInfo(_) => IFLA_LINKINFO,
             Self::Wireless(_) => IFLA_WIRELESS,
             Self::ProtoInfo(_) => IFLA_PROTINFO,
-            Self::Pad(_) => IFLA_PAD,
             Self::Xdp(_) => IFLA_XDP,
             Self::Event(_) => IFLA_EVENT,
             Self::NewNetnsId(_) => IFLA_NEW_NETNSID,
@@ -361,7 +357,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_PHYS_SWITCH_ID => Self::PhysSwitchId(payload.to_vec()),
             IFLA_WIRELESS => Self::Wireless(payload.to_vec()),
             IFLA_PROTINFO => Self::ProtoInfo(payload.to_vec()),
-            IFLA_PAD => Self::Pad(payload.to_vec()),
             IFLA_EVENT => Self::Event(payload.to_vec()),
             IFLA_NEW_NETNSID => Self::NewNetnsId(payload.to_vec()),
             IFLA_IF_NETNSID => Self::IfNetnsId(payload.to_vec()),
