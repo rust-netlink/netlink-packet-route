@@ -61,7 +61,7 @@ const IFLA_BR_NF_CALL_IPTABLES: u16 = 36;
 const IFLA_BR_NF_CALL_IP6TABLES: u16 = 37;
 const IFLA_BR_NF_CALL_ARPTABLES: u16 = 38;
 const IFLA_BR_VLAN_DEFAULT_PVID: u16 = 39;
-const IFLA_BR_PAD: u16 = 40;
+// const IFLA_BR_PAD: u16 = 40;
 const IFLA_BR_VLAN_STATS_ENABLED: u16 = 41;
 const IFLA_BR_MCAST_STATS_ENABLED: u16 = 42;
 const IFLA_BR_MCAST_IGMP_VERSION: u16 = 43;
@@ -77,7 +77,6 @@ pub enum InfoBridge {
     // FIXME: what type is this? putting Vec<u8> for now but it might
     // be a boolean actually
     FdbFlush(Vec<u8>),
-    Pad(Vec<u8>),
     HelloTimer(u64),
     TcnTimer(u64),
     TopologyChangeTimer(u64),
@@ -129,7 +128,7 @@ impl Nla for InfoBridge {
     fn value_len(&self) -> usize {
         use self::InfoBridge::*;
         match self {
-            FdbFlush(bytes) | Pad(bytes) => bytes.len(),
+            FdbFlush(bytes) => bytes.len(),
             HelloTimer(_)
             | TcnTimer(_)
             | TopologyChangeTimer(_)
@@ -182,9 +181,7 @@ impl Nla for InfoBridge {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoBridge::*;
         match self {
-            FdbFlush(ref bytes) | Pad(ref bytes) => {
-                buffer.copy_from_slice(bytes)
-            }
+            FdbFlush(ref bytes) => buffer.copy_from_slice(bytes),
 
             HelloTimer(ref value)
             | TcnTimer(ref value)
@@ -257,7 +254,6 @@ impl Nla for InfoBridge {
         match self {
             GroupAddr(_) => IFLA_BR_GROUP_ADDR,
             FdbFlush(_) => IFLA_BR_FDB_FLUSH,
-            Pad(_) => IFLA_BR_PAD,
             HelloTimer(_) => IFLA_BR_HELLO_TIMER,
             TcnTimer(_) => IFLA_BR_TCN_TIMER,
             TopologyChangeTimer(_) => IFLA_BR_TOPOLOGY_CHANGE_TIMER,
@@ -319,7 +315,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BR_FDB_FLUSH => FdbFlush(payload.to_vec()),
-            IFLA_BR_PAD => Pad(payload.to_vec()),
             IFLA_BR_HELLO_TIMER => HelloTimer(
                 parse_u64(payload)
                     .context("invalid IFLA_BR_HELLO_TIMER value")?,
