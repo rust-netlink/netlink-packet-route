@@ -8,7 +8,7 @@ use std::{
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
-    nla::{Nla, NlaBuffer, NlasIterator},
+    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::{parse_ip, parse_mac, parse_u16, parse_u32, parse_u8},
     traits::{Emitable, Parseable},
     DecodeError,
@@ -60,65 +60,72 @@ pub enum BondAdInfo {
     ActorKey(u16),
     PartnerKey(u16),
     PartnerMac([u8; 6]),
+    Other(DefaultNla),
 }
 
 impl Nla for BondAdInfo {
     fn value_len(&self) -> usize {
-        use self::BondAdInfo::*;
         match self {
-            Aggregator(_) | NumPorts(_) | ActorKey(_) | PartnerKey(_) => 2,
-            PartnerMac(_) => 6,
+            Self::Aggregator(_)
+            | Self::NumPorts(_)
+            | Self::ActorKey(_)
+            | Self::PartnerKey(_) => 2,
+            Self::PartnerMac(_) => 6,
+            Self::Other(v) => v.value_len(),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::BondAdInfo::*;
         match self {
-            Aggregator(_) => IFLA_BOND_AD_INFO_AGGREGATOR,
-            NumPorts(_) => IFLA_BOND_AD_INFO_NUM_PORTS,
-            ActorKey(_) => IFLA_BOND_AD_INFO_ACTOR_KEY,
-            PartnerKey(_) => IFLA_BOND_AD_INFO_PARTNER_KEY,
-            PartnerMac(_) => IFLA_BOND_AD_INFO_PARTNER_MAC,
+            Self::Aggregator(_) => IFLA_BOND_AD_INFO_AGGREGATOR,
+            Self::NumPorts(_) => IFLA_BOND_AD_INFO_NUM_PORTS,
+            Self::ActorKey(_) => IFLA_BOND_AD_INFO_ACTOR_KEY,
+            Self::PartnerKey(_) => IFLA_BOND_AD_INFO_PARTNER_KEY,
+            Self::PartnerMac(_) => IFLA_BOND_AD_INFO_PARTNER_MAC,
+            Self::Other(v) => v.kind(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::BondAdInfo::*;
         match self {
-            Aggregator(d) | NumPorts(d) | ActorKey(d) | PartnerKey(d) => {
-                NativeEndian::write_u16(buffer, *d)
-            }
-            PartnerMac(mac) => buffer.copy_from_slice(mac),
+            Self::Aggregator(d)
+            | Self::NumPorts(d)
+            | Self::ActorKey(d)
+            | Self::PartnerKey(d) => NativeEndian::write_u16(buffer, *d),
+            Self::PartnerMac(mac) => buffer.copy_from_slice(mac),
+            Self::Other(v) => v.emit_value(buffer),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for BondAdInfo {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::BondAdInfo::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BOND_AD_INFO_AGGREGATOR => Aggregator(
+            IFLA_BOND_AD_INFO_AGGREGATOR => Self::Aggregator(
                 parse_u16(payload)
                     .context("invalid IFLA_BOND_AD_INFO_AGGREGATOR value")?,
             ),
-            IFLA_BOND_AD_INFO_NUM_PORTS => NumPorts(
+            IFLA_BOND_AD_INFO_NUM_PORTS => Self::NumPorts(
                 parse_u16(payload)
                     .context("invalid IFLA_BOND_AD_INFO_NUM_PORTS value")?,
             ),
-            IFLA_BOND_AD_INFO_ACTOR_KEY => ActorKey(
+            IFLA_BOND_AD_INFO_ACTOR_KEY => Self::ActorKey(
                 parse_u16(payload)
                     .context("invalid IFLA_BOND_AD_INFO_ACTOR_KEY value")?,
             ),
-            IFLA_BOND_AD_INFO_PARTNER_KEY => PartnerKey(
+            IFLA_BOND_AD_INFO_PARTNER_KEY => Self::PartnerKey(
                 parse_u16(payload)
                     .context("invalid IFLA_BOND_AD_INFO_PARTNER_KEY value")?,
             ),
-            IFLA_BOND_AD_INFO_PARTNER_MAC => PartnerMac(
+            IFLA_BOND_AD_INFO_PARTNER_MAC => Self::PartnerMac(
                 parse_mac(payload)
                     .context("invalid IFLA_BOND_AD_INFO_PARTNER_MAC value")?,
             ),
-            _ => return Err(format!("unknown NLA type {}", buf.kind()).into()),
+            _ => Self::Other(DefaultNla::parse(buf).context(format!(
+                "invalid NLA for {}: {payload:?}",
+                buf.kind()
+            ))?),
         })
     }
 }
@@ -223,169 +230,159 @@ pub enum InfoBond {
     AdLacpActive(u8),
     MissedMax(u8),
     NsIp6Target(Vec<Ipv6Addr>),
+    Other(DefaultNla),
 }
 
 impl Nla for InfoBond {
-    #[rustfmt::skip]
     fn value_len(&self) -> usize {
-        use self::InfoBond::*;
-        match *self {
-            Mode(_)
-                | UseCarrier(_)
-                | PrimaryReselect(_)
-                | FailOverMac(_)
-                | XmitHashPolicy(_)
-                | NumPeerNotif(_)
-                | AllPortsActive(_)
-                | AdLacpActive(_)
-                | AdLacpRate(_)
-                | AdSelect(_)
-                | TlbDynamicLb(_)
-                | MissedMax(_)
-            => 1,
-            AdActorSysPrio(_)
-                | AdUserPortKey(_)
-            => 2,
-            ActivePort(_)
-                | MiiMon(_)
-                | UpDelay(_)
-                | DownDelay(_)
-                | ArpInterval(_)
-                | ArpValidate(_)
-                | ArpAllTargets(_)
-                | Primary(_)
-                | ResendIgmp(_)
-                | MinLinks(_)
-                | LpInterval(_)
-                | PacketsPerPort(_)
-                | PeerNotifDelay(_)
-                => 4,
-            ArpIpTarget(ref addrs)
-                => {
-                    BondIpAddrNlaList::from(addrs).as_slice().buffer_len()
-                },
-            NsIp6Target(ref addrs)
-                =>  {
-                    BondIpAddrNlaList::from(addrs).as_slice().buffer_len()
-                },
-            AdActorSystem(_) => 6,
-            AdInfo(ref infos)
-            => infos.as_slice().buffer_len(),
+        match self {
+            Self::Mode(_)
+            | Self::UseCarrier(_)
+            | Self::PrimaryReselect(_)
+            | Self::FailOverMac(_)
+            | Self::XmitHashPolicy(_)
+            | Self::NumPeerNotif(_)
+            | Self::AllPortsActive(_)
+            | Self::AdLacpActive(_)
+            | Self::AdLacpRate(_)
+            | Self::AdSelect(_)
+            | Self::TlbDynamicLb(_)
+            | Self::MissedMax(_) => 1,
+            Self::AdActorSysPrio(_) | Self::AdUserPortKey(_) => 2,
+            Self::ActivePort(_)
+            | Self::MiiMon(_)
+            | Self::UpDelay(_)
+            | Self::DownDelay(_)
+            | Self::ArpInterval(_)
+            | Self::ArpValidate(_)
+            | Self::ArpAllTargets(_)
+            | Self::Primary(_)
+            | Self::ResendIgmp(_)
+            | Self::MinLinks(_)
+            | Self::LpInterval(_)
+            | Self::PacketsPerPort(_)
+            | Self::PeerNotifDelay(_) => 4,
+            Self::ArpIpTarget(ref addrs) => {
+                BondIpAddrNlaList::from(addrs).as_slice().buffer_len()
+            }
+            Self::NsIp6Target(ref addrs) => {
+                BondIpAddrNlaList::from(addrs).as_slice().buffer_len()
+            }
+            Self::AdActorSystem(_) => 6,
+            Self::AdInfo(infos) => infos.as_slice().buffer_len(),
+            Self::Other(v) => v.value_len(),
         }
     }
 
-    #[rustfmt::skip]
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoBond::*;
         match self {
-            Mode(value)
-                | UseCarrier(value)
-                | PrimaryReselect(value)
-                | FailOverMac(value)
-                | XmitHashPolicy(value)
-                | NumPeerNotif(value)
-                | AllPortsActive(value)
-                | AdLacpActive(value)
-                | AdLacpRate(value)
-                | AdSelect(value)
-                | TlbDynamicLb(value)
-                | MissedMax(value)
-            => buffer[0] = *value,
-            AdActorSysPrio(value)
-                | AdUserPortKey(value)
-            => NativeEndian::write_u16(buffer, *value),
-            ActivePort(value)
-                | MiiMon(value)
-                | UpDelay(value)
-                | DownDelay(value)
-                | ArpInterval(value)
-                | ArpValidate(value)
-                | ArpAllTargets(value)
-                | Primary(value)
-                | ResendIgmp(value)
-                | MinLinks(value)
-                | LpInterval(value)
-                | PacketsPerPort(value)
-                | PeerNotifDelay(value)
-             => NativeEndian::write_u32(buffer, *value),
-            AdActorSystem(bytes) => buffer.copy_from_slice(bytes),
-            ArpIpTarget(addrs) => {
+            Self::Mode(value)
+            | Self::UseCarrier(value)
+            | Self::PrimaryReselect(value)
+            | Self::FailOverMac(value)
+            | Self::XmitHashPolicy(value)
+            | Self::NumPeerNotif(value)
+            | Self::AllPortsActive(value)
+            | Self::AdLacpActive(value)
+            | Self::AdLacpRate(value)
+            | Self::AdSelect(value)
+            | Self::TlbDynamicLb(value)
+            | Self::MissedMax(value) => buffer[0] = *value,
+            Self::AdActorSysPrio(value) | Self::AdUserPortKey(value) => {
+                NativeEndian::write_u16(buffer, *value)
+            }
+            Self::ActivePort(value)
+            | Self::MiiMon(value)
+            | Self::UpDelay(value)
+            | Self::DownDelay(value)
+            | Self::ArpInterval(value)
+            | Self::ArpValidate(value)
+            | Self::ArpAllTargets(value)
+            | Self::Primary(value)
+            | Self::ResendIgmp(value)
+            | Self::MinLinks(value)
+            | Self::LpInterval(value)
+            | Self::PacketsPerPort(value)
+            | Self::PeerNotifDelay(value) => {
+                NativeEndian::write_u32(buffer, *value)
+            }
+            Self::AdActorSystem(bytes) => buffer.copy_from_slice(bytes),
+            Self::ArpIpTarget(addrs) => {
                 BondIpAddrNlaList::from(addrs).as_slice().emit(buffer)
-            },
-            NsIp6Target(addrs) => {
+            }
+            Self::NsIp6Target(addrs) => {
                 BondIpAddrNlaList::from(addrs).as_slice().emit(buffer)
-            },
-            AdInfo(infos) => infos.as_slice().emit(buffer),
+            }
+            Self::AdInfo(infos) => infos.as_slice().emit(buffer),
+            Self::Other(v) => v.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoBond::*;
-
         match self {
-            Mode(_) => IFLA_BOND_MODE,
-            ActivePort(_) => IFLA_BOND_ACTIVE_PORT,
-            MiiMon(_) => IFLA_BOND_MIIMON,
-            UpDelay(_) => IFLA_BOND_UPDELAY,
-            DownDelay(_) => IFLA_BOND_DOWNDELAY,
-            UseCarrier(_) => IFLA_BOND_USE_CARRIER,
-            ArpInterval(_) => IFLA_BOND_ARP_INTERVAL,
-            ArpIpTarget(_) => IFLA_BOND_ARP_IP_TARGET,
-            ArpValidate(_) => IFLA_BOND_ARP_VALIDATE,
-            ArpAllTargets(_) => IFLA_BOND_ARP_ALL_TARGETS,
-            Primary(_) => IFLA_BOND_PRIMARY,
-            PrimaryReselect(_) => IFLA_BOND_PRIMARY_RESELECT,
-            FailOverMac(_) => IFLA_BOND_FAIL_OVER_MAC,
-            XmitHashPolicy(_) => IFLA_BOND_XMIT_HASH_POLICY,
-            ResendIgmp(_) => IFLA_BOND_RESEND_IGMP,
-            NumPeerNotif(_) => IFLA_BOND_NUM_PEER_NOTIF,
-            AllPortsActive(_) => IFLA_BOND_ALL_PORTS_ACTIVE,
-            MinLinks(_) => IFLA_BOND_MIN_LINKS,
-            LpInterval(_) => IFLA_BOND_LP_INTERVAL,
-            PacketsPerPort(_) => IFLA_BOND_PACKETS_PER_PORT,
-            AdLacpRate(_) => IFLA_BOND_AD_LACP_RATE,
-            AdSelect(_) => IFLA_BOND_AD_SELECT,
-            AdInfo(_) => IFLA_BOND_AD_INFO,
-            AdActorSysPrio(_) => IFLA_BOND_AD_ACTOR_SYS_PRIO,
-            AdUserPortKey(_) => IFLA_BOND_AD_USER_PORT_KEY,
-            AdActorSystem(_) => IFLA_BOND_AD_ACTOR_SYSTEM,
-            TlbDynamicLb(_) => IFLA_BOND_TLB_DYNAMIC_LB,
-            PeerNotifDelay(_) => IFLA_BOND_PEER_NOTIF_DELAY,
-            AdLacpActive(_) => IFLA_BOND_AD_LACP_ACTIVE,
-            MissedMax(_) => IFLA_BOND_MISSED_MAX,
-            NsIp6Target(_) => IFLA_BOND_NS_IP6_TARGET,
+            Self::Mode(_) => IFLA_BOND_MODE,
+            Self::ActivePort(_) => IFLA_BOND_ACTIVE_PORT,
+            Self::MiiMon(_) => IFLA_BOND_MIIMON,
+            Self::UpDelay(_) => IFLA_BOND_UPDELAY,
+            Self::DownDelay(_) => IFLA_BOND_DOWNDELAY,
+            Self::UseCarrier(_) => IFLA_BOND_USE_CARRIER,
+            Self::ArpInterval(_) => IFLA_BOND_ARP_INTERVAL,
+            Self::ArpIpTarget(_) => IFLA_BOND_ARP_IP_TARGET,
+            Self::ArpValidate(_) => IFLA_BOND_ARP_VALIDATE,
+            Self::ArpAllTargets(_) => IFLA_BOND_ARP_ALL_TARGETS,
+            Self::Primary(_) => IFLA_BOND_PRIMARY,
+            Self::PrimaryReselect(_) => IFLA_BOND_PRIMARY_RESELECT,
+            Self::FailOverMac(_) => IFLA_BOND_FAIL_OVER_MAC,
+            Self::XmitHashPolicy(_) => IFLA_BOND_XMIT_HASH_POLICY,
+            Self::ResendIgmp(_) => IFLA_BOND_RESEND_IGMP,
+            Self::NumPeerNotif(_) => IFLA_BOND_NUM_PEER_NOTIF,
+            Self::AllPortsActive(_) => IFLA_BOND_ALL_PORTS_ACTIVE,
+            Self::MinLinks(_) => IFLA_BOND_MIN_LINKS,
+            Self::LpInterval(_) => IFLA_BOND_LP_INTERVAL,
+            Self::PacketsPerPort(_) => IFLA_BOND_PACKETS_PER_PORT,
+            Self::AdLacpRate(_) => IFLA_BOND_AD_LACP_RATE,
+            Self::AdSelect(_) => IFLA_BOND_AD_SELECT,
+            Self::AdInfo(_) => IFLA_BOND_AD_INFO,
+            Self::AdActorSysPrio(_) => IFLA_BOND_AD_ACTOR_SYS_PRIO,
+            Self::AdUserPortKey(_) => IFLA_BOND_AD_USER_PORT_KEY,
+            Self::AdActorSystem(_) => IFLA_BOND_AD_ACTOR_SYSTEM,
+            Self::TlbDynamicLb(_) => IFLA_BOND_TLB_DYNAMIC_LB,
+            Self::PeerNotifDelay(_) => IFLA_BOND_PEER_NOTIF_DELAY,
+            Self::AdLacpActive(_) => IFLA_BOND_AD_LACP_ACTIVE,
+            Self::MissedMax(_) => IFLA_BOND_MISSED_MAX,
+            Self::NsIp6Target(_) => IFLA_BOND_NS_IP6_TARGET,
+            Self::Other(v) => v.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoBond::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BOND_MODE => Mode(
+            IFLA_BOND_MODE => Self::Mode(
                 parse_u8(payload).context("invalid IFLA_BOND_MODE value")?,
             ),
-            IFLA_BOND_ACTIVE_PORT => ActivePort(
+            IFLA_BOND_ACTIVE_PORT => Self::ActivePort(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_ACTIVE_PORT value")?,
             ),
-            IFLA_BOND_MIIMON => MiiMon(
+            IFLA_BOND_MIIMON => Self::MiiMon(
                 parse_u32(payload).context("invalid IFLA_BOND_MIIMON value")?,
             ),
-            IFLA_BOND_UPDELAY => UpDelay(
+            IFLA_BOND_UPDELAY => Self::UpDelay(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_UPDELAY value")?,
             ),
-            IFLA_BOND_DOWNDELAY => DownDelay(
+            IFLA_BOND_DOWNDELAY => Self::DownDelay(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_DOWNDELAY value")?,
             ),
-            IFLA_BOND_USE_CARRIER => UseCarrier(
+            IFLA_BOND_USE_CARRIER => Self::UseCarrier(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_USE_CARRIER value")?,
             ),
-            IFLA_BOND_ARP_INTERVAL => ArpInterval(
+            IFLA_BOND_ARP_INTERVAL => Self::ArpInterval(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_ARP_INTERVAL value")?,
             ),
@@ -398,61 +395,61 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                         addrs.push(addr);
                     }
                 }
-                ArpIpTarget(addrs)
+                Self::ArpIpTarget(addrs)
             }
-            IFLA_BOND_ARP_VALIDATE => ArpValidate(
+            IFLA_BOND_ARP_VALIDATE => Self::ArpValidate(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_ARP_VALIDATE value")?,
             ),
-            IFLA_BOND_ARP_ALL_TARGETS => ArpAllTargets(
+            IFLA_BOND_ARP_ALL_TARGETS => Self::ArpAllTargets(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_ARP_ALL_TARGETS value")?,
             ),
-            IFLA_BOND_PRIMARY => Primary(
+            IFLA_BOND_PRIMARY => Self::Primary(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_PRIMARY value")?,
             ),
-            IFLA_BOND_PRIMARY_RESELECT => PrimaryReselect(
+            IFLA_BOND_PRIMARY_RESELECT => Self::PrimaryReselect(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?,
             ),
-            IFLA_BOND_FAIL_OVER_MAC => FailOverMac(
+            IFLA_BOND_FAIL_OVER_MAC => Self::FailOverMac(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_FAIL_OVER_MAC value")?,
             ),
-            IFLA_BOND_XMIT_HASH_POLICY => XmitHashPolicy(
+            IFLA_BOND_XMIT_HASH_POLICY => Self::XmitHashPolicy(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_XMIT_HASH_POLICY value")?,
             ),
-            IFLA_BOND_RESEND_IGMP => ResendIgmp(
+            IFLA_BOND_RESEND_IGMP => Self::ResendIgmp(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_RESEND_IGMP value")?,
             ),
-            IFLA_BOND_NUM_PEER_NOTIF => NumPeerNotif(
+            IFLA_BOND_NUM_PEER_NOTIF => Self::NumPeerNotif(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_NUM_PEER_NOTIF value")?,
             ),
-            IFLA_BOND_ALL_PORTS_ACTIVE => AllPortsActive(
+            IFLA_BOND_ALL_PORTS_ACTIVE => Self::AllPortsActive(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_ALL_PORTS_ACTIVE value")?,
             ),
-            IFLA_BOND_MIN_LINKS => MinLinks(
+            IFLA_BOND_MIN_LINKS => Self::MinLinks(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_MIN_LINKS value")?,
             ),
-            IFLA_BOND_LP_INTERVAL => LpInterval(
+            IFLA_BOND_LP_INTERVAL => Self::LpInterval(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_LP_INTERVAL value")?,
             ),
-            IFLA_BOND_PACKETS_PER_PORT => PacketsPerPort(
+            IFLA_BOND_PACKETS_PER_PORT => Self::PacketsPerPort(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_PACKETS_PER_PORT value")?,
             ),
-            IFLA_BOND_AD_LACP_RATE => AdLacpRate(
+            IFLA_BOND_AD_LACP_RATE => Self::AdLacpRate(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_AD_LACP_RATE value")?,
             ),
-            IFLA_BOND_AD_SELECT => AdSelect(
+            IFLA_BOND_AD_SELECT => Self::AdSelect(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_AD_SELECT value")?,
             ),
@@ -464,33 +461,33 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                     let info = BondAdInfo::parse(nla).context(err)?;
                     infos.push(info);
                 }
-                AdInfo(infos)
+                Self::AdInfo(infos)
             }
-            IFLA_BOND_AD_ACTOR_SYS_PRIO => AdActorSysPrio(
+            IFLA_BOND_AD_ACTOR_SYS_PRIO => Self::AdActorSysPrio(
                 parse_u16(payload)
                     .context("invalid IFLA_BOND_AD_ACTOR_SYS_PRIO value")?,
             ),
-            IFLA_BOND_AD_USER_PORT_KEY => AdUserPortKey(
+            IFLA_BOND_AD_USER_PORT_KEY => Self::AdUserPortKey(
                 parse_u16(payload)
                     .context("invalid IFLA_BOND_AD_USER_PORT_KEY value")?,
             ),
-            IFLA_BOND_AD_ACTOR_SYSTEM => AdActorSystem(
+            IFLA_BOND_AD_ACTOR_SYSTEM => Self::AdActorSystem(
                 parse_mac(payload)
                     .context("invalid IFLA_BOND_AD_ACTOR_SYSTEM value")?,
             ),
-            IFLA_BOND_TLB_DYNAMIC_LB => TlbDynamicLb(
+            IFLA_BOND_TLB_DYNAMIC_LB => Self::TlbDynamicLb(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_TLB_DYNAMIC_LB value")?,
             ),
-            IFLA_BOND_PEER_NOTIF_DELAY => PeerNotifDelay(
+            IFLA_BOND_PEER_NOTIF_DELAY => Self::PeerNotifDelay(
                 parse_u32(payload)
                     .context("invalid IFLA_BOND_PEER_NOTIF_DELAY value")?,
             ),
-            IFLA_BOND_AD_LACP_ACTIVE => AdLacpActive(
+            IFLA_BOND_AD_LACP_ACTIVE => Self::AdLacpActive(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_AD_LACP_ACTIVE value")?,
             ),
-            IFLA_BOND_MISSED_MAX => MissedMax(
+            IFLA_BOND_MISSED_MAX => Self::MissedMax(
                 parse_u8(payload)
                     .context("invalid IFLA_BOND_MISSED_MAX value")?,
             ),
@@ -503,9 +500,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                         addrs.push(addr);
                     }
                 }
-                NsIp6Target(addrs)
+                Self::NsIp6Target(addrs)
             }
-            _ => return Err(format!("unknown NLA type {}", buf.kind()).into()),
+            _ => Self::Other(DefaultNla::parse(buf).context(format!(
+                "invalid NLA for {}: {payload:?}",
+                buf.kind()
+            ))?),
         })
     }
 }
