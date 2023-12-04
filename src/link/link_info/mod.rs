@@ -29,7 +29,7 @@ pub use self::macsec::{
     InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidation,
 };
 pub use self::veth::InfoVeth;
-pub use self::vlan::{InfoVlan, VlanProtocol, VlanQosMapping};
+pub use self::vlan::{InfoVlan, VlanQosMapping};
 pub use self::vrf::InfoVrf;
 pub use self::vxlan::InfoVxlan;
 pub use self::xfrm::InfoXfrm;

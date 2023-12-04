@@ -9,6 +9,8 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
+use crate::link::VlanProtocol;
+
 const IFLA_VLAN_ID: u16 = 1;
 const IFLA_VLAN_FLAGS: u16 = 2;
 const IFLA_VLAN_EGRESS_QOS: u16 = 3;
@@ -161,57 +163,5 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
             ),
             _ => return Err(format!("unknown NLA type {}", buf.kind()).into()),
         })
-    }
-}
-
-const ETH_P_8021Q: u16 = 0x8100;
-const ETH_P_8021AD: u16 = 0x88A8;
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
-#[non_exhaustive]
-#[repr(u16)]
-// VLAN protocol seldom add new, so no Other for this enum.
-pub enum VlanProtocol {
-    #[default]
-    Ieee8021Q = ETH_P_8021Q,
-    Ieee8021Ad = ETH_P_8021AD,
-}
-
-impl From<u16> for VlanProtocol {
-    fn from(d: u16) -> Self {
-        match d {
-            ETH_P_8021Q => Self::Ieee8021Q,
-            ETH_P_8021AD => Self::Ieee8021Ad,
-            _ => {
-                log::warn!(
-                    "BUG: Got unknown VLAN protocol {}, treating as {}",
-                    d,
-                    Self::Ieee8021Q
-                );
-                Self::Ieee8021Q
-            }
-        }
-    }
-}
-
-impl From<VlanProtocol> for u16 {
-    fn from(v: VlanProtocol) -> u16 {
-        match v {
-            VlanProtocol::Ieee8021Q => ETH_P_8021Q,
-            VlanProtocol::Ieee8021Ad => ETH_P_8021AD,
-        }
-    }
-}
-
-impl std::fmt::Display for VlanProtocol {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                VlanProtocol::Ieee8021Q => "802.1q",
-                VlanProtocol::Ieee8021Ad => "802.1ad",
-            }
-        )
     }
 }

@@ -15,9 +15,10 @@ use netlink_packet_utils::{
 use super::af_spec::VecAfSpecBridge;
 use super::{
     af_spec::VecAfSpecUnspec, buffer_tool::expand_buffer_if_small,
-    link_info::VecLinkInfo, stats::LINK_STATS_LEN, stats64::LINK_STATS64_LEN,
-    xdp::VecXdp, AfSpecBridge, AfSpecUnspec, LinkInfo, Map, MapBuffer, Prop,
-    State, Stats, Stats64, Stats64Buffer, StatsBuffer, Xdp,
+    link_info::VecLinkInfo, sriov::VecLinkVfInfo, stats::LINK_STATS_LEN,
+    stats64::LINK_STATS64_LEN, xdp::VecXdp, AfSpecBridge, AfSpecUnspec,
+    LinkInfo, LinkVfInfo, Map, MapBuffer, Prop, State, Stats, Stats64,
+    Stats64Buffer, StatsBuffer, Xdp,
 };
 use crate::AddressFamily;
 
@@ -92,7 +93,7 @@ const IFLA_DEVLINK_PORT: u16 = 62;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum LinkAttribute {
-    VfInfoList(Vec<u8>),
+    VfInfoList(Vec<LinkVfInfo>),
     VfPorts(Vec<u8>),
     PortSelf(Vec<u8>),
     PhysPortId(Vec<u8>),
@@ -156,8 +157,8 @@ pub enum LinkAttribute {
 impl Nla for LinkAttribute {
     fn value_len(&self) -> usize {
         match self {
-            Self::VfInfoList(bytes)
-            | Self::VfPorts(bytes)
+            Self::VfInfoList(v) => v.as_slice().buffer_len(),
+            Self::VfPorts(bytes)
             | Self::PortSelf(bytes)
             | Self::PhysPortId(bytes)
             | Self::PhysSwitchId(bytes)
@@ -216,8 +217,8 @@ impl Nla for LinkAttribute {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::VfInfoList(bytes)
-            | Self::VfPorts(bytes)
+            Self::VfInfoList(v) => v.as_slice().emit(buffer),
+            Self::VfPorts(bytes)
             | Self::PortSelf(bytes)
             | Self::PhysPortId(bytes)
             | Self::PhysSwitchId(bytes)
@@ -350,7 +351,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
     ) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VFINFO_LIST => Self::VfInfoList(payload.to_vec()),
+            IFLA_VFINFO_LIST => Self::VfInfoList(
+                VecLinkVfInfo::parse(&NlaBuffer::new(payload))
+                    .context(format!("invalid IFLA_VFINFO_LIST {payload:?}"))?
+                    .0,
+            ),
             IFLA_VF_PORTS => Self::VfPorts(payload.to_vec()),
             IFLA_PORT_SELF => Self::PortSelf(payload.to_vec()),
             IFLA_PHYS_PORT_ID => Self::PhysPortId(payload.to_vec()),

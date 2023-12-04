@@ -19,6 +19,8 @@ mod message;
 #[cfg(test)]
 mod prop_list;
 #[cfg(test)]
+mod sriov;
+#[cfg(test)]
 mod veth;
 #[cfg(test)]
 mod vlan;
