@@ -17,6 +17,7 @@ pub(crate) mod sriov;
 mod stats;
 mod stats64;
 mod vlan_protocol;
+mod wireless;
 mod xdp;
 
 mod tests;
@@ -56,4 +57,5 @@ pub use self::sriov::{
 pub use self::stats::{Stats, StatsBuffer};
 pub use self::stats64::{Stats64, Stats64Buffer};
 pub use self::vlan_protocol::VlanProtocol;
+pub use self::wireless::LinkWirelessEvent;
 pub use self::xdp::{LinkXdp, XdpAttached};
