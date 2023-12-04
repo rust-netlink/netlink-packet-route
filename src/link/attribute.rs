@@ -105,8 +105,8 @@ pub enum LinkAttribute {
     PhysSwitchId(LinkPhysId),
     Xdp(Vec<LinkXdp>),
     Event(LinkEvent),
-    NewNetnsId(Vec<u8>),
-    IfNetnsId(Vec<u8>),
+    NewNetnsId(i32),
+    IfNetnsId(i32),
     CarrierUpCount(Vec<u8>),
     CarrierDownCount(Vec<u8>),
     NewIfIndex(Vec<u8>),
@@ -168,9 +168,7 @@ impl Nla for LinkAttribute {
             Self::PhysPortId(v) => v.buffer_len(),
             Self::PhysSwitchId(v) => v.buffer_len(),
             Self::Event(v) => v.buffer_len(),
-            Self::NewNetnsId(bytes)
-            | Self::IfNetnsId(bytes)
-            | Self::Wireless(bytes)
+            Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
             | Self::CarrierUpCount(bytes)
             | Self::CarrierDownCount(bytes)
@@ -189,6 +187,8 @@ impl Nla for LinkAttribute {
             Self::Mode(_) | Self::Carrier(_) | Self::ProtoDown(_) => 1,
 
             Self::Mtu(_)
+            | Self::NewNetnsId(_)
+            | Self::IfNetnsId(_)
             | Self::Link(_)
             | Self::Controller(_)
             | Self::TxQueueLen(_)
@@ -230,8 +230,6 @@ impl Nla for LinkAttribute {
             Self::Event(v) => v.emit(buffer),
             Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
-            | Self::NewNetnsId(bytes)
-            | Self::IfNetnsId(bytes)
             | Self::CarrierUpCount(bytes)
             | Self::CarrierDownCount(bytes)
             | Self::NewIfIndex(bytes)
@@ -272,9 +270,10 @@ impl Nla for LinkAttribute {
             | Self::MinMtu(value)
             | Self::MaxMtu(value) => NativeEndian::write_u32(buffer, *value),
 
-            Self::NetnsId(value) | Self::NetNsFd(value) => {
-                NativeEndian::write_i32(buffer, *value)
-            }
+            Self::NetnsId(v)
+            | Self::NetNsFd(v)
+            | Self::NewNetnsId(v)
+            | Self::IfNetnsId(v) => NativeEndian::write_i32(buffer, *v),
             Self::Stats(nla) => nla.emit(buffer),
             Self::Map(nla) => nla.emit(buffer),
             Self::Stats64(nla) => nla.emit(buffer),
@@ -386,8 +385,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 LinkEvent::parse(payload)
                     .context(format!("invalid IFLA_EVENT {payload:?}"))?,
             ),
-            IFLA_NEW_NETNSID => Self::NewNetnsId(payload.to_vec()),
-            IFLA_IF_NETNSID => Self::IfNetnsId(payload.to_vec()),
+            IFLA_NEW_NETNSID => Self::NewNetnsId(
+                parse_i32(payload).context("invalid IFLA_NEW_NETNSID value")?,
+            ),
+            IFLA_IF_NETNSID => Self::IfNetnsId(
+                parse_i32(payload).context("invalid IFLA_IF_NETNSID value")?,
+            ),
             IFLA_CARRIER_UP_COUNT => Self::CarrierUpCount(payload.to_vec()),
             IFLA_CARRIER_DOWN_COUNT => Self::CarrierDownCount(payload.to_vec()),
             IFLA_NEW_IFINDEX => Self::NewIfIndex(payload.to_vec()),
@@ -422,7 +425,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 parse_string(payload)
                     .context("invalid IFLA_PHYS_PORT_NAME value")?,
             ),
-            // u8
             IFLA_LINKMODE => Self::Mode(
                 parse_u8(payload).context("invalid IFLA_LINKMODE value")?,
             ),
