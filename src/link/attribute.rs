@@ -21,8 +21,9 @@ use super::{
     stats::LINK_STATS_LEN,
     stats64::LINK_STATS64_LEN,
     xdp::VecXdp,
-    AfSpecBridge, AfSpecUnspec, LinkInfo, LinkVfInfo, LinkVfPort, Map,
-    MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer, Xdp,
+    AfSpecBridge, AfSpecUnspec, LinkInfo, LinkPhysId, LinkVfInfo, LinkVfPort,
+    Map, MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
+    Xdp,
 };
 use crate::AddressFamily;
 
@@ -100,8 +101,8 @@ pub enum LinkAttribute {
     VfInfoList(Vec<LinkVfInfo>),
     VfPorts(Vec<LinkVfPort>),
     PortSelf(LinkVfPort),
-    PhysPortId(Vec<u8>),
-    PhysSwitchId(Vec<u8>),
+    PhysPortId(LinkPhysId),
+    PhysSwitchId(LinkPhysId),
     Xdp(Vec<Xdp>),
     Event(Vec<u8>),
     NewNetnsId(Vec<u8>),
@@ -164,9 +165,9 @@ impl Nla for LinkAttribute {
             Self::VfInfoList(v) => v.as_slice().buffer_len(),
             Self::VfPorts(v) => v.as_slice().buffer_len(),
             Self::PortSelf(v) => v.buffer_len(),
-            Self::PhysPortId(bytes)
-            | Self::PhysSwitchId(bytes)
-            | Self::Event(bytes)
+            Self::PhysPortId(v) => v.buffer_len(),
+            Self::PhysSwitchId(v) => v.buffer_len(),
+            Self::Event(bytes)
             | Self::NewNetnsId(bytes)
             | Self::IfNetnsId(bytes)
             | Self::Wireless(bytes)
@@ -224,9 +225,9 @@ impl Nla for LinkAttribute {
             Self::VfInfoList(v) => v.as_slice().emit(buffer),
             Self::VfPorts(v) => v.as_slice().emit(buffer),
             Self::PortSelf(v) => v.emit(buffer),
-            Self::PhysPortId(bytes)
-            | Self::PhysSwitchId(bytes)
-            | Self::Wireless(bytes)
+            Self::PhysPortId(v) => v.emit(buffer),
+            Self::PhysSwitchId(v) => v.emit(buffer),
+            Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
             | Self::Event(bytes)
             | Self::NewNetnsId(bytes)
@@ -369,8 +370,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 LinkVfPort::parse(&NlaBuffer::new(payload))
                     .context(format!("invalid IFLA_PORT_SELF {payload:?}"))?,
             ),
-            IFLA_PHYS_PORT_ID => Self::PhysPortId(payload.to_vec()),
-            IFLA_PHYS_SWITCH_ID => Self::PhysSwitchId(payload.to_vec()),
+            IFLA_PHYS_PORT_ID => {
+                Self::PhysPortId(LinkPhysId::parse(payload).context(
+                    format!("invalid IFLA_PHYS_PORT_ID value {payload:?}"),
+                )?)
+            }
+            IFLA_PHYS_SWITCH_ID => {
+                Self::PhysSwitchId(LinkPhysId::parse(payload).context(
+                    format!("invalid IFLA_PHYS_SWITCH_ID value {payload:?}"),
+                )?)
+            }
             IFLA_WIRELESS => Self::Wireless(payload.to_vec()),
             IFLA_PROTINFO => Self::ProtoInfo(payload.to_vec()),
             IFLA_EVENT => Self::Event(payload.to_vec()),

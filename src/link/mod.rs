@@ -10,6 +10,7 @@ mod link_layer_type;
 mod link_state;
 mod map;
 mod message;
+mod phys_id;
 mod prop_list;
 pub(crate) mod sriov;
 mod stats;
@@ -39,6 +40,7 @@ pub use self::link_layer_type::LinkLayerType;
 pub use self::link_state::State;
 pub use self::map::{Map, MapBuffer};
 pub use self::message::LinkMessage;
+pub use self::phys_id::LinkPhysId;
 pub use self::prop_list::Prop;
 pub use self::sriov::{
     LinkVfInfo, LinkVfPort, VfInfo, VfInfoBroadcast, VfInfoBroadcastBuffer,
