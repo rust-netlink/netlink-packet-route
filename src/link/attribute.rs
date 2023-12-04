@@ -20,10 +20,10 @@ use super::{
     sriov::{VecLinkVfInfo, VecLinkVfPort},
     stats::LINK_STATS_LEN,
     stats64::LINK_STATS64_LEN,
-    xdp::VecXdp,
+    xdp::VecLinkXdp,
     AfSpecBridge, AfSpecUnspec, LinkInfo, LinkPhysId, LinkVfInfo, LinkVfPort,
-    Map, MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
-    Xdp,
+    LinkXdp, Map, MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer,
+    StatsBuffer,
 };
 use crate::AddressFamily;
 
@@ -103,7 +103,7 @@ pub enum LinkAttribute {
     PortSelf(LinkVfPort),
     PhysPortId(LinkPhysId),
     PhysSwitchId(LinkPhysId),
-    Xdp(Vec<Xdp>),
+    Xdp(Vec<LinkXdp>),
     Event(Vec<u8>),
     NewNetnsId(Vec<u8>),
     IfNetnsId(Vec<u8>),
@@ -542,7 +542,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_XDP => {
                 let err = "invalid IFLA_XDP value";
                 let buf = NlaBuffer::new_checked(payload).context(err)?;
-                Self::Xdp(VecXdp::parse(&buf).context(err)?.0)
+                Self::Xdp(VecLinkXdp::parse(&buf).context(err)?.0)
             }
             kind => Self::Other(
                 DefaultNla::parse(buf)

@@ -3,6 +3,8 @@
 #[cfg(test)]
 mod bond;
 #[cfg(test)]
+mod xdp;
+#[cfg(test)]
 mod bridge;
 #[cfg(test)]
 mod hsr;

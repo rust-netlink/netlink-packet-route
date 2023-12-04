@@ -10,7 +10,7 @@ use crate::link::{
     AfSpecUnspec, BridgeVlanInfo, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlag,
     Inet6IfaceFlags, InetDevConf, InfoBridge, InfoData, InfoKind,
     LinkAttribute, LinkFlag, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, Map, State, Stats, Stats64, Xdp, XdpAttached,
+    LinkMessageBuffer, LinkXdp, Map, State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -243,7 +243,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                 tx_compressed: 0,
                 rx_nohandler: 0,
             }),
-            LinkAttribute::Xdp(vec![Xdp::Attached(XdpAttached::None)]),
+            LinkAttribute::Xdp(vec![LinkXdp::Attached(XdpAttached::None)]),
             LinkAttribute::LinkInfo(vec![
                 LinkInfo::Kind(InfoKind::Bridge),
                 LinkInfo::Data(InfoData::Bridge(vec![
