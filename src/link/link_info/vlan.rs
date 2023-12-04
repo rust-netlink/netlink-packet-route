@@ -27,43 +27,46 @@ pub enum InfoVlan {
     EgressQos(Vec<VlanQosMapping>),
     IngressQos(Vec<VlanQosMapping>),
     Protocol(VlanProtocol),
+    Other(DefaultNla),
 }
 
 impl Nla for InfoVlan {
     fn value_len(&self) -> usize {
-        use self::InfoVlan::*;
         match self {
-            Id(_) | Protocol(_) => 2,
-            Flags(_) => 8,
-            EgressQos(mappings) | IngressQos(mappings) => {
+            Self::Id(_) | Self::Protocol(_) => 2,
+            Self::Flags(_) => 8,
+            Self::EgressQos(mappings) | Self::IngressQos(mappings) => {
                 mappings.as_slice().buffer_len()
             }
+            Self::Other(v) => v.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoVlan::*;
         match self {
-            EgressQos(ref mappings) | IngressQos(ref mappings) => {
+            Self::EgressQos(ref mappings) | Self::IngressQos(ref mappings) => {
                 mappings.as_slice().emit(buffer)
             }
-            Id(ref value) => NativeEndian::write_u16(buffer, *value),
-            Protocol(value) => BigEndian::write_u16(buffer, (*value).into()),
-            Flags(ref flags) => {
+            Self::Id(value) => NativeEndian::write_u16(buffer, *value),
+            Self::Protocol(value) => {
+                BigEndian::write_u16(buffer, (*value).into())
+            }
+            Self::Flags(flags) => {
                 NativeEndian::write_u32(&mut buffer[0..4], flags.0);
                 NativeEndian::write_u32(&mut buffer[4..8], flags.1)
             }
+            Self::Other(v) => v.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoVlan::*;
         match self {
-            Id(_) => IFLA_VLAN_ID,
-            Flags(_) => IFLA_VLAN_FLAGS,
-            EgressQos(_) => IFLA_VLAN_EGRESS_QOS,
-            IngressQos(_) => IFLA_VLAN_INGRESS_QOS,
-            Protocol(_) => IFLA_VLAN_PROTOCOL,
+            Self::Id(_) => IFLA_VLAN_ID,
+            Self::Flags(_) => IFLA_VLAN_FLAGS,
+            Self::EgressQos(_) => IFLA_VLAN_EGRESS_QOS,
+            Self::IngressQos(_) => IFLA_VLAN_INGRESS_QOS,
+            Self::Protocol(_) => IFLA_VLAN_PROTOCOL,
+            Self::Other(v) => v.kind(),
         }
     }
 }
@@ -161,7 +164,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
                     .context("invalid IFLA_VLAN_PROTOCOL value")?
                     .into(),
             ),
-            _ => return Err(format!("unknown NLA type {}", buf.kind()).into()),
+            _ => Self::Other(DefaultNla::parse(buf).context(format!(
+                "invalid NLA for {}: {payload:?}",
+                buf.kind()
+            ))?),
         })
     }
 }
