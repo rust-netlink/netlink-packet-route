@@ -11,8 +11,10 @@ mod link_state;
 mod map;
 mod message;
 mod prop_list;
+pub(crate) mod sriov;
 mod stats;
 mod stats64;
+mod vlan_protocol;
 mod xdp;
 
 mod tests;
@@ -31,13 +33,22 @@ pub use self::link_info::{
     InfoBondPort, InfoBridge, InfoData, InfoHsr, InfoIpVlan, InfoIpoib,
     InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoPortData, InfoPortKind,
     InfoVeth, InfoVlan, InfoVrf, InfoVxlan, InfoXfrm, LinkInfo, MacSecCipherId,
-    MacSecOffload, MacSecValidation, MiiStatus, VlanProtocol, VlanQosMapping,
+    MacSecOffload, MacSecValidation, MiiStatus, VlanQosMapping,
 };
 pub use self::link_layer_type::LinkLayerType;
 pub use self::link_state::State;
 pub use self::map::{Map, MapBuffer};
 pub use self::message::LinkMessage;
 pub use self::prop_list::Prop;
+pub use self::sriov::{
+    LinkVfInfo, VfInfo, VfInfoBroadcast, VfInfoBroadcastBuffer, VfInfoGuid,
+    VfInfoGuidBuffer, VfInfoLinkState, VfInfoLinkStateBuffer, VfInfoMac,
+    VfInfoMacBuffer, VfInfoRate, VfInfoRateBuffer, VfInfoRssQueryEn,
+    VfInfoRssQueryEnBuffer, VfInfoSpoofCheck, VfInfoSpoofCheckBuffer,
+    VfInfoTrust, VfInfoTrustBuffer, VfInfoTxRate, VfInfoTxRateBuffer,
+    VfInfoVlan, VfInfoVlanBuffer, VfLinkState, VfStats, VfVlan, VfVlanInfo,
+};
 pub use self::stats::{Stats, StatsBuffer};
 pub use self::stats64::{Stats64, Stats64Buffer};
+pub use self::vlan_protocol::VlanProtocol;
 pub use self::xdp::{Xdp, XdpAttached};
