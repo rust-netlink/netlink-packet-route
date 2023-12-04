@@ -41,12 +41,13 @@ pub use self::map::{Map, MapBuffer};
 pub use self::message::LinkMessage;
 pub use self::prop_list::Prop;
 pub use self::sriov::{
-    LinkVfInfo, VfInfo, VfInfoBroadcast, VfInfoBroadcastBuffer, VfInfoGuid,
-    VfInfoGuidBuffer, VfInfoLinkState, VfInfoLinkStateBuffer, VfInfoMac,
-    VfInfoMacBuffer, VfInfoRate, VfInfoRateBuffer, VfInfoRssQueryEn,
+    LinkVfInfo, LinkVfPort, VfInfo, VfInfoBroadcast, VfInfoBroadcastBuffer,
+    VfInfoGuid, VfInfoGuidBuffer, VfInfoLinkState, VfInfoLinkStateBuffer,
+    VfInfoMac, VfInfoMacBuffer, VfInfoRate, VfInfoRateBuffer, VfInfoRssQueryEn,
     VfInfoRssQueryEnBuffer, VfInfoSpoofCheck, VfInfoSpoofCheckBuffer,
     VfInfoTrust, VfInfoTrustBuffer, VfInfoTxRate, VfInfoTxRateBuffer,
-    VfInfoVlan, VfInfoVlanBuffer, VfLinkState, VfStats, VfVlan, VfVlanInfo,
+    VfInfoVlan, VfInfoVlanBuffer, VfLinkState, VfPort, VfStats, VfVlan,
+    VfVlanInfo,
 };
 pub use self::stats::{Stats, StatsBuffer};
 pub use self::stats64::{Stats64, Stats64Buffer};

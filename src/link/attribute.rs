@@ -14,11 +14,15 @@ use netlink_packet_utils::{
 #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
 use super::af_spec::VecAfSpecBridge;
 use super::{
-    af_spec::VecAfSpecUnspec, buffer_tool::expand_buffer_if_small,
-    link_info::VecLinkInfo, sriov::VecLinkVfInfo, stats::LINK_STATS_LEN,
-    stats64::LINK_STATS64_LEN, xdp::VecXdp, AfSpecBridge, AfSpecUnspec,
-    LinkInfo, LinkVfInfo, Map, MapBuffer, Prop, State, Stats, Stats64,
-    Stats64Buffer, StatsBuffer, Xdp,
+    af_spec::VecAfSpecUnspec,
+    buffer_tool::expand_buffer_if_small,
+    link_info::VecLinkInfo,
+    sriov::{VecLinkVfInfo, VecLinkVfPort},
+    stats::LINK_STATS_LEN,
+    stats64::LINK_STATS64_LEN,
+    xdp::VecXdp,
+    AfSpecBridge, AfSpecUnspec, LinkInfo, LinkVfInfo, LinkVfPort, Map,
+    MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer, Xdp,
 };
 use crate::AddressFamily;
 
@@ -94,7 +98,7 @@ const IFLA_DEVLINK_PORT: u16 = 62;
 #[non_exhaustive]
 pub enum LinkAttribute {
     VfInfoList(Vec<LinkVfInfo>),
-    VfPorts(Vec<u8>),
+    VfPorts(Vec<LinkVfPort>),
     PortSelf(Vec<u8>),
     PhysPortId(Vec<u8>),
     PhysSwitchId(Vec<u8>),
@@ -158,8 +162,8 @@ impl Nla for LinkAttribute {
     fn value_len(&self) -> usize {
         match self {
             Self::VfInfoList(v) => v.as_slice().buffer_len(),
-            Self::VfPorts(bytes)
-            | Self::PortSelf(bytes)
+            Self::VfPorts(v) => v.as_slice().buffer_len(),
+            Self::PortSelf(bytes)
             | Self::PhysPortId(bytes)
             | Self::PhysSwitchId(bytes)
             | Self::Event(bytes)
@@ -218,8 +222,8 @@ impl Nla for LinkAttribute {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::VfInfoList(v) => v.as_slice().emit(buffer),
-            Self::VfPorts(bytes)
-            | Self::PortSelf(bytes)
+            Self::VfPorts(v) => v.as_slice().emit(buffer),
+            Self::PortSelf(bytes)
             | Self::PhysPortId(bytes)
             | Self::PhysSwitchId(bytes)
             | Self::Wireless(bytes)
@@ -356,7 +360,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context(format!("invalid IFLA_VFINFO_LIST {payload:?}"))?
                     .0,
             ),
-            IFLA_VF_PORTS => Self::VfPorts(payload.to_vec()),
+            IFLA_VF_PORTS => Self::VfPorts(
+                VecLinkVfPort::parse(&NlaBuffer::new(payload))
+                    .context(format!("invalid IFLA_VF_PORTS {payload:?}"))?
+                    .0,
+            ),
             IFLA_PORT_SELF => Self::PortSelf(payload.to_vec()),
             IFLA_PHYS_PORT_ID => Self::PhysPortId(payload.to_vec()),
             IFLA_PHYS_SWITCH_ID => Self::PhysSwitchId(payload.to_vec()),
