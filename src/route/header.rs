@@ -35,8 +35,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> RouteMessageBuffer<&'a T> {
 /// messages headers.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct RouteHeader {
-    /// Address family of the route: either [AddressFamily::Ipv4] for IPv4,
-    /// or [AddressFamily::Ipv6] for IPv6.
+    /// Address family of the route: either [AddressFamily::Inet] for IPv4,
+    /// or [AddressFamily::Inet6] for IPv6.
     pub address_family: AddressFamily,
     /// Prefix length of the destination subnet.
     pub destination_prefix_length: u8,

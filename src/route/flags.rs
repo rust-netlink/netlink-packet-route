@@ -15,8 +15,6 @@ const RTM_F_OFFLOAD: u32 = 0x4000;
 const RTM_F_TRAP: u32 = 0x8000;
 const RTM_F_OFFLOAD_FAILED: u32 = 0x20000000;
 
-/// Flags that can be set in a `RTM_GETROUTE`
-/// ([`RouteNetlinkMessage::GetRoute`]) message.
 #[derive(Clone, Eq, PartialEq, Debug, Copy)]
 #[non_exhaustive]
 pub enum RouteFlag {

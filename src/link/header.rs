@@ -59,7 +59,7 @@ pub struct LinkHeader {
     /// Link index.
     pub index: u32,
     /// Link type. It should be set to one of the `ARPHRD_*`
-    /// constants. The most common value is [ALinkLayerType::ETHER] for
+    /// constants. The most common value is [LinkLayerType::Ether] for
     /// Ethernet.
     /// The LinkLayerType has `From<u16>` and `From<LinkLayerType> for u16`
     /// implemented.
