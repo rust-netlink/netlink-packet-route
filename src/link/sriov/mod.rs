@@ -11,10 +11,12 @@ mod stats;
 mod trust;
 mod tx_rate;
 mod vf_list;
+mod vf_port;
 mod vf_vlan;
 mod vlan;
 
 pub(crate) use self::vf_list::VecLinkVfInfo;
+pub(crate) use self::vf_port::VecLinkVfPort;
 
 pub use self::broadcast::{VfInfoBroadcast, VfInfoBroadcastBuffer};
 pub use self::guid::{VfInfoGuid, VfInfoGuidBuffer};
@@ -29,5 +31,6 @@ pub use self::stats::VfStats;
 pub use self::trust::{VfInfoTrust, VfInfoTrustBuffer};
 pub use self::tx_rate::{VfInfoTxRate, VfInfoTxRateBuffer};
 pub use self::vf_list::{LinkVfInfo, VfInfo};
+pub use self::vf_port::{LinkVfPort, VfPort};
 pub use self::vf_vlan::{VfVlan, VfVlanInfo};
 pub use self::vlan::{VfInfoVlan, VfInfoVlanBuffer};
