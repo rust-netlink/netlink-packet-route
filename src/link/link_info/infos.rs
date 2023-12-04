@@ -5,14 +5,13 @@ use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::parse_string,
-    traits::{Emitable, Parseable},
-    DecodeError,
+    DecodeError, Emitable, Parseable, ParseableParametrized,
 };
 
 use super::super::{
     InfoBond, InfoBondPort, InfoBridge, InfoHsr, InfoIpVlan, InfoIpoib,
     InfoMacSec, InfoMacVlan, InfoMacVtap, InfoVeth, InfoVlan, InfoVrf,
-    InfoVxlan, InfoXfrm,
+    InfoVxlan, InfoXfrm, LinkXstats,
 };
 
 const IFLA_INFO_KIND: u16 = 1;
@@ -51,7 +50,7 @@ const HSR: &str = "hsr";
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum LinkInfo {
-    Xstats(Vec<u8>),
+    Xstats(LinkXstats),
     Kind(InfoKind),
     Data(InfoData),
     PortKind(InfoPortKind),
@@ -62,7 +61,7 @@ pub enum LinkInfo {
 impl Nla for LinkInfo {
     fn value_len(&self) -> usize {
         match self {
-            Self::Xstats(bytes) => bytes.len(),
+            Self::Xstats(v) => v.buffer_len(),
             Self::Kind(nla) => nla.value_len(),
             Self::Data(nla) => nla.value_len(),
             Self::PortKind(nla) => nla.value_len(),
@@ -73,7 +72,7 @@ impl Nla for LinkInfo {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Xstats(bytes) => buffer.copy_from_slice(bytes),
+            Self::Xstats(v) => v.emit(buffer),
             Self::Kind(nla) => nla.emit_value(buffer),
             Self::Data(nla) => nla.emit_value(buffer),
             Self::PortKind(nla) => nla.emit_value(buffer),
@@ -116,7 +115,15 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
             let nla = nla?;
             match nla.kind() {
                 IFLA_INFO_XSTATS => {
-                    nlas.push(LinkInfo::Xstats(nla.value().to_vec()))
+                    if let Some(link_info_kind) = &link_info_kind {
+                        nlas.push(LinkInfo::Xstats(
+                            LinkXstats::parse_with_param(&nla, link_info_kind)?,
+                        ));
+                    } else {
+                        return Err("IFLA_INFO_XSTATS is not \
+                            preceded by an IFLA_INFO_KIND"
+                            .into());
+                    }
                 }
                 IFLA_INFO_PORT_KIND => {
                     let parsed = InfoPortKind::parse(&nla)?;
@@ -144,7 +151,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                     link_info_kind = Some(parsed);
                 }
                 IFLA_INFO_DATA => {
-                    if let Some(link_info_kind) = link_info_kind {
+                    if let Some(link_info_kind) = &link_info_kind {
                         nlas.push(LinkInfo::Data(parse_info_data_with_kind(
                             nla.value(),
                             link_info_kind,
@@ -154,7 +161,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                             IFLA_INFO_KIND"
                             .into());
                     }
-                    link_info_kind = None;
                 }
                 _kind => nlas.push(LinkInfo::Other(
                     DefaultNla::parse(&nla).context(format!(
@@ -519,7 +525,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
 
 fn parse_info_data_with_kind(
     payload: &[u8],
-    kind: InfoKind,
+    kind: &InfoKind,
 ) -> Result<InfoData, DecodeError> {
     Ok(match kind {
         InfoKind::Dummy => InfoData::Dummy(payload.to_vec()),
