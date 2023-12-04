@@ -99,7 +99,7 @@ const IFLA_DEVLINK_PORT: u16 = 62;
 pub enum LinkAttribute {
     VfInfoList(Vec<LinkVfInfo>),
     VfPorts(Vec<LinkVfPort>),
-    PortSelf(Vec<u8>),
+    PortSelf(LinkVfPort),
     PhysPortId(Vec<u8>),
     PhysSwitchId(Vec<u8>),
     Xdp(Vec<Xdp>),
@@ -163,8 +163,8 @@ impl Nla for LinkAttribute {
         match self {
             Self::VfInfoList(v) => v.as_slice().buffer_len(),
             Self::VfPorts(v) => v.as_slice().buffer_len(),
-            Self::PortSelf(bytes)
-            | Self::PhysPortId(bytes)
+            Self::PortSelf(v) => v.buffer_len(),
+            Self::PhysPortId(bytes)
             | Self::PhysSwitchId(bytes)
             | Self::Event(bytes)
             | Self::NewNetnsId(bytes)
@@ -223,8 +223,8 @@ impl Nla for LinkAttribute {
         match self {
             Self::VfInfoList(v) => v.as_slice().emit(buffer),
             Self::VfPorts(v) => v.as_slice().emit(buffer),
-            Self::PortSelf(bytes)
-            | Self::PhysPortId(bytes)
+            Self::PortSelf(v) => v.emit(buffer),
+            Self::PhysPortId(bytes)
             | Self::PhysSwitchId(bytes)
             | Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
@@ -365,7 +365,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context(format!("invalid IFLA_VF_PORTS {payload:?}"))?
                     .0,
             ),
-            IFLA_PORT_SELF => Self::PortSelf(payload.to_vec()),
+            IFLA_PORT_SELF => Self::PortSelf(
+                LinkVfPort::parse(&NlaBuffer::new(payload))
+                    .context(format!("invalid IFLA_PORT_SELF {payload:?}"))?,
+            ),
             IFLA_PHYS_PORT_ID => Self::PhysPortId(payload.to_vec()),
             IFLA_PHYS_SWITCH_ID => Self::PhysSwitchId(payload.to_vec()),
             IFLA_WIRELESS => Self::Wireless(payload.to_vec()),
