@@ -74,9 +74,7 @@ const IFLA_BR_MCAST_QUERIER_STATE: u16 = 47;
 #[non_exhaustive]
 pub enum InfoBridge {
     GroupAddr([u8; 6]),
-    // FIXME: what type is this? putting Vec<u8> for now but it might
-    // be a boolean actually
-    FdbFlush(Vec<u8>),
+    FdbFlush,
     HelloTimer(u64),
     TcnTimer(u64),
     TopologyChangeTimer(u64),
@@ -126,283 +124,302 @@ pub enum InfoBridge {
 
 impl Nla for InfoBridge {
     fn value_len(&self) -> usize {
-        use self::InfoBridge::*;
         match self {
-            FdbFlush(bytes) => bytes.len(),
-            HelloTimer(_)
-            | TcnTimer(_)
-            | TopologyChangeTimer(_)
-            | GcTimer(_)
-            | MulticastMembershipInterval(_)
-            | MulticastQuerierInterval(_)
-            | MulticastQueryInterval(_)
-            | MulticastQueryResponseInterval(_)
-            | MulticastLastMemberInterval(_)
-            | MulticastStartupQueryInterval(_) => 8,
-            ForwardDelay(_)
-            | HelloTime(_)
-            | MaxAge(_)
-            | AgeingTime(_)
-            | StpState(_)
-            | MulticastHashElasticity(_)
-            | MulticastHashMax(_)
-            | MulticastLastMemberCount(_)
-            | MulticastStartupQueryCount(_)
-            | RootPathCost(_) => 4,
-            Priority(_) | VlanProtocol(_) | GroupFwdMask(_) | RootPort(_)
-            | VlanDefaultPvid(_) => 2,
+            // The existance of FdbFlush means true
+            Self::FdbFlush => 0,
+            Self::HelloTimer(_)
+            | Self::TcnTimer(_)
+            | Self::TopologyChangeTimer(_)
+            | Self::GcTimer(_)
+            | Self::MulticastMembershipInterval(_)
+            | Self::MulticastQuerierInterval(_)
+            | Self::MulticastQueryInterval(_)
+            | Self::MulticastQueryResponseInterval(_)
+            | Self::MulticastLastMemberInterval(_)
+            | Self::MulticastStartupQueryInterval(_) => 8,
+            Self::ForwardDelay(_)
+            | Self::HelloTime(_)
+            | Self::MaxAge(_)
+            | Self::AgeingTime(_)
+            | Self::StpState(_)
+            | Self::MulticastHashElasticity(_)
+            | Self::MulticastHashMax(_)
+            | Self::MulticastLastMemberCount(_)
+            | Self::MulticastStartupQueryCount(_)
+            | Self::RootPathCost(_) => 4,
+            Self::Priority(_)
+            | Self::VlanProtocol(_)
+            | Self::GroupFwdMask(_)
+            | Self::RootPort(_)
+            | Self::VlanDefaultPvid(_) => 2,
 
-            RootId(_) | BridgeId(_) | MultiBoolOpt(_) => 8,
+            Self::RootId(_) | Self::BridgeId(_) | Self::MultiBoolOpt(_) => 8,
 
-            GroupAddr(_) => 6,
+            Self::GroupAddr(_) => 6,
 
-            VlanFiltering(_)
-            | TopologyChange(_)
-            | TopologyChangeDetected(_)
-            | MulticastRouter(_)
-            | MulticastSnooping(_)
-            | MulticastQueryUseIfaddr(_)
-            | MulticastQuerier(_)
-            | NfCallIpTables(_)
-            | NfCallIp6Tables(_)
-            | NfCallArpTables(_)
-            | VlanStatsEnabled(_)
-            | MulticastStatsEnabled(_)
-            | MulticastIgmpVersion(_)
-            | MulticastMldVersion(_)
-            | VlanStatsPerHost(_) => 1,
+            Self::VlanFiltering(_)
+            | Self::TopologyChange(_)
+            | Self::TopologyChangeDetected(_)
+            | Self::MulticastRouter(_)
+            | Self::MulticastSnooping(_)
+            | Self::MulticastQueryUseIfaddr(_)
+            | Self::MulticastQuerier(_)
+            | Self::NfCallIpTables(_)
+            | Self::NfCallIp6Tables(_)
+            | Self::NfCallArpTables(_)
+            | Self::VlanStatsEnabled(_)
+            | Self::MulticastStatsEnabled(_)
+            | Self::MulticastIgmpVersion(_)
+            | Self::MulticastMldVersion(_)
+            | Self::VlanStatsPerHost(_) => 1,
 
-            MulticastQuerierState(ref nlas) => nlas.as_slice().buffer_len(),
+            Self::MulticastQuerierState(nlas) => nlas.as_slice().buffer_len(),
 
-            Other(nla) => nla.value_len(),
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoBridge::*;
         match self {
-            FdbFlush(ref bytes) => buffer.copy_from_slice(bytes),
+            Self::FdbFlush => (),
 
-            HelloTimer(ref value)
-            | TcnTimer(ref value)
-            | TopologyChangeTimer(ref value)
-            | GcTimer(ref value)
-            | MulticastMembershipInterval(ref value)
-            | MulticastQuerierInterval(ref value)
-            | MulticastQueryInterval(ref value)
-            | MulticastQueryResponseInterval(ref value)
-            | MulticastLastMemberInterval(ref value)
-            | MulticastStartupQueryInterval(ref value)
-            | MultiBoolOpt(ref value) => {
+            Self::HelloTimer(value)
+            | Self::TcnTimer(value)
+            | Self::TopologyChangeTimer(value)
+            | Self::GcTimer(value)
+            | Self::MulticastMembershipInterval(value)
+            | Self::MulticastQuerierInterval(value)
+            | Self::MulticastQueryInterval(value)
+            | Self::MulticastQueryResponseInterval(value)
+            | Self::MulticastLastMemberInterval(value)
+            | Self::MulticastStartupQueryInterval(value)
+            | Self::MultiBoolOpt(value) => {
                 NativeEndian::write_u64(buffer, *value)
             }
 
-            ForwardDelay(ref value)
-            | HelloTime(ref value)
-            | MaxAge(ref value)
-            | AgeingTime(ref value)
-            | StpState(ref value)
-            | MulticastHashElasticity(ref value)
-            | MulticastHashMax(ref value)
-            | MulticastLastMemberCount(ref value)
-            | MulticastStartupQueryCount(ref value)
-            | RootPathCost(ref value) => {
+            Self::ForwardDelay(value)
+            | Self::HelloTime(value)
+            | Self::MaxAge(value)
+            | Self::AgeingTime(value)
+            | Self::StpState(value)
+            | Self::MulticastHashElasticity(value)
+            | Self::MulticastHashMax(value)
+            | Self::MulticastLastMemberCount(value)
+            | Self::MulticastStartupQueryCount(value)
+            | Self::RootPathCost(value) => {
                 NativeEndian::write_u32(buffer, *value)
             }
 
-            Priority(ref value)
-            | GroupFwdMask(ref value)
-            | RootPort(ref value)
-            | VlanDefaultPvid(ref value) => {
+            Self::Priority(value)
+            | Self::GroupFwdMask(value)
+            | Self::RootPort(value)
+            | Self::VlanDefaultPvid(value) => {
                 NativeEndian::write_u16(buffer, *value)
             }
 
-            VlanProtocol(ref value) => BigEndian::write_u16(buffer, *value),
+            Self::VlanProtocol(value) => BigEndian::write_u16(buffer, *value),
 
-            RootId((ref priority, ref address))
-            | BridgeId((ref priority, ref address)) => {
+            Self::RootId((priority, ref address))
+            | Self::BridgeId((priority, ref address)) => {
                 NativeEndian::write_u16(buffer, *priority);
                 buffer[2..].copy_from_slice(&address[..]);
             }
 
-            GroupAddr(ref value) => buffer.copy_from_slice(&value[..]),
+            Self::GroupAddr(value) => buffer.copy_from_slice(&value[..]),
 
-            VlanFiltering(ref value)
-            | TopologyChange(ref value)
-            | TopologyChangeDetected(ref value)
-            | MulticastRouter(ref value)
-            | MulticastSnooping(ref value)
-            | MulticastQueryUseIfaddr(ref value)
-            | MulticastQuerier(ref value)
-            | NfCallIpTables(ref value)
-            | NfCallIp6Tables(ref value)
-            | NfCallArpTables(ref value)
-            | VlanStatsEnabled(ref value)
-            | MulticastStatsEnabled(ref value)
-            | MulticastIgmpVersion(ref value)
-            | MulticastMldVersion(ref value)
-            | VlanStatsPerHost(ref value) => buffer[0] = *value,
+            Self::VlanFiltering(value)
+            | Self::TopologyChange(value)
+            | Self::TopologyChangeDetected(value)
+            | Self::MulticastRouter(value)
+            | Self::MulticastSnooping(value)
+            | Self::MulticastQueryUseIfaddr(value)
+            | Self::MulticastQuerier(value)
+            | Self::NfCallIpTables(value)
+            | Self::NfCallIp6Tables(value)
+            | Self::NfCallArpTables(value)
+            | Self::VlanStatsEnabled(value)
+            | Self::MulticastStatsEnabled(value)
+            | Self::MulticastIgmpVersion(value)
+            | Self::MulticastMldVersion(value)
+            | Self::VlanStatsPerHost(value) => buffer[0] = *value,
 
-            MulticastQuerierState(ref nlas) => nlas.as_slice().emit(buffer),
+            Self::MulticastQuerierState(nlas) => nlas.as_slice().emit(buffer),
 
-            Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoBridge::*;
         match self {
-            GroupAddr(_) => IFLA_BR_GROUP_ADDR,
-            FdbFlush(_) => IFLA_BR_FDB_FLUSH,
-            HelloTimer(_) => IFLA_BR_HELLO_TIMER,
-            TcnTimer(_) => IFLA_BR_TCN_TIMER,
-            TopologyChangeTimer(_) => IFLA_BR_TOPOLOGY_CHANGE_TIMER,
-            GcTimer(_) => IFLA_BR_GC_TIMER,
-            MulticastMembershipInterval(_) => IFLA_BR_MCAST_MEMBERSHIP_INTVL,
-            MulticastQuerierInterval(_) => IFLA_BR_MCAST_QUERIER_INTVL,
-            MulticastQueryInterval(_) => IFLA_BR_MCAST_QUERY_INTVL,
-            MulticastQueryResponseInterval(_) => {
+            Self::GroupAddr(_) => IFLA_BR_GROUP_ADDR,
+            Self::FdbFlush => IFLA_BR_FDB_FLUSH,
+            Self::HelloTimer(_) => IFLA_BR_HELLO_TIMER,
+            Self::TcnTimer(_) => IFLA_BR_TCN_TIMER,
+            Self::TopologyChangeTimer(_) => IFLA_BR_TOPOLOGY_CHANGE_TIMER,
+            Self::GcTimer(_) => IFLA_BR_GC_TIMER,
+            Self::MulticastMembershipInterval(_) => {
+                IFLA_BR_MCAST_MEMBERSHIP_INTVL
+            }
+            Self::MulticastQuerierInterval(_) => IFLA_BR_MCAST_QUERIER_INTVL,
+            Self::MulticastQueryInterval(_) => IFLA_BR_MCAST_QUERY_INTVL,
+            Self::MulticastQueryResponseInterval(_) => {
                 IFLA_BR_MCAST_QUERY_RESPONSE_INTVL
             }
-            ForwardDelay(_) => IFLA_BR_FORWARD_DELAY,
-            HelloTime(_) => IFLA_BR_HELLO_TIME,
-            MaxAge(_) => IFLA_BR_MAX_AGE,
-            AgeingTime(_) => IFLA_BR_AGEING_TIME,
-            StpState(_) => IFLA_BR_STP_STATE,
-            MulticastHashElasticity(_) => IFLA_BR_MCAST_HASH_ELASTICITY,
-            MulticastHashMax(_) => IFLA_BR_MCAST_HASH_MAX,
-            MulticastLastMemberCount(_) => IFLA_BR_MCAST_LAST_MEMBER_CNT,
-            MulticastStartupQueryCount(_) => IFLA_BR_MCAST_STARTUP_QUERY_CNT,
-            MulticastLastMemberInterval(_) => IFLA_BR_MCAST_LAST_MEMBER_INTVL,
-            MulticastStartupQueryInterval(_) => {
+            Self::ForwardDelay(_) => IFLA_BR_FORWARD_DELAY,
+            Self::HelloTime(_) => IFLA_BR_HELLO_TIME,
+            Self::MaxAge(_) => IFLA_BR_MAX_AGE,
+            Self::AgeingTime(_) => IFLA_BR_AGEING_TIME,
+            Self::StpState(_) => IFLA_BR_STP_STATE,
+            Self::MulticastHashElasticity(_) => IFLA_BR_MCAST_HASH_ELASTICITY,
+            Self::MulticastHashMax(_) => IFLA_BR_MCAST_HASH_MAX,
+            Self::MulticastLastMemberCount(_) => IFLA_BR_MCAST_LAST_MEMBER_CNT,
+            Self::MulticastStartupQueryCount(_) => {
+                IFLA_BR_MCAST_STARTUP_QUERY_CNT
+            }
+            Self::MulticastLastMemberInterval(_) => {
+                IFLA_BR_MCAST_LAST_MEMBER_INTVL
+            }
+            Self::MulticastStartupQueryInterval(_) => {
                 IFLA_BR_MCAST_STARTUP_QUERY_INTVL
             }
-            RootPathCost(_) => IFLA_BR_ROOT_PATH_COST,
-            Priority(_) => IFLA_BR_PRIORITY,
-            VlanProtocol(_) => IFLA_BR_VLAN_PROTOCOL,
-            GroupFwdMask(_) => IFLA_BR_GROUP_FWD_MASK,
-            RootId(_) => IFLA_BR_ROOT_ID,
-            BridgeId(_) => IFLA_BR_BRIDGE_ID,
-            RootPort(_) => IFLA_BR_ROOT_PORT,
-            VlanDefaultPvid(_) => IFLA_BR_VLAN_DEFAULT_PVID,
-            VlanFiltering(_) => IFLA_BR_VLAN_FILTERING,
-            TopologyChange(_) => IFLA_BR_TOPOLOGY_CHANGE,
-            TopologyChangeDetected(_) => IFLA_BR_TOPOLOGY_CHANGE_DETECTED,
-            MulticastRouter(_) => IFLA_BR_MCAST_ROUTER,
-            MulticastSnooping(_) => IFLA_BR_MCAST_SNOOPING,
-            MulticastQueryUseIfaddr(_) => IFLA_BR_MCAST_QUERY_USE_IFADDR,
-            MulticastQuerier(_) => IFLA_BR_MCAST_QUERIER,
-            NfCallIpTables(_) => IFLA_BR_NF_CALL_IPTABLES,
-            NfCallIp6Tables(_) => IFLA_BR_NF_CALL_IP6TABLES,
-            NfCallArpTables(_) => IFLA_BR_NF_CALL_ARPTABLES,
-            VlanStatsEnabled(_) => IFLA_BR_VLAN_STATS_ENABLED,
-            MulticastStatsEnabled(_) => IFLA_BR_MCAST_STATS_ENABLED,
-            MulticastIgmpVersion(_) => IFLA_BR_MCAST_IGMP_VERSION,
-            MulticastMldVersion(_) => IFLA_BR_MCAST_MLD_VERSION,
-            VlanStatsPerHost(_) => IFLA_BR_VLAN_STATS_PER_PORT,
-            MultiBoolOpt(_) => IFLA_BR_MULTI_BOOLOPT,
-            MulticastQuerierState(_) => {
+            Self::RootPathCost(_) => IFLA_BR_ROOT_PATH_COST,
+            Self::Priority(_) => IFLA_BR_PRIORITY,
+            Self::VlanProtocol(_) => IFLA_BR_VLAN_PROTOCOL,
+            Self::GroupFwdMask(_) => IFLA_BR_GROUP_FWD_MASK,
+            Self::RootId(_) => IFLA_BR_ROOT_ID,
+            Self::BridgeId(_) => IFLA_BR_BRIDGE_ID,
+            Self::RootPort(_) => IFLA_BR_ROOT_PORT,
+            Self::VlanDefaultPvid(_) => IFLA_BR_VLAN_DEFAULT_PVID,
+            Self::VlanFiltering(_) => IFLA_BR_VLAN_FILTERING,
+            Self::TopologyChange(_) => IFLA_BR_TOPOLOGY_CHANGE,
+            Self::TopologyChangeDetected(_) => IFLA_BR_TOPOLOGY_CHANGE_DETECTED,
+            Self::MulticastRouter(_) => IFLA_BR_MCAST_ROUTER,
+            Self::MulticastSnooping(_) => IFLA_BR_MCAST_SNOOPING,
+            Self::MulticastQueryUseIfaddr(_) => IFLA_BR_MCAST_QUERY_USE_IFADDR,
+            Self::MulticastQuerier(_) => IFLA_BR_MCAST_QUERIER,
+            Self::NfCallIpTables(_) => IFLA_BR_NF_CALL_IPTABLES,
+            Self::NfCallIp6Tables(_) => IFLA_BR_NF_CALL_IP6TABLES,
+            Self::NfCallArpTables(_) => IFLA_BR_NF_CALL_ARPTABLES,
+            Self::VlanStatsEnabled(_) => IFLA_BR_VLAN_STATS_ENABLED,
+            Self::MulticastStatsEnabled(_) => IFLA_BR_MCAST_STATS_ENABLED,
+            Self::MulticastIgmpVersion(_) => IFLA_BR_MCAST_IGMP_VERSION,
+            Self::MulticastMldVersion(_) => IFLA_BR_MCAST_MLD_VERSION,
+            Self::VlanStatsPerHost(_) => IFLA_BR_VLAN_STATS_PER_PORT,
+            Self::MultiBoolOpt(_) => IFLA_BR_MULTI_BOOLOPT,
+            Self::MulticastQuerierState(_) => {
                 IFLA_BR_MCAST_QUERIER_STATE | NLA_F_NESTED
             }
-            Other(nla) => nla.kind(),
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoBridge::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BR_FDB_FLUSH => FdbFlush(payload.to_vec()),
-            IFLA_BR_HELLO_TIMER => HelloTimer(
+            IFLA_BR_FDB_FLUSH => Self::FdbFlush,
+            IFLA_BR_HELLO_TIMER => Self::HelloTimer(
                 parse_u64(payload)
                     .context("invalid IFLA_BR_HELLO_TIMER value")?,
             ),
-            IFLA_BR_TCN_TIMER => TcnTimer(
+            IFLA_BR_TCN_TIMER => Self::TcnTimer(
                 parse_u64(payload)
                     .context("invalid IFLA_BR_TCN_TIMER value")?,
             ),
-            IFLA_BR_TOPOLOGY_CHANGE_TIMER => TopologyChangeTimer(
+            IFLA_BR_TOPOLOGY_CHANGE_TIMER => Self::TopologyChangeTimer(
                 parse_u64(payload)
                     .context("invalid IFLA_BR_TOPOLOGY_CHANGE_TIMER value")?,
             ),
-            IFLA_BR_GC_TIMER => GcTimer(
+            IFLA_BR_GC_TIMER => Self::GcTimer(
                 parse_u64(payload).context("invalid IFLA_BR_GC_TIMER value")?,
             ),
-            IFLA_BR_MCAST_LAST_MEMBER_INTVL => MulticastLastMemberInterval(
-                parse_u64(payload)
-                    .context("invalid IFLA_BR_MCAST_LAST_MEMBER_INTVL value")?,
-            ),
-            IFLA_BR_MCAST_MEMBERSHIP_INTVL => MulticastMembershipInterval(
-                parse_u64(payload)
-                    .context("invalid IFLA_BR_MCAST_MEMBERSHIP_INTVL value")?,
-            ),
-            IFLA_BR_MCAST_QUERIER_INTVL => MulticastQuerierInterval(
+            IFLA_BR_MCAST_LAST_MEMBER_INTVL => {
+                Self::MulticastLastMemberInterval(
+                    parse_u64(payload).context(
+                        "invalid IFLA_BR_MCAST_LAST_MEMBER_INTVL value",
+                    )?,
+                )
+            }
+            IFLA_BR_MCAST_MEMBERSHIP_INTVL => {
+                Self::MulticastMembershipInterval(
+                    parse_u64(payload).context(
+                        "invalid IFLA_BR_MCAST_MEMBERSHIP_INTVL value",
+                    )?,
+                )
+            }
+            IFLA_BR_MCAST_QUERIER_INTVL => Self::MulticastQuerierInterval(
                 parse_u64(payload)
                     .context("invalid IFLA_BR_MCAST_QUERIER_INTVL value")?,
             ),
-            IFLA_BR_MCAST_QUERY_INTVL => MulticastQueryInterval(
+            IFLA_BR_MCAST_QUERY_INTVL => Self::MulticastQueryInterval(
                 parse_u64(payload)
                     .context("invalid IFLA_BR_MCAST_QUERY_INTVL value")?,
             ),
             IFLA_BR_MCAST_QUERY_RESPONSE_INTVL => {
-                MulticastQueryResponseInterval(parse_u64(payload).context(
-                    "invalid IFLA_BR_MCAST_QUERY_RESPONSE_INTVL value",
-                )?)
+                Self::MulticastQueryResponseInterval(
+                    parse_u64(payload).context(
+                        "invalid IFLA_BR_MCAST_QUERY_RESPONSE_INTVL value",
+                    )?,
+                )
             }
             IFLA_BR_MCAST_STARTUP_QUERY_INTVL => {
-                MulticastStartupQueryInterval(parse_u64(payload).context(
-                    "invalid IFLA_BR_MCAST_STARTUP_QUERY_INTVL value",
-                )?)
+                Self::MulticastStartupQueryInterval(
+                    parse_u64(payload).context(
+                        "invalid IFLA_BR_MCAST_STARTUP_QUERY_INTVL value",
+                    )?,
+                )
             }
-            IFLA_BR_FORWARD_DELAY => ForwardDelay(
+            IFLA_BR_FORWARD_DELAY => Self::ForwardDelay(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_FORWARD_DELAY value")?,
             ),
-            IFLA_BR_HELLO_TIME => HelloTime(
+            IFLA_BR_HELLO_TIME => Self::HelloTime(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_HELLO_TIME value")?,
             ),
-            IFLA_BR_MAX_AGE => MaxAge(
+            IFLA_BR_MAX_AGE => Self::MaxAge(
                 parse_u32(payload).context("invalid IFLA_BR_MAX_AGE value")?,
             ),
-            IFLA_BR_AGEING_TIME => AgeingTime(
+            IFLA_BR_AGEING_TIME => Self::AgeingTime(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_AGEING_TIME value")?,
             ),
-            IFLA_BR_STP_STATE => StpState(
+            IFLA_BR_STP_STATE => Self::StpState(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_STP_STATE value")?,
             ),
-            IFLA_BR_MCAST_HASH_ELASTICITY => MulticastHashElasticity(
+            IFLA_BR_MCAST_HASH_ELASTICITY => Self::MulticastHashElasticity(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_MCAST_HASH_ELASTICITY value")?,
             ),
-            IFLA_BR_MCAST_HASH_MAX => MulticastHashMax(
+            IFLA_BR_MCAST_HASH_MAX => Self::MulticastHashMax(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_MCAST_HASH_MAX value")?,
             ),
-            IFLA_BR_MCAST_LAST_MEMBER_CNT => MulticastLastMemberCount(
+            IFLA_BR_MCAST_LAST_MEMBER_CNT => Self::MulticastLastMemberCount(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_MCAST_LAST_MEMBER_CNT value")?,
             ),
-            IFLA_BR_MCAST_STARTUP_QUERY_CNT => MulticastStartupQueryCount(
-                parse_u32(payload)
-                    .context("invalid IFLA_BR_MCAST_STARTUP_QUERY_CNT value")?,
-            ),
-            IFLA_BR_ROOT_PATH_COST => RootPathCost(
+            IFLA_BR_MCAST_STARTUP_QUERY_CNT => {
+                Self::MulticastStartupQueryCount(
+                    parse_u32(payload).context(
+                        "invalid IFLA_BR_MCAST_STARTUP_QUERY_CNT value",
+                    )?,
+                )
+            }
+            IFLA_BR_ROOT_PATH_COST => Self::RootPathCost(
                 parse_u32(payload)
                     .context("invalid IFLA_BR_ROOT_PATH_COST value")?,
             ),
-            IFLA_BR_PRIORITY => Priority(
+            IFLA_BR_PRIORITY => Self::Priority(
                 parse_u16(payload).context("invalid IFLA_BR_PRIORITY value")?,
             ),
-            IFLA_BR_VLAN_PROTOCOL => VlanProtocol(
+            IFLA_BR_VLAN_PROTOCOL => Self::VlanProtocol(
                 parse_u16_be(payload)
                     .context("invalid IFLA_BR_VLAN_PROTOCOL value")?,
             ),
-            IFLA_BR_GROUP_FWD_MASK => GroupFwdMask(
+            IFLA_BR_GROUP_FWD_MASK => Self::GroupFwdMask(
                 parse_u16(payload)
                     .context("invalid IFLA_BR_GROUP_FWD_MASK value")?,
             ),
@@ -420,85 +437,85 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                 )?;
 
                 match buf.kind() {
-                    IFLA_BR_ROOT_ID => RootId((priority, address)),
-                    IFLA_BR_BRIDGE_ID => BridgeId((priority, address)),
+                    IFLA_BR_ROOT_ID => Self::RootId((priority, address)),
+                    IFLA_BR_BRIDGE_ID => Self::BridgeId((priority, address)),
                     _ => unreachable!(),
                 }
             }
-            IFLA_BR_GROUP_ADDR => GroupAddr(
+            IFLA_BR_GROUP_ADDR => Self::GroupAddr(
                 parse_mac(payload)
                     .context("invalid IFLA_BR_GROUP_ADDR value")?,
             ),
-            IFLA_BR_ROOT_PORT => RootPort(
+            IFLA_BR_ROOT_PORT => Self::RootPort(
                 parse_u16(payload)
                     .context("invalid IFLA_BR_ROOT_PORT value")?,
             ),
-            IFLA_BR_VLAN_DEFAULT_PVID => VlanDefaultPvid(
+            IFLA_BR_VLAN_DEFAULT_PVID => Self::VlanDefaultPvid(
                 parse_u16(payload)
                     .context("invalid IFLA_BR_VLAN_DEFAULT_PVID value")?,
             ),
-            IFLA_BR_VLAN_FILTERING => VlanFiltering(
+            IFLA_BR_VLAN_FILTERING => Self::VlanFiltering(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_VLAN_FILTERING value")?,
             ),
-            IFLA_BR_TOPOLOGY_CHANGE => TopologyChange(
+            IFLA_BR_TOPOLOGY_CHANGE => Self::TopologyChange(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_TOPOLOGY_CHANGE value")?,
             ),
             IFLA_BR_TOPOLOGY_CHANGE_DETECTED => {
-                TopologyChangeDetected(parse_u8(payload).context(
+                Self::TopologyChangeDetected(parse_u8(payload).context(
                     "invalid IFLA_BR_TOPOLOGY_CHANGE_DETECTED value",
                 )?)
             }
-            IFLA_BR_MCAST_ROUTER => MulticastRouter(
+            IFLA_BR_MCAST_ROUTER => Self::MulticastRouter(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_ROUTER value")?,
             ),
-            IFLA_BR_MCAST_SNOOPING => MulticastSnooping(
+            IFLA_BR_MCAST_SNOOPING => Self::MulticastSnooping(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_SNOOPING value")?,
             ),
-            IFLA_BR_MCAST_QUERY_USE_IFADDR => MulticastQueryUseIfaddr(
+            IFLA_BR_MCAST_QUERY_USE_IFADDR => Self::MulticastQueryUseIfaddr(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_QUERY_USE_IFADDR value")?,
             ),
-            IFLA_BR_MCAST_QUERIER => MulticastQuerier(
+            IFLA_BR_MCAST_QUERIER => Self::MulticastQuerier(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_QUERIER value")?,
             ),
-            IFLA_BR_NF_CALL_IPTABLES => NfCallIpTables(
+            IFLA_BR_NF_CALL_IPTABLES => Self::NfCallIpTables(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_NF_CALL_IPTABLES value")?,
             ),
-            IFLA_BR_NF_CALL_IP6TABLES => NfCallIp6Tables(
+            IFLA_BR_NF_CALL_IP6TABLES => Self::NfCallIp6Tables(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_NF_CALL_IP6TABLES value")?,
             ),
-            IFLA_BR_NF_CALL_ARPTABLES => NfCallArpTables(
+            IFLA_BR_NF_CALL_ARPTABLES => Self::NfCallArpTables(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_NF_CALL_ARPTABLES value")?,
             ),
-            IFLA_BR_VLAN_STATS_ENABLED => VlanStatsEnabled(
+            IFLA_BR_VLAN_STATS_ENABLED => Self::VlanStatsEnabled(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_VLAN_STATS_ENABLED value")?,
             ),
-            IFLA_BR_MCAST_STATS_ENABLED => MulticastStatsEnabled(
+            IFLA_BR_MCAST_STATS_ENABLED => Self::MulticastStatsEnabled(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_STATS_ENABLED value")?,
             ),
-            IFLA_BR_MCAST_IGMP_VERSION => MulticastIgmpVersion(
+            IFLA_BR_MCAST_IGMP_VERSION => Self::MulticastIgmpVersion(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_IGMP_VERSION value")?,
             ),
-            IFLA_BR_MCAST_MLD_VERSION => MulticastMldVersion(
+            IFLA_BR_MCAST_MLD_VERSION => Self::MulticastMldVersion(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_MLD_VERSION value")?,
             ),
-            IFLA_BR_VLAN_STATS_PER_PORT => VlanStatsPerHost(
+            IFLA_BR_VLAN_STATS_PER_PORT => Self::VlanStatsPerHost(
                 parse_u8(payload)
                     .context("invalid IFLA_BR_VLAN_STATS_PER_PORT value")?,
             ),
-            IFLA_BR_MULTI_BOOLOPT => MultiBoolOpt(
+            IFLA_BR_MULTI_BOOLOPT => Self::MultiBoolOpt(
                 parse_u64(payload)
                     .context("invalid IFLA_BR_MULTI_BOOLOPT value")?,
             ),
@@ -510,9 +527,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                     let parsed = BridgeQuerierState::parse(nla).context(err)?;
                     v.push(parsed);
                 }
-                MulticastQuerierState(v)
+                Self::MulticastQuerierState(v)
             }
-            _ => Other(DefaultNla::parse(buf).context(
+            _ => Self::Other(DefaultNla::parse(buf).context(
                 "invalid link info bridge NLA value (unknown type)",
             )?),
         })
