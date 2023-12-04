@@ -109,7 +109,7 @@ pub enum LinkAttribute {
     IfNetnsId(i32),
     CarrierUpCount(u32),
     CarrierDownCount(u32),
-    NewIfIndex(Vec<u8>),
+    NewIfIndex(i32),
     LinkInfo(Vec<LinkInfo>),
     Wireless(Vec<u8>),
     ProtoInfo(Vec<u8>),
@@ -170,7 +170,6 @@ impl Nla for LinkAttribute {
             Self::Event(v) => v.buffer_len(),
             Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
-            | Self::NewIfIndex(bytes)
             | Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
@@ -205,6 +204,7 @@ impl Nla for LinkAttribute {
             | Self::MinMtu(_)
             | Self::CarrierUpCount(_)
             | Self::CarrierDownCount(_)
+            | Self::NewIfIndex(_)
             | Self::MaxMtu(_) => 4,
 
             Self::OperState(_) => 1,
@@ -230,7 +230,6 @@ impl Nla for LinkAttribute {
             Self::Event(v) => v.emit(buffer),
             Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
-            | Self::NewIfIndex(bytes)
             | Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
@@ -273,6 +272,7 @@ impl Nla for LinkAttribute {
             Self::NetnsId(v)
             | Self::NetNsFd(v)
             | Self::NewNetnsId(v)
+            | Self::NewIfIndex(v)
             | Self::IfNetnsId(v) => NativeEndian::write_i32(buffer, *v),
             Self::Stats(nla) => nla.emit(buffer),
             Self::Map(nla) => nla.emit(buffer),
@@ -399,7 +399,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 parse_u32(payload)
                     .context("invalid IFLA_CARRIER_DOWN_COUNT value")?,
             ),
-            IFLA_NEW_IFINDEX => Self::NewIfIndex(payload.to_vec()),
+            IFLA_NEW_IFINDEX => Self::NewIfIndex(
+                parse_i32(payload).context("invalid IFLA_NEW_IFINDEX value")?,
+            ),
+
             IFLA_PROP_LIST => {
                 let error_msg = "invalid IFLA_PROP_LIST value";
                 let mut nlas = vec![];
