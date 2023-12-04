@@ -3,8 +3,6 @@
 #[cfg(test)]
 mod bond;
 #[cfg(test)]
-mod xdp;
-#[cfg(test)]
 mod bridge;
 #[cfg(test)]
 mod hsr;
@@ -30,6 +28,8 @@ mod vlan;
 mod vrf;
 #[cfg(test)]
 mod vxlan;
+#[cfg(test)]
+mod xdp;
 #[cfg(test)]
 mod xfrm;
 
