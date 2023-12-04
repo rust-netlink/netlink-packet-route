@@ -1,4 +1,18 @@
 # Changelog
+## [0.18.0] - 2023-12-04
+### Breaking changes
+
+ - MASSIVE changes to API in order to 1.0 preparation. Please check
+   document or code for detail. Sorry for the inconvenience.
+
+### New features
+ - Support HSR interface. (37f9c5c)
+
+### Bug fixes
+ - vxlan: Do not fail on unknown option. (2457bdf)
+ - bond: Do not fail on unknown option. (acac109)
+ - vlan: Do not fail on unknown option. (1617948)
+
 ## [0.17.1] - 2023-08-30
 ### Breaking changes
  - N/A
