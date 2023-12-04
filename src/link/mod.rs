@@ -54,4 +54,4 @@ pub use self::sriov::{
 pub use self::stats::{Stats, StatsBuffer};
 pub use self::stats64::{Stats64, Stats64Buffer};
 pub use self::vlan_protocol::VlanProtocol;
-pub use self::xdp::{Xdp, XdpAttached};
+pub use self::xdp::{LinkXdp, XdpAttached};
