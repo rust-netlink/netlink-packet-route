@@ -22,8 +22,8 @@ use super::{
     stats64::LINK_STATS64_LEN,
     xdp::VecLinkXdp,
     AfSpecBridge, AfSpecUnspec, LinkEvent, LinkInfo, LinkPhysId, LinkVfInfo,
-    LinkVfPort, LinkXdp, Map, MapBuffer, Prop, State, Stats, Stats64,
-    Stats64Buffer, StatsBuffer,
+    LinkVfPort, LinkWirelessEvent, LinkXdp, Map, MapBuffer, Prop, State, Stats,
+    Stats64, Stats64Buffer, StatsBuffer,
 };
 use crate::AddressFamily;
 
@@ -111,7 +111,7 @@ pub enum LinkAttribute {
     CarrierDownCount(u32),
     NewIfIndex(i32),
     LinkInfo(Vec<LinkInfo>),
-    Wireless(Vec<u8>),
+    Wireless(LinkWirelessEvent),
     ProtoInfo(Vec<u8>),
     PropList(Vec<Prop>),
     ProtoDownReason(Vec<u8>),
@@ -168,8 +168,8 @@ impl Nla for LinkAttribute {
             Self::PhysPortId(v) => v.buffer_len(),
             Self::PhysSwitchId(v) => v.buffer_len(),
             Self::Event(v) => v.buffer_len(),
-            Self::Wireless(bytes)
-            | Self::ProtoInfo(bytes)
+            Self::Wireless(v) => v.buffer_len(),
+            Self::ProtoInfo(bytes)
             | Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
@@ -228,8 +228,8 @@ impl Nla for LinkAttribute {
             Self::PhysPortId(v) => v.emit(buffer),
             Self::PhysSwitchId(v) => v.emit(buffer),
             Self::Event(v) => v.emit(buffer),
-            Self::Wireless(bytes)
-            | Self::ProtoInfo(bytes)
+            Self::Wireless(v) => v.emit(buffer),
+            Self::ProtoInfo(bytes)
             | Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
@@ -379,7 +379,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     format!("invalid IFLA_PHYS_SWITCH_ID value {payload:?}"),
                 )?)
             }
-            IFLA_WIRELESS => Self::Wireless(payload.to_vec()),
+            IFLA_WIRELESS => Self::Wireless(
+                LinkWirelessEvent::parse(payload)
+                    .context(format!("invalid IFLA_WIRELESS {payload:?}"))?,
+            ),
             IFLA_PROTINFO => Self::ProtoInfo(payload.to_vec()),
             IFLA_EVENT => Self::Event(
                 LinkEvent::parse(payload)
