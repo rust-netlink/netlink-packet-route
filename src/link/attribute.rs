@@ -21,9 +21,9 @@ use super::{
     stats::LINK_STATS_LEN,
     stats64::LINK_STATS64_LEN,
     xdp::VecLinkXdp,
-    AfSpecBridge, AfSpecUnspec, LinkInfo, LinkPhysId, LinkVfInfo, LinkVfPort,
-    LinkXdp, Map, MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer,
-    StatsBuffer,
+    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkInfo, LinkPhysId, LinkVfInfo,
+    LinkVfPort, LinkXdp, Map, MapBuffer, Prop, State, Stats, Stats64,
+    Stats64Buffer, StatsBuffer,
 };
 use crate::AddressFamily;
 
@@ -104,7 +104,7 @@ pub enum LinkAttribute {
     PhysPortId(LinkPhysId),
     PhysSwitchId(LinkPhysId),
     Xdp(Vec<LinkXdp>),
-    Event(Vec<u8>),
+    Event(LinkEvent),
     NewNetnsId(Vec<u8>),
     IfNetnsId(Vec<u8>),
     CarrierUpCount(Vec<u8>),
@@ -167,8 +167,8 @@ impl Nla for LinkAttribute {
             Self::PortSelf(v) => v.buffer_len(),
             Self::PhysPortId(v) => v.buffer_len(),
             Self::PhysSwitchId(v) => v.buffer_len(),
-            Self::Event(bytes)
-            | Self::NewNetnsId(bytes)
+            Self::Event(v) => v.buffer_len(),
+            Self::NewNetnsId(bytes)
             | Self::IfNetnsId(bytes)
             | Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
@@ -227,9 +227,9 @@ impl Nla for LinkAttribute {
             Self::PortSelf(v) => v.emit(buffer),
             Self::PhysPortId(v) => v.emit(buffer),
             Self::PhysSwitchId(v) => v.emit(buffer),
+            Self::Event(v) => v.emit(buffer),
             Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
-            | Self::Event(bytes)
             | Self::NewNetnsId(bytes)
             | Self::IfNetnsId(bytes)
             | Self::CarrierUpCount(bytes)
@@ -382,7 +382,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             }
             IFLA_WIRELESS => Self::Wireless(payload.to_vec()),
             IFLA_PROTINFO => Self::ProtoInfo(payload.to_vec()),
-            IFLA_EVENT => Self::Event(payload.to_vec()),
+            IFLA_EVENT => Self::Event(
+                LinkEvent::parse(payload)
+                    .context(format!("invalid IFLA_EVENT {payload:?}"))?,
+            ),
             IFLA_NEW_NETNSID => Self::NewNetnsId(payload.to_vec()),
             IFLA_IF_NETNSID => Self::IfNetnsId(payload.to_vec()),
             IFLA_CARRIER_UP_COUNT => Self::CarrierUpCount(payload.to_vec()),
