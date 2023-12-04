@@ -38,7 +38,7 @@ const TCA_U32_FLAGS: u16 = 11;
 pub struct TcFilterU32 {}
 
 impl TcFilterU32 {
-    pub(crate) const KIND: &'static str = "u32";
+    pub const KIND: &'static str = "u32";
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
