@@ -13,17 +13,21 @@ use netlink_packet_utils::{
 
 #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
 use super::af_spec::VecAfSpecBridge;
+#[cfg(any(target_os = "linux", target_os = "fuchsia",))]
+use super::proto_info::VecLinkProtoInfoBridge;
 use super::{
     af_spec::VecAfSpecUnspec,
     buffer_tool::expand_buffer_if_small,
     link_info::VecLinkInfo,
+    proto_info::VecLinkProtoInfoInet6,
     sriov::{VecLinkVfInfo, VecLinkVfPort},
     stats::LINK_STATS_LEN,
     stats64::LINK_STATS64_LEN,
     xdp::VecLinkXdp,
-    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkInfo, LinkPhysId, LinkVfInfo,
-    LinkVfPort, LinkWirelessEvent, LinkXdp, Map, MapBuffer, Prop, State, Stats,
-    Stats64, Stats64Buffer, StatsBuffer,
+    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkInfo, LinkPhysId,
+    LinkProtoInfoBridge, LinkProtoInfoInet6, LinkVfInfo, LinkVfPort,
+    LinkWirelessEvent, LinkXdp, Map, MapBuffer, Prop, State, Stats, Stats64,
+    Stats64Buffer, StatsBuffer,
 };
 use crate::AddressFamily;
 
@@ -112,7 +116,9 @@ pub enum LinkAttribute {
     NewIfIndex(i32),
     LinkInfo(Vec<LinkInfo>),
     Wireless(LinkWirelessEvent),
-    ProtoInfo(Vec<u8>),
+    ProtoInfoBridge(Vec<LinkProtoInfoBridge>),
+    ProtoInfoInet6(Vec<LinkProtoInfoInet6>),
+    ProtoInfoUnknown(DefaultNla),
     PropList(Vec<Prop>),
     ProtoDownReason(Vec<u8>),
     Address(Vec<u8>),
@@ -169,8 +175,10 @@ impl Nla for LinkAttribute {
             Self::PhysSwitchId(v) => v.buffer_len(),
             Self::Event(v) => v.buffer_len(),
             Self::Wireless(v) => v.buffer_len(),
-            Self::ProtoInfo(bytes)
-            | Self::Address(bytes)
+            Self::ProtoInfoBridge(v) => v.as_slice().buffer_len(),
+            Self::ProtoInfoInet6(v) => v.as_slice().buffer_len(),
+
+            Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
             | Self::AfSpecUnknown(bytes)
@@ -216,6 +224,7 @@ impl Nla for LinkAttribute {
             Self::PropList(nlas) => nlas.as_slice().buffer_len(),
             Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
             Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
+            Self::ProtoInfoUnknown(attr) => attr.value_len(),
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -229,8 +238,9 @@ impl Nla for LinkAttribute {
             Self::PhysSwitchId(v) => v.emit(buffer),
             Self::Event(v) => v.emit(buffer),
             Self::Wireless(v) => v.emit(buffer),
-            Self::ProtoInfo(bytes)
-            | Self::Address(bytes)
+            Self::ProtoInfoBridge(v) => v.as_slice().emit(buffer),
+            Self::ProtoInfoInet6(v) => v.as_slice().emit(buffer),
+            Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
             | Self::AfSpecUnknown(bytes)
@@ -283,7 +293,9 @@ impl Nla for LinkAttribute {
             Self::PropList(nlas) => nlas.as_slice().emit(buffer),
             Self::AfSpecUnspec(nlas) => nlas.as_slice().emit(buffer),
             Self::AfSpecBridge(nlas) => nlas.as_slice().emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::ProtoInfoUnknown(attr) | Self::Other(attr) => {
+                attr.emit_value(buffer)
+            }
         }
     }
 
@@ -296,7 +308,8 @@ impl Nla for LinkAttribute {
             Self::PhysSwitchId(_) => IFLA_PHYS_SWITCH_ID,
             Self::LinkInfo(_) => IFLA_LINKINFO,
             Self::Wireless(_) => IFLA_WIRELESS,
-            Self::ProtoInfo(_) => IFLA_PROTINFO,
+            Self::ProtoInfoBridge(_) | Self::ProtoInfoInet6(_) => IFLA_PROTINFO,
+            Self::ProtoInfoUnknown(attr) => attr.kind(),
             Self::Xdp(_) => IFLA_XDP,
             Self::Event(_) => IFLA_EVENT,
             Self::NewNetnsId(_) => IFLA_NEW_NETNSID,
@@ -383,7 +396,29 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 LinkWirelessEvent::parse(payload)
                     .context(format!("invalid IFLA_WIRELESS {payload:?}"))?,
             ),
-            IFLA_PROTINFO => Self::ProtoInfo(payload.to_vec()),
+            IFLA_PROTINFO => match interface_family {
+                AddressFamily::Inet6 => Self::ProtoInfoInet6(
+                    VecLinkProtoInfoInet6::parse(&NlaBuffer::new(payload))
+                        .context(format!(
+                            "invalid IFLA_PROTINFO for AF_INET6 {payload:?}"
+                        ))?
+                        .0,
+                ),
+                #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
+                AddressFamily::Bridge => Self::ProtoInfoBridge(
+                    VecLinkProtoInfoBridge::parse(&NlaBuffer::new(payload))
+                        .context(format!(
+                            "invalid IFLA_PROTINFO for AF_INET6 {payload:?}"
+                        ))?
+                        .0,
+                ),
+                _ => Self::ProtoInfoUnknown(DefaultNla::parse(buf).context(
+                    format!(
+                        "invalid IFLA_PROTINFO for \
+                        {interface_family:?}: {payload:?}"
+                    ),
+                )?),
+            },
             IFLA_EVENT => Self::Event(
                 LinkEvent::parse(payload)
                     .context(format!("invalid IFLA_EVENT {payload:?}"))?,
