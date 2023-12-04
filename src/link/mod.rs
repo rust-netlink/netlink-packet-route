@@ -37,10 +37,12 @@ pub use self::header::{LinkHeader, LinkMessageBuffer};
 pub use self::link_flag::{LinkFlag, LinkFlags};
 pub use self::link_info::{
     BondAdInfo, BondPortState, BridgeQuerierState, HsrProtocol, InfoBond,
-    InfoBondPort, InfoBridge, InfoData, InfoHsr, InfoIpVlan, InfoIpoib,
-    InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoPortData, InfoPortKind,
-    InfoVeth, InfoVlan, InfoVrf, InfoVxlan, InfoXfrm, LinkInfo, LinkXstats,
-    MacSecCipherId, MacSecOffload, MacSecValidation, MiiStatus, VlanQosMapping,
+    InfoBondPort, InfoBridge, InfoData, InfoGreTap, InfoGreTap6, InfoGreTun,
+    InfoGreTun6, InfoGtp, InfoHsr, InfoIpVlan, InfoIpoib, InfoKind, InfoMacSec,
+    InfoMacVlan, InfoMacVtap, InfoPortData, InfoPortKind, InfoSitTun, InfoTun,
+    InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm, LinkInfo,
+    LinkXstats, MacSecCipherId, MacSecOffload, MacSecValidation, MiiStatus,
+    VlanQosMapping,
 };
 pub use self::link_layer_type::LinkLayerType;
 pub use self::link_state::State;
