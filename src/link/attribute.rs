@@ -25,9 +25,9 @@ use super::{
     stats64::LINK_STATS64_LEN,
     xdp::VecLinkXdp,
     AfSpecBridge, AfSpecUnspec, LinkEvent, LinkInfo, LinkPhysId,
-    LinkProtoInfoBridge, LinkProtoInfoInet6, LinkVfInfo, LinkVfPort,
-    LinkWirelessEvent, LinkXdp, Map, MapBuffer, Prop, State, Stats, Stats64,
-    Stats64Buffer, StatsBuffer,
+    LinkProtoInfoBridge, LinkProtoInfoInet6, LinkProtocolDownReason,
+    LinkVfInfo, LinkVfPort, LinkWirelessEvent, LinkXdp, Map, MapBuffer, Prop,
+    State, Stats, Stats64, Stats64Buffer, StatsBuffer,
 };
 use crate::AddressFamily;
 
@@ -120,7 +120,7 @@ pub enum LinkAttribute {
     ProtoInfoInet6(Vec<LinkProtoInfoInet6>),
     ProtoInfoUnknown(DefaultNla),
     PropList(Vec<Prop>),
-    ProtoDownReason(Vec<u8>),
+    ProtoDownReason(Vec<LinkProtocolDownReason>),
     Address(Vec<u8>),
     Broadcast(Vec<u8>),
     /// Permanent hardware address of the device. The provides the same
@@ -177,12 +177,12 @@ impl Nla for LinkAttribute {
             Self::Wireless(v) => v.buffer_len(),
             Self::ProtoInfoBridge(v) => v.as_slice().buffer_len(),
             Self::ProtoInfoInet6(v) => v.as_slice().buffer_len(),
+            Self::ProtoDownReason(v) => v.as_slice().buffer_len(),
 
             Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
-            | Self::AfSpecUnknown(bytes)
-            | Self::ProtoDownReason(bytes) => bytes.len(),
+            | Self::AfSpecUnknown(bytes) => bytes.len(),
 
             Self::IfName(string)
             | Self::Qdisc(string)
@@ -240,11 +240,11 @@ impl Nla for LinkAttribute {
             Self::Wireless(v) => v.emit(buffer),
             Self::ProtoInfoBridge(v) => v.as_slice().emit(buffer),
             Self::ProtoInfoInet6(v) => v.as_slice().emit(buffer),
+            Self::ProtoDownReason(v) => v.as_slice().emit(buffer),
             Self::Address(bytes)
             | Self::Broadcast(bytes)
             | Self::PermAddress(bytes)
-            | Self::AfSpecUnknown(bytes)
-            | Self::ProtoDownReason(bytes) => {
+            | Self::AfSpecUnknown(bytes) => {
                 buffer.copy_from_slice(bytes.as_slice())
             }
 
@@ -451,7 +451,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
                 Self::PropList(nlas)
             }
-            IFLA_PROTO_DOWN_REASON => Self::ProtoDownReason(payload.to_vec()),
+            IFLA_PROTO_DOWN_REASON => {
+                let mut nlas = vec![];
+                for nla in NlasIterator::new(payload) {
+                    let nla =
+                        &nla.context("invalid IFLA_PROTO_DOWN_REASON value")?;
+                    let parsed = LinkProtocolDownReason::parse(nla)?;
+                    nlas.push(parsed);
+                }
+                Self::ProtoDownReason(nlas)
+            }
             // HW address (we parse them as Vec for now, because for IP over
             // GRE, the HW address is an IP instead of a MAC for
             // example
