@@ -23,7 +23,7 @@ const TCA_MATCHALL_PCNT: u16 = 4;
 #[non_exhaustive]
 pub struct TcFilterMatchAll {}
 impl TcFilterMatchAll {
-    pub(crate) const KIND: &'static str = "matchall";
+    pub const KIND: &'static str = "matchall";
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
