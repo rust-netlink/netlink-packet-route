@@ -3,6 +3,7 @@
 mod af_spec;
 mod attribute;
 mod buffer_tool;
+mod down_reason;
 mod event;
 mod header;
 mod link_flag;
@@ -30,6 +31,7 @@ pub use self::af_spec::{
     Inet6Stats, Inet6StatsBuffer, InetDevConf,
 };
 pub use self::attribute::LinkAttribute;
+pub use self::down_reason::LinkProtocolDownReason;
 pub use self::event::LinkEvent;
 pub use self::header::{LinkHeader, LinkMessageBuffer};
 pub use self::link_flag::{LinkFlag, LinkFlags};
