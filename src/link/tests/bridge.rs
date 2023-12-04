@@ -177,8 +177,8 @@ fn test_parse_link_bridge_no_extention_mask() {
             LinkAttribute::Carrier(1),
             LinkAttribute::Qdisc("noqueue".to_string()),
             LinkAttribute::CarrierChanges(2),
-            LinkAttribute::CarrierUpCount(vec![1, 0, 0, 0]),
-            LinkAttribute::CarrierDownCount(vec![1, 0, 0, 0]),
+            LinkAttribute::CarrierUpCount(1),
+            LinkAttribute::CarrierDownCount(1),
             LinkAttribute::ProtoDown(0),
             LinkAttribute::Map(Map {
                 memory_start: 0,

@@ -157,8 +157,8 @@ fn test_parsing_link_vxlan() {
             LinkAttribute::Carrier(1),
             LinkAttribute::Qdisc("noqueue".to_string()),
             LinkAttribute::CarrierChanges(0),
-            LinkAttribute::CarrierUpCount(vec![0, 0, 0, 0]),
-            LinkAttribute::CarrierDownCount(vec![0, 0, 0, 0]),
+            LinkAttribute::CarrierUpCount(0),
+            LinkAttribute::CarrierDownCount(0),
             LinkAttribute::ProtoDown(0),
             LinkAttribute::Map(Map {
                 memory_start: 0,

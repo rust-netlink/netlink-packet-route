@@ -107,8 +107,8 @@ pub enum LinkAttribute {
     Event(LinkEvent),
     NewNetnsId(i32),
     IfNetnsId(i32),
-    CarrierUpCount(Vec<u8>),
-    CarrierDownCount(Vec<u8>),
+    CarrierUpCount(u32),
+    CarrierDownCount(u32),
     NewIfIndex(Vec<u8>),
     LinkInfo(Vec<LinkInfo>),
     Wireless(Vec<u8>),
@@ -170,8 +170,6 @@ impl Nla for LinkAttribute {
             Self::Event(v) => v.buffer_len(),
             Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
-            | Self::CarrierUpCount(bytes)
-            | Self::CarrierDownCount(bytes)
             | Self::NewIfIndex(bytes)
             | Self::Address(bytes)
             | Self::Broadcast(bytes)
@@ -205,6 +203,8 @@ impl Nla for LinkAttribute {
             | Self::GsoMaxSize(_)
             | Self::NetnsId(_)
             | Self::MinMtu(_)
+            | Self::CarrierUpCount(_)
+            | Self::CarrierDownCount(_)
             | Self::MaxMtu(_) => 4,
 
             Self::OperState(_) => 1,
@@ -230,8 +230,6 @@ impl Nla for LinkAttribute {
             Self::Event(v) => v.emit(buffer),
             Self::Wireless(bytes)
             | Self::ProtoInfo(bytes)
-            | Self::CarrierUpCount(bytes)
-            | Self::CarrierDownCount(bytes)
             | Self::NewIfIndex(bytes)
             | Self::Address(bytes)
             | Self::Broadcast(bytes)
@@ -265,6 +263,8 @@ impl Nla for LinkAttribute {
             | Self::NumTxQueues(value)
             | Self::NumRxQueues(value)
             | Self::CarrierChanges(value)
+            | Self::CarrierUpCount(value)
+            | Self::CarrierDownCount(value)
             | Self::GsoMaxSegs(value)
             | Self::GsoMaxSize(value)
             | Self::MinMtu(value)
@@ -391,8 +391,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_IF_NETNSID => Self::IfNetnsId(
                 parse_i32(payload).context("invalid IFLA_IF_NETNSID value")?,
             ),
-            IFLA_CARRIER_UP_COUNT => Self::CarrierUpCount(payload.to_vec()),
-            IFLA_CARRIER_DOWN_COUNT => Self::CarrierDownCount(payload.to_vec()),
+            IFLA_CARRIER_UP_COUNT => Self::CarrierUpCount(
+                parse_u32(payload)
+                    .context("invalid IFLA_CARRIER_UP_COUNT value")?,
+            ),
+            IFLA_CARRIER_DOWN_COUNT => Self::CarrierDownCount(
+                parse_u32(payload)
+                    .context("invalid IFLA_CARRIER_DOWN_COUNT value")?,
+            ),
             IFLA_NEW_IFINDEX => Self::NewIfIndex(payload.to_vec()),
             IFLA_PROP_LIST => {
                 let error_msg = "invalid IFLA_PROP_LIST value";
