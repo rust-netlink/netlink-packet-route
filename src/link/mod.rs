@@ -39,8 +39,8 @@ pub use self::link_info::{
     BondAdInfo, BondPortState, BridgeQuerierState, HsrProtocol, InfoBond,
     InfoBondPort, InfoBridge, InfoData, InfoHsr, InfoIpVlan, InfoIpoib,
     InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoPortData, InfoPortKind,
-    InfoVeth, InfoVlan, InfoVrf, InfoVxlan, InfoXfrm, LinkInfo, MacSecCipherId,
-    MacSecOffload, MacSecValidation, MiiStatus, VlanQosMapping,
+    InfoVeth, InfoVlan, InfoVrf, InfoVxlan, InfoXfrm, LinkInfo, LinkXstats,
+    MacSecCipherId, MacSecOffload, MacSecValidation, MiiStatus, VlanQosMapping,
 };
 pub use self::link_layer_type::LinkLayerType;
 pub use self::link_state::State;
