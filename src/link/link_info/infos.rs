@@ -61,38 +61,35 @@ pub enum LinkInfo {
 
 impl Nla for LinkInfo {
     fn value_len(&self) -> usize {
-        use self::LinkInfo::*;
         match self {
-            Xstats(ref bytes) => bytes.len(),
-            Kind(ref nla) => nla.value_len(),
-            Data(ref nla) => nla.value_len(),
-            PortKind(ref nla) => nla.value_len(),
-            PortData(ref nla) => nla.value_len(),
-            Other(ref nla) => nla.value_len(),
+            Self::Xstats(bytes) => bytes.len(),
+            Self::Kind(nla) => nla.value_len(),
+            Self::Data(nla) => nla.value_len(),
+            Self::PortKind(nla) => nla.value_len(),
+            Self::PortData(nla) => nla.value_len(),
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::LinkInfo::*;
         match self {
-            Xstats(ref bytes) => buffer.copy_from_slice(bytes),
-            Kind(ref nla) => nla.emit_value(buffer),
-            Data(ref nla) => nla.emit_value(buffer),
-            PortKind(ref nla) => nla.emit_value(buffer),
-            PortData(ref nla) => nla.emit_value(buffer),
-            Other(ref nla) => nla.emit_value(buffer),
+            Self::Xstats(bytes) => buffer.copy_from_slice(bytes),
+            Self::Kind(nla) => nla.emit_value(buffer),
+            Self::Data(nla) => nla.emit_value(buffer),
+            Self::PortKind(nla) => nla.emit_value(buffer),
+            Self::PortData(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::LinkInfo::*;
         match self {
-            Xstats(_) => IFLA_INFO_XSTATS,
-            PortKind(_) => IFLA_INFO_PORT_KIND,
-            PortData(_) => IFLA_INFO_PORT_DATA,
-            Kind(_) => IFLA_INFO_KIND,
-            Data(_) => IFLA_INFO_DATA,
-            Other(ref nla) => nla.kind(),
+            Self::Xstats(_) => IFLA_INFO_XSTATS,
+            Self::PortKind(_) => IFLA_INFO_PORT_KIND,
+            Self::PortData(_) => IFLA_INFO_PORT_DATA,
+            Self::Kind(_) => IFLA_INFO_KIND,
+            Self::Data(_) => IFLA_INFO_DATA,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
@@ -204,73 +201,67 @@ pub enum InfoData {
 }
 
 impl Nla for InfoData {
-    #[rustfmt::skip]
     fn value_len(&self) -> usize {
-        use self::InfoData::*;
         match self {
-            Bond(ref nlas) => nlas.as_slice().buffer_len(),
-            Bridge(ref nlas) => nlas.as_slice().buffer_len(),
-            Vlan(ref nlas) =>  nlas.as_slice().buffer_len(),
-            Veth(ref msg) => msg.buffer_len(),
-            IpVlan(ref nlas) => nlas.as_slice().buffer_len(),
-            Ipoib(ref nlas) => nlas.as_slice().buffer_len(),
-            MacVlan(ref nlas) => nlas.as_slice().buffer_len(),
-            MacVtap(ref nlas) => nlas.as_slice().buffer_len(),
-            Vrf(ref nlas) => nlas.as_slice().buffer_len(),
-            Vxlan(ref nlas) => nlas.as_slice().buffer_len(),
-            Xfrm(ref nlas)  => nlas.as_slice().buffer_len(),
-            MacSec(ref nlas) => nlas.as_slice().buffer_len(),
-            Hsr(ref nlas) => nlas.as_slice().buffer_len(),
-            Dummy(ref bytes)
-                | Tun(ref bytes)
-                | Nlmon(ref bytes)
-                | Ifb(ref bytes)
-                | GreTap(ref bytes)
-                | GreTap6(ref bytes)
-                | IpTun(ref bytes)
-                | SitTun(ref bytes)
-                | GreTun(ref bytes)
-                | GreTun6(ref bytes)
-                | Vti(ref bytes)
-                | Gtp(ref bytes)
-                | Wireguard(ref bytes)
-                | Other(ref bytes)
-                => bytes.len(),
+            Self::Bond(nlas) => nlas.as_slice().buffer_len(),
+            Self::Bridge(nlas) => nlas.as_slice().buffer_len(),
+            Self::Vlan(nlas) => nlas.as_slice().buffer_len(),
+            Self::Veth(msg) => msg.buffer_len(),
+            Self::IpVlan(nlas) => nlas.as_slice().buffer_len(),
+            Self::Ipoib(nlas) => nlas.as_slice().buffer_len(),
+            Self::MacVlan(nlas) => nlas.as_slice().buffer_len(),
+            Self::MacVtap(nlas) => nlas.as_slice().buffer_len(),
+            Self::Vrf(nlas) => nlas.as_slice().buffer_len(),
+            Self::Vxlan(nlas) => nlas.as_slice().buffer_len(),
+            Self::Xfrm(nlas) => nlas.as_slice().buffer_len(),
+            Self::MacSec(nlas) => nlas.as_slice().buffer_len(),
+            Self::Hsr(nlas) => nlas.as_slice().buffer_len(),
+            Self::Dummy(bytes)
+            | Self::Tun(bytes)
+            | Self::Nlmon(bytes)
+            | Self::Ifb(bytes)
+            | Self::GreTap(bytes)
+            | Self::GreTap6(bytes)
+            | Self::IpTun(bytes)
+            | Self::SitTun(bytes)
+            | Self::GreTun(bytes)
+            | Self::GreTun6(bytes)
+            | Self::Vti(bytes)
+            | Self::Gtp(bytes)
+            | Self::Wireguard(bytes)
+            | Self::Other(bytes) => bytes.len(),
         }
     }
 
-    #[rustfmt::skip]
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoData::*;
         match self {
-            Bond(ref nlas) => nlas.as_slice().emit(buffer),
-            Bridge(ref nlas) => nlas.as_slice().emit(buffer),
-            Vlan(ref nlas) => nlas.as_slice().emit(buffer),
-            Veth(ref msg) => msg.emit(buffer),
-            IpVlan(ref nlas) => nlas.as_slice().emit(buffer),
-            Ipoib(ref nlas) => nlas.as_slice().emit(buffer),
-            MacVlan(ref nlas) => nlas.as_slice().emit(buffer),
-            MacVtap(ref nlas) => nlas.as_slice().emit(buffer),
-            Vrf(ref nlas) => nlas.as_slice().emit(buffer),
-            Vxlan(ref nlas) => nlas.as_slice().emit(buffer),
-            Xfrm(ref nlas)  => nlas.as_slice().emit(buffer),
-            MacSec(ref nlas) => nlas.as_slice().emit(buffer),
-            Hsr(ref nlas) => nlas.as_slice().emit(buffer),
-            Dummy(ref bytes)
-                | Tun(ref bytes)
-                | Nlmon(ref bytes)
-                | Ifb(ref bytes)
-                | GreTap(ref bytes)
-                | GreTap6(ref bytes)
-                | IpTun(ref bytes)
-                | SitTun(ref bytes)
-                | GreTun(ref bytes)
-                | GreTun6(ref bytes)
-                | Vti(ref bytes)
-                | Gtp(ref bytes)
-                | Wireguard(ref bytes)
-                | Other(ref bytes)
-                => buffer.copy_from_slice(bytes),
+            Self::Bond(nlas) => nlas.as_slice().emit(buffer),
+            Self::Bridge(nlas) => nlas.as_slice().emit(buffer),
+            Self::Vlan(nlas) => nlas.as_slice().emit(buffer),
+            Self::Veth(msg) => msg.emit(buffer),
+            Self::IpVlan(nlas) => nlas.as_slice().emit(buffer),
+            Self::Ipoib(nlas) => nlas.as_slice().emit(buffer),
+            Self::MacVlan(nlas) => nlas.as_slice().emit(buffer),
+            Self::MacVtap(nlas) => nlas.as_slice().emit(buffer),
+            Self::Vrf(nlas) => nlas.as_slice().emit(buffer),
+            Self::Vxlan(nlas) => nlas.as_slice().emit(buffer),
+            Self::Xfrm(nlas) => nlas.as_slice().emit(buffer),
+            Self::MacSec(nlas) => nlas.as_slice().emit(buffer),
+            Self::Hsr(nlas) => nlas.as_slice().emit(buffer),
+            Self::Dummy(bytes)
+            | Self::Tun(bytes)
+            | Self::Nlmon(bytes)
+            | Self::Ifb(bytes)
+            | Self::GreTap(bytes)
+            | Self::GreTap6(bytes)
+            | Self::IpTun(bytes)
+            | Self::SitTun(bytes)
+            | Self::GreTun(bytes)
+            | Self::GreTun6(bytes)
+            | Self::Vti(bytes)
+            | Self::Gtp(bytes)
+            | Self::Wireguard(bytes)
+            | Self::Other(bytes) => buffer.copy_from_slice(bytes),
         }
     }
 
@@ -287,21 +278,17 @@ pub enum InfoPortData {
 }
 
 impl Nla for InfoPortData {
-    #[rustfmt::skip]
     fn value_len(&self) -> usize {
-        use self::InfoPortData::*;
         match self {
-            BondPort(ref nlas) => nlas.as_slice().buffer_len(),
-            Other(ref bytes) => bytes.len(),
+            Self::BondPort(nlas) => nlas.as_slice().buffer_len(),
+            Self::Other(bytes) => bytes.len(),
         }
     }
 
-    #[rustfmt::skip]
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoPortData::*;
         match self {
-            BondPort(ref nlas) => nlas.as_slice().emit(buffer),
-            Other(ref bytes) => buffer.copy_from_slice(bytes),
+            Self::BondPort(nlas) => nlas.as_slice().emit(buffer),
+            Self::Other(bytes) => buffer.copy_from_slice(bytes),
         }
     }
 
@@ -382,35 +369,34 @@ impl std::fmt::Display for InfoKind {
 
 impl Nla for InfoKind {
     fn value_len(&self) -> usize {
-        use self::InfoKind::*;
-        let len = match *self {
-            Dummy => DUMMY.len(),
-            Ifb => IFB.len(),
-            Bridge => BRIDGE.len(),
-            Tun => TUN.len(),
-            Nlmon => NLMON.len(),
-            Vlan => VLAN.len(),
-            Veth => VETH.len(),
-            Vxlan => VXLAN.len(),
-            Bond => BOND.len(),
-            IpVlan => IPVLAN.len(),
-            MacVlan => MACVLAN.len(),
-            MacVtap => MACVTAP.len(),
-            GreTap => GRETAP.len(),
-            GreTap6 => IP6GRETAP.len(),
-            IpTun => IPIP.len(),
-            SitTun => SIT.len(),
-            GreTun => GRE.len(),
-            GreTun6 => IP6GRE.len(),
-            Vti => VTI.len(),
-            Vrf => VRF.len(),
-            Gtp => GTP.len(),
-            Ipoib => IPOIB.len(),
-            Wireguard => WIREGUARD.len(),
-            Xfrm => XFRM.len(),
-            MacSec => MACSEC.len(),
-            Hsr => HSR.len(),
-            Other(ref s) => s.len(),
+        let len = match self {
+            Self::Dummy => DUMMY.len(),
+            Self::Ifb => IFB.len(),
+            Self::Bridge => BRIDGE.len(),
+            Self::Tun => TUN.len(),
+            Self::Nlmon => NLMON.len(),
+            Self::Vlan => VLAN.len(),
+            Self::Veth => VETH.len(),
+            Self::Vxlan => VXLAN.len(),
+            Self::Bond => BOND.len(),
+            Self::IpVlan => IPVLAN.len(),
+            Self::MacVlan => MACVLAN.len(),
+            Self::MacVtap => MACVTAP.len(),
+            Self::GreTap => GRETAP.len(),
+            Self::GreTap6 => IP6GRETAP.len(),
+            Self::IpTun => IPIP.len(),
+            Self::SitTun => SIT.len(),
+            Self::GreTun => GRE.len(),
+            Self::GreTun6 => IP6GRE.len(),
+            Self::Vti => VTI.len(),
+            Self::Vrf => VRF.len(),
+            Self::Gtp => GTP.len(),
+            Self::Ipoib => IPOIB.len(),
+            Self::Wireguard => WIREGUARD.len(),
+            Self::Xfrm => XFRM.len(),
+            Self::MacSec => MACSEC.len(),
+            Self::Hsr => HSR.len(),
+            Self::Other(s) => s.len(),
         };
         len + 1
     }
@@ -429,7 +415,6 @@ impl Nla for InfoKind {
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoKind, DecodeError> {
-        use self::InfoKind::*;
         if buf.kind() != IFLA_INFO_KIND {
             return Err(format!(
                 "failed to parse IFLA_INFO_KIND: NLA type is {}",
@@ -440,33 +425,33 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
         let s = parse_string(buf.value())
             .context("invalid IFLA_INFO_KIND value")?;
         Ok(match s.as_str() {
-            DUMMY => Dummy,
-            IFB => Ifb,
-            BRIDGE => Bridge,
-            TUN => Tun,
-            NLMON => Nlmon,
-            VLAN => Vlan,
-            VETH => Veth,
-            VXLAN => Vxlan,
-            BOND => Bond,
-            IPVLAN => IpVlan,
-            MACVLAN => MacVlan,
-            MACVTAP => MacVtap,
-            GRETAP => GreTap,
-            IP6GRETAP => GreTap6,
-            IPIP => IpTun,
-            SIT => SitTun,
-            GRE => GreTun,
-            IP6GRE => GreTun6,
-            VTI => Vti,
-            VRF => Vrf,
-            GTP => Gtp,
-            IPOIB => Ipoib,
-            WIREGUARD => Wireguard,
-            MACSEC => MacSec,
-            XFRM => Xfrm,
-            HSR => Hsr,
-            _ => Other(s),
+            DUMMY => Self::Dummy,
+            IFB => Self::Ifb,
+            BRIDGE => Self::Bridge,
+            TUN => Self::Tun,
+            NLMON => Self::Nlmon,
+            VLAN => Self::Vlan,
+            VETH => Self::Veth,
+            VXLAN => Self::Vxlan,
+            BOND => Self::Bond,
+            IPVLAN => Self::IpVlan,
+            MACVLAN => Self::MacVlan,
+            MACVTAP => Self::MacVtap,
+            GRETAP => Self::GreTap,
+            IP6GRETAP => Self::GreTap6,
+            IPIP => Self::IpTun,
+            SIT => Self::SitTun,
+            GRE => Self::GreTun,
+            IP6GRE => Self::GreTun6,
+            VTI => Self::Vti,
+            VRF => Self::Vrf,
+            GTP => Self::Gtp,
+            IPOIB => Self::Ipoib,
+            WIREGUARD => Self::Wireguard,
+            MACSEC => Self::MacSec,
+            XFRM => Self::Xfrm,
+            HSR => Self::Hsr,
+            _ => Self::Other(s),
         })
     }
 }
@@ -493,19 +478,17 @@ impl std::fmt::Display for InfoPortKind {
 
 impl Nla for InfoPortKind {
     fn value_len(&self) -> usize {
-        use self::InfoPortKind::*;
-        let len = match *self {
-            Bond => BOND.len(),
-            Other(ref s) => s.len(),
+        let len = match self {
+            Self::Bond => BOND.len(),
+            Self::Other(s) => s.len(),
         };
         len + 1
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoPortKind::*;
-        let s = match *self {
-            Bond => BOND,
-            Other(ref s) => s.as_str(),
+        let s = match self {
+            Self::Bond => BOND,
+            Self::Other(s) => s.as_str(),
         };
         buffer[..s.len()].copy_from_slice(s.as_bytes());
         buffer[s.len()] = 0;
@@ -518,7 +501,6 @@ impl Nla for InfoPortKind {
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoPortKind, DecodeError> {
-        use self::InfoPortKind::*;
         if buf.kind() != IFLA_INFO_PORT_KIND {
             return Err(format!(
                 "failed to parse IFLA_INFO_PORT_KIND: NLA type is {}",
@@ -529,8 +511,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
         let s = parse_string(buf.value())
             .context("invalid IFLA_INFO_PORT_KIND value")?;
         Ok(match s.as_str() {
-            BOND => Bond,
-            _ => Other(s),
+            BOND => Self::Bond,
+            _ => Self::Other(s),
         })
     }
 }
