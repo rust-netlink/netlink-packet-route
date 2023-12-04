@@ -50,7 +50,7 @@ pub enum RuleAttribute {
     Source(IpAddr),
     /// input interface name
     Iifname(String),
-    /// The priority number of another rule for [RuleAction::Goto]
+    /// The priority number of another rule for [super::RuleAction::Goto]
     Goto(u32),
     Priority(u32),
     FwMark(u32),

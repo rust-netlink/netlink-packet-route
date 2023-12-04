@@ -7,8 +7,6 @@ const FIB_RULE_IIF_DETACHED: u32 = 0x00000008;
 const FIB_RULE_DEV_DETACHED: u32 = FIB_RULE_IIF_DETACHED;
 const FIB_RULE_OIF_DETACHED: u32 = 0x00000010;
 
-/// Flags that can be set in a `RTM_GETROUTE`
-/// ([`RuleNetlinkMessage::GetRule`]) message.
 #[derive(Clone, Eq, PartialEq, Debug, Copy)]
 #[non_exhaustive]
 pub enum RuleFlag {
