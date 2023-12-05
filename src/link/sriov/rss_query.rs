@@ -26,7 +26,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRssQueryEnBuffer<&'a T>>
     for VfInfoRssQueryEn
 {
     fn parse(buf: &VfInfoRssQueryEnBuffer<&T>) -> Result<Self, DecodeError> {
-        Ok(Self::new(buf.vf_id(), buf.setting() > 0))
+        Ok(Self::new(
+            buf.vf_id(),
+            buf.setting() > 0 && buf.setting() != u32::MAX,
+        ))
     }
 }
 

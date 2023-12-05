@@ -26,7 +26,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoSpoofCheckBuffer<&'a T>>
     for VfInfoSpoofCheck
 {
     fn parse(buf: &VfInfoSpoofCheckBuffer<&T>) -> Result<Self, DecodeError> {
-        Ok(Self::new(buf.vf_id(), buf.setting() > 0))
+        Ok(Self::new(
+            buf.vf_id(),
+            buf.setting() > 0 && buf.setting() != u32::MAX,
+        ))
     }
 }
 
