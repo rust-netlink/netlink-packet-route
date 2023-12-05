@@ -4,11 +4,10 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::{
     tc::{
-        TcActionType,
         TcAction, TcActionAttribute, TcActionGeneric, TcActionMirrorOption,
-        TcActionOption, TcAttribute, TcFilterMatchAllOption, TcHandle,
-        TcHeader, TcMessage, TcMessageBuffer, TcMirror, TcOption, TcStats2,
-        TcStatsBasic, TcStatsQueue,
+        TcActionOption, TcActionType, TcAttribute, TcFilterMatchAllOption,
+        TcHandle, TcHeader, TcMessage, TcMessageBuffer, TcMirror,
+        TcMirrorActionType, TcOption, TcStats2, TcStatsBasic, TcStatsQueue,
     },
     AddressFamily,
 };
@@ -150,7 +149,8 @@ fn test_get_filter_matchall() {
                                             refcnt: 1,
                                             bindcnt: 1,
                                         },
-                                        eaction: 2,
+                                        eaction:
+                                            TcMirrorActionType::EgressMirror,
                                         ifindex: 51,
                                     }),
                                 ),

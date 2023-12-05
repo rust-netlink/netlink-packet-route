@@ -78,7 +78,7 @@ const TC_MIRRED_BUF_LEN: usize = TcActionGeneric::BUF_LEN + 8;
 #[non_exhaustive]
 pub struct TcMirror {
     pub generic: TcActionGeneric,
-    pub eaction: i32,
+    pub eaction: TcMirrorActionType,
     pub ifindex: u32,
 }
 
@@ -97,7 +97,7 @@ impl Emitable for TcMirror {
     fn emit(&self, buffer: &mut [u8]) {
         let mut packet = TcMirrorBuffer::new(buffer);
         self.generic.emit(packet.generic_mut());
-        packet.set_eaction(self.eaction);
+        packet.set_eaction(self.eaction.into());
         packet.set_ifindex(self.ifindex);
     }
 }
@@ -110,8 +110,48 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcMirrorBuffer<&'a T>>
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
                 buf.generic(),
             ))?,
-            eaction: buf.eaction(),
+            eaction: buf.eaction().into(),
             ifindex: buf.ifindex(),
         })
+    }
+}
+
+const TCA_EGRESS_REDIR: i32 = 1;
+const TCA_EGRESS_MIRROR: i32 = 2;
+const TCA_INGRESS_REDIR: i32 = 3;
+const TCA_INGRESS_MIRROR: i32 = 4;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[non_exhaustive]
+pub enum TcMirrorActionType {
+    #[default]
+    EgressRedir,
+    EgressMirror,
+    IngressRedir,
+    IngressMirror,
+    Other(i32),
+}
+
+impl From<i32> for TcMirrorActionType {
+    fn from(d: i32) -> Self {
+        match d {
+            TCA_EGRESS_REDIR => Self::EgressRedir,
+            TCA_EGRESS_MIRROR => Self::EgressMirror,
+            TCA_INGRESS_REDIR => Self::IngressRedir,
+            TCA_INGRESS_MIRROR => Self::IngressMirror,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<TcMirrorActionType> for i32 {
+    fn from(v: TcMirrorActionType) -> i32 {
+        match v {
+            TcMirrorActionType::EgressRedir => TCA_EGRESS_REDIR,
+            TcMirrorActionType::EgressMirror => TCA_EGRESS_MIRROR,
+            TcMirrorActionType::IngressRedir => TCA_INGRESS_REDIR,
+            TcMirrorActionType::IngressMirror => TCA_INGRESS_MIRROR,
+            TcMirrorActionType::Other(d) => d,
+        }
     }
 }
