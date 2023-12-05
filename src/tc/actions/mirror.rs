@@ -18,7 +18,7 @@ use super::{TcActionGeneric, TcActionGenericBuffer};
 #[non_exhaustive]
 pub struct TcActionMirror {}
 impl TcActionMirror {
-    pub(crate) const KIND: &'static str = "mirred";
+    pub const KIND: &'static str = "mirred";
 }
 
 const TCA_MIRRED_TM: u16 = 1;
