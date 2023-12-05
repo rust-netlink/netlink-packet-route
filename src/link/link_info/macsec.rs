@@ -78,14 +78,14 @@ impl From<MacSecCipherId> for u64 {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
-pub enum MacSecValidation {
+pub enum MacSecValidate {
     Disabled,
     Check,
     Strict,
     Other(u8),
 }
 
-impl From<u8> for MacSecValidation {
+impl From<u8> for MacSecValidate {
     fn from(d: u8) -> Self {
         match d {
             MACSEC_VALIDATE_DISABLED => Self::Disabled,
@@ -96,13 +96,13 @@ impl From<u8> for MacSecValidation {
     }
 }
 
-impl From<MacSecValidation> for u8 {
-    fn from(d: MacSecValidation) -> Self {
+impl From<MacSecValidate> for u8 {
+    fn from(d: MacSecValidate) -> Self {
         match d {
-            MacSecValidation::Disabled => MACSEC_VALIDATE_DISABLED,
-            MacSecValidation::Check => MACSEC_VALIDATE_CHECK,
-            MacSecValidation::Strict => MACSEC_VALIDATE_STRICT,
-            MacSecValidation::Other(value) => value,
+            MacSecValidate::Disabled => MACSEC_VALIDATE_DISABLED,
+            MacSecValidate::Check => MACSEC_VALIDATE_CHECK,
+            MacSecValidate::Strict => MACSEC_VALIDATE_STRICT,
+            MacSecValidate::Other(value) => value,
         }
     }
 }
@@ -153,7 +153,7 @@ pub enum InfoMacSec {
     Es(u8),
     Scb(u8),
     ReplayProtect(u8),
-    Validation(MacSecValidation),
+    Validation(MacSecValidate),
     Offload(MacSecOffload),
     Other(DefaultNla),
 }

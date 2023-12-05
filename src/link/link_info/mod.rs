@@ -42,7 +42,7 @@ pub use self::ipoib::InfoIpoib;
 pub use self::ipvlan::InfoIpVlan;
 pub use self::mac_vlan::{InfoMacVlan, InfoMacVtap};
 pub use self::macsec::{
-    InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidation,
+    InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate,
 };
 pub use self::sit::InfoSitTun;
 pub use self::tun::InfoTun;
