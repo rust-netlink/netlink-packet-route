@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::net::Ipv6Addr;
+
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_ipv6, parse_u32, parse_u8},
+    parsers::{parse_u32, parse_u8},
     traits::{Emitable, Parseable},
     DecodeError,
 };
@@ -15,6 +17,7 @@ use super::super::{
     Inet6IfaceFlags, Inet6Stats, Inet6StatsBuffer,
 };
 use super::inet6_devconf::LINK_INET6_DEV_CONF_LEN;
+use crate::ip::parse_ipv6_addr;
 
 const IFLA_INET6_FLAGS: u16 = 1;
 const IFLA_INET6_CONF: u16 = 2;
@@ -36,7 +39,7 @@ pub enum AfSpecInet6 {
     DevConf(Inet6DevConf),
     Stats(Inet6Stats),
     Icmp6Stats(Icmp6Stats),
-    Token([u8; 16]),
+    Token(Ipv6Addr),
     AddrGenMode(u8),
     RaMtu(u32),
     Other(DefaultNla),
@@ -84,7 +87,7 @@ impl Nla for AfSpecInet6 {
             DevConf(ref v) => v.emit(buffer),
             Stats(ref v) => v.emit(buffer),
             Icmp6Stats(ref v) => v.emit(buffer),
-            Token(ref ipv6) => buffer.copy_from_slice(&ipv6[..]),
+            Token(v) => buffer.copy_from_slice(&v.octets()),
             AddrGenMode(value) => buffer[0] = value,
             Other(ref nla) => nla.emit_value(buffer),
         }
@@ -151,7 +154,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                 ))?,
             ),
             IFLA_INET6_TOKEN => Token(
-                parse_ipv6(payload)
+                parse_ipv6_addr(payload)
                     .context("invalid IFLA_INET6_TOKEN value")?,
             ),
             IFLA_INET6_ADDR_GEN_MODE => AddrGenMode(
