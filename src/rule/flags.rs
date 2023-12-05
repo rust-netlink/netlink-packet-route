@@ -19,12 +19,11 @@ pub enum RuleFlag {
     Other(u32),
 }
 
-const ALL_RULE_FLAGS: [RuleFlag; 6] = [
+const ALL_RULE_FLAGS: [RuleFlag; 5] = [
     RuleFlag::Permanent,
     RuleFlag::Invert,
     RuleFlag::Unresolved,
     RuleFlag::IifDetached,
-    RuleFlag::DevDetached,
     RuleFlag::OifDetached,
 ];
 
