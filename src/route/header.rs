@@ -56,6 +56,10 @@ pub struct RouteHeader {
     pub flags: Vec<RouteFlag>,
 }
 
+impl RouteHeader {
+    pub const RT_TABLE_MAIN: u8 = 254;
+}
+
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteMessageBuffer<&'a T>>
     for RouteHeader
 {
