@@ -152,7 +152,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                 LinkFlag::Running,
                 LinkFlag::Up,
             ],
-            change_mask: 0,
+            change_mask: vec![],
         },
         attributes: vec![
             LinkAttribute::IfName("br0".into()),

@@ -24,7 +24,7 @@ fn test_ipvlan_link_info() {
             index: 18,
             link_layer_type: LinkLayerType::Ether,
             flags: vec![LinkFlag::Broadcast, LinkFlag::Multicast],
-            change_mask: 0,
+            change_mask: vec![],
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::IpVlan),

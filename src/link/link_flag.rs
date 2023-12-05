@@ -23,7 +23,7 @@ const IFF_DORMANT: u32 = 1 << 17;
 const IFF_ECHO: u32 = 1 << 18;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct LinkFlags(pub Vec<LinkFlag>);
+pub(crate) struct VecLinkFlag(pub Vec<LinkFlag>);
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
@@ -155,7 +155,7 @@ const ALL_LINK_FLAGS: [LinkFlag; 19] = [
     LinkFlag::Up,
 ];
 
-impl From<u32> for LinkFlags {
+impl From<u32> for VecLinkFlag {
     fn from(d: u32) -> Self {
         let mut got: u32 = 0;
         let mut ret = Vec::new();
@@ -172,8 +172,8 @@ impl From<u32> for LinkFlags {
     }
 }
 
-impl From<&LinkFlags> for u32 {
-    fn from(v: &LinkFlags) -> u32 {
+impl From<&VecLinkFlag> for u32 {
+    fn from(v: &VecLinkFlag) -> u32 {
         let mut d: u32 = 0;
         for flag in &v.0 {
             d += u32::from(*flag);

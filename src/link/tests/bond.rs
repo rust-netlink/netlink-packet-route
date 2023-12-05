@@ -52,7 +52,7 @@ fn test_bond_link_info() {
                 LinkFlag::Running,
                 LinkFlag::Up,
             ],
-            change_mask: 0,
+            change_mask: vec![],
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Bond),
@@ -123,7 +123,7 @@ fn test_bond_port_link_info() {
                 LinkFlag::Running,
                 LinkFlag::Up,
             ],
-            change_mask: 0,
+            change_mask: vec![],
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Veth),

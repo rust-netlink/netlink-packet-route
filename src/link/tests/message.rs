@@ -3,7 +3,7 @@
 use netlink_packet_utils::traits::{Emitable, ParseableParametrized};
 
 use crate::link::{
-    LinkAttribute, LinkFlag, LinkFlags, LinkHeader, LinkLayerType, LinkMessage,
+    LinkAttribute, LinkFlag, LinkHeader, LinkLayerType, LinkMessage,
     LinkMessageBuffer, State,
 };
 use crate::AddressFamily;
@@ -44,13 +44,11 @@ fn link_message_packet_header_read() {
     assert_eq!(packet.link_layer_type(), LinkLayerType::Loopback.into());
     assert_eq!(packet.link_index(), 1);
     assert_eq!(
-        LinkFlags::from(packet.flags()).0,
-        vec![
-            LinkFlag::Loopback,
-            LinkFlag::LowerUp,
-            LinkFlag::Running,
-            LinkFlag::Up,
-        ]
+        packet.flags(),
+        u32::from(LinkFlag::Loopback)
+            | u32::from(LinkFlag::LowerUp)
+            | u32::from(LinkFlag::Running)
+            | u32::from(LinkFlag::Up)
     );
     assert_eq!(packet.change_mask(), 0);
 }
@@ -64,12 +62,12 @@ fn link_message_packet_header_build() {
         packet.set_reserved_1(0);
         packet.set_link_layer_type(LinkLayerType::Loopback.into());
         packet.set_link_index(1);
-        packet.set_flags(u32::from(&LinkFlags(vec![
-            LinkFlag::Loopback,
-            LinkFlag::LowerUp,
-            LinkFlag::Running,
-            LinkFlag::Up,
-        ])));
+        packet.set_flags(
+            u32::from(LinkFlag::Loopback)
+                | u32::from(LinkFlag::LowerUp)
+                | u32::from(LinkFlag::Running)
+                | u32::from(LinkFlag::Up),
+        );
         packet.set_change_mask(0);
     }
     assert_eq!(&buf[..], &LINK_MSG[0..16]);

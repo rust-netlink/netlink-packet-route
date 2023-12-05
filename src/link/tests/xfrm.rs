@@ -29,7 +29,7 @@ fn test_parsing_link_xfrm() {
                 LinkFlag::Running,
                 LinkFlag::Up,
             ],
-            change_mask: 0,
+            change_mask: vec![],
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Xfrm),
