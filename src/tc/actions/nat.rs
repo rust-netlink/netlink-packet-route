@@ -11,7 +11,9 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{TcActionGeneric, TcActionGenericBuffer};
+use super::{
+    nat_flag::VecTcNatFlag, TcActionGeneric, TcActionGenericBuffer, TcNatFlag,
+};
 
 const TCA_NAT_PARMS: u16 = 1;
 const TCA_NAT_TM: u16 = 2;
@@ -73,16 +75,15 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 }
 
 const TC_NAT_BUF_LEN: usize = TcActionGeneric::BUF_LEN + 16;
-const TCA_NAT_FLAG_EGRESS: u32 = 1;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub struct TcNat {
     pub generic: TcActionGeneric,
     pub old_addr: Ipv4Addr,
     pub new_addr: Ipv4Addr,
     pub mask: Ipv4Addr,
-    pub flags: u32, // TODO(Gris Ge): should a Vec<enum TcNatFlag>
+    pub flags: Vec<TcNatFlag>,
 }
 
 impl Default for TcNat {
@@ -92,7 +93,7 @@ impl Default for TcNat {
             old_addr: Ipv4Addr::UNSPECIFIED,
             new_addr: Ipv4Addr::UNSPECIFIED,
             mask: Ipv4Addr::UNSPECIFIED,
-            flags: 0,
+            flags: vec![],
         }
     }
 }
@@ -104,13 +105,6 @@ buffer!(TcNatBuffer(TC_NAT_BUF_LEN) {
     mask: (slice, (TcActionGeneric::BUF_LEN+8)..(TcActionGeneric::BUF_LEN+12)),
     flags: (u32, (TcActionGeneric::BUF_LEN+12)..TC_NAT_BUF_LEN),
 });
-
-impl TcNat {
-    pub fn egress(mut self) -> Self {
-        self.flags = TCA_NAT_FLAG_EGRESS;
-        self
-    }
-}
 
 impl Emitable for TcNat {
     fn buffer_len(&self) -> usize {
@@ -127,7 +121,7 @@ impl Emitable for TcNat {
             .new_addr_mut()
             .copy_from_slice(&self.new_addr.octets());
         packet.mask_mut().copy_from_slice(&self.mask.octets());
-        packet.set_flags(self.flags);
+        packet.set_flags(u32::from(&VecTcNatFlag(self.flags.to_vec())));
     }
 }
 
@@ -140,7 +134,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&'a T>> for TcNat {
             old_addr: parse_ipv4(buf.old_addr())?,
             new_addr: parse_ipv4(buf.new_addr())?,
             mask: parse_ipv4(buf.mask())?,
-            flags: buf.flags(),
+            flags: VecTcNatFlag::from(buf.flags()).0,
         })
     }
 }

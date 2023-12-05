@@ -12,7 +12,7 @@ mod stats;
 pub use self::actions::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
     TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
-    TcActionOption, TcMirror, TcMirrorBuffer, TcNat, TcNatBuffer,
+    TcActionOption, TcMirror, TcMirrorBuffer, TcNat, TcNatBuffer, TcNatFlag,
 };
 pub use self::attribute::TcAttribute;
 pub use self::filters::{
