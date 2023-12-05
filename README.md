@@ -40,16 +40,21 @@ crate directly.
    changed netlink attribute. To capture the netlink raw bytes, you may use
    tcpdump/wireshark again the `nlmon` interface. For example:
 
- * The integration test(play with linux kernel netlink interface) should be
-   placed into `rtnetlink` crate. Current(netlink-packet-route) crate should
-   only unit test case only.
-
 ```bash
 modprobe nlmon
 ip link add nl0 type nlmon
 ip link set nl0 up
 tcpdump -i nl0 -w netlink_capture_file.cap
+# Then use wireshark to open this `netlink_capture_file.cap`
+# Find out the packet you are interested,
+# right click -> "Copy" -> "...as Hex Dump".
+# You may use https://github.com/cathay4t/hex_to_rust to convert this
+# hexdump to rust u8 array
 ```
+ * The integration test(play with linux kernel netlink interface) should be
+   placed into `rtnetlink` crate. Current(netlink-packet-route) crate should
+   only unit test case only.
+
 
  * For certain netlink message which cannot captured by nlmon, please use
    Rust Debug and explain every bits in comment.
