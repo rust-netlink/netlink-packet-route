@@ -5,6 +5,7 @@ mod attribute;
 mod buffer_tool;
 mod down_reason;
 mod event;
+pub(crate) mod ext_mask;
 mod header;
 pub(crate) mod link_flag;
 mod link_info;
@@ -33,6 +34,7 @@ pub use self::af_spec::{
 pub use self::attribute::LinkAttribute;
 pub use self::down_reason::LinkProtocolDownReason;
 pub use self::event::LinkEvent;
+pub use self::ext_mask::LinkExtentMask;
 pub use self::header::{LinkHeader, LinkMessageBuffer};
 pub use self::link_flag::LinkFlag;
 pub use self::link_info::{

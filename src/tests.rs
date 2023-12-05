@@ -7,7 +7,7 @@ use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
 use netlink_packet_utils::Emitable;
 
 use crate::{
-    link::{LinkAttribute, LinkMessage},
+    link::{LinkAttribute, LinkExtentMask, LinkMessage},
     RouteNetlinkMessage,
 };
 
@@ -32,7 +32,10 @@ fn test_get_link() {
         header,
         NetlinkPayload::from(RouteNetlinkMessage::GetLink(LinkMessage {
             attributes: vec![
-                LinkAttribute::ExtMask(9),
+                LinkAttribute::ExtMask(vec![
+                    LinkExtentMask::Vf,
+                    LinkExtentMask::SkipStats,
+                ]),
                 LinkAttribute::IfName("lo".to_string()),
             ],
             ..Default::default()
