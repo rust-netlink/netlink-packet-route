@@ -132,7 +132,7 @@ fn test_get_filter_nat() {
                                     old_addr: Ipv4Addr::new(192, 0, 2, 2),
                                     new_addr: Ipv4Addr::new(203, 0, 113, 1),
                                     mask: Ipv4Addr::new(255, 255, 255, 255),
-                                    flags: 0,
+                                    flags: vec![],
                                 },
                             )),
                             TcActionOption::Nat(TcActionNatOption::Tm(vec![
