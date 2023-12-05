@@ -241,7 +241,7 @@ where
 pub struct TcActionGeneric {
     pub index: u32,
     pub capab: u32,
-    pub action: i32,
+    pub action: TcActionType,
     pub refcnt: i32,
     pub bindcnt: i32,
 }
@@ -267,7 +267,7 @@ impl Emitable for TcActionGeneric {
         let mut packet = TcActionGenericBuffer::new(buffer);
         packet.set_index(self.index);
         packet.set_capab(self.capab);
-        packet.set_action(self.action);
+        packet.set_action(self.action.into());
         packet.set_refcnt(self.refcnt);
         packet.set_bindcnt(self.bindcnt);
     }
@@ -278,9 +278,73 @@ impl<T: AsRef<[u8]>> Parseable<TcActionGenericBuffer<T>> for TcActionGeneric {
         Ok(Self {
             index: buf.index(),
             capab: buf.capab(),
-            action: buf.action(),
+            action: buf.action().into(),
             refcnt: buf.refcnt(),
             bindcnt: buf.bindcnt(),
         })
+    }
+}
+
+const TC_ACT_UNSPEC: i32 = -1;
+const TC_ACT_OK: i32 = 0;
+const TC_ACT_RECLASSIFY: i32 = 1;
+const TC_ACT_SHOT: i32 = 2;
+const TC_ACT_PIPE: i32 = 3;
+const TC_ACT_STOLEN: i32 = 4;
+const TC_ACT_QUEUED: i32 = 5;
+const TC_ACT_REPEAT: i32 = 6;
+const TC_ACT_REDIRECT: i32 = 7;
+const TC_ACT_TRAP: i32 = 8;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[non_exhaustive]
+pub enum TcActionType {
+    #[default]
+    Unspec,
+    Ok,
+    Reclassify,
+    Shot,
+    Pipe,
+    Stolen,
+    Queued,
+    Repeat,
+    Redirect,
+    Trap,
+    Other(i32),
+}
+
+impl From<i32> for TcActionType {
+    fn from(d: i32) -> Self {
+        match d {
+            TC_ACT_UNSPEC => Self::Unspec,
+            TC_ACT_OK => Self::Ok,
+            TC_ACT_RECLASSIFY => Self::Reclassify,
+            TC_ACT_SHOT => Self::Shot,
+            TC_ACT_PIPE => Self::Pipe,
+            TC_ACT_STOLEN => Self::Stolen,
+            TC_ACT_QUEUED => Self::Queued,
+            TC_ACT_REPEAT => Self::Repeat,
+            TC_ACT_REDIRECT => Self::Redirect,
+            TC_ACT_TRAP => Self::Trap,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<TcActionType> for i32 {
+    fn from(v: TcActionType) -> i32 {
+        match v {
+            TcActionType::Unspec => TC_ACT_UNSPEC,
+            TcActionType::Ok => TC_ACT_OK,
+            TcActionType::Reclassify => TC_ACT_RECLASSIFY,
+            TcActionType::Shot => TC_ACT_SHOT,
+            TcActionType::Pipe => TC_ACT_PIPE,
+            TcActionType::Stolen => TC_ACT_STOLEN,
+            TcActionType::Queued => TC_ACT_QUEUED,
+            TcActionType::Repeat => TC_ACT_REPEAT,
+            TcActionType::Redirect => TC_ACT_REDIRECT,
+            TcActionType::Trap => TC_ACT_TRAP,
+            TcActionType::Other(d) => d,
+        }
     }
 }

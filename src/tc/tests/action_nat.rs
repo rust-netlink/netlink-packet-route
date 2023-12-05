@@ -7,9 +7,9 @@ use netlink_packet_utils::{Emitable, Parseable};
 use crate::{
     tc::{
         TcAction, TcActionAttribute, TcActionGeneric, TcActionNatOption,
-        TcActionOption, TcAttribute, TcFilterU32Option, TcHandle, TcHeader,
-        TcMessage, TcMessageBuffer, TcNat, TcOption, TcStats2, TcStatsBasic,
-        TcStatsQueue, TcU32Key, TcU32OptionFlag, TcU32Selector,
+        TcActionOption, TcActionType, TcAttribute, TcFilterU32Option, TcHandle,
+        TcHeader, TcMessage, TcMessageBuffer, TcNat, TcOption, TcStats2,
+        TcStatsBasic, TcStatsQueue, TcU32Key, TcU32OptionFlag, TcU32Selector,
         TcU32SelectorFlag,
     },
     AddressFamily,
@@ -125,7 +125,7 @@ fn test_get_filter_nat() {
                                     generic: TcActionGeneric {
                                         index: 1,
                                         capab: 0,
-                                        action: 0,
+                                        action: TcActionType::Ok,
                                         refcnt: 1,
                                         bindcnt: 1,
                                     },

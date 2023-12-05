@@ -7,6 +7,7 @@ pub(crate) mod nat_flag;
 
 pub use self::action::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
+    TcActionType,
     TcActionOption,
 };
 pub use self::mirror::{
