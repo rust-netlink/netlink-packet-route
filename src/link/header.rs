@@ -7,7 +7,7 @@ use netlink_packet_utils::{
 };
 
 use crate::{
-    link::{LinkFlag, LinkFlags, LinkLayerType},
+    link::{link_flag::VecLinkFlag, LinkFlag, LinkLayerType},
     AddressFamily,
 };
 
@@ -67,13 +67,12 @@ pub struct LinkHeader {
     /// State of the link, described by a combinations of `IFF_*`
     /// constants, for instance `vec![LinkFlag::Up, LinkFlag::LowerUp]`.
     /// To convert `Vec<LinkFlag>` into `u32`, you may:
-    ///  `u32::from(&LinkFlags(Vec<LinkFlag>)`
+    ///  `u32::from(&VecLinkFlag(Vec<LinkFlag>)`
     /// To convert `u32` to `Vec<LinkFlag>`, you may:
-    ///  `LinkFlags::from(u32).0`
+    ///  `VecLinkFlag::from(u32).0`
     pub flags: Vec<LinkFlag>,
-    /// Change mask for the `flags` field. Reserved, it should be set
-    /// to u32::MAX or 0(equal to u32::MAX for backwards compatibility).
-    pub change_mask: u32,
+    /// Change mask for the `flags` field.
+    pub change_mask: Vec<LinkFlag>,
 }
 
 impl Emitable for LinkHeader {
@@ -85,9 +84,11 @@ impl Emitable for LinkHeader {
         let mut packet = LinkMessageBuffer::new(buffer);
         packet.set_interface_family(u8::from(self.interface_family));
         packet.set_link_index(self.index);
-        packet.set_change_mask(self.change_mask);
+        packet.set_change_mask(u32::from(&VecLinkFlag(
+            self.change_mask.to_vec(),
+        )));
         packet.set_link_layer_type(u16::from(self.link_layer_type));
-        packet.set_flags(u32::from(&LinkFlags(self.flags.to_vec())));
+        packet.set_flags(u32::from(&VecLinkFlag(self.flags.to_vec())));
     }
 }
 
@@ -97,8 +98,8 @@ impl<T: AsRef<[u8]>> Parseable<LinkMessageBuffer<T>> for LinkHeader {
             interface_family: buf.interface_family().into(),
             link_layer_type: buf.link_layer_type().into(),
             index: buf.link_index(),
-            change_mask: buf.change_mask(),
-            flags: LinkFlags::from(buf.flags()).0,
+            change_mask: VecLinkFlag::from(buf.change_mask()).0,
+            flags: VecLinkFlag::from(buf.flags()).0,
         })
     }
 }

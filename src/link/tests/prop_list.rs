@@ -31,7 +31,7 @@ fn test_wlan0_with_prop_altname() {
                 LinkFlag::Running,
                 LinkFlag::Up,
             ],
-            change_mask: 0,
+            change_mask: vec![],
         },
         attributes: vec![LinkAttribute::PropList(vec![
             Prop::AltIfName("wlp0s20f3".to_string()),

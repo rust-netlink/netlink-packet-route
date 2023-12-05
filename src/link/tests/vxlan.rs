@@ -132,7 +132,7 @@ fn test_parsing_link_vxlan() {
                 LinkFlag::Running,
                 LinkFlag::Up,
             ],
-            change_mask: 0,
+            change_mask: vec![],
         },
         attributes: vec![
             LinkAttribute::IfName("vxlan0".into()),
