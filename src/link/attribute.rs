@@ -18,16 +18,17 @@ use super::proto_info::VecLinkProtoInfoBridge;
 use super::{
     af_spec::VecAfSpecUnspec,
     buffer_tool::expand_buffer_if_small,
+    ext_mask::VecLinkExtentMask,
     link_info::VecLinkInfo,
     proto_info::VecLinkProtoInfoInet6,
     sriov::{VecLinkVfInfo, VecLinkVfPort},
     stats::LINK_STATS_LEN,
     stats64::LINK_STATS64_LEN,
     xdp::VecLinkXdp,
-    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkInfo, LinkPhysId,
-    LinkProtoInfoBridge, LinkProtoInfoInet6, LinkProtocolDownReason,
-    LinkVfInfo, LinkVfPort, LinkWirelessEvent, LinkXdp, Map, MapBuffer, Prop,
-    State, Stats, Stats64, Stats64Buffer, StatsBuffer,
+    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkExtentMask, LinkInfo,
+    LinkPhysId, LinkProtoInfoBridge, LinkProtoInfoInet6,
+    LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkWirelessEvent, LinkXdp,
+    Map, MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
 };
 use crate::AddressFamily;
 
@@ -141,7 +142,7 @@ pub enum LinkAttribute {
     NumVf(u32),
     Group(u32),
     NetNsFd(RawFd),
-    ExtMask(u32),
+    ExtMask(Vec<LinkExtentMask>),
     Promiscuity(u32),
     NumTxQueues(u32),
     NumRxQueues(u32),
@@ -267,7 +268,6 @@ impl Nla for LinkAttribute {
             | Self::NetNsPid(value)
             | Self::NumVf(value)
             | Self::Group(value)
-            | Self::ExtMask(value)
             | Self::Promiscuity(value)
             | Self::NumTxQueues(value)
             | Self::NumRxQueues(value)
@@ -278,6 +278,11 @@ impl Nla for LinkAttribute {
             | Self::GsoMaxSize(value)
             | Self::MinMtu(value)
             | Self::MaxMtu(value) => NativeEndian::write_u32(buffer, *value),
+
+            Self::ExtMask(value) => NativeEndian::write_u32(
+                buffer,
+                u32::from(&VecLinkExtentMask(value.to_vec())),
+            ),
 
             Self::NetnsId(v)
             | Self::NetNsFd(v)
@@ -516,7 +521,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 parse_i32(payload).context("invalid IFLA_NET_NS_FD value")?,
             ),
             IFLA_EXT_MASK => Self::ExtMask(
-                parse_u32(payload).context("invalid IFLA_EXT_MASK value")?,
+                VecLinkExtentMask::from(
+                    parse_u32(payload)
+                        .context("invalid IFLA_EXT_MASK value")?,
+                )
+                .0,
             ),
             IFLA_PROMISCUITY => Self::Promiscuity(
                 parse_u32(payload).context("invalid IFLA_PROMISCUITY value")?,
