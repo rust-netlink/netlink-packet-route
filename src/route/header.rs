@@ -58,6 +58,7 @@ pub struct RouteHeader {
 
 impl RouteHeader {
     pub const RT_TABLE_MAIN: u8 = 254;
+    pub const RT_TABLE_UNSPEC: u8 = 0;
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteMessageBuffer<&'a T>>
