@@ -4,6 +4,7 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::{
     tc::{
+        TcActionType,
         TcAction, TcActionAttribute, TcActionGeneric, TcActionMirrorOption,
         TcActionOption, TcAttribute, TcFilterMatchAllOption, TcHandle,
         TcHeader, TcMessage, TcMessageBuffer, TcMirror, TcOption, TcStats2,
@@ -145,7 +146,7 @@ fn test_get_filter_matchall() {
                                         generic: TcActionGeneric {
                                             index: 1,
                                             capab: 0,
-                                            action: 3,
+                                            action: TcActionType::Pipe,
                                             refcnt: 1,
                                             bindcnt: 1,
                                         },
