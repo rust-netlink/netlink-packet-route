@@ -9,7 +9,8 @@ use crate::{
         TcAction, TcActionAttribute, TcActionGeneric, TcActionNatOption,
         TcActionOption, TcAttribute, TcFilterU32Option, TcHandle, TcHeader,
         TcMessage, TcMessageBuffer, TcNat, TcOption, TcStats2, TcStatsBasic,
-        TcStatsQueue, TcU32Key, TcU32Selector, TcU32SelectorFlag,
+        TcStatsQueue, TcU32Key, TcU32OptionFlag, TcU32Selector,
+        TcU32SelectorFlag,
     },
     AddressFamily,
 };
@@ -93,7 +94,9 @@ fn test_get_filter_nat() {
                     }],
                 })),
                 TcOption::U32(TcFilterU32Option::Hash(u32::from_be(0x80))),
-                TcOption::U32(TcFilterU32Option::Flags(8)),
+                TcOption::U32(TcFilterU32Option::Flags(vec![
+                    TcU32OptionFlag::NotInHw,
+                ])),
                 TcOption::U32(TcFilterU32Option::Action(vec![TcAction {
                     tab: 1,
                     attributes: vec![

@@ -16,8 +16,8 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::u32_flags::VecTcU32SelectorFlag;
-use crate::tc::{TcAction, TcHandle, TcU32SelectorFlag};
+use super::u32_flags::{VecTcU32OptionFlag, VecTcU32SelectorFlag};
+use crate::tc::{TcAction, TcHandle, TcU32OptionFlag, TcU32SelectorFlag};
 
 const TC_U32_SEL_BUF_LEN: usize = 16;
 const TC_U32_KEY_BUF_LEN: usize = 16;
@@ -55,7 +55,7 @@ pub enum TcFilterU32Option {
     Indev(Vec<u8>),
     Pnct(Vec<u8>),
     Mark(Vec<u8>),
-    Flags(u32),
+    Flags(Vec<TcU32OptionFlag>),
     Other(DefaultNla),
 }
 
@@ -83,10 +83,13 @@ impl Nla for TcFilterU32Option {
             | Self::Indev(b)
             | Self::Pnct(b)
             | Self::Mark(b) => buffer.copy_from_slice(b.as_slice()),
-            Self::Hash(i)
-            | Self::Link(i)
-            | Self::Divisor(i)
-            | Self::Flags(i) => NativeEndian::write_u32(buffer, *i),
+            Self::Hash(i) | Self::Link(i) | Self::Divisor(i) => {
+                NativeEndian::write_u32(buffer, *i)
+            }
+            Self::Flags(v) => NativeEndian::write_u32(
+                buffer,
+                u32::from(&VecTcU32OptionFlag(v.to_vec())),
+            ),
             Self::ClassId(i) => NativeEndian::write_u32(buffer, (*i).into()),
             Self::Selector(s) => s.emit(buffer),
             Self::Action(acts) => acts.as_slice().emit(buffer),
@@ -154,7 +157,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             TCA_U32_PCNT => Self::Pnct(payload.to_vec()),
             TCA_U32_MARK => Self::Mark(payload.to_vec()),
             TCA_U32_FLAGS => Self::Flags(
-                parse_u32(payload).context("failed to parse TCA_U32_FLAGS")?,
+                VecTcU32OptionFlag::from(
+                    parse_u32(payload)
+                        .context("failed to parse TCA_U32_FLAGS")?,
+                )
+                .0,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf).context("failed to parse u32 nla")?,
