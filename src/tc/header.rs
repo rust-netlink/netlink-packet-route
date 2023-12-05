@@ -41,6 +41,10 @@ pub struct TcHeader {
     pub info: u32,
 }
 
+impl TcHeader {
+    pub const TCM_IFINDEX_MAGIC_BLOCK: u32 = 0xFFFFFFFF;
+}
+
 impl Emitable for TcHeader {
     fn buffer_len(&self) -> usize {
         TC_HEADER_LEN
