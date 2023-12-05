@@ -1,4 +1,15 @@
 # Changelog
+## [0.18.1] - 2023-12-05
+### Breaking changes
+
+ - N/A
+
+### New features
+ - N/A
+
+### Bug fixes
+ - Fix crash on RuleFlag of `attempt to subtract with overflow`. (ece8735)
+
 ## [0.18.0] - 2023-12-05
 ### Breaking changes
 
