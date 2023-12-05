@@ -68,9 +68,9 @@ pub enum InfoVxlan {
     UDPZeroCsumRX(bool),
     RemCsumTX(bool),
     RemCsumRX(bool),
-    Gbp(u8),
-    Gpe(u8),
-    RemCsumNoPartial(u8),
+    Gbp(bool),
+    Gpe(bool),
+    RemCsumNoPartial(bool),
     TtlInherit(bool),
     Df(u8),
     Vnifilter(bool),
@@ -80,151 +80,168 @@ pub enum InfoVxlan {
 
 impl Nla for InfoVxlan {
     fn value_len(&self) -> usize {
-        use self::InfoVxlan::*;
-        match *self {
-            Tos(_) | Ttl(_) | Learning(_) | Proxy(_) | Rsc(_) | L2Miss(_)
-            | L3Miss(_) | CollectMetadata(_) | UDPCsum(_)
-            | UDPZeroCsumTX(_) | UDPZeroCsumRX(_) | RemCsumTX(_)
-            | RemCsumRX(_) | Gbp(_) | Gpe(_) | RemCsumNoPartial(_)
-            | TtlInherit(_) | Df(_) | Vnifilter(_) | Localbypass(_) => 1,
-            Port(_) => 2,
-            Id(_) | Label(_) | Link(_) | Ageing(_) | Limit(_)
-            | PortRange(_) => 4,
-            Local(ref bytes) | Local6(ref bytes) | Group(ref bytes)
-            | Group6(ref bytes) => bytes.len(),
-            Other(ref nla) => nla.value_len(),
+        match self {
+            Self::Tos(_)
+            | Self::Ttl(_)
+            | Self::Learning(_)
+            | Self::Proxy(_)
+            | Self::Rsc(_)
+            | Self::L2Miss(_)
+            | Self::L3Miss(_)
+            | Self::CollectMetadata(_)
+            | Self::UDPCsum(_)
+            | Self::UDPZeroCsumTX(_)
+            | Self::UDPZeroCsumRX(_)
+            | Self::RemCsumTX(_)
+            | Self::RemCsumRX(_)
+            | Self::TtlInherit(_)
+            | Self::Df(_)
+            | Self::Vnifilter(_)
+            | Self::Localbypass(_) => 1,
+            Self::Gbp(_) | Self::Gpe(_) | Self::RemCsumNoPartial(_) => 0,
+            Self::Port(_) => 2,
+            Self::Id(_)
+            | Self::Label(_)
+            | Self::Link(_)
+            | Self::Ageing(_)
+            | Self::Limit(_)
+            | Self::PortRange(_) => 4,
+            Self::Local(bytes)
+            | Self::Local6(bytes)
+            | Self::Group(bytes)
+            | Self::Group6(bytes) => bytes.len(),
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoVxlan::*;
         match self {
-            Id(ref value) | Label(ref value) | Link(ref value)
-            | Ageing(ref value) | Limit(ref value) => {
-                NativeEndian::write_u32(buffer, *value)
+            Self::Id(value)
+            | Self::Label(value)
+            | Self::Link(value)
+            | Self::Ageing(value)
+            | Self::Limit(value) => NativeEndian::write_u32(buffer, *value),
+            Self::Gbp(_value)
+            | Self::Gpe(_value)
+            | Self::RemCsumNoPartial(_value) => (),
+            Self::Tos(value) | Self::Ttl(value) | Self::Df(value) => {
+                buffer[0] = *value
             }
-            Tos(ref value)
-            | Gbp(ref value)
-            | Gpe(ref value)
-            | RemCsumNoPartial(ref value)
-            | Ttl(ref value)
-            | Df(ref value) => buffer[0] = *value,
-            Vnifilter(ref value)
-            | Localbypass(ref value)
-            | Learning(ref value)
-            | Proxy(ref value)
-            | Rsc(ref value)
-            | L2Miss(ref value)
-            | L3Miss(ref value)
-            | CollectMetadata(ref value)
-            | UDPCsum(ref value)
-            | UDPZeroCsumTX(ref value)
-            | UDPZeroCsumRX(ref value)
-            | RemCsumTX(ref value)
-            | RemCsumRX(ref value)
-            | TtlInherit(ref value) => buffer[0] = *value as u8,
-            Local(ref value) | Group(ref value) | Group6(ref value)
-            | Local6(ref value) => buffer.copy_from_slice(value.as_slice()),
-            Port(ref value) => BigEndian::write_u16(buffer, *value),
-            PortRange(ref range) => {
+            Self::Vnifilter(value)
+            | Self::Localbypass(value)
+            | Self::Learning(value)
+            | Self::Proxy(value)
+            | Self::Rsc(value)
+            | Self::L2Miss(value)
+            | Self::L3Miss(value)
+            | Self::CollectMetadata(value)
+            | Self::UDPCsum(value)
+            | Self::UDPZeroCsumTX(value)
+            | Self::UDPZeroCsumRX(value)
+            | Self::RemCsumTX(value)
+            | Self::RemCsumRX(value)
+            | Self::TtlInherit(value) => buffer[0] = *value as u8,
+            Self::Local(value)
+            | Self::Group(value)
+            | Self::Group6(value)
+            | Self::Local6(value) => buffer.copy_from_slice(value.as_slice()),
+            Self::Port(value) => BigEndian::write_u16(buffer, *value),
+            Self::PortRange(range) => {
                 BigEndian::write_u16(buffer, range.0);
                 BigEndian::write_u16(&mut buffer[2..], range.1)
             }
-            Other(ref nla) => nla.emit_value(buffer),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoVxlan::*;
-
         match self {
-            Id(_) => IFLA_VXLAN_ID,
-            Group(_) => IFLA_VXLAN_GROUP,
-            Group6(_) => IFLA_VXLAN_GROUP6,
-            Link(_) => IFLA_VXLAN_LINK,
-            Local(_) => IFLA_VXLAN_LOCAL,
-            Local6(_) => IFLA_VXLAN_LOCAL6,
-            Tos(_) => IFLA_VXLAN_TOS,
-            Ttl(_) => IFLA_VXLAN_TTL,
-            Label(_) => IFLA_VXLAN_LABEL,
-            Learning(_) => IFLA_VXLAN_LEARNING,
-            Ageing(_) => IFLA_VXLAN_AGEING,
-            Limit(_) => IFLA_VXLAN_LIMIT,
-            PortRange(_) => IFLA_VXLAN_PORT_RANGE,
-            Proxy(_) => IFLA_VXLAN_PROXY,
-            Rsc(_) => IFLA_VXLAN_RSC,
-            L2Miss(_) => IFLA_VXLAN_L2MISS,
-            L3Miss(_) => IFLA_VXLAN_L3MISS,
-            CollectMetadata(_) => IFLA_VXLAN_COLLECT_METADATA,
-            Port(_) => IFLA_VXLAN_PORT,
-            UDPCsum(_) => IFLA_VXLAN_UDP_CSUM,
-            UDPZeroCsumTX(_) => IFLA_VXLAN_UDP_ZERO_CSUM6_TX,
-            UDPZeroCsumRX(_) => IFLA_VXLAN_UDP_ZERO_CSUM6_RX,
-            RemCsumTX(_) => IFLA_VXLAN_REMCSUM_TX,
-            RemCsumRX(_) => IFLA_VXLAN_REMCSUM_RX,
-            Gbp(_) => IFLA_VXLAN_GBP,
-            Gpe(_) => IFLA_VXLAN_GPE,
-            RemCsumNoPartial(_) => IFLA_VXLAN_REMCSUM_NOPARTIAL,
-            TtlInherit(_) => IFLA_VXLAN_TTL_INHERIT,
-            Df(_) => IFLA_VXLAN_DF,
-            Vnifilter(_) => IFLA_VXLAN_VNIFILTER,
-            Localbypass(_) => IFLA_VXLAN_LOCALBYPASS,
-            Other(nla) => nla.kind(),
+            Self::Id(_) => IFLA_VXLAN_ID,
+            Self::Group(_) => IFLA_VXLAN_GROUP,
+            Self::Group6(_) => IFLA_VXLAN_GROUP6,
+            Self::Link(_) => IFLA_VXLAN_LINK,
+            Self::Local(_) => IFLA_VXLAN_LOCAL,
+            Self::Local6(_) => IFLA_VXLAN_LOCAL6,
+            Self::Tos(_) => IFLA_VXLAN_TOS,
+            Self::Ttl(_) => IFLA_VXLAN_TTL,
+            Self::Label(_) => IFLA_VXLAN_LABEL,
+            Self::Learning(_) => IFLA_VXLAN_LEARNING,
+            Self::Ageing(_) => IFLA_VXLAN_AGEING,
+            Self::Limit(_) => IFLA_VXLAN_LIMIT,
+            Self::PortRange(_) => IFLA_VXLAN_PORT_RANGE,
+            Self::Proxy(_) => IFLA_VXLAN_PROXY,
+            Self::Rsc(_) => IFLA_VXLAN_RSC,
+            Self::L2Miss(_) => IFLA_VXLAN_L2MISS,
+            Self::L3Miss(_) => IFLA_VXLAN_L3MISS,
+            Self::CollectMetadata(_) => IFLA_VXLAN_COLLECT_METADATA,
+            Self::Port(_) => IFLA_VXLAN_PORT,
+            Self::UDPCsum(_) => IFLA_VXLAN_UDP_CSUM,
+            Self::UDPZeroCsumTX(_) => IFLA_VXLAN_UDP_ZERO_CSUM6_TX,
+            Self::UDPZeroCsumRX(_) => IFLA_VXLAN_UDP_ZERO_CSUM6_RX,
+            Self::RemCsumTX(_) => IFLA_VXLAN_REMCSUM_TX,
+            Self::RemCsumRX(_) => IFLA_VXLAN_REMCSUM_RX,
+            Self::Gbp(_) => IFLA_VXLAN_GBP,
+            Self::Gpe(_) => IFLA_VXLAN_GPE,
+            Self::RemCsumNoPartial(_) => IFLA_VXLAN_REMCSUM_NOPARTIAL,
+            Self::TtlInherit(_) => IFLA_VXLAN_TTL_INHERIT,
+            Self::Df(_) => IFLA_VXLAN_DF,
+            Self::Vnifilter(_) => IFLA_VXLAN_VNIFILTER,
+            Self::Localbypass(_) => IFLA_VXLAN_LOCALBYPASS,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoVxlan::*;
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VXLAN_ID => {
-                Id(parse_u32(payload).context("invalid IFLA_VXLAN_ID value")?)
+                Self::Id(parse_u32(payload).context("invalid IFLA_VXLAN_ID value")?)
             }
-            IFLA_VXLAN_GROUP => Group(payload.to_vec()),
-            IFLA_VXLAN_GROUP6 => Group6(payload.to_vec()),
-            IFLA_VXLAN_LINK => Link(
+            IFLA_VXLAN_GROUP => Self::Group(payload.to_vec()),
+            IFLA_VXLAN_GROUP6 => Self::Group6(payload.to_vec()),
+            IFLA_VXLAN_LINK => Self::Link(
                 parse_u32(payload).context("invalid IFLA_VXLAN_LINK value")?,
             ),
-            IFLA_VXLAN_LOCAL => Local(payload.to_vec()),
-            IFLA_VXLAN_LOCAL6 => Local6(payload.to_vec()),
+            IFLA_VXLAN_LOCAL => Self::Local(payload.to_vec()),
+            IFLA_VXLAN_LOCAL6 => Self::Local6(payload.to_vec()),
             IFLA_VXLAN_TOS => {
-                Tos(parse_u8(payload)
+                Self::Tos(parse_u8(payload)
                     .context("invalid IFLA_VXLAN_TOS value")?)
             }
             IFLA_VXLAN_TTL => {
-                Ttl(parse_u8(payload)
+                Self::Ttl(parse_u8(payload)
                     .context("invalid IFLA_VXLAN_TTL value")?)
             }
-            IFLA_VXLAN_LABEL => Label(
+            IFLA_VXLAN_LABEL => Self::Label(
                 parse_u32(payload).context("invalid IFLA_VXLAN_LABEL value")?,
             ),
-            IFLA_VXLAN_LEARNING => Learning(
+            IFLA_VXLAN_LEARNING => Self::Learning(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_LEARNING value")? > 0,
             ),
-            IFLA_VXLAN_AGEING => Ageing(
+            IFLA_VXLAN_AGEING => Self::Ageing(
                 parse_u32(payload)
                     .context("invalid IFLA_VXLAN_AGEING value")?,
             ),
-            IFLA_VXLAN_LIMIT => Limit(
+            IFLA_VXLAN_LIMIT => Self::Limit(
                 parse_u32(payload).context("invalid IFLA_VXLAN_LIMIT value")?,
             ),
-            IFLA_VXLAN_PROXY => Proxy(
+            IFLA_VXLAN_PROXY => Self::Proxy(
                 parse_u8(payload).context("invalid IFLA_VXLAN_PROXY value")? > 0,
             ),
             IFLA_VXLAN_RSC => {
-                Rsc(parse_u8(payload)
+                Self::Rsc(parse_u8(payload)
                     .context("invalid IFLA_VXLAN_RSC value")?> 0)
             }
-            IFLA_VXLAN_L2MISS => L2Miss(
+            IFLA_VXLAN_L2MISS => Self::L2Miss(
                 parse_u8(payload).context("invalid IFLA_VXLAN_L2MISS value")? > 0,
             ),
-            IFLA_VXLAN_L3MISS => L3Miss(
+            IFLA_VXLAN_L3MISS => Self::L3Miss(
                 parse_u8(payload).context("invalid IFLA_VXLAN_L3MISS value")? > 0,
             ),
-            IFLA_VXLAN_COLLECT_METADATA => CollectMetadata(
+            IFLA_VXLAN_COLLECT_METADATA => Self::CollectMetadata(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_COLLECT_METADATA value")? >0,
             ),
@@ -235,60 +252,55 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                 }
                 let low = parse_u16_be(&payload[0..2]).context(err)?;
                 let high = parse_u16_be(&payload[2..]).context(err)?;
-                PortRange((low, high))
+                Self::PortRange((low, high))
             }
-            IFLA_VXLAN_PORT => Port(
+            IFLA_VXLAN_PORT => Self::Port(
                 parse_u16_be(payload)
                     .context("invalid IFLA_VXLAN_PORT value")?,
             ),
-            IFLA_VXLAN_UDP_CSUM => UDPCsum(
+            IFLA_VXLAN_UDP_CSUM => Self::UDPCsum(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_UDP_CSUM value")? > 0,
             ),
-            IFLA_VXLAN_UDP_ZERO_CSUM6_TX => UDPZeroCsumTX(
+            IFLA_VXLAN_UDP_ZERO_CSUM6_TX => Self::UDPZeroCsumTX(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_TX value")? > 0,
             ),
-            IFLA_VXLAN_UDP_ZERO_CSUM6_RX => UDPZeroCsumRX(
+            IFLA_VXLAN_UDP_ZERO_CSUM6_RX => Self::UDPZeroCsumRX(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_RX value")? > 0,
             ),
-            IFLA_VXLAN_REMCSUM_TX => RemCsumTX(
+            IFLA_VXLAN_REMCSUM_TX => Self::RemCsumTX(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_REMCSUM_TX value")? > 0,
             ),
-            IFLA_VXLAN_REMCSUM_RX => RemCsumRX(
+            IFLA_VXLAN_REMCSUM_RX => Self::RemCsumRX(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_REMCSUM_RX value")? > 0,
             ),
             IFLA_VXLAN_DF => {
-                Df(parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?)
+                Self::Df(parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?)
             }
             IFLA_VXLAN_GBP => {
-                Gbp(parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_GBP value")?)
+                Self::Gbp(true)
             }
             IFLA_VXLAN_GPE => {
-                Gpe(parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_GPE value")?)
+                Self::Gpe(true)
             }
-            IFLA_VXLAN_REMCSUM_NOPARTIAL => RemCsumNoPartial(
-                parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_REMCSUM_NO_PARTIAL")?,
-            ),
-            IFLA_VXLAN_TTL_INHERIT => TtlInherit(
+            IFLA_VXLAN_REMCSUM_NOPARTIAL => Self::RemCsumNoPartial(true),
+            IFLA_VXLAN_TTL_INHERIT => Self::TtlInherit(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_TTL_INHERIT value")? > 0,
             ),
-            IFLA_VXLAN_VNIFILTER => Vnifilter(
+            IFLA_VXLAN_VNIFILTER => Self::Vnifilter(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_VNIFILTER value")? > 0,
             ),
-            IFLA_VXLAN_LOCALBYPASS => Localbypass(
+            IFLA_VXLAN_LOCALBYPASS => Self::Localbypass(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_LOCALBYPASS value")? > 0,
             ),
-            unknown_kind => Other(DefaultNla::parse(buf).context(format!(
+            unknown_kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "Failed to parse IFLA_INFO_DATA(vxlan) NLA type: {unknown_kind} as DefaultNla"
             ))?),
         })
