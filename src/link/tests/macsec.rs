@@ -5,7 +5,7 @@ use netlink_packet_utils::{Emitable, Parseable};
 use crate::link::{
     InfoData, InfoKind, InfoMacSec, LinkAttribute, LinkFlag, LinkHeader,
     LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, MacSecCipherId,
-    MacSecOffload, MacSecValidation,
+    MacSecOffload, MacSecValidate,
 };
 use crate::AddressFamily;
 
@@ -54,7 +54,7 @@ fn test_macsec_link_info() {
                 InfoMacSec::Es(0),
                 InfoMacSec::Scb(0),
                 InfoMacSec::ReplayProtect(0),
-                InfoMacSec::Validation(MacSecValidation::Strict),
+                InfoMacSec::Validation(MacSecValidate::Strict),
                 InfoMacSec::Offload(MacSecOffload::Off),
             ])),
         ])],
