@@ -7,9 +7,10 @@ use netlink_packet_utils::{
     DecodeError, Emitable, Parseable,
 };
 
-use super::super::InfoBondPort;
+use super::super::{InfoBondPort, InfoBridgePort};
 
 const BOND: &str = "bond";
+const BRIDGE: &str = "bridge";
 
 const IFLA_INFO_PORT_KIND: u16 = 4;
 const IFLA_INFO_PORT_DATA: u16 = 5;
@@ -18,6 +19,7 @@ const IFLA_INFO_PORT_DATA: u16 = 5;
 #[non_exhaustive]
 pub enum InfoPortKind {
     Bond,
+    Bridge,
     Other(String),
 }
 
@@ -28,6 +30,7 @@ impl std::fmt::Display for InfoPortKind {
             "{}",
             match self {
                 Self::Bond => BOND,
+                Self::Bridge => BRIDGE,
                 Self::Other(s) => s.as_str(),
             }
         )
@@ -38,6 +41,7 @@ impl Nla for InfoPortKind {
     fn value_len(&self) -> usize {
         let len = match self {
             Self::Bond => BOND.len(),
+            Self::Bridge => BRIDGE.len(),
             Self::Other(s) => s.len(),
         };
         len + 1
@@ -46,6 +50,7 @@ impl Nla for InfoPortKind {
     fn emit_value(&self, buffer: &mut [u8]) {
         let s = match self {
             Self::Bond => BOND,
+            Self::Bridge => BRIDGE,
             Self::Other(s) => s.as_str(),
         };
         buffer[..s.len()].copy_from_slice(s.as_bytes());
@@ -70,6 +75,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
             .context("invalid IFLA_INFO_PORT_KIND value")?;
         Ok(match s.as_str() {
             BOND => Self::Bond,
+            BRIDGE => Self::Bridge,
             _ => Self::Other(s),
         })
     }
@@ -79,6 +85,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
 #[non_exhaustive]
 pub enum InfoPortData {
     BondPort(Vec<InfoBondPort>),
+    BridgePort(Vec<InfoBridgePort>),
     Other(Vec<u8>),
 }
 
@@ -86,6 +93,7 @@ impl Nla for InfoPortData {
     fn value_len(&self) -> usize {
         match self {
             Self::BondPort(nlas) => nlas.as_slice().buffer_len(),
+            Self::BridgePort(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(bytes) => bytes.len(),
         }
     }
@@ -93,6 +101,7 @@ impl Nla for InfoPortData {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::BondPort(nlas) => nlas.as_slice().emit(buffer),
+            Self::BridgePort(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(bytes) => buffer.copy_from_slice(bytes),
         }
     }
@@ -107,23 +116,20 @@ impl InfoPortData {
         payload: &[u8],
         kind: InfoPortKind,
     ) -> Result<InfoPortData, DecodeError> {
-        Ok(match kind {
-            InfoPortKind::Bond => {
-                let mut v = Vec::new();
-                for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(format!(
-                        "failed to parse IFLA_INFO_PORT_DATA \
-                    (IFLA_INFO_PORT_KIND is '{kind}')"
-                    ))?;
-                    let parsed = InfoBondPort::parse(nla).context(format!(
-                        "failed to parse IFLA_INFO_PORT_DATA \
-                    (IFLA_INFO_PORT_KIND is '{kind}')"
-                    ))?;
-                    v.push(parsed);
-                }
-                InfoPortData::BondPort(v)
-            }
-            InfoPortKind::Other(_) => InfoPortData::Other(payload.to_vec()),
-        })
+        let port_data = match kind {
+            InfoPortKind::Bond => NlasIterator::new(payload)
+                .map(|nla| nla.and_then(|nla| InfoBondPort::parse(&nla)))
+                .collect::<Result<Vec<_>, _>>()
+                .map(InfoPortData::BondPort),
+            InfoPortKind::Bridge => NlasIterator::new(payload)
+                .map(|nla| nla.and_then(|nla| InfoBridgePort::parse(&nla)))
+                .collect::<Result<Vec<_>, _>>()
+                .map(InfoPortData::BridgePort),
+            InfoPortKind::Other(_) => Ok(InfoPortData::Other(payload.to_vec())),
+        };
+
+        Ok(port_data.context(format!(
+            "failed to parse IFLA_INFO_PORT_DATA (IFLA_INFO_PORT_KIND is '{kind}')"
+        ))?)
     }
 }
