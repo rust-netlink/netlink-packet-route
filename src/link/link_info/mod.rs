@@ -3,6 +3,7 @@
 mod bond;
 mod bond_port;
 mod bridge;
+mod bridge_port;
 mod gre;
 mod gre6;
 mod gre_tap;
@@ -29,6 +30,9 @@ mod xstats;
 pub use self::bond::{BondAdInfo, InfoBond};
 pub use self::bond_port::{BondPortState, InfoBondPort, MiiStatus};
 pub use self::bridge::{BridgeQuerierState, InfoBridge};
+pub use self::bridge_port::{
+    BridgePortMulticastRouter, BridgePortState, InfoBridgePort,
+};
 pub use self::gre::InfoGreTun;
 pub use self::gre6::InfoGreTun6;
 pub use self::gre_tap::InfoGreTap;
