@@ -55,7 +55,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoXfrm {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_XFRM_LINK => Link(
-                parse_u32(payload).context("invalid IFLA_XFRM_IF_ID value")?,
+                parse_u32(payload).context("invalid IFLA_XFRM_LINK value")?,
             ),
             IFLA_XFRM_IF_ID => IfId(
                 parse_u32(payload).context("invalid IFLA_XFRM_IF_ID value")?,
