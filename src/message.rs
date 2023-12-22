@@ -15,6 +15,7 @@ use crate::{
     neighbour::{NeighbourMessage, NeighbourMessageBuffer},
     neighbour_table::{NeighbourTableMessage, NeighbourTableMessageBuffer},
     nsid::{NsidMessage, NsidMessageBuffer},
+    prefix::{PrefixMessage, PrefixMessageBuffer},
     route::{RouteHeader, RouteMessage, RouteMessageBuffer},
     rule::{RuleMessage, RuleMessageBuffer},
     tc::{TcMessage, TcMessageBuffer},
@@ -48,7 +49,7 @@ const RTM_GETTFILTER: u16 = 46;
 // const RTM_NEWACTION: u16 = 48;
 // const RTM_DELACTION: u16 = 49;
 // const RTM_GETACTION: u16 = 50;
-// const RTM_NEWPREFIX: u16 = 52;
+const RTM_NEWPREFIX: u16 = 52;
 // const RTM_GETMULTICAST: u16 = 58;
 // const RTM_GETANYCAST: u16 = 62;
 const RTM_NEWNEIGHTBL: u16 = 64;
@@ -225,6 +226,18 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
 
+            // Prefix messages
+            RTM_NEWPREFIX => {
+                let err = "invalid prefix message";
+                RouteNetlinkMessage::NewPrefix(
+                    PrefixMessage::parse(
+                        &PrefixMessageBuffer::new_checked(&buf.inner())
+                            .context(err)?,
+                    )
+                    .context(err)?,
+                )
+            }
+
             RTM_NEWRULE | RTM_GETRULE | RTM_DELRULE => {
                 let err = "invalid fib rule message";
                 let msg = RuleMessage::parse(
@@ -325,6 +338,7 @@ pub enum RouteNetlinkMessage {
     NewRoute(RouteMessage),
     DelRoute(RouteMessage),
     GetRoute(RouteMessage),
+    NewPrefix(PrefixMessage),
     NewQueueDiscipline(TcMessage),
     DelQueueDiscipline(TcMessage),
     GetQueueDiscipline(TcMessage),
@@ -504,6 +518,7 @@ impl RouteNetlinkMessage {
             NewRoute(_) => RTM_NEWROUTE,
             DelRoute(_) => RTM_DELROUTE,
             GetRoute(_) => RTM_GETROUTE,
+            NewPrefix(_) => RTM_NEWPREFIX,
             NewQueueDiscipline(_) => RTM_NEWQDISC,
             DelQueueDiscipline(_) => RTM_DELQDISC,
             GetQueueDiscipline(_) => RTM_GETQDISC,
@@ -558,6 +573,8 @@ impl Emitable for RouteNetlinkMessage {
             | DelRoute(ref msg)
             | GetRoute(ref msg)
             => msg.buffer_len(),
+
+            NewPrefix(ref msg) => msg.buffer_len(),
 
             | NewQueueDiscipline(ref msg)
             | DelQueueDiscipline(ref msg)
@@ -616,6 +633,8 @@ impl Emitable for RouteNetlinkMessage {
             | DelRoute(ref msg)
             | GetRoute(ref msg)
             => msg.emit(buffer),
+
+            | NewPrefix(ref msg) => msg.emit(buffer),
 
             | NewQueueDiscipline(ref msg)
             | DelQueueDiscipline(ref msg)

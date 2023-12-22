@@ -5,6 +5,7 @@ pub mod link;
 pub mod neighbour;
 pub mod neighbour_table;
 pub mod nsid;
+pub mod prefix;
 pub mod route;
 pub mod rule;
 pub mod tc;
