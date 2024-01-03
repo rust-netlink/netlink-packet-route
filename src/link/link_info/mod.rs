@@ -29,7 +29,9 @@ mod xstats;
 
 pub use self::bond::{BondAdInfo, InfoBond};
 pub use self::bond_port::{BondPortState, InfoBondPort, MiiStatus};
-pub use self::bridge::{BridgeQuerierState, InfoBridge};
+pub use self::bridge::{
+    BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge,
+};
 pub use self::bridge_port::{
     BridgePortMulticastRouter, BridgePortState, InfoBridgePort,
 };

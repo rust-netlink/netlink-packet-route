@@ -14,14 +14,6 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-const BRIDGE_QUERIER_IP_ADDRESS: u16 = 1;
-const BRIDGE_QUERIER_IP_PORT: u16 = 2;
-const BRIDGE_QUERIER_IP_OTHER_TIMER: u16 = 3;
-// const BRIDGE_QUERIER_PAD: u16 = 4;
-const BRIDGE_QUERIER_IPV6_ADDRESS: u16 = 5;
-const BRIDGE_QUERIER_IPV6_PORT: u16 = 6;
-const BRIDGE_QUERIER_IPV6_OTHER_TIMER: u16 = 7;
-
 const IFLA_BR_FORWARD_DELAY: u16 = 1;
 const IFLA_BR_HELLO_TIME: u16 = 2;
 const IFLA_BR_MAX_AGE: u16 = 3;
@@ -98,8 +90,8 @@ pub enum InfoBridge {
     Priority(u16),
     VlanProtocol(u16),
     GroupFwdMask(u16),
-    RootId((u16, [u8; 6])),
-    BridgeId((u16, [u8; 6])),
+    RootId(BridgeId),
+    BridgeId(BridgeId),
     RootPort(u16),
     VlanDefaultPvid(u16),
     VlanFiltering(u8),
@@ -219,10 +211,8 @@ impl Nla for InfoBridge {
 
             Self::VlanProtocol(value) => BigEndian::write_u16(buffer, *value),
 
-            Self::RootId((priority, ref address))
-            | Self::BridgeId((priority, ref address)) => {
-                NativeEndian::write_u16(buffer, *priority);
-                buffer[2..].copy_from_slice(&address[..]);
+            Self::RootId(bridge_id) | Self::BridgeId(bridge_id) => {
+                bridge_id.emit(buffer)
             }
 
             Self::GroupAddr(value) => buffer.copy_from_slice(&value[..]),
@@ -423,25 +413,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                 parse_u16(payload)
                     .context("invalid IFLA_BR_GROUP_FWD_MASK value")?,
             ),
-            IFLA_BR_ROOT_ID | IFLA_BR_BRIDGE_ID => {
-                if payload.len() != 8 {
-                    return Err(
-                        "invalid IFLA_BR_ROOT_ID or IFLA_BR_BRIDGE_ID value"
-                            .into(),
-                    );
-                }
-
-                let priority = NativeEndian::read_u16(&payload[..2]);
-                let address = parse_mac(&payload[2..]).context(
-                    "invalid IFLA_BR_ROOT_ID or IFLA_BR_BRIDGE_ID value",
-                )?;
-
-                match buf.kind() {
-                    IFLA_BR_ROOT_ID => Self::RootId((priority, address)),
-                    IFLA_BR_BRIDGE_ID => Self::BridgeId((priority, address)),
-                    _ => unreachable!(),
-                }
-            }
+            IFLA_BR_ROOT_ID => Self::RootId(
+                BridgeId::parse(&BridgeIdBuffer::new(payload))
+                    .context("invalid IFLA_BR_ROOT_ID value")?,
+            ),
+            IFLA_BR_BRIDGE_ID => Self::BridgeId(
+                BridgeId::parse(&BridgeIdBuffer::new(payload))
+                    .context("invalid IFLA_BR_BRIDGE_ID value")?,
+            ),
             IFLA_BR_GROUP_ADDR => Self::GroupAddr(
                 parse_mac(payload)
                     .context("invalid IFLA_BR_GROUP_ADDR value")?,
@@ -535,6 +514,52 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
         })
     }
 }
+
+const BRIDGE_ID_LEN: usize = 8;
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct BridgeId {
+    pub priority: u16,
+    pub address: [u8; 6],
+}
+
+buffer!(BridgeIdBuffer(BRIDGE_ID_LEN) {
+    priority: (u16, 0..2),
+    address: (slice, 2..BRIDGE_ID_LEN)
+});
+
+impl<T: AsRef<[u8]> + ?Sized> Parseable<BridgeIdBuffer<&T>> for BridgeId {
+    fn parse(buf: &BridgeIdBuffer<&T>) -> Result<Self, DecodeError> {
+        // Priority is encoded in big endian. From kernel's
+        // net/bridge/br_netlink.c br_fill_info():
+        // u16 priority = (br->bridge_id.prio[0] << 8) | br->bridge_id.prio[1];
+        Ok(Self {
+            priority: u16::from_be(buf.priority()),
+            address: parse_mac(buf.address())
+                .context("invalid MAC address in BridgeId buffer")?,
+        })
+    }
+}
+
+impl Emitable for BridgeId {
+    fn buffer_len(&self) -> usize {
+        BRIDGE_ID_LEN
+    }
+
+    fn emit(&self, buffer: &mut [u8]) {
+        let mut buffer = BridgeIdBuffer::new(buffer);
+        buffer.set_priority(self.priority.to_be());
+        buffer.address_mut().copy_from_slice(&self.address[..]);
+    }
+}
+
+const BRIDGE_QUERIER_IP_ADDRESS: u16 = 1;
+const BRIDGE_QUERIER_IP_PORT: u16 = 2;
+const BRIDGE_QUERIER_IP_OTHER_TIMER: u16 = 3;
+// const BRIDGE_QUERIER_PAD: u16 = 4;
+const BRIDGE_QUERIER_IPV6_ADDRESS: u16 = 5;
+const BRIDGE_QUERIER_IPV6_PORT: u16 = 6;
+const BRIDGE_QUERIER_IPV6_OTHER_TIMER: u16 = 7;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+use crate::link::{BridgeId, BridgeIdBuffer};
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_mac, parse_u16, parse_u32, parse_u64, parse_u8},
-    traits::Parseable,
+    parsers::{parse_u16, parse_u32, parse_u64, parse_u8},
+    traits::{Emitable, Parseable},
     DecodeError,
 };
 
@@ -68,8 +69,8 @@ pub enum InfoBridgePort {
     UnicastFlood(bool),
     ProxyARP(bool),
     ProxyARPWifi(bool),
-    RootId((u16, [u8; 6])),
-    BridgeId((u16, [u8; 6])),
+    RootId(BridgeId),
+    BridgeId(BridgeId),
     DesignatedPort(u16),
     DesignatedCost(u16),
     PortId(u16),
@@ -199,11 +200,8 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::HoldTimer(value) => {
                 NativeEndian::write_u64(buffer, *value)
             }
-            InfoBridgePort::RootId((prio, addr))
-            | InfoBridgePort::BridgeId((prio, addr)) => {
-                NativeEndian::write_u16(buffer, *prio);
-                buffer[2..].copy_from_slice(&addr[..]);
-            }
+            InfoBridgePort::RootId(bridge_id)
+            | InfoBridgePort::BridgeId(bridge_id) => bridge_id.emit(buffer),
             InfoBridgePort::State(state) => buffer[0] = (*state).into(),
             InfoBridgePort::MulticastRouter(mcast_router) => {
                 buffer[0] = (*mcast_router).into()
@@ -339,32 +337,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     format!("invalid IFLA_BRPORT_PROXYARP_WIFI {payload:?}")
                 })? > 0,
             ),
-            IFLA_BRPORT_ROOT_ID => {
-                if payload.len() != 8 {
-                    return Err(format!(
-                        "invalid IFLA_BRPORT_ROOT_ID {payload:?}"
-                    )
-                    .into());
-                }
-                let prio = NativeEndian::read_u16(&payload[0..2]);
-                let addr = parse_mac(&payload[2..]).with_context(|| {
+            IFLA_BRPORT_ROOT_ID => Self::RootId(
+                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(|| {
                     format!("invalid IFLA_BRPORT_ROOT_ID {payload:?}")
-                })?;
-                InfoBridgePort::RootId((prio, addr))
-            }
-            IFLA_BRPORT_BRIDGE_ID => {
-                if payload.len() != 8 {
-                    return Err(format!(
-                        "invalid IFLA_BRPORT_BRIDGE_ID {payload:?}"
-                    )
-                    .into());
-                }
-                let prio = NativeEndian::read_u16(&payload[0..2]);
-                let addr = parse_mac(&payload[2..]).with_context(|| {
+                })?,
+            ),
+            IFLA_BRPORT_BRIDGE_ID => Self::BridgeId(
+                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(|| {
                     format!("invalid IFLA_BRPORT_BRIDGE_ID {payload:?}")
-                })?;
-                InfoBridgePort::BridgeId((prio, addr))
-            }
+                })?,
+            ),
             IFLA_BRPORT_DESIGNATED_PORT => InfoBridgePort::DesignatedPort(
                 parse_u16(payload).with_context(|| {
                     format!("invalid IFLA_BRPORT_DESIGNATED_PORT {payload:?}")

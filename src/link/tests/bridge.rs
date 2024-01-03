@@ -7,11 +7,12 @@ use netlink_packet_utils::{
 
 use crate::link::{
     af_spec::VecAfSpecBridge, AfSpecBridge, AfSpecInet, AfSpecInet6,
-    AfSpecUnspec, BridgePortMulticastRouter, BridgePortState, BridgeVlanInfo,
-    Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlag, Inet6IfaceFlags, InetDevConf,
-    InfoBridge, InfoBridgePort, InfoData, InfoKind, InfoPortData, InfoPortKind,
-    LinkAttribute, LinkFlag, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, LinkXdp, Map, State, Stats, Stats64, XdpAttached,
+    AfSpecUnspec, BridgeId, BridgePortMulticastRouter, BridgePortState,
+    BridgeVlanInfo, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlag,
+    Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
+    InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkFlag, LinkHeader,
+    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map,
+    State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -260,14 +261,14 @@ fn test_parse_link_bridge_no_extention_mask() {
                     InfoBridge::Priority(32768),
                     InfoBridge::VlanFiltering(0),
                     InfoBridge::GroupFwdMask(0),
-                    InfoBridge::BridgeId((
-                        0x0080, // iproute is showing it as 0x8000
-                        [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
-                    )),
-                    InfoBridge::RootId((
-                        0x0080, // iproute is showing it as 0x8000
-                        [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
-                    )),
+                    InfoBridge::BridgeId(BridgeId {
+                        priority: 0x8000,
+                        address: [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
+                    }),
+                    InfoBridge::RootId(BridgeId {
+                        priority: 0x8000,
+                        address: [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
+                    }),
                     InfoBridge::RootPort(0),
                     InfoBridge::RootPathCost(0),
                     InfoBridge::TopologyChange(0),
@@ -513,14 +514,14 @@ fn test_bridge_port_link_info() {
                 InfoBridgePort::BroadcastFlood(true),
                 InfoBridgePort::ProxyARP(false),
                 InfoBridgePort::ProxyARPWifi(false),
-                InfoBridgePort::RootId((
-                    0x0080,
-                    [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
-                )),
-                InfoBridgePort::BridgeId((
-                    0x0080,
-                    [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
-                )),
+                InfoBridgePort::RootId(BridgeId {
+                    priority: 0x8000,
+                    address: [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
+                }),
+                InfoBridgePort::BridgeId(BridgeId {
+                    priority: 0x8000,
+                    address: [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
+                }),
                 InfoBridgePort::DesignatedPort(32769),
                 InfoBridgePort::DesignatedCost(0),
                 InfoBridgePort::PortId(32769),
