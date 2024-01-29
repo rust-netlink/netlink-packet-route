@@ -6,7 +6,7 @@ use netlink_packet_utils::{
 };
 
 /// Queuing statistics
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub struct TcStatsQueue {
     /// queue length

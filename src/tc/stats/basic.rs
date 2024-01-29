@@ -6,7 +6,7 @@ use netlink_packet_utils::{
 };
 
 /// Byte/Packet throughput statistics
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub struct TcStatsBasic {
     /// number of seen bytes
