@@ -90,7 +90,7 @@ impl Emitable for TcFqCodelXstats {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub struct TcFqCodelQdStats {
     pub maxpacket: u32,
@@ -151,7 +151,7 @@ impl Emitable for TcFqCodelQdStats {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub struct TcFqCodelClStats {
     deficit: i32,

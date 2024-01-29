@@ -6,7 +6,7 @@ use netlink_packet_utils::{
 };
 
 /// Generic queue statistics
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub struct TcStats {
     /// Number of enqueued bytes
