@@ -94,7 +94,7 @@ pub enum InfoBridge {
     BridgeId(BridgeId),
     RootPort(u16),
     VlanDefaultPvid(u16),
-    VlanFiltering(u8),
+    VlanFiltering(bool),
     TopologyChange(u8),
     TopologyChangeDetected(u8),
     MulticastRouter(u8),
@@ -149,8 +149,8 @@ impl Nla for InfoBridge {
 
             Self::GroupAddr(_) => 6,
 
-            Self::VlanFiltering(_)
-            | Self::TopologyChange(_)
+            Self::VlanFiltering(_) => 1,
+            Self::TopologyChange(_)
             | Self::TopologyChangeDetected(_)
             | Self::MulticastRouter(_)
             | Self::MulticastSnooping(_)
@@ -217,8 +217,8 @@ impl Nla for InfoBridge {
 
             Self::GroupAddr(value) => buffer.copy_from_slice(&value[..]),
 
-            Self::VlanFiltering(value)
-            | Self::TopologyChange(value)
+            Self::VlanFiltering(value) => buffer[0] = (*value).into(),
+            Self::TopologyChange(value)
             | Self::TopologyChangeDetected(value)
             | Self::MulticastRouter(value)
             | Self::MulticastSnooping(value)
@@ -435,7 +435,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             ),
             IFLA_BR_VLAN_FILTERING => Self::VlanFiltering(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_VLAN_FILTERING value")?,
+                    .context("invalid IFLA_BR_VLAN_FILTERING value")?
+                    > 0,
             ),
             IFLA_BR_TOPOLOGY_CHANGE => Self::TopologyChange(
                 parse_u8(payload)

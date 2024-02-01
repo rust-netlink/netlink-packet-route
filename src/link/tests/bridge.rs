@@ -259,7 +259,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                     InfoBridge::AgeingTime(29999),
                     InfoBridge::StpState(0),
                     InfoBridge::Priority(32768),
-                    InfoBridge::VlanFiltering(0),
+                    InfoBridge::VlanFiltering(false),
                     InfoBridge::GroupFwdMask(0),
                     InfoBridge::BridgeId(BridgeId {
                         priority: 0x8000,
