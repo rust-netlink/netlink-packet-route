@@ -4,7 +4,7 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::{
     InfoData, InfoKind, InfoMacVlan, LinkAttribute, LinkFlag, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, MacVlanMode,
 };
 use crate::AddressFamily;
 
@@ -39,7 +39,7 @@ fn test_macvlan_link_info() {
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::MacVlan),
             LinkInfo::Data(InfoData::MacVlan(vec![
-                InfoMacVlan::Mode(16),
+                InfoMacVlan::Mode(MacVlanMode::Source),
                 InfoMacVlan::Flags(0),
                 InfoMacVlan::MacAddrCount(2),
                 InfoMacVlan::MacAddrData(vec![

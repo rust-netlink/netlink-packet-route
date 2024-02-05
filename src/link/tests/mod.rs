@@ -15,6 +15,8 @@ mod macsec;
 #[cfg(test)]
 mod macvlan;
 #[cfg(test)]
+mod macvtap;
+#[cfg(test)]
 mod message;
 #[cfg(test)]
 mod prop_list;

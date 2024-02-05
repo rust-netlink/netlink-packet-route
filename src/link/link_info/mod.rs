@@ -46,7 +46,7 @@ pub use self::info_port::{InfoPortData, InfoPortKind};
 pub use self::infos::{InfoKind, LinkInfo};
 pub use self::ipoib::InfoIpoib;
 pub use self::ipvlan::InfoIpVlan;
-pub use self::mac_vlan::{InfoMacVlan, InfoMacVtap};
+pub use self::mac_vlan::{InfoMacVlan, InfoMacVtap, MacVlanMode, MacVtapMode};
 pub use self::macsec::{
     InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate,
 };

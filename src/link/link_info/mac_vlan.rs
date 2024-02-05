@@ -22,7 +22,7 @@ const IFLA_MACVLAN_BC_CUTOFF: u16 = 9;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoMacVlan {
-    Mode(u32),
+    Mode(MacVlanMode),
     Flags(u16),
     MacAddrMode(u32),
     MacAddr([u8; 6]),
@@ -37,34 +37,38 @@ pub enum InfoMacVlan {
 
 impl Nla for InfoMacVlan {
     fn value_len(&self) -> usize {
-        use self::InfoMacVlan::*;
         match self {
-            Mode(_) => 4,
-            Flags(_) => 2,
-            MacAddrMode(_) => 4,
-            MacAddr(_) => 6,
-            MacAddrData(ref nlas) => nlas.as_slice().buffer_len(),
-            MacAddrCount(_) => 4,
-            BcQueueLen(_) => 4,
-            BcQueueLenUsed(_) => 4,
-            BcCutoff(_) => 4,
-            Other(nla) => nla.value_len(),
+            Self::Mode(_) => 4,
+            Self::Flags(_) => 2,
+            Self::MacAddrMode(_) => 4,
+            Self::MacAddr(_) => 6,
+            Self::MacAddrData(ref nlas) => nlas.as_slice().buffer_len(),
+            Self::MacAddrCount(_) => 4,
+            Self::BcQueueLen(_) => 4,
+            Self::BcQueueLenUsed(_) => 4,
+            Self::BcCutoff(_) => 4,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoMacVlan::*;
         match self {
-            Mode(value) => NativeEndian::write_u32(buffer, *value),
-            Flags(value) => NativeEndian::write_u16(buffer, *value),
-            MacAddrMode(value) => NativeEndian::write_u32(buffer, *value),
-            MacAddr(bytes) => buffer.copy_from_slice(bytes),
-            MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
-            MacAddrCount(value) => NativeEndian::write_u32(buffer, *value),
-            BcQueueLen(value) => NativeEndian::write_u32(buffer, *value),
-            BcQueueLenUsed(value) => NativeEndian::write_u32(buffer, *value),
-            BcCutoff(value) => NativeEndian::write_i32(buffer, *value),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Mode(value) => {
+                NativeEndian::write_u32(buffer, (*value).into())
+            }
+            Self::Flags(value) => NativeEndian::write_u16(buffer, *value),
+            Self::MacAddrMode(value) => NativeEndian::write_u32(buffer, *value),
+            Self::MacAddr(bytes) => buffer.copy_from_slice(bytes),
+            Self::MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
+            Self::MacAddrCount(value) => {
+                NativeEndian::write_u32(buffer, *value)
+            }
+            Self::BcQueueLen(value) => NativeEndian::write_u32(buffer, *value),
+            Self::BcQueueLenUsed(value) => {
+                NativeEndian::write_u32(buffer, *value)
+            }
+            Self::BcCutoff(value) => NativeEndian::write_i32(buffer, *value),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
@@ -92,7 +96,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
         Ok(match buf.kind() {
             IFLA_MACVLAN_MODE => Mode(
                 parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MODE value")?,
+                    .context("invalid IFLA_MACVLAN_MODE value")?
+                    .into(),
             ),
             IFLA_MACVLAN_FLAGS => Flags(
                 parse_u16(payload)
@@ -142,7 +147,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoMacVtap {
-    Mode(u32),
+    Mode(MacVtapMode),
     Flags(u16),
     MacAddrMode(u32),
     MacAddr([u8; 6]),
@@ -174,7 +179,7 @@ impl Nla for InfoMacVtap {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoMacVtap::*;
         match self {
-            Mode(value) => NativeEndian::write_u32(buffer, *value),
+            Mode(value) => NativeEndian::write_u32(buffer, (*value).into()),
             Flags(value) => NativeEndian::write_u16(buffer, *value),
             MacAddrMode(value) => NativeEndian::write_u32(buffer, *value),
             MacAddr(bytes) => buffer.copy_from_slice(bytes),
@@ -211,7 +216,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
         Ok(match buf.kind() {
             IFLA_MACVLAN_MODE => Mode(
                 parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MODE value")?,
+                    .context("invalid IFLA_MACVLAN_MODE value")?
+                    .into(),
             ),
             IFLA_MACVLAN_FLAGS => Flags(
                 parse_u16(payload)
@@ -255,5 +261,53 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
                 "unknown NLA type {kind} for IFLA_INFO_DATA(mac_vtap)"
             ))?),
         })
+    }
+}
+
+const MACVLAN_MODE_PRIVATE: u32 = 1;
+const MACVLAN_MODE_VEPA: u32 = 2;
+const MACVLAN_MODE_BRIDGE: u32 = 4;
+const MACVLAN_MODE_PASSTHRU: u32 = 8;
+const MACVLAN_MODE_SOURCE: u32 = 16;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum MacVlanMode {
+    Private,
+    Vepa,
+    Bridge,
+    Passthrough,
+    Source,
+    Other(u32),
+}
+
+pub type MacVtapMode = MacVlanMode;
+
+impl From<u32> for MacVlanMode {
+    fn from(d: u32) -> Self {
+        match d {
+            MACVLAN_MODE_PRIVATE => Self::Private,
+            MACVLAN_MODE_VEPA => Self::Vepa,
+            MACVLAN_MODE_BRIDGE => Self::Bridge,
+            MACVLAN_MODE_PASSTHRU => Self::Passthrough,
+            MACVLAN_MODE_SOURCE => Self::Source,
+            _ => {
+                log::warn!("Unknown MAC VLAN mode {}", d);
+                Self::Other(d)
+            }
+        }
+    }
+}
+
+impl From<MacVlanMode> for u32 {
+    fn from(v: MacVlanMode) -> u32 {
+        match v {
+            MacVlanMode::Private => MACVLAN_MODE_PRIVATE,
+            MacVlanMode::Vepa => MACVLAN_MODE_VEPA,
+            MacVlanMode::Bridge => MACVLAN_MODE_BRIDGE,
+            MacVlanMode::Passthrough => MACVLAN_MODE_PASSTHRU,
+            MacVlanMode::Source => MACVLAN_MODE_SOURCE,
+            MacVlanMode::Other(d) => d,
+        }
     }
 }
