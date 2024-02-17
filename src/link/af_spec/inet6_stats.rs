@@ -5,7 +5,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-const INET6_STATS_LEN: usize = 288;
+pub(crate) const INET6_STATS_LEN: usize = 288;
 
 buffer!(Inet6StatsBuffer(INET6_STATS_LEN) {
     num: (i64, 0..8),

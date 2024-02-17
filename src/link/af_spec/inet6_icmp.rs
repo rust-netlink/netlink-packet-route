@@ -5,7 +5,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-const ICMP6_STATS_LEN: usize = 48;
+pub(crate) const ICMP6_STATS_LEN: usize = 48;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 #[non_exhaustive]

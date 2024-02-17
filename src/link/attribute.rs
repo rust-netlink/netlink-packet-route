@@ -570,9 +570,15 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context(format!("Invalid IFLA_MAP value {:?}", payload))?,
             ),
             IFLA_STATS => Self::Stats(
-                super::Stats::parse(&StatsBuffer::new(payload)).context(
-                    format!("Invalid IFLA_STATS value {:?}", payload),
-                )?,
+                super::Stats::parse(&StatsBuffer::new(
+                    expand_buffer_if_small(
+                        payload,
+                        LINK_STATS_LEN,
+                        "IFLA_STATS",
+                    )
+                    .as_slice(),
+                ))
+                .context(format!("Invalid IFLA_STATS value {:?}", payload))?,
             ),
             IFLA_STATS64 => {
                 let payload = expand_buffer_if_small(

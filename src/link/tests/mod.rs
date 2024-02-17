@@ -23,6 +23,8 @@ mod prop_list;
 #[cfg(test)]
 mod sriov;
 #[cfg(test)]
+mod statistics;
+#[cfg(test)]
 mod veth;
 #[cfg(test)]
 mod vlan;
@@ -36,4 +38,3 @@ mod xdp;
 mod xfrm;
 
 //TODO(Gris Ge): capture netlink message for ipoib
-//TODO(Gris Ge): need test for Icmp6Stats and Inet6Stats
