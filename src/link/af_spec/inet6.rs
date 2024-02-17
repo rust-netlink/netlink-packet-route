@@ -16,7 +16,10 @@ use super::super::{
     Inet6CacheInfo, Inet6CacheInfoBuffer, Inet6DevConf, Inet6DevConfBuffer,
     Inet6IfaceFlags, Inet6Stats, Inet6StatsBuffer,
 };
-use super::inet6_devconf::LINK_INET6_DEV_CONF_LEN;
+use super::{
+    inet6_devconf::LINK_INET6_DEV_CONF_LEN, inet6_icmp::ICMP6_STATS_LEN,
+    inet6_stats::INET6_STATS_LEN,
+};
 use crate::ip::parse_ipv6_addr;
 
 const IFLA_INET6_FLAGS: u16 = 1;
@@ -140,13 +143,27 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                 ))?,
             ),
             IFLA_INET6_STATS => Stats(
-                Inet6Stats::parse(&Inet6StatsBuffer::new(payload)).context(
-                    format!("invalid IFLA_INET6_STATS value {:?}", payload),
-                )?,
+                Inet6Stats::parse(&Inet6StatsBuffer::new(
+                    expand_buffer_if_small(
+                        payload,
+                        INET6_STATS_LEN,
+                        "IFLA_INET6_STATS",
+                    )
+                    .as_slice(),
+                ))
+                .context(format!(
+                    "invalid IFLA_INET6_STATS value {:?}",
+                    payload
+                ))?,
             ),
             IFLA_INET6_ICMP6STATS => Icmp6Stats(
                 super::super::Icmp6Stats::parse(&Icmp6StatsBuffer::new(
-                    payload,
+                    expand_buffer_if_small(
+                        payload,
+                        ICMP6_STATS_LEN,
+                        "IFLA_INET6_ICMP6STATS",
+                    )
+                    .as_slice(),
                 ))
                 .context(format!(
                     "invalid IFLA_INET6_ICMP6STATS value {:?}",
