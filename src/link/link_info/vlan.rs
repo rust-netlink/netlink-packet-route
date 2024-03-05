@@ -113,10 +113,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         use VlanQosMapping::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VLAN_QOS_MAPPING => Mapping(
-                parse_u32(&payload[..4]).context("expected u32 from value")?,
-                parse_u32(&payload[4..]).context("expected u32 to value")?,
-            ),
+            IFLA_VLAN_QOS_MAPPING => {
+                if payload.len() != 8 {
+                    return Err("invalid IFLA_VLAN_QOS_MAPPING value".into());
+                }
+                Mapping(
+                    parse_u32(&payload[..4])
+                        .context("expected u32 from value")?,
+                    parse_u32(&payload[4..])
+                        .context("expected u32 to value")?,
+                )
+            }
             kind => Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for VLAN QoS mapping"
             ))?),

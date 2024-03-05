@@ -6,7 +6,7 @@ use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_i32, parse_u32},
+    parsers::{parse_i32, parse_u32, parse_u8},
     DecodeError, Parseable,
 };
 
@@ -98,10 +98,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkXdp {
             IFLA_XDP_FD => Self::Fd(
                 parse_i32(payload).context("invalid IFLA_XDP_FD value")?,
             ),
-            IFLA_XDP_ATTACHED => Self::Attached(
-                XdpAttached::try_from(payload[0])
-                    .context("invalid IFLA_XDP_ATTACHED value")?,
-            ),
+            IFLA_XDP_ATTACHED => {
+                let err = "invalid IFLA_XDP_ATTACHED value";
+                let value = parse_u8(payload).context(err)?;
+                Self::Attached(XdpAttached::try_from(value).context(err)?)
+            }
             IFLA_XDP_FLAGS => Self::Flags(
                 parse_u32(payload).context("invalid IFLA_XDP_FLAGS value")?,
             ),
