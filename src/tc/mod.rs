@@ -18,7 +18,7 @@ pub use self::actions::{
 pub use self::attribute::TcAttribute;
 pub use self::filters::{
     TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
-    TcU32Key, TcU32OptionFlag, TcU32Selector, TcU32SelectorFlag,
+    TcU32Key, TcU32Selector, TcU32SelectorFlag,
 };
 pub use self::header::{TcHandle, TcHeader, TcMessageBuffer};
 pub use self::message::TcMessage;

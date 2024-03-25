@@ -70,64 +70,15 @@ const TCA_CLS_FLAGS_IN_HW: u32 = 1 << 2;
 const TCA_CLS_FLAGS_NOT_IN_HW: u32 = 1 << 3;
 const TCA_CLS_FLAGS_VERBOSE: u32 = 1 << 4;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[non_exhaustive]
-pub enum TcU32OptionFlag {
-    SkipHw,
-    SkipSw,
-    InHw,
-    NotInHw,
-    Verbose,
-    Other(u32),
-}
-
-impl From<TcU32OptionFlag> for u32 {
-    fn from(v: TcU32OptionFlag) -> u32 {
-        match v {
-            TcU32OptionFlag::SkipHw => TCA_CLS_FLAGS_SKIP_HW,
-            TcU32OptionFlag::SkipSw => TCA_CLS_FLAGS_SKIP_SW,
-            TcU32OptionFlag::InHw => TCA_CLS_FLAGS_IN_HW,
-            TcU32OptionFlag::NotInHw => TCA_CLS_FLAGS_NOT_IN_HW,
-            TcU32OptionFlag::Verbose => TCA_CLS_FLAGS_VERBOSE,
-            TcU32OptionFlag::Other(i) => i,
-        }
-    }
-}
-
-const ALL_OPTION_FLAGS: [TcU32OptionFlag; 5] = [
-    TcU32OptionFlag::SkipHw,
-    TcU32OptionFlag::SkipSw,
-    TcU32OptionFlag::InHw,
-    TcU32OptionFlag::NotInHw,
-    TcU32OptionFlag::Verbose,
-];
-
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub(crate) struct VecTcU32OptionFlag(pub(crate) Vec<TcU32OptionFlag>);
-
-impl From<u32> for VecTcU32OptionFlag {
-    fn from(d: u32) -> Self {
-        let mut got: u32 = 0;
-        let mut ret = Vec::new();
-        for flag in ALL_OPTION_FLAGS {
-            if (d & (u32::from(flag))) > 0 {
-                ret.push(flag);
-                got += u32::from(flag);
-            }
-        }
-        if got != d {
-            ret.push(TcU32OptionFlag::Other(d - got));
-        }
-        Self(ret)
-    }
-}
-
-impl From<&VecTcU32OptionFlag> for u32 {
-    fn from(v: &VecTcU32OptionFlag) -> u32 {
-        let mut d: u32 = 0;
-        for flag in &v.0 {
-            d += u32::from(*flag);
-        }
-        d
+bitflags! {
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    #[non_exhaustive]
+    pub struct TcU32OptionFlags: u32 {
+        const SkipHw = TCA_CLS_FLAGS_SKIP_HW;
+        const SkipSw = TCA_CLS_FLAGS_SKIP_SW;
+        const InHw = TCA_CLS_FLAGS_IN_HW;
+        const NotInHw = TCA_CLS_FLAGS_NOT_IN_HW;
+        const Verbose = TCA_CLS_FLAGS_VERBOSE;
+        const _ = !0;
     }
 }

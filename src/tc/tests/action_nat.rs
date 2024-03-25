@@ -6,11 +6,11 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::{
     tc::{
-        TcAction, TcActionAttribute, TcActionGeneric, TcActionNatOption,
-        TcActionOption, TcActionType, TcAttribute, TcFilterU32Option, TcHandle,
-        TcHeader, TcMessage, TcMessageBuffer, TcNat, TcOption, TcStats2,
-        TcStatsBasic, TcStatsQueue, TcU32Key, TcU32OptionFlag, TcU32Selector,
-        TcU32SelectorFlag,
+        filters::u32_flags::TcU32OptionFlags, TcAction, TcActionAttribute,
+        TcActionGeneric, TcActionNatOption, TcActionOption, TcActionType,
+        TcAttribute, TcFilterU32Option, TcHandle, TcHeader, TcMessage,
+        TcMessageBuffer, TcNat, TcOption, TcStats2, TcStatsBasic, TcStatsQueue,
+        TcU32Key, TcU32Selector, TcU32SelectorFlag,
     },
     AddressFamily,
 };
@@ -94,9 +94,9 @@ fn test_get_filter_nat() {
                     }],
                 })),
                 TcOption::U32(TcFilterU32Option::Hash(u32::from_be(0x80))),
-                TcOption::U32(TcFilterU32Option::Flags(vec![
-                    TcU32OptionFlag::NotInHw,
-                ])),
+                TcOption::U32(TcFilterU32Option::Flags(
+                    TcU32OptionFlags::NotInHw,
+                )),
                 TcOption::U32(TcFilterU32Option::Action(vec![TcAction {
                     tab: 1,
                     attributes: vec![
