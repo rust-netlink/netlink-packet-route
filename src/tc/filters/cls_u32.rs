@@ -16,8 +16,8 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::u32_flags::{TcU32OptionFlags, VecTcU32SelectorFlag};
-use crate::tc::{TcAction, TcHandle, TcU32SelectorFlag};
+use super::u32_flags::{TcU32OptionFlags, TcU32SelectorFlags};
+use crate::tc::{TcAction, TcHandle};
 
 const TC_U32_SEL_BUF_LEN: usize = 16;
 const TC_U32_KEY_BUF_LEN: usize = 16;
@@ -166,7 +166,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct TcU32Selector {
-    pub flags: Vec<TcU32SelectorFlag>,
+    pub flags: TcU32SelectorFlags,
     pub offshift: u8,
     pub nkeys: u8,
     pub offmask: u16,
@@ -197,7 +197,7 @@ impl Emitable for TcU32Selector {
 
     fn emit(&self, buffer: &mut [u8]) {
         let mut packet = TcU32SelectorBuffer::new(buffer);
-        packet.set_flags(u8::from(&VecTcU32SelectorFlag(self.flags.to_vec())));
+        packet.set_flags(self.flags.bits());
         packet.set_offshift(self.offshift);
         packet.set_offmask(self.offmask);
         packet.set_off(self.off);
@@ -236,7 +236,7 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<TcU32SelectorBuffer<&T>>
         }
 
         Ok(Self {
-            flags: VecTcU32SelectorFlag::from(buf.flags()).0,
+            flags: TcU32SelectorFlags::from_bits_retain(buf.flags()),
             offshift: buf.offshift(),
             nkeys,
             offmask: buf.offmask(),
