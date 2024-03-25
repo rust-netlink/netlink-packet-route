@@ -9,8 +9,8 @@ use crate::{
         filters::{TcU32OptionFlags, TcU32SelectorFlags},
         TcAction, TcActionAttribute, TcActionGeneric, TcActionNatOption,
         TcActionOption, TcActionType, TcAttribute, TcFilterU32Option, TcHandle,
-        TcHeader, TcMessage, TcMessageBuffer, TcNat, TcOption, TcStats2,
-        TcStatsBasic, TcStatsQueue, TcU32Key, TcU32Selector,
+        TcHeader, TcMessage, TcMessageBuffer, TcNat, TcNatFlags, TcOption,
+        TcStats2, TcStatsBasic, TcStatsQueue, TcU32Key, TcU32Selector,
     },
     AddressFamily,
 };
@@ -132,7 +132,7 @@ fn test_get_filter_nat() {
                                     old_addr: Ipv4Addr::new(192, 0, 2, 2),
                                     new_addr: Ipv4Addr::new(203, 0, 113, 1),
                                     mask: Ipv4Addr::new(255, 255, 255, 255),
-                                    flags: vec![],
+                                    flags: TcNatFlags::empty(),
                                 },
                             )),
                             TcActionOption::Nat(TcActionNatOption::Tm(vec![
