@@ -2,8 +2,9 @@
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    InfoData, InfoKind, InfoVrf, LinkAttribute, LinkFlag, LinkHeader, LinkInfo,
+    InfoData, InfoKind, InfoVrf, LinkAttribute, LinkHeader, LinkInfo,
     LinkLayerType, LinkMessage, LinkMessageBuffer,
 };
 use crate::AddressFamily;
@@ -22,14 +23,12 @@ fn test_parsing_link_vrf() {
             interface_family: AddressFamily::Unspec,
             index: 34,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![
-                LinkFlag::Controller,
-                LinkFlag::LowerUp,
-                LinkFlag::Noarp,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::Controller
+                | LinkFlags::LowerUp
+                | LinkFlags::Noarp
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Vrf),

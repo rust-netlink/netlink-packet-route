@@ -5,8 +5,9 @@ use std::str::FromStr;
 
 use netlink_packet_utils::traits::{Emitable, Parseable};
 
+use crate::route::flags::RouteFlags;
 use crate::route::{
-    RouteAttribute, RouteCacheInfo, RouteFlag, RouteHeader, RouteMessage,
+    RouteAttribute, RouteCacheInfo, RouteHeader, RouteMessage,
     RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
 };
 use crate::AddressFamily;
@@ -36,12 +37,10 @@ fn test_ipv4_route_uid() {
             protocol: RouteProtocol::Unspec,
             scope: RouteScope::Universe,
             kind: RouteType::Local,
-            flags: vec![
-                RouteFlag::Cloned,
+            flags: RouteFlags::Cloned |
                 // TODO(Gris Ge): Waiting reply from kernel team for this
                 // value.
-                RouteFlag::Other(0x80000000),
-            ],
+                RouteFlags::from_bits_retain(0x80000000),
         },
         attributes: vec![
             RouteAttribute::Table(254),

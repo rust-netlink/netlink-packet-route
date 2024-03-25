@@ -5,9 +5,10 @@ use std::str::FromStr;
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::neighbour::flags::NeighbourFlags;
 use crate::{
     neighbour::{
-        NeighbourAttribute, NeighbourCacheInfo, NeighbourFlag, NeighbourHeader,
+        NeighbourAttribute, NeighbourCacheInfo, NeighbourHeader,
         NeighbourMessage, NeighbourMessageBuffer, NeighbourState,
     },
     route::{RouteProtocol, RouteType},
@@ -31,7 +32,7 @@ fn test_ipv4_neighbour_show() {
             family: AddressFamily::Inet,
             ifindex: 3,
             state: NeighbourState::Reachable,
-            flags: vec![],
+            flags: NeighbourFlags::empty(),
             kind: RouteType::Unicast,
         },
         attributes: vec![
@@ -81,7 +82,7 @@ fn test_ipv6_neighbour_show() {
             family: AddressFamily::Inet6,
             ifindex: 3,
             state: NeighbourState::Stale,
-            flags: vec![NeighbourFlag::Router],
+            flags: NeighbourFlags::Router,
             kind: RouteType::Unicast,
         },
         attributes: vec![
@@ -136,7 +137,7 @@ fn test_ipv4_neighbour_protocol_show() {
             family: AddressFamily::Inet,
             ifindex: 3,
             state: NeighbourState::Permanent,
-            flags: vec![],
+            flags: NeighbourFlags::empty(),
             kind: RouteType::Unicast,
         },
         attributes: vec![

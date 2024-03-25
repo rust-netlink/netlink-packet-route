@@ -16,8 +16,8 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::u32_flags::{VecTcU32OptionFlag, VecTcU32SelectorFlag};
-use crate::tc::{TcAction, TcHandle, TcU32OptionFlag, TcU32SelectorFlag};
+use super::u32_flags::{TcU32OptionFlags, TcU32SelectorFlags};
+use crate::tc::{TcAction, TcHandle};
 
 const TC_U32_SEL_BUF_LEN: usize = 16;
 const TC_U32_KEY_BUF_LEN: usize = 16;
@@ -55,7 +55,7 @@ pub enum TcFilterU32Option {
     Indev(Vec<u8>),
     Pnct(Vec<u8>),
     Mark(Vec<u8>),
-    Flags(Vec<TcU32OptionFlag>),
+    Flags(TcU32OptionFlags),
     Other(DefaultNla),
 }
 
@@ -86,10 +86,7 @@ impl Nla for TcFilterU32Option {
             Self::Hash(i) | Self::Link(i) | Self::Divisor(i) => {
                 NativeEndian::write_u32(buffer, *i)
             }
-            Self::Flags(v) => NativeEndian::write_u32(
-                buffer,
-                u32::from(&VecTcU32OptionFlag(v.to_vec())),
-            ),
+            Self::Flags(f) => NativeEndian::write_u32(buffer, f.bits()),
             Self::ClassId(i) => NativeEndian::write_u32(buffer, (*i).into()),
             Self::Selector(s) => s.emit(buffer),
             Self::Action(acts) => acts.as_slice().emit(buffer),
@@ -156,13 +153,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             TCA_U32_INDEV => Self::Indev(payload.to_vec()),
             TCA_U32_PCNT => Self::Pnct(payload.to_vec()),
             TCA_U32_MARK => Self::Mark(payload.to_vec()),
-            TCA_U32_FLAGS => Self::Flags(
-                VecTcU32OptionFlag::from(
-                    parse_u32(payload)
-                        .context("failed to parse TCA_U32_FLAGS")?,
-                )
-                .0,
-            ),
+            TCA_U32_FLAGS => Self::Flags(TcU32OptionFlags::from_bits_retain(
+                parse_u32(payload).context("failed to parse TCA_U32_FLAGS")?,
+            )),
             _ => Self::Other(
                 DefaultNla::parse(buf).context("failed to parse u32 nla")?,
             ),
@@ -173,7 +166,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct TcU32Selector {
-    pub flags: Vec<TcU32SelectorFlag>,
+    pub flags: TcU32SelectorFlags,
     pub offshift: u8,
     pub nkeys: u8,
     pub offmask: u16,
@@ -204,7 +197,7 @@ impl Emitable for TcU32Selector {
 
     fn emit(&self, buffer: &mut [u8]) {
         let mut packet = TcU32SelectorBuffer::new(buffer);
-        packet.set_flags(u8::from(&VecTcU32SelectorFlag(self.flags.to_vec())));
+        packet.set_flags(self.flags.bits());
         packet.set_offshift(self.offshift);
         packet.set_offmask(self.offmask);
         packet.set_off(self.off);
@@ -243,7 +236,7 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<TcU32SelectorBuffer<&T>>
         }
 
         Ok(Self {
-            flags: VecTcU32SelectorFlag::from(buf.flags()).0,
+            flags: TcU32SelectorFlags::from_bits_retain(buf.flags()),
             offshift: buf.offshift(),
             nkeys,
             offmask: buf.offmask(),

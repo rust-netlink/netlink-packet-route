@@ -11,7 +11,7 @@ use netlink_packet_utils::{
     DecodeError, Emitable, Parseable,
 };
 
-use crate::address::{AddressFlag, AddressFlags, CacheInfo, CacheInfoBuffer};
+use crate::address::{AddressFlags, CacheInfo, CacheInfoBuffer};
 
 const IFA_ADDRESS: u16 = 1;
 const IFA_LOCAL: u16 = 2;
@@ -44,7 +44,7 @@ pub enum AddressAttribute {
     CacheInfo(CacheInfo),
     /// IPv6 only
     Multicast(Ipv6Addr),
-    Flags(Vec<AddressFlag>),
+    Flags(AddressFlags),
     Other(DefaultNla),
 }
 
@@ -84,10 +84,9 @@ impl Nla for AddressAttribute {
                 buffer[..string.len()].copy_from_slice(string.as_bytes());
                 buffer[string.len()] = 0;
             }
-            Self::Flags(ref value) => NativeEndian::write_u32(
-                buffer,
-                u32::from(&AddressFlags(value.to_vec())),
-            ),
+            Self::Flags(ref value) => {
+                NativeEndian::write_u32(buffer, value.bits())
+            }
             Self::CacheInfo(ref attr) => attr.emit(buffer),
             Self::Other(ref attr) => attr.emit_value(buffer),
         }
@@ -194,12 +193,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     )));
                 }
             }
-            IFA_FLAGS => Self::Flags(
-                AddressFlags::from(
-                    parse_u32(payload).context("invalid IFA_FLAGS value")?,
-                )
-                .0,
-            ),
+            IFA_FLAGS => Self::Flags(AddressFlags::from_bits_retain(
+                parse_u32(payload).context("invalid IFA_FLAGS value")?,
+            )),
             kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,

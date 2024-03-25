@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use netlink_packet_utils::traits::{Emitable, Parseable};
 
+use crate::route::flags::RouteFlags;
 use crate::route::{
     MplsLabel, RouteAddress, RouteAttribute, RouteCacheInfo, RouteHeader,
     RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage, RouteMessageBuffer,
@@ -44,7 +45,7 @@ fn test_mpls_route_to_ipv4() {
             protocol: RouteProtocol::Boot,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Table(254),
@@ -119,7 +120,7 @@ fn test_ipv6_to_mpls_route() {
             protocol: RouteProtocol::Boot,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Table(254),
@@ -195,7 +196,7 @@ fn test_mpls_route_to_ipv6() {
             protocol: RouteProtocol::Boot,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Destination(RouteAddress::Mpls(MplsLabel {
@@ -252,7 +253,7 @@ fn test_mpls_route_relable_new_dst() {
             protocol: RouteProtocol::Boot,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Destination(RouteAddress::Mpls(MplsLabel {
@@ -317,7 +318,7 @@ fn test_mpls_ttl_propagate() {
             protocol: RouteProtocol::Boot,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Destination(RouteAddress::Mpls(MplsLabel {

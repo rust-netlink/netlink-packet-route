@@ -16,7 +16,7 @@ pub use self::inet6::AfSpecInet6;
 pub use self::inet6_cache::{Inet6CacheInfo, Inet6CacheInfoBuffer};
 pub use self::inet6_devconf::{Inet6DevConf, Inet6DevConfBuffer};
 pub use self::inet6_icmp::{Icmp6Stats, Icmp6StatsBuffer};
-pub use self::inet6_iface_flag::{Inet6IfaceFlag, Inet6IfaceFlags};
+pub use self::inet6_iface_flag::Inet6IfaceFlags;
 pub use self::inet6_stats::{Inet6Stats, Inet6StatsBuffer};
 pub use self::unspec::AfSpecUnspec;
 

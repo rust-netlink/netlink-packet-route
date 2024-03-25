@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::rule::flags::RuleFlags;
 use crate::{
     route::RouteProtocol,
     rule::{
@@ -35,7 +36,7 @@ fn test_ipv4_src_dst_blackhole() {
             tos: 0,
             table: 0,
             action: RuleAction::Blackhole,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(0),
@@ -88,7 +89,7 @@ fn test_ipv6_src_dst_goto() {
             tos: 0,
             table: 0,
             action: RuleAction::Goto,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(0),

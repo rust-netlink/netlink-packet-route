@@ -3,7 +3,7 @@
 mod action;
 mod mirror;
 mod nat;
-pub(crate) mod nat_flag;
+mod nat_flag;
 
 pub use self::action::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
@@ -14,4 +14,4 @@ pub use self::mirror::{
     TcMirrorBuffer,
 };
 pub use self::nat::{TcActionNat, TcActionNatOption, TcNat, TcNatBuffer};
-pub use self::nat_flag::TcNatFlag;
+pub use nat_flag::TcNatFlags;

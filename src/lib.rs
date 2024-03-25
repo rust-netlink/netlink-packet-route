@@ -70,3 +70,6 @@ extern crate netlink_packet_utils;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
+
+#[macro_use]
+extern crate bitflags;

@@ -6,7 +6,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{super::AddressFamily, flags::VecRuleFlag, RuleAction, RuleFlag};
+use super::{super::AddressFamily, flags::RuleFlags, RuleAction};
 
 const RULE_HEADER_LEN: usize = 12;
 
@@ -40,7 +40,7 @@ pub struct RuleHeader {
     pub tos: u8,
     pub table: u8,
     pub action: RuleAction,
-    pub flags: Vec<RuleFlag>,
+    pub flags: RuleFlags,
 }
 
 impl Emitable for RuleHeader {
@@ -56,7 +56,7 @@ impl Emitable for RuleHeader {
         packet.set_table(self.table);
         packet.set_tos(self.tos);
         packet.set_action(self.action.into());
-        packet.set_flags(u32::from(&VecRuleFlag(self.flags.to_vec())));
+        packet.set_flags(self.flags.bits());
     }
 }
 
@@ -71,7 +71,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RuleMessageBuffer<&'a T>>
             tos: buf.tos(),
             table: buf.table(),
             action: buf.action().into(),
-            flags: VecRuleFlag::from(buf.flags()).0,
+            flags: RuleFlags::from_bits_retain(buf.flags()),
         })
     }
 }

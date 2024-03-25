@@ -2,9 +2,10 @@
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    InfoData, InfoIpVlan, InfoKind, LinkAttribute, LinkFlag, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    InfoData, InfoIpVlan, InfoKind, LinkAttribute, LinkHeader, LinkInfo,
+    LinkLayerType, LinkMessage, LinkMessageBuffer,
 };
 use crate::AddressFamily;
 
@@ -23,8 +24,8 @@ fn test_ipvlan_link_info() {
             interface_family: AddressFamily::Unspec,
             index: 18,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![LinkFlag::Broadcast, LinkFlag::Multicast],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast | LinkFlags::Multicast,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::IpVlan),

@@ -4,8 +4,8 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::{
     neighbour::{
-        NeighbourAttribute, NeighbourFlag, NeighbourHeader, NeighbourMessage,
-        NeighbourMessageBuffer, NeighbourState,
+        flags::NeighbourFlags, NeighbourAttribute, NeighbourHeader,
+        NeighbourMessage, NeighbourMessageBuffer, NeighbourState,
     },
     route::RouteType,
     AddressFamily,
@@ -25,7 +25,7 @@ fn test_bridge_neighbour_show() {
             family: AddressFamily::Bridge,
             ifindex: 3,
             state: NeighbourState::Permanent,
-            flags: vec![NeighbourFlag::Own],
+            flags: NeighbourFlags::Own,
             kind: RouteType::Unspec,
         },
         attributes: vec![NeighbourAttribute::LinkLocalAddress(vec![

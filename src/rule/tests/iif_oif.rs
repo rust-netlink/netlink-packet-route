@@ -8,7 +8,8 @@ use netlink_packet_utils::{Emitable, Parseable};
 use crate::{
     route::RouteProtocol,
     rule::{
-        RuleAction, RuleAttribute, RuleHeader, RuleMessage, RuleMessageBuffer,
+        flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
+        RuleMessageBuffer,
     },
     AddressFamily, IpProtocol,
 };
@@ -38,7 +39,7 @@ fn test_ipv4_iif_oif_prohibit() {
             tos: 0,
             table: 0,
             action: RuleAction::Prohibit,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(0),
@@ -91,7 +92,7 @@ fn test_ipv6_iif_oif_ipproto() {
             tos: 0,
             table: 252,
             action: RuleAction::ToTable,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(500),

@@ -7,7 +7,7 @@ use netlink_packet_utils::{
 
 use crate::link::{
     af_spec::VecAfSpecUnspec, AfSpecInet, AfSpecInet6, AfSpecUnspec,
-    Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlag, Inet6IfaceFlags, InetDevConf,
+    Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf,
 };
 
 #[test]
@@ -111,7 +111,7 @@ fn test_link_loopback() {
             arp_evict_nocarrier: 1,
         })]),
         AfSpecUnspec::Inet6(vec![
-            AfSpecInet6::Flags(Inet6IfaceFlags(vec![Inet6IfaceFlag::Ready])),
+            AfSpecInet6::Flags(Inet6IfaceFlags::Ready),
             AfSpecInet6::CacheInfo(Inet6CacheInfo {
                 max_reasm_len: 65535,
                 tstamp: 178,

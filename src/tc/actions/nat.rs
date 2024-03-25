@@ -11,9 +11,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{
-    nat_flag::VecTcNatFlag, TcActionGeneric, TcActionGenericBuffer, TcNatFlag,
-};
+use super::{nat_flag::TcNatFlags, TcActionGeneric, TcActionGenericBuffer};
 
 const TCA_NAT_PARMS: u16 = 1;
 const TCA_NAT_TM: u16 = 2;
@@ -83,7 +81,7 @@ pub struct TcNat {
     pub old_addr: Ipv4Addr,
     pub new_addr: Ipv4Addr,
     pub mask: Ipv4Addr,
-    pub flags: Vec<TcNatFlag>,
+    pub flags: TcNatFlags,
 }
 
 impl Default for TcNat {
@@ -93,7 +91,7 @@ impl Default for TcNat {
             old_addr: Ipv4Addr::UNSPECIFIED,
             new_addr: Ipv4Addr::UNSPECIFIED,
             mask: Ipv4Addr::UNSPECIFIED,
-            flags: vec![],
+            flags: TcNatFlags::empty(),
         }
     }
 }
@@ -121,7 +119,7 @@ impl Emitable for TcNat {
             .new_addr_mut()
             .copy_from_slice(&self.new_addr.octets());
         packet.mask_mut().copy_from_slice(&self.mask.octets());
-        packet.set_flags(u32::from(&VecTcNatFlag(self.flags.to_vec())));
+        packet.set_flags(self.flags.bits());
     }
 }
 
@@ -134,7 +132,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&'a T>> for TcNat {
             old_addr: parse_ipv4(buf.old_addr())?,
             new_addr: parse_ipv4(buf.new_addr())?,
             mask: parse_ipv4(buf.mask())?,
-            flags: VecTcNatFlag::from(buf.flags()).0,
+            flags: TcNatFlags::from_bits_retain(buf.flags()),
         })
     }
 }

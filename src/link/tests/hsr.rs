@@ -2,9 +2,10 @@
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    HsrProtocol, InfoData, InfoHsr, InfoKind, LinkAttribute, LinkFlag,
-    LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    HsrProtocol, InfoData, InfoHsr, InfoKind, LinkAttribute, LinkHeader,
+    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
 };
 use crate::AddressFamily;
 
@@ -25,14 +26,12 @@ fn test_parsing_link_hsr() {
             interface_family: AddressFamily::Unspec,
             index: 45,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![
-                LinkFlag::Broadcast,
-                LinkFlag::LowerUp,
-                LinkFlag::Multicast,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast
+                | LinkFlags::LowerUp
+                | LinkFlags::Multicast
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Hsr),

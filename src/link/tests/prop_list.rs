@@ -2,9 +2,10 @@
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    LinkAttribute, LinkFlag, LinkHeader, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, Prop,
+    LinkAttribute, LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    Prop,
 };
 use crate::AddressFamily;
 
@@ -24,14 +25,12 @@ fn test_wlan0_with_prop_altname() {
             interface_family: AddressFamily::Unspec,
             index: 2,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![
-                LinkFlag::Broadcast,
-                LinkFlag::LowerUp,
-                LinkFlag::Multicast,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast
+                | LinkFlags::LowerUp
+                | LinkFlags::Multicast
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![LinkAttribute::PropList(vec![
             Prop::AltIfName("wlp0s20f3".to_string()),

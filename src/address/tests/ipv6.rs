@@ -5,7 +5,7 @@ use std::net::{IpAddr, Ipv6Addr};
 use netlink_packet_utils::{nla::NlaBuffer, Emitable, Parseable};
 
 use crate::address::{
-    AddressAttribute, AddressFlag, AddressHeader, AddressHeaderFlag,
+    AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
     AddressMessage, AddressMessageBuffer, AddressScope, CacheInfo,
 };
 use crate::AddressFamily;
@@ -14,10 +14,9 @@ use crate::AddressFamily;
 
 #[test]
 fn test_addr_flag_stable_privacy() {
-    let nla = AddressAttribute::Flags(vec![
-        AddressFlag::Permanent,
-        AddressFlag::StablePrivacy,
-    ]);
+    let nla = AddressAttribute::Flags(
+        AddressFlags::Permanent | AddressFlags::StablePrivacy,
+    );
 
     let raw: [u8; 8] = [
         0x08, 0x00, // length 8
@@ -50,7 +49,7 @@ fn test_get_loopback_ipv6_addr() {
         header: AddressHeader {
             family: AddressFamily::Inet6,
             prefix_len: 128,
-            flags: vec![AddressHeaderFlag::Permanent],
+            flags: AddressHeaderFlags::Permanent,
             scope: AddressScope::Host,
             index: 1,
         },
@@ -62,10 +61,9 @@ fn test_get_loopback_ipv6_addr() {
                 cstamp: 142,
                 tstamp: 142,
             }),
-            AddressAttribute::Flags(vec![
-                AddressFlag::Permanent,
-                AddressFlag::Noprefixroute,
-            ]),
+            AddressAttribute::Flags(
+                AddressFlags::Permanent | AddressFlags::Noprefixroute,
+            ),
         ],
     };
 

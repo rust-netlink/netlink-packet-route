@@ -5,8 +5,9 @@ use std::str::FromStr;
 
 use netlink_packet_utils::traits::{Emitable, Parseable};
 
+use crate::route::flags::RouteFlags;
 use crate::route::{
-    RouteAttribute, RouteFlag, RouteHeader, RouteMessage, RouteMessageBuffer,
+    RouteAttribute, RouteHeader, RouteMessage, RouteMessageBuffer,
     RouteProtocol, RouteScope, RouteType,
 };
 use crate::AddressFamily;
@@ -32,7 +33,7 @@ fn test_ipv6_add_route_onlink() {
             protocol: RouteProtocol::Boot,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![RouteFlag::Onlink],
+            flags: RouteFlags::Onlink,
         },
         attributes: vec![
             RouteAttribute::Destination(
