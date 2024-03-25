@@ -153,7 +153,7 @@ pub enum LinkAttribute {
     MinMtu(u32),
     /// The maximum MTU for the device.
     MaxMtu(u32),
-    NetnsId(i32),
+    LinkNetNsId(i32),
     OperState(State),
     Stats(Stats),
     Stats64(Stats64),
@@ -209,7 +209,7 @@ impl Nla for LinkAttribute {
             | Self::CarrierChanges(_)
             | Self::GsoMaxSegs(_)
             | Self::GsoMaxSize(_)
-            | Self::NetnsId(_)
+            | Self::LinkNetNsId(_)
             | Self::MinMtu(_)
             | Self::CarrierUpCount(_)
             | Self::CarrierDownCount(_)
@@ -284,7 +284,7 @@ impl Nla for LinkAttribute {
                 u32::from(&VecLinkExtentMask(value.to_vec())),
             ),
 
-            Self::NetnsId(v)
+            Self::LinkNetNsId(v)
             | Self::NetNsFd(v)
             | Self::NewNetnsId(v)
             | Self::NewIfIndex(v)
@@ -351,7 +351,7 @@ impl Nla for LinkAttribute {
             Self::GsoMaxSize(_) => IFLA_GSO_MAX_SIZE,
             Self::MinMtu(_) => IFLA_MIN_MTU,
             Self::MaxMtu(_) => IFLA_MAX_MTU,
-            Self::NetnsId(_) => IFLA_LINK_NETNSID,
+            Self::LinkNetNsId(_) => IFLA_LINK_NETNSID,
             Self::OperState(_) => IFLA_OPERSTATE,
             Self::Map(_) => IFLA_MAP,
             Self::Stats(_) => IFLA_STATS,
@@ -556,7 +556,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_MAX_MTU => Self::MaxMtu(
                 parse_u32(payload).context("invalid IFLA_MAX_MTU value")?,
             ),
-            IFLA_LINK_NETNSID => Self::NetnsId(
+            IFLA_LINK_NETNSID => Self::LinkNetNsId(
                 parse_i32(payload)
                     .context("invalid IFLA_LINK_NETNSID value")?,
             ),
