@@ -6,7 +6,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{flags::VecNeighbourFlag, NeighbourFlag, NeighbourState};
+use super::{flags::NeighbourFlags, NeighbourState};
 use crate::{route::RouteType, AddressFamily};
 
 const NEIGHBOUR_HEADER_LEN: usize = 12;
@@ -51,7 +51,7 @@ pub struct NeighbourHeader {
     pub state: NeighbourState,
     /// Neighbour cache entry flags. It should be set to a combination
     /// of the `NTF_*` constants
-    pub flags: Vec<NeighbourFlag>,
+    pub flags: NeighbourFlags,
     /// Neighbour cache entry type. It should be set to one of the
     /// `NDA_*` constants.
     pub kind: RouteType,
@@ -63,7 +63,7 @@ impl<T: AsRef<[u8]>> Parseable<NeighbourMessageBuffer<T>> for NeighbourHeader {
             family: buf.family().into(),
             ifindex: buf.ifindex(),
             state: buf.state().into(),
-            flags: VecNeighbourFlag::from(buf.flags()).0,
+            flags: NeighbourFlags::from_bits_retain(buf.flags()),
             kind: buf.kind().into(),
         })
     }
@@ -79,7 +79,7 @@ impl Emitable for NeighbourHeader {
         packet.set_family(self.family.into());
         packet.set_ifindex(self.ifindex);
         packet.set_state(self.state.into());
-        packet.set_flags(u8::from(&VecNeighbourFlag(self.flags.to_vec())));
+        packet.set_flags(self.flags.bits());
         packet.set_kind(self.kind.into());
     }
 }
