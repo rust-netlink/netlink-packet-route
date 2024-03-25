@@ -3,7 +3,7 @@
 mod address;
 mod attribute;
 mod cache_info;
-pub(crate) mod flags;
+mod flags;
 mod header;
 mod lwtunnel;
 mod message;
@@ -21,7 +21,6 @@ mod tests;
 pub use self::address::RouteAddress;
 pub use self::attribute::RouteAttribute;
 pub use self::cache_info::{RouteCacheInfo, RouteCacheInfoBuffer};
-pub use self::flags::RouteFlag;
 pub use self::header::{
     RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
 };
@@ -34,3 +33,4 @@ pub use self::next_hops::{RouteNextHop, RouteNextHopBuffer, RouteNextHopFlag};
 pub use self::preference::RoutePreference;
 pub use self::realm::RouteRealm;
 pub use self::via::{RouteVia, RouteViaBuffer};
+pub use flags::RouteFlags;

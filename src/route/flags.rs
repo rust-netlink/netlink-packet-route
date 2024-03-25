@@ -15,100 +15,26 @@ const RTM_F_OFFLOAD: u32 = 0x4000;
 const RTM_F_TRAP: u32 = 0x8000;
 const RTM_F_OFFLOAD_FAILED: u32 = 0x20000000;
 
-#[derive(Clone, Eq, PartialEq, Debug, Copy)]
-#[non_exhaustive]
-pub enum RouteFlag {
-    // Kernel also store next hope flags here
-    Dead,
-    Pervasive,
-    Onlink,
-    Offload,
-    Linkdown,
-    Unresolved,
-    Trap,
-    // Next hope flags ends
-    Notify,
-    Cloned,
-    Equalize,
-    Prefix,
-    LookupTable,
-    FibMatch,
-    RtOffload,
-    RtTrap,
-    OffloadFailed,
-    Other(u32),
-}
-
-const ALL_ROUTE_FLAGS: [RouteFlag; 16] = [
-    RouteFlag::Dead,
-    RouteFlag::Pervasive,
-    RouteFlag::Onlink,
-    RouteFlag::Offload,
-    RouteFlag::Linkdown,
-    RouteFlag::Unresolved,
-    RouteFlag::Trap,
-    RouteFlag::Notify,
-    RouteFlag::Cloned,
-    RouteFlag::Equalize,
-    RouteFlag::Prefix,
-    RouteFlag::LookupTable,
-    RouteFlag::FibMatch,
-    RouteFlag::RtOffload,
-    RouteFlag::RtTrap,
-    RouteFlag::OffloadFailed,
-];
-
-impl From<RouteFlag> for u32 {
-    fn from(v: RouteFlag) -> u32 {
-        match v {
-            RouteFlag::Dead => RTNH_F_DEAD.into(),
-            RouteFlag::Pervasive => RTNH_F_PERVASIVE.into(),
-            RouteFlag::Onlink => RTNH_F_ONLINK.into(),
-            RouteFlag::Offload => RTNH_F_OFFLOAD.into(),
-            RouteFlag::Linkdown => RTNH_F_LINKDOWN.into(),
-            RouteFlag::Unresolved => RTNH_F_UNRESOLVED.into(),
-            RouteFlag::Trap => RTNH_F_TRAP.into(),
-
-            RouteFlag::Notify => RTM_F_NOTIFY,
-            RouteFlag::Cloned => RTM_F_CLONED,
-            RouteFlag::Equalize => RTM_F_EQUALIZE,
-            RouteFlag::Prefix => RTM_F_PREFIX,
-            RouteFlag::LookupTable => RTM_F_LOOKUP_TABLE,
-            RouteFlag::FibMatch => RTM_F_FIB_MATCH,
-            RouteFlag::RtOffload => RTM_F_OFFLOAD,
-            RouteFlag::RtTrap => RTM_F_TRAP,
-            RouteFlag::OffloadFailed => RTM_F_OFFLOAD_FAILED,
-            RouteFlag::Other(i) => i,
-        }
-    }
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Default)]
-pub(crate) struct VecRouteFlag(pub(crate) Vec<RouteFlag>);
-
-impl From<u32> for VecRouteFlag {
-    fn from(d: u32) -> Self {
-        let mut got: u32 = 0;
-        let mut ret = Vec::new();
-        for flag in ALL_ROUTE_FLAGS {
-            if (d & (u32::from(flag))) > 0 {
-                ret.push(flag);
-                got += u32::from(flag);
-            }
-        }
-        if got != d {
-            ret.push(RouteFlag::Other(d - got));
-        }
-        Self(ret)
-    }
-}
-
-impl From<&VecRouteFlag> for u32 {
-    fn from(v: &VecRouteFlag) -> u32 {
-        let mut d: u32 = 0;
-        for flag in &v.0 {
-            d += u32::from(*flag);
-        }
-        d
+bitflags! {
+    #[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
+    #[non_exhaustive]
+    pub struct RouteFlags: u32 {
+        const Dead = RTNH_F_DEAD as u32;
+        const Pervasive = RTNH_F_PERVASIVE as u32;
+        const Onlink = RTNH_F_ONLINK as u32;
+        const Offload = RTNH_F_OFFLOAD as u32;
+        const Linkdown = RTNH_F_LINKDOWN as u32;
+        const Unresolved = RTNH_F_UNRESOLVED as u32;
+        const Trap = RTNH_F_TRAP as u32;
+        const Notify = RTM_F_NOTIFY;
+        const Cloned = RTM_F_CLONED;
+        const Equalize = RTM_F_EQUALIZE;
+        const Prefix = RTM_F_PREFIX;
+        const LookupTable = RTM_F_LOOKUP_TABLE;
+        const FibMatch = RTM_F_FIB_MATCH;
+        const RtOffload = RTM_F_OFFLOAD;
+        const RtTrap = RTM_F_TRAP;
+        const OffloadFailed = RTM_F_OFFLOAD_FAILED;
+        const _ = !0;
     }
 }
