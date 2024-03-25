@@ -6,9 +6,9 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::{
     tc::{
-        filters::u32_flags::TcU32OptionFlags, TcAttribute, TcFilterU32Option,
-        TcHandle, TcHeader, TcMessage, TcMessageBuffer, TcOption, TcU32Key,
-        TcU32Selector, TcU32SelectorFlag,
+        filters::{TcU32OptionFlags, TcU32SelectorFlags},
+        TcAttribute, TcFilterU32Option, TcHandle, TcHeader, TcMessage,
+        TcMessageBuffer, TcOption, TcU32Key, TcU32Selector,
     },
     AddressFamily,
 };
@@ -63,7 +63,7 @@ fn test_get_filter_u32() {
             TcAttribute::Chain(0),
             TcAttribute::Options(vec![
                 TcOption::U32(TcFilterU32Option::Selector(TcU32Selector {
-                    flags: vec![TcU32SelectorFlag::Terminal],
+                    flags: TcU32SelectorFlags::Terminal,
                     offshift: 0,
                     nkeys: 2,
                     offmask: 0,
