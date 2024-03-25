@@ -19,71 +19,18 @@ pub(crate) const RTNH_F_LINKDOWN: u8 = 16;
 pub(crate) const RTNH_F_UNRESOLVED: u8 = 32;
 pub(crate) const RTNH_F_TRAP: u8 = 64;
 
-#[derive(Clone, Eq, PartialEq, Debug, Copy)]
-#[non_exhaustive]
-pub enum RouteNextHopFlag {
-    Dead,
-    Pervasive,
-    Onlink,
-    Offload,
-    Linkdown,
-    Unresolved,
-    Trap,
-    Other(u8),
-}
-
-impl From<RouteNextHopFlag> for u8 {
-    fn from(v: RouteNextHopFlag) -> u8 {
-        match v {
-            RouteNextHopFlag::Dead => RTNH_F_DEAD,
-            RouteNextHopFlag::Pervasive => RTNH_F_PERVASIVE,
-            RouteNextHopFlag::Onlink => RTNH_F_ONLINK,
-            RouteNextHopFlag::Offload => RTNH_F_OFFLOAD,
-            RouteNextHopFlag::Linkdown => RTNH_F_LINKDOWN,
-            RouteNextHopFlag::Unresolved => RTNH_F_UNRESOLVED,
-            RouteNextHopFlag::Trap => RTNH_F_TRAP,
-            RouteNextHopFlag::Other(i) => i,
-        }
-    }
-}
-
-const ALL_NH_FLAGS: [RouteNextHopFlag; 7] = [
-    RouteNextHopFlag::Dead,
-    RouteNextHopFlag::Pervasive,
-    RouteNextHopFlag::Onlink,
-    RouteNextHopFlag::Offload,
-    RouteNextHopFlag::Linkdown,
-    RouteNextHopFlag::Unresolved,
-    RouteNextHopFlag::Trap,
-];
-
-#[derive(Clone, Eq, PartialEq, Debug)]
-struct VecRouteNextHopFlag(Vec<RouteNextHopFlag>);
-
-impl From<u8> for VecRouteNextHopFlag {
-    fn from(d: u8) -> Self {
-        let mut got: u8 = 0;
-        let mut ret = Vec::new();
-        for flag in ALL_NH_FLAGS {
-            if (d & (u8::from(flag))) > 0 {
-                ret.push(flag);
-                got += u8::from(flag);
-            }
-        }
-        if got != d {
-            ret.push(RouteNextHopFlag::Other(d - got));
-        }
-        Self(ret)
-    }
-}
-
-impl From<&VecRouteNextHopFlag> for u8 {
-    fn from(v: &VecRouteNextHopFlag) -> u8 {
-        let mut d: u8 = 0;
-        for flag in &v.0 {
-            d += u8::from(*flag);
-        }
-        d
+bitflags! {
+    #[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
+    #[non_exhaustive]
+    pub struct RouteNextHopFlags: u8 {
+        const Dead = RTNH_F_DEAD;
+        const Pervasive = RTNH_F_PERVASIVE;
+        const Onlink = RTNH_F_ONLINK;
+        const Offload = RTNH_F_OFFLOAD;
+        const Linkdown = RTNH_F_LINKDOWN;
+        const Unresolved = RTNH_F_UNRESOLVED;
+        const Trap = RTNH_F_TRAP;
+        const _ = !0;
     }
 }
 
@@ -138,7 +85,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> RouteNextHopBuffer<&'a T> {
 #[non_exhaustive]
 pub struct RouteNextHop {
     /// Next-hop flags
-    pub flags: Vec<RouteNextHopFlag>,
+    pub flags: RouteNextHopFlags,
     /// Next-hop priority
     pub hops: u8,
     /// Interface index for the next-hop
@@ -168,7 +115,7 @@ impl<'a, T: AsRef<[u8]>>
         )
         .context("cannot parse route attributes in next-hop")?;
         Ok(RouteNextHop {
-            flags: VecRouteNextHopFlag::from(buf.flags()).0,
+            flags: RouteNextHopFlags::from_bits_retain(buf.flags()),
             hops: buf.hops(),
             interface_index: buf.interface_index(),
             attributes,
@@ -210,8 +157,7 @@ impl Emitable for RouteNextHop {
     fn emit(&self, buffer: &mut [u8]) {
         let mut nh_buffer = RouteNextHopBuffer::new(buffer);
         nh_buffer.set_length(self.buffer_len() as u16);
-        nh_buffer
-            .set_flags(u8::from(&VecRouteNextHopFlag(self.flags.to_vec())));
+        nh_buffer.set_flags(self.flags.bits());
         nh_buffer.set_hops(self.hops);
         nh_buffer.set_interface_index(self.interface_index);
         self.attributes.as_slice().emit(nh_buffer.payload_mut())
