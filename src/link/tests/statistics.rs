@@ -4,9 +4,9 @@ use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
 
 use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Icmp6Stats, Inet6CacheInfo,
-    Inet6DevConf, Inet6IfaceFlag, Inet6IfaceFlags, Inet6Stats, InetDevConf,
-    LinkAttribute, LinkFlag, LinkHeader, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, LinkXdp, Map, Prop, State, Stats, Stats64, XdpAttached,
+    Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, LinkAttribute,
+    LinkFlag, LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    LinkXdp, Map, Prop, State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -266,9 +266,7 @@ fn test_parsing_link_statistics_on_kernel_4_18() {
                     arp_evict_nocarrier: 0,
                 })]),
                 AfSpecUnspec::Inet6(vec![
-                    AfSpecInet6::Flags(Inet6IfaceFlags(vec![
-                        Inet6IfaceFlag::Ready,
-                    ])),
+                    AfSpecInet6::Flags(Inet6IfaceFlags::Ready),
                     AfSpecInet6::CacheInfo(Inet6CacheInfo {
                         max_reasm_len: 65535,
                         tstamp: 4092622,
@@ -645,13 +643,13 @@ fn test_parsing_link_statistics() {
                     arp_evict_nocarrier: 1,
                 })]),
                 AfSpecUnspec::Inet6(vec![
-                    AfSpecInet6::Flags(Inet6IfaceFlags(vec![
-                        Inet6IfaceFlag::Otherconf,
-                        Inet6IfaceFlag::RaManaged,
-                        Inet6IfaceFlag::RaRcvd,
-                        Inet6IfaceFlag::RsSent,
-                        Inet6IfaceFlag::Ready,
-                    ])),
+                    AfSpecInet6::Flags(
+                        Inet6IfaceFlags::Otherconf
+                            | Inet6IfaceFlags::RaManaged
+                            | Inet6IfaceFlags::RaRcvd
+                            | Inet6IfaceFlags::RsSent
+                            | Inet6IfaceFlags::Ready,
+                    ),
                     AfSpecInet6::CacheInfo(Inet6CacheInfo {
                         max_reasm_len: 65535,
                         tstamp: 1258,

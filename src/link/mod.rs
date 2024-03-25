@@ -28,8 +28,8 @@ mod tests;
 pub use self::af_spec::{
     AfSpecBridge, AfSpecInet, AfSpecInet6, AfSpecUnspec, BridgeVlanInfo,
     Icmp6Stats, Icmp6StatsBuffer, Inet6CacheInfo, Inet6CacheInfoBuffer,
-    Inet6DevConf, Inet6DevConfBuffer, Inet6IfaceFlag, Inet6IfaceFlags,
-    Inet6Stats, Inet6StatsBuffer, InetDevConf,
+    Inet6DevConf, Inet6DevConfBuffer, Inet6IfaceFlags, Inet6Stats,
+    Inet6StatsBuffer, InetDevConf,
 };
 pub use self::attribute::LinkAttribute;
 pub use self::down_reason::LinkProtocolDownReason;
