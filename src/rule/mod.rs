@@ -2,7 +2,7 @@
 
 mod action;
 mod attribute;
-pub(crate) mod flags;
+mod flags;
 mod header;
 mod message;
 mod port_range;
@@ -12,7 +12,7 @@ mod uid_range;
 
 pub use self::action::RuleAction;
 pub use self::attribute::RuleAttribute;
-pub use self::flags::RuleFlag;
+pub use self::flags::RuleFlags;
 pub use self::header::{RuleHeader, RuleMessageBuffer};
 pub use self::message::RuleMessage;
 pub use self::port_range::RulePortRange;

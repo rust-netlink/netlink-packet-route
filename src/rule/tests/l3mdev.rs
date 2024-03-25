@@ -5,8 +5,8 @@ use netlink_packet_utils::{Emitable, Parseable};
 use crate::{
     route::RouteProtocol,
     rule::{
-        RuleAction, RuleAttribute, RuleHeader, RuleMessage, RuleMessageBuffer,
-        RuleUidRange,
+        flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
+        RuleMessageBuffer, RuleUidRange,
     },
     AddressFamily,
 };
@@ -33,7 +33,7 @@ fn test_ipv4_l3mdev() {
             tos: 0,
             table: 0,
             action: RuleAction::ToTable,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(0),
@@ -78,7 +78,7 @@ fn test_ipv6_l3mdev_uid() {
             tos: 0,
             table: 0,
             action: RuleAction::ToTable,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(0),
