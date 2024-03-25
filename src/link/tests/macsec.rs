@@ -2,9 +2,10 @@
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    InfoData, InfoKind, InfoMacSec, LinkAttribute, LinkFlag, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, MacSecCipherId,
+    InfoData, InfoKind, InfoMacSec, LinkAttribute, LinkHeader, LinkInfo,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, MacSecCipherId,
     MacSecOffload, MacSecValidate,
 };
 use crate::AddressFamily;
@@ -31,14 +32,12 @@ fn test_macsec_link_info() {
             interface_family: AddressFamily::Unspec,
             index: 9,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![
-                LinkFlag::Broadcast,
-                LinkFlag::LowerUp,
-                LinkFlag::Multicast,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast
+                | LinkFlags::LowerUp
+                | LinkFlags::Multicast
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::MacSec),

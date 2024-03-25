@@ -7,7 +7,7 @@ mod down_reason;
 mod event;
 pub(crate) mod ext_mask;
 mod header;
-pub(crate) mod link_flag;
+mod link_flag;
 mod link_info;
 mod link_layer_type;
 mod link_state;
@@ -36,7 +36,7 @@ pub use self::down_reason::LinkProtocolDownReason;
 pub use self::event::LinkEvent;
 pub use self::ext_mask::LinkExtentMask;
 pub use self::header::{LinkHeader, LinkMessageBuffer};
-pub use self::link_flag::LinkFlag;
+pub use self::link_flag::LinkFlags;
 pub use self::link_info::{
     BondAdInfo, BondPortState, BridgeId, BridgeIdBuffer,
     BridgePortMulticastRouter, BridgePortState, BridgeQuerierState,
