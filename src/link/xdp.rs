@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::{convert::TryFrom, mem::size_of, os::fd::RawFd};
+use std::{mem::size_of, os::fd::RawFd};
 
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
