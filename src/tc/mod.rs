@@ -13,12 +13,12 @@ pub use self::actions::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
     TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
     TcActionOption, TcActionType, TcMirror, TcMirrorActionType, TcMirrorBuffer,
-    TcNat, TcNatBuffer, TcNatFlag,
+    TcNat, TcNatBuffer, TcNatFlags,
 };
 pub use self::attribute::TcAttribute;
 pub use self::filters::{
     TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
-    TcU32Key, TcU32Selector,
+    TcU32Key, TcU32OptionFlags, TcU32Selector, TcU32SelectorFlags,
 };
 pub use self::header::{TcHandle, TcHeader, TcMessageBuffer};
 pub use self::message::TcMessage;
