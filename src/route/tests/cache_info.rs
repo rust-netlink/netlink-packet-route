@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use netlink_packet_utils::traits::{Emitable, Parseable};
 
+use crate::route::flags::RouteFlags;
 use crate::route::{
     RouteAttribute, RouteCacheInfo, RouteHeader, RouteMessage,
     RouteMessageBuffer, RouteMetric, RoutePreference, RouteProtocol,
@@ -73,7 +74,7 @@ fn test_ipv6_route_cache_info() {
             protocol: RouteProtocol::Ra,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Table(254),

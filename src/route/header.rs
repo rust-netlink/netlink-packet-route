@@ -6,7 +6,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{super::AddressFamily, flags::VecRouteFlag, RouteFlag};
+use super::{super::AddressFamily, flags::RouteFlags};
 
 const ROUTE_HEADER_LEN: usize = 12;
 
@@ -53,7 +53,7 @@ pub struct RouteHeader {
     /// Route type.
     pub kind: RouteType,
     /// Flags when querying the kernel with a `RTM_GETROUTE` message.
-    pub flags: Vec<RouteFlag>,
+    pub flags: RouteFlags,
 }
 
 impl RouteHeader {
@@ -74,7 +74,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteMessageBuffer<&'a T>>
             protocol: buf.protocol().into(),
             scope: buf.scope().into(),
             kind: buf.kind().into(),
-            flags: VecRouteFlag::from(buf.flags()).0,
+            flags: RouteFlags::from_bits_retain(buf.flags()),
         })
     }
 }
@@ -94,7 +94,7 @@ impl Emitable for RouteHeader {
         buffer.set_protocol(self.protocol.into());
         buffer.set_scope(self.scope.into());
         buffer.set_kind(self.kind.into());
-        buffer.set_flags(u32::from(&VecRouteFlag(self.flags.to_vec())));
+        buffer.set_flags(self.flags.bits());
     }
 }
 
