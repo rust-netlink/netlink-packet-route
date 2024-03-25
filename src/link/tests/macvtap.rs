@@ -4,10 +4,10 @@ use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
 
 use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Inet6CacheInfo, Inet6DevConf,
-    Inet6IfaceFlag, Inet6IfaceFlags, InetDevConf, InfoData, InfoKind,
-    InfoMacVtap, LinkAttribute, LinkFlag, LinkHeader, LinkInfo, LinkLayerType,
-    LinkMessage, LinkMessageBuffer, LinkXdp, MacVtapMode, Map, State, Stats,
-    Stats64, XdpAttached,
+    Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoMacVtap,
+    LinkAttribute, LinkFlag, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
+    LinkMessageBuffer, LinkXdp, MacVtapMode, Map, State, Stats, Stats64,
+    XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -253,10 +253,9 @@ fn test_macvtap_link_info() {
                     arp_evict_nocarrier: 1,
                 })]),
                 AfSpecUnspec::Inet6(vec![
-                    AfSpecInet6::Flags(Inet6IfaceFlags(vec![
-                        Inet6IfaceFlag::Otherconf,
-                        Inet6IfaceFlag::RaManaged,
-                    ])),
+                    AfSpecInet6::Flags(
+                        Inet6IfaceFlags::Otherconf | Inet6IfaceFlags::RaManaged,
+                    ),
                     AfSpecInet6::CacheInfo(Inet6CacheInfo {
                         max_reasm_len: 65535,
                         tstamp: 17871112,

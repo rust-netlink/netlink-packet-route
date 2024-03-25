@@ -4,10 +4,9 @@ use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
 
 use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Inet6CacheInfo, Inet6DevConf,
-    Inet6IfaceFlag, Inet6IfaceFlags, InetDevConf, InfoData, InfoKind,
-    InfoVxlan, LinkAttribute, LinkFlag, LinkHeader, LinkInfo, LinkLayerType,
-    LinkMessage, LinkMessageBuffer, LinkXdp, Map, State, Stats, Stats64,
-    XdpAttached,
+    Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoVxlan, LinkAttribute,
+    LinkFlag, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
+    LinkMessageBuffer, LinkXdp, Map, State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -291,10 +290,9 @@ fn test_parsing_link_vxlan() {
                     arp_evict_nocarrier: 1,
                 })]),
                 AfSpecUnspec::Inet6(vec![
-                    AfSpecInet6::Flags(Inet6IfaceFlags(vec![
-                        Inet6IfaceFlag::RsSent,
-                        Inet6IfaceFlag::Ready,
-                    ])),
+                    AfSpecInet6::Flags(
+                        Inet6IfaceFlags::RsSent | Inet6IfaceFlags::Ready,
+                    ),
                     AfSpecInet6::CacheInfo(Inet6CacheInfo {
                         max_reasm_len: 65535,
                         tstamp: 7344,
