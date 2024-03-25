@@ -2,11 +2,12 @@
 
 use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Icmp6Stats, Inet6CacheInfo,
     Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, LinkAttribute,
-    LinkFlag, LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer,
-    LinkXdp, Map, Prop, State, Stats, Stats64, XdpAttached,
+    LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map,
+    Prop, State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -135,14 +136,12 @@ fn test_parsing_link_statistics_on_kernel_4_18() {
             interface_family: AddressFamily::Unspec,
             index: 2,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![
-                LinkFlag::Broadcast,
-                LinkFlag::LowerUp,
-                LinkFlag::Multicast,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast
+                | LinkFlags::LowerUp
+                | LinkFlags::Multicast
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![
             LinkAttribute::IfName("ens3".into()),
@@ -505,14 +504,12 @@ fn test_parsing_link_statistics() {
             interface_family: AddressFamily::Unspec,
             index: 3,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![
-                LinkFlag::Broadcast,
-                LinkFlag::LowerUp,
-                LinkFlag::Multicast,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast
+                | LinkFlags::LowerUp
+                | LinkFlags::Multicast
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![
             LinkAttribute::IfName("wlan0".into()),
