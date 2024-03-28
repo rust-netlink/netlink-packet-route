@@ -6,13 +6,13 @@ use netlink_packet_utils::{
 };
 
 use crate::link::{
-    af_spec::VecAfSpecBridge, AfSpecBridge, AfSpecInet, AfSpecInet6,
-    AfSpecUnspec, BridgeId, BridgePortMulticastRouter, BridgePortState,
-    BridgeVlanInfo, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlag,
+    af_spec::VecAfSpecBridge, link_flag::LinkFlags, AfSpecBridge, AfSpecInet,
+    AfSpecInet6, AfSpecUnspec, BridgeId, BridgePortMulticastRouter,
+    BridgePortState, BridgeVlanInfo, Inet6CacheInfo, Inet6DevConf,
     Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
-    InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkFlag, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map,
-    State, Stats, Stats64, XdpAttached,
+    InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map, State, Stats,
+    Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -147,14 +147,12 @@ fn test_parse_link_bridge_no_extention_mask() {
             interface_family: AddressFamily::Unspec,
             index: 53,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![
-                LinkFlag::Broadcast,
-                LinkFlag::LowerUp,
-                LinkFlag::Multicast,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast
+                | LinkFlags::LowerUp
+                | LinkFlags::Multicast
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![
             LinkAttribute::IfName("br0".into()),
@@ -338,10 +336,9 @@ fn test_parse_link_bridge_no_extention_mask() {
                     arp_evict_nocarrier: 1,
                 })]),
                 AfSpecUnspec::Inet6(vec![
-                    AfSpecInet6::Flags(Inet6IfaceFlags(vec![
-                        Inet6IfaceFlag::RsSent,
-                        Inet6IfaceFlag::Ready,
-                    ])),
+                    AfSpecInet6::Flags(
+                        Inet6IfaceFlags::RsSent | Inet6IfaceFlags::Ready,
+                    ),
                     AfSpecInet6::CacheInfo(Inet6CacheInfo {
                         max_reasm_len: 65535,
                         tstamp: 26395879,
@@ -493,8 +490,8 @@ fn test_bridge_port_link_info() {
             interface_family: AddressFamily::Unspec,
             index: 7,
             link_layer_type: LinkLayerType::Ether,
-            flags: vec![LinkFlag::Broadcast, LinkFlag::Multicast],
-            change_mask: vec![],
+            flags: LinkFlags::Broadcast | LinkFlags::Multicast,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Veth),

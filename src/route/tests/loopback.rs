@@ -3,6 +3,7 @@
 use netlink_packet_utils::traits::{Emitable, Parseable};
 use std::net::{Ipv4Addr, Ipv6Addr};
 
+use crate::route::flags::RouteFlags;
 use crate::route::{
     RouteAttribute, RouteCacheInfo, RouteHeader, RouteMessage,
     RouteMessageBuffer, RoutePreference, RouteProtocol, RouteScope, RouteType,
@@ -30,7 +31,7 @@ fn test_ipv4_route_loopback() {
             protocol: RouteProtocol::Kernel,
             scope: RouteScope::Host,
             kind: RouteType::Local,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Table(255),
@@ -75,7 +76,7 @@ fn test_ipv4_route_loopback_broadcast() {
             protocol: RouteProtocol::Kernel,
             scope: RouteScope::Link,
             kind: RouteType::Broadcast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Table(255),
@@ -125,7 +126,7 @@ fn test_ipv6_route_loopback() {
             protocol: RouteProtocol::Kernel,
             scope: RouteScope::Universe,
             kind: RouteType::Local,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Table(255),
