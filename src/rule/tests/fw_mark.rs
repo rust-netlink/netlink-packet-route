@@ -5,7 +5,8 @@ use netlink_packet_utils::{Emitable, Parseable};
 use crate::{
     route::RouteProtocol,
     rule::{
-        RuleAction, RuleAttribute, RuleHeader, RuleMessage, RuleMessageBuffer,
+        flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
+        RuleMessageBuffer,
     },
     AddressFamily,
 };
@@ -32,7 +33,7 @@ fn test_ipv4_fwmark_suppress_prefixlength() {
             tos: 0,
             table: 254,
             action: RuleAction::ToTable,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(254),
@@ -78,7 +79,7 @@ fn test_ipv6_fwmark_suppress_ifgroup() {
             tos: 0,
             table: 254,
             action: RuleAction::ToTable,
-            flags: vec![],
+            flags: RuleFlags::empty(),
         },
         attributes: vec![
             RuleAttribute::Table(254),

@@ -5,7 +5,7 @@ use std::net::{IpAddr, Ipv4Addr};
 use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::address::{
-    AddressAttribute, AddressFlag, AddressHeader, AddressHeaderFlag,
+    AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
     AddressMessage, AddressMessageBuffer, AddressScope, CacheInfo,
 };
 use crate::AddressFamily;
@@ -26,7 +26,7 @@ fn test_ipv4_get_loopback_address() {
         header: AddressHeader {
             family: AddressFamily::Inet,
             prefix_len: 8,
-            flags: vec![AddressHeaderFlag::Permanent],
+            flags: AddressHeaderFlags::Permanent,
             scope: AddressScope::Host,
             index: 1,
         },
@@ -34,7 +34,7 @@ fn test_ipv4_get_loopback_address() {
             AddressAttribute::Address(IpAddr::V4(Ipv4Addr::LOCALHOST)),
             AddressAttribute::Local(IpAddr::V4(Ipv4Addr::LOCALHOST)),
             AddressAttribute::Label("lo".to_string()),
-            AddressAttribute::Flags(vec![AddressFlag::Permanent]),
+            AddressAttribute::Flags(AddressFlags::Permanent),
             AddressAttribute::CacheInfo(CacheInfo {
                 ifa_preferred: u32::MAX,
                 ifa_valid: u32::MAX,

@@ -6,10 +6,9 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use crate::{
-    link::{link_flag::VecLinkFlag, LinkFlag, LinkLayerType},
-    AddressFamily,
-};
+use crate::{link::LinkLayerType, AddressFamily};
+
+use super::link_flag::LinkFlags;
 
 const LINK_HEADER_LEN: usize = 16;
 
@@ -65,14 +64,10 @@ pub struct LinkHeader {
     /// implemented.
     pub link_layer_type: LinkLayerType,
     /// State of the link, described by a combinations of `IFF_*`
-    /// constants, for instance `vec![LinkFlag::Up, LinkFlag::LowerUp]`.
-    /// To convert `Vec<LinkFlag>` into `u32`, you may:
-    ///  `u32::from(&VecLinkFlag(Vec<LinkFlag>)`
-    /// To convert `u32` to `Vec<LinkFlag>`, you may:
-    ///  `VecLinkFlag::from(u32).0`
-    pub flags: Vec<LinkFlag>,
+    /// constants.
+    pub flags: LinkFlags,
     /// Change mask for the `flags` field.
-    pub change_mask: Vec<LinkFlag>,
+    pub change_mask: LinkFlags,
 }
 
 impl Emitable for LinkHeader {
@@ -84,11 +79,9 @@ impl Emitable for LinkHeader {
         let mut packet = LinkMessageBuffer::new(buffer);
         packet.set_interface_family(u8::from(self.interface_family));
         packet.set_link_index(self.index);
-        packet.set_change_mask(u32::from(&VecLinkFlag(
-            self.change_mask.to_vec(),
-        )));
+        packet.set_change_mask(self.change_mask.bits());
         packet.set_link_layer_type(u16::from(self.link_layer_type));
-        packet.set_flags(u32::from(&VecLinkFlag(self.flags.to_vec())));
+        packet.set_flags(self.flags.bits());
     }
 }
 
@@ -98,8 +91,8 @@ impl<T: AsRef<[u8]>> Parseable<LinkMessageBuffer<T>> for LinkHeader {
             interface_family: buf.interface_family().into(),
             link_layer_type: buf.link_layer_type().into(),
             index: buf.link_index(),
-            change_mask: VecLinkFlag::from(buf.change_mask()).0,
-            flags: VecLinkFlag::from(buf.flags()).0,
+            change_mask: LinkFlags::from_bits_retain(buf.change_mask()),
+            flags: LinkFlags::from_bits_retain(buf.flags()),
         })
     }
 }

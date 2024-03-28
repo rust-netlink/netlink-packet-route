@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use std::convert::TryFrom;
-
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{

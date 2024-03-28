@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use netlink_packet_utils::traits::{Emitable, Parseable};
 
+use crate::route::flags::RouteFlags;
 use crate::route::{
     RouteAttribute, RouteHeader, RouteMessage, RouteMessageBuffer,
     RouteProtocol, RouteScope, RouteType, RouteVia,
@@ -35,7 +36,7 @@ fn test_ipv4_route_via() {
             protocol: RouteProtocol::Boot,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![],
+            flags: RouteFlags::empty(),
         },
         attributes: vec![
             RouteAttribute::Table(254),

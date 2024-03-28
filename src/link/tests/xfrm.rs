@@ -2,9 +2,10 @@
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    InfoData, InfoKind, InfoXfrm, LinkAttribute, LinkFlag, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    InfoData, InfoKind, InfoXfrm, LinkAttribute, LinkHeader, LinkInfo,
+    LinkLayerType, LinkMessage, LinkMessageBuffer,
 };
 use crate::AddressFamily;
 
@@ -23,13 +24,11 @@ fn test_parsing_link_xfrm() {
             interface_family: AddressFamily::Unspec,
             index: 40,
             link_layer_type: LinkLayerType::None,
-            flags: vec![
-                LinkFlag::LowerUp,
-                LinkFlag::Noarp,
-                LinkFlag::Running,
-                LinkFlag::Up,
-            ],
-            change_mask: vec![],
+            flags: LinkFlags::LowerUp
+                | LinkFlags::Noarp
+                | LinkFlags::Running
+                | LinkFlags::Up,
+            change_mask: LinkFlags::empty(),
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Xfrm),

@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use std::string::ToString;
-
 use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };

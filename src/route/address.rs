@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_utils::{DecodeError, Emitable};
 
@@ -20,6 +20,15 @@ pub enum RouteAddress {
     Inet6(Ipv6Addr),
     Mpls(MplsLabel),
     Other(Vec<u8>),
+}
+
+impl From<IpAddr> for RouteAddress {
+    fn from(ip: IpAddr) -> Self {
+        match ip {
+            IpAddr::V4(ipv4) => Self::Inet(ipv4),
+            IpAddr::V6(ipv6) => Self::Inet6(ipv6),
+        }
+    }
 }
 
 impl RouteAddress {
