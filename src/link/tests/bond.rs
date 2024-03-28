@@ -4,9 +4,9 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    BondPortState, InfoBond, InfoBondPort, InfoData, InfoKind, InfoPortData,
-    InfoPortKind, LinkAttribute, LinkHeader, LinkInfo, LinkLayerType,
-    LinkMessage, LinkMessageBuffer, MiiStatus,
+    BondMode, BondPortState, InfoBond, InfoBondPort, InfoData, InfoKind,
+    InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, MiiStatus,
 };
 use crate::AddressFamily;
 
@@ -56,7 +56,7 @@ fn test_bond_link_info() {
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Bond),
             LinkInfo::Data(InfoData::Bond(vec![
-                InfoBond::Mode(0),
+                InfoBond::Mode(BondMode::BalanceRr),
                 InfoBond::MiiMon(0),
                 InfoBond::UpDelay(0),
                 InfoBond::DownDelay(0),

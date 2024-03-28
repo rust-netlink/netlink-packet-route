@@ -52,6 +52,14 @@ const IFLA_BOND_AD_LACP_ACTIVE: u16 = 29;
 const IFLA_BOND_MISSED_MAX: u16 = 30;
 const IFLA_BOND_NS_IP6_TARGET: u16 = 31;
 
+const BOND_MODE_ROUNDROBIN: u8 = 0;
+const BOND_MODE_ACTIVEBACKUP: u8 = 1;
+const BOND_MODE_XOR: u8 = 2;
+const BOND_MODE_BROADCAST: u8 = 3;
+const BOND_MODE_8023AD: u8 = 4;
+const BOND_MODE_TLB: u8 = 5;
+const BOND_MODE_ALB: u8 = 6;
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum BondAdInfo {
@@ -130,6 +138,67 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for BondAdInfo {
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[non_exhaustive]
+pub enum BondMode {
+    #[default]
+    BalanceRr,
+    ActiveBackup,
+    BalanceXor,
+    Broadcast,
+    Ieee8023Ad,
+    BalanceTlb,
+    BalanceAlb,
+    Other(u8),
+}
+
+impl From<u8> for BondMode {
+    fn from(d: u8) -> Self {
+        match d {
+            BOND_MODE_ROUNDROBIN => Self::BalanceRr,
+            BOND_MODE_ACTIVEBACKUP => Self::ActiveBackup,
+            BOND_MODE_XOR => Self::BalanceXor,
+            BOND_MODE_BROADCAST => Self::Broadcast,
+            BOND_MODE_8023AD => Self::Ieee8023Ad,
+            BOND_MODE_TLB => Self::BalanceTlb,
+            BOND_MODE_ALB => Self::BalanceAlb,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BondMode> for u8 {
+    fn from(d: BondMode) -> Self {
+        match d {
+            BondMode::BalanceRr => BOND_MODE_ROUNDROBIN,
+            BondMode::ActiveBackup => BOND_MODE_ACTIVEBACKUP,
+            BondMode::BalanceXor => BOND_MODE_XOR,
+            BondMode::Broadcast => BOND_MODE_BROADCAST,
+            BondMode::Ieee8023Ad => BOND_MODE_8023AD,
+            BondMode::BalanceTlb => BOND_MODE_TLB,
+            BondMode::BalanceAlb => BOND_MODE_ALB,
+            BondMode::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for BondMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondMode::BalanceRr => "balance-rr",
+            BondMode::ActiveBackup => "active-backup",
+            BondMode::BalanceXor => "balance-xor",
+            BondMode::Broadcast => "broadcast",
+            BondMode::Ieee8023Ad => "802.3ad",
+            BondMode::BalanceTlb => "balance-tlb",
+            BondMode::BalanceAlb => "balance-alb",
+            BondMode::Other(d) => return write!(f, "unknown-variant ({d})"),
+        };
+
+        f.write_str(kernel_name)
+    }
+}
+
 // Some attributes (ARP_IP_TARGET, NS_IP6_TARGET) contain a nested
 // list of IP addresses, where each element uses the index as NLA kind
 // and the address as value. InfoBond exposes vectors of IP addresses,
@@ -199,7 +268,7 @@ impl Nla for BondIpAddrNla {
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoBond {
-    Mode(u8),
+    Mode(BondMode),
     ActivePort(u32),
     MiiMon(u32),
     UpDelay(u32),
@@ -276,8 +345,8 @@ impl Nla for InfoBond {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Mode(value)
-            | Self::UseCarrier(value)
+            Self::Mode(value) => buffer[0] = (*value).into(),
+            Self::UseCarrier(value)
             | Self::PrimaryReselect(value)
             | Self::FailOverMac(value)
             | Self::XmitHashPolicy(value)
@@ -361,7 +430,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BOND_MODE => Self::Mode(
-                parse_u8(payload).context("invalid IFLA_BOND_MODE value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_BOND_MODE value")?
+                    .into(),
             ),
             IFLA_BOND_ACTIVE_PORT => Self::ActivePort(
                 parse_u32(payload)
