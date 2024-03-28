@@ -5,8 +5,9 @@ use std::str::FromStr;
 
 use netlink_packet_utils::traits::{Emitable, Parseable};
 
+use crate::route::flags::RouteFlags;
 use crate::route::{
-    RouteAttribute, RouteCacheInfo, RouteFlag, RouteHeader, RouteMessage,
+    RouteAttribute, RouteCacheInfo, RouteHeader, RouteMessage,
     RouteMessageBuffer, RouteProtocol, RouteRealm, RouteScope, RouteType,
 };
 use crate::AddressFamily;
@@ -38,7 +39,8 @@ fn test_ipv4_route_realm() {
             protocol: RouteProtocol::Unspec,
             scope: RouteScope::Universe,
             kind: RouteType::Unicast,
-            flags: vec![RouteFlag::Cloned, RouteFlag::Other(0x80000000)],
+            flags: RouteFlags::Cloned
+                | RouteFlags::from_bits_retain(0x80000000),
         },
         attributes: vec![
             RouteAttribute::Table(254),

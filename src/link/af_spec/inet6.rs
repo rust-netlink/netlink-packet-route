@@ -82,9 +82,7 @@ impl Nla for AfSpecInet6 {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::AfSpecInet6::*;
         match *self {
-            Flags(ref value) => {
-                NativeEndian::write_u32(buffer, u32::from(value))
-            }
+            Flags(ref value) => NativeEndian::write_u32(buffer, value.bits()),
             RaMtu(ref value) => NativeEndian::write_u32(buffer, *value),
             CacheInfo(ref v) => v.emit(buffer),
             DevConf(ref v) => v.emit(buffer),
@@ -118,7 +116,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
 
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_INET6_FLAGS => Flags(Inet6IfaceFlags::from(
+            IFLA_INET6_FLAGS => Flags(Inet6IfaceFlags::from_bits_retain(
                 parse_u32(payload).context("invalid IFLA_INET6_FLAGS value")?,
             )),
             IFLA_INET6_CACHEINFO => CacheInfo(

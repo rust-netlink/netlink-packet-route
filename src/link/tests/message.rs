@@ -2,9 +2,10 @@
 
 use netlink_packet_utils::traits::{Emitable, ParseableParametrized};
 
+use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    LinkAttribute, LinkFlag, LinkHeader, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, State,
+    LinkAttribute, LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    State,
 };
 use crate::AddressFamily;
 
@@ -45,10 +46,11 @@ fn link_message_packet_header_read() {
     assert_eq!(packet.link_index(), 1);
     assert_eq!(
         packet.flags(),
-        u32::from(LinkFlag::Loopback)
-            | u32::from(LinkFlag::LowerUp)
-            | u32::from(LinkFlag::Running)
-            | u32::from(LinkFlag::Up)
+        (LinkFlags::Loopback
+            | LinkFlags::LowerUp
+            | LinkFlags::Running
+            | LinkFlags::Up)
+            .bits()
     );
     assert_eq!(packet.change_mask(), 0);
 }
@@ -63,10 +65,11 @@ fn link_message_packet_header_build() {
         packet.set_link_layer_type(LinkLayerType::Loopback.into());
         packet.set_link_index(1);
         packet.set_flags(
-            u32::from(LinkFlag::Loopback)
-                | u32::from(LinkFlag::LowerUp)
-                | u32::from(LinkFlag::Running)
-                | u32::from(LinkFlag::Up),
+            (LinkFlags::Loopback
+                | LinkFlags::LowerUp
+                | LinkFlags::Running
+                | LinkFlags::Up)
+                .bits(),
         );
         packet.set_change_mask(0);
     }
@@ -167,12 +170,10 @@ fn link_message_emit() {
     let header = LinkHeader {
         link_layer_type: LinkLayerType::Loopback,
         index: 1,
-        flags: vec![
-            LinkFlag::Loopback,
-            LinkFlag::LowerUp,
-            LinkFlag::Running,
-            LinkFlag::Up,
-        ],
+        flags: LinkFlags::Loopback
+            | LinkFlags::LowerUp
+            | LinkFlags::Running
+            | LinkFlags::Up,
         interface_family: AddressFamily::Unspec,
         ..Default::default()
     };
