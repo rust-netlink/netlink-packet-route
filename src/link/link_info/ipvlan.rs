@@ -15,7 +15,7 @@ const IFLA_IPVLAN_FLAGS: u16 = 2;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoIpVlan {
-    Mode(u16),
+    Mode(IpVlanMode),
     Flags(u16),
     Other(DefaultNla),
 }
@@ -32,7 +32,7 @@ impl Nla for InfoIpVlan {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoIpVlan::*;
         match self {
-            Mode(value) => NativeEndian::write_u16(buffer, *value),
+            Mode(value) => NativeEndian::write_u16(buffer, (*value).into()),
             Flags(value) => NativeEndian::write_u16(buffer, *value),
             Other(nla) => nla.emit_value(buffer),
         }
@@ -54,7 +54,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_IPVLAN_MODE => Mode(
-                parse_u16(payload).context("invalid IFLA_IPVLAN_MODE value")?,
+                parse_u16(payload)
+                    .context("invalid IFLA_IPVLAN_MODE value")?
+                    .into(),
             ),
             IFLA_IPVLAN_FLAGS => Flags(
                 parse_u16(payload)
@@ -64,5 +66,43 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
                 "unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)"
             ))?),
         })
+    }
+}
+
+const IPVLAN_MODE_L2: u16 = 0;
+const IPVLAN_MODE_L3: u16 = 1;
+const IPVLAN_MODE_L3S: u16 = 2;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum IpVlanMode {
+    L2,
+    L3,
+    L3S,
+    Other(u16),
+}
+
+impl From<u16> for IpVlanMode {
+    fn from(d: u16) -> Self {
+        match d {
+            IPVLAN_MODE_L2 => Self::L2,
+            IPVLAN_MODE_L3 => Self::L3,
+            IPVLAN_MODE_L3S => Self::L3S,
+            _ => {
+                log::warn!("Unknown IP VLAN mode {}", d);
+                Self::Other(d)
+            }
+        }
+    }
+}
+
+impl From<IpVlanMode> for u16 {
+    fn from(v: IpVlanMode) -> u16 {
+        match v {
+            IpVlanMode::L2 => IPVLAN_MODE_L2,
+            IpVlanMode::L3 => IPVLAN_MODE_L3,
+            IpVlanMode::L3S => IPVLAN_MODE_L3S,
+            IpVlanMode::Other(d) => d,
+        }
     }
 }
