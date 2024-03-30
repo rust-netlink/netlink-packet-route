@@ -9,9 +9,9 @@ use netlink_packet_utils::{
 
 use super::super::{
     InfoBond, InfoBridge, InfoGreTap, InfoGreTap6, InfoGreTun, InfoGreTun6,
-    InfoGtp, InfoHsr, InfoIpVlan, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan,
-    InfoMacVtap, InfoSitTun, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti,
-    InfoVxlan, InfoXfrm,
+    InfoGtp, InfoHsr, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec,
+    InfoMacVlan, InfoMacVtap, InfoSitTun, InfoTun, InfoVeth, InfoVlan, InfoVrf,
+    InfoVti, InfoVxlan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -26,6 +26,7 @@ pub enum InfoData {
     Vxlan(Vec<InfoVxlan>),
     Bond(Vec<InfoBond>),
     IpVlan(Vec<InfoIpVlan>),
+    IpVtap(Vec<InfoIpVtap>),
     MacVlan(Vec<InfoMacVlan>),
     MacVtap(Vec<InfoMacVtap>),
     GreTap(Vec<InfoGreTap>),
@@ -51,6 +52,7 @@ impl Nla for InfoData {
             Self::Vlan(nlas) => nlas.as_slice().buffer_len(),
             Self::Veth(msg) => msg.buffer_len(),
             Self::IpVlan(nlas) => nlas.as_slice().buffer_len(),
+            Self::IpVtap(nlas) => nlas.as_slice().buffer_len(),
             Self::Ipoib(nlas) => nlas.as_slice().buffer_len(),
             Self::MacVlan(nlas) => nlas.as_slice().buffer_len(),
             Self::MacVtap(nlas) => nlas.as_slice().buffer_len(),
@@ -78,6 +80,7 @@ impl Nla for InfoData {
             Self::Vlan(nlas) => nlas.as_slice().emit(buffer),
             Self::Veth(msg) => msg.emit(buffer),
             Self::IpVlan(nlas) => nlas.as_slice().emit(buffer),
+            Self::IpVtap(nlas) => nlas.as_slice().emit(buffer),
             Self::Ipoib(nlas) => nlas.as_slice().emit(buffer),
             Self::MacVlan(nlas) => nlas.as_slice().emit(buffer),
             Self::MacVtap(nlas) => nlas.as_slice().emit(buffer),
@@ -181,6 +184,17 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::IpVlan(v)
+            }
+            InfoKind::IpVtap => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoIpVtap::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::IpVtap(v)
             }
             InfoKind::MacVlan => {
                 let mut v = Vec::new();

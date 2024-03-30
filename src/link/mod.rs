@@ -42,11 +42,11 @@ pub use self::link_info::{
     BridgePortMulticastRouter, BridgePortState, BridgeQuerierState,
     HsrProtocol, InfoBond, InfoBondPort, InfoBridge, InfoBridgePort, InfoData,
     InfoGreTap, InfoGreTap6, InfoGreTun, InfoGreTun6, InfoGtp, InfoHsr,
-    InfoIpVlan, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap,
-    InfoPortData, InfoPortKind, InfoSitTun, InfoTun, InfoVeth, InfoVlan,
-    InfoVrf, InfoVti, InfoVxlan, InfoXfrm, IpVlanMode, LinkInfo, LinkXstats,
-    MacSecCipherId, MacSecOffload, MacSecValidate, MacVlanMode, MacVtapMode,
-    MiiStatus, VlanQosMapping,
+    InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan,
+    InfoMacVtap, InfoPortData, InfoPortKind, InfoSitTun, InfoTun, InfoVeth,
+    InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm, IpVlanMode, IpVtapMode,
+    LinkInfo, LinkXstats, MacSecCipherId, MacSecOffload, MacSecValidate,
+    MacVlanMode, MacVtapMode, MiiStatus, VlanQosMapping,
 };
 pub use self::link_layer_type::LinkLayerType;
 pub use self::link_state::State;
