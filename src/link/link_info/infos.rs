@@ -25,6 +25,7 @@ const VETH: &str = "veth";
 const VXLAN: &str = "vxlan";
 const BOND: &str = "bond";
 const IPVLAN: &str = "ipvlan";
+const IPVTAP: &str = "ipvtap";
 const MACVLAN: &str = "macvlan";
 const MACVTAP: &str = "macvtap";
 const GRETAP: &str = "gretap";
@@ -182,6 +183,7 @@ pub enum InfoKind {
     Vxlan,
     Bond,
     IpVlan,
+    IpVtap,
     MacVlan,
     MacVtap,
     GreTap,
@@ -217,6 +219,7 @@ impl std::fmt::Display for InfoKind {
                 Self::Vxlan => VXLAN,
                 Self::Bond => BOND,
                 Self::IpVlan => IPVLAN,
+                Self::IpVtap => IPVTAP,
                 Self::MacVlan => MACVLAN,
                 Self::MacVtap => MACVTAP,
                 Self::GreTap => GRETAP,
@@ -252,6 +255,7 @@ impl Nla for InfoKind {
             Self::Vxlan => VXLAN.len(),
             Self::Bond => BOND.len(),
             Self::IpVlan => IPVLAN.len(),
+            Self::IpVtap => IPVTAP.len(),
             Self::MacVlan => MACVLAN.len(),
             Self::MacVtap => MACVTAP.len(),
             Self::GreTap => GRETAP.len(),
@@ -307,6 +311,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
             VXLAN => Self::Vxlan,
             BOND => Self::Bond,
             IPVLAN => Self::IpVlan,
+            IPVTAP => Self::IpVtap,
             MACVLAN => Self::MacVlan,
             MACVTAP => Self::MacVtap,
             GRETAP => Self::GreTap,

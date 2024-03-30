@@ -9,6 +9,8 @@ mod hsr;
 #[cfg(test)]
 mod ipvlan;
 #[cfg(test)]
+mod ipvtap;
+#[cfg(test)]
 mod loopback;
 #[cfg(test)]
 mod macsec;
