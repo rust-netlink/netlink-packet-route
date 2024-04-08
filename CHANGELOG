@@ -1,4 +1,22 @@
 # Changelog
+## [0.20.0] - 2024-01-31
+### Breaking changes
+ - Use bitflags. (3c08f7f, 5072f3a, 9271b33, 8564ed9, e26b489, b337e00,
+   386470f, 99bd9d2, 590411d, 6f63c6b)
+ - bond: Convert `InfoBond::Mode` into an enum. (3e16f9c)
+ - ipvlan: Change mode type from u16 to enum. (396d4b0)
+ - link: Renamed `LinkAttribute::NetnsId` to `LinkNetNsId`. (528905c)
+ - mac vlan/vtap: Changed MAC VLAN/VTAP mode from u32 to enum. (b23b165)
+ - bridge: Change InfoBridge::VlanFiltering from u8 to bool. (de0f47a)
+
+### New features
+ - Added `InfoData::IpVtap`. (a8d125c)
+ - impl `From<IpAddr>` for `RouteAddress`. (984b358)
+
+### Bug fixes
+ - link: Check buffer length when parsing NLAs. (a543bb7)
+ - link: Expand the buffer before parsing stats data from old kernel. (4d5f819)
+
 ## [0.19.0] - 2024-01-31
 ### Breaking changes
 
