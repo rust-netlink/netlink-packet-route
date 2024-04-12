@@ -216,7 +216,7 @@ impl Emitable for Inet6DevConf {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
 #[non_exhaustive]
 pub struct Inet6DevConf {
     pub forwarding: i32,

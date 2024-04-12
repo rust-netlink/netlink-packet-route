@@ -7,7 +7,7 @@ use netlink_packet_utils::{
 
 pub(crate) const LINK_STATS_LEN: usize = 96;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub struct Stats {
     /// total packets received
