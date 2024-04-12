@@ -44,9 +44,9 @@ pub use self::link_info::{
     InfoGreTap, InfoGreTap6, InfoGreTun, InfoGreTun6, InfoGtp, InfoHsr,
     InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan,
     InfoMacVtap, InfoPortData, InfoPortKind, InfoSitTun, InfoTun, InfoVeth,
-    InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm, IpVlanMode, IpVtapMode,
-    LinkInfo, LinkXstats, MacSecCipherId, MacSecOffload, MacSecValidate,
-    MacVlanMode, MacVtapMode, MiiStatus, VlanQosMapping,
+    InfoVlan, InfoVrf, InfoVrfPort, InfoVti, InfoVxlan, InfoXfrm, IpVlanMode,
+    IpVtapMode, LinkInfo, LinkXstats, MacSecCipherId, MacSecOffload,
+    MacSecValidate, MacVlanMode, MacVtapMode, MiiStatus, VlanQosMapping,
 };
 pub use self::link_layer_type::LinkLayerType;
 pub use self::link_state::State;

@@ -7,7 +7,7 @@ use netlink_packet_utils::{
 
 pub(crate) const ICMP6_STATS_LEN: usize = 48;
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
 #[non_exhaustive]
 pub struct Icmp6Stats {
     pub num: i64,

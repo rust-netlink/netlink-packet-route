@@ -35,7 +35,7 @@ buffer!(Stats64Buffer(LINK_STATS64_LEN) {
     rx_otherhost_dropped: (u64, 192..200),
 });
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub struct Stats64 {
     /// total packets received

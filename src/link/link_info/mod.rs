@@ -42,7 +42,7 @@ pub use self::gre_tap6::InfoGreTap6;
 pub use self::gtp::InfoGtp;
 pub use self::hsr::{HsrProtocol, InfoHsr};
 pub use self::info_data::InfoData;
-pub use self::info_port::{InfoPortData, InfoPortKind};
+pub use self::info_port::{InfoPortData, InfoPortKind, InfoVrfPort};
 pub use self::infos::{InfoKind, LinkInfo};
 pub use self::ipoib::InfoIpoib;
 pub use self::ipvlan::{InfoIpVlan, InfoIpVtap, IpVlanMode, IpVtapMode};

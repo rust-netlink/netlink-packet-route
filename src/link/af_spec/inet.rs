@@ -123,7 +123,7 @@ buffer!(InetDevConfBuffer(DEV_CONF_LEN) {
     arp_evict_nocarrier: (i32, 128..132),
 });
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
 #[non_exhaustive]
 pub struct InetDevConf {
     pub forwarding: i32,

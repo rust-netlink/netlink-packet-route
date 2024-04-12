@@ -16,7 +16,7 @@ buffer!(MapBuffer(LINK_MAP_LEN) {
     port: (u8, 27),
 });
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub struct Map {
     pub memory_start: u64,
