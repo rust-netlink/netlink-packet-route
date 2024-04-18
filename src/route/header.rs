@@ -33,7 +33,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> RouteMessageBuffer<&'a T> {
 
 /// High level representation of `RTM_GETROUTE`, `RTM_ADDROUTE`, `RTM_DELROUTE`
 /// messages headers.
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Default, Hash)]
 pub struct RouteHeader {
     /// Address family of the route: either [AddressFamily::Inet] for IPv4,
     /// or [AddressFamily::Inet6] for IPv6.
@@ -98,7 +98,7 @@ impl Emitable for RouteHeader {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
 pub enum RouteProtocol {
     Unspec,
@@ -274,7 +274,7 @@ const RT_SCOPE_LINK: u8 = 253;
 const RT_SCOPE_HOST: u8 = 254;
 const RT_SCOPE_NOWHERE: u8 = 255;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
 pub enum RouteScope {
     Universe,
@@ -330,7 +330,7 @@ impl std::fmt::Display for RouteScope {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[non_exhaustive]
 pub enum RouteType {
     /// Unknown

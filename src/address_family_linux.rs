@@ -6,7 +6,7 @@ const AF_SMC: u8 = 43;
 const AF_XDP: u8 = 44;
 const AF_MCTP: u8 = 45;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default, Hash)]
 #[non_exhaustive]
 pub enum AddressFamily {
     #[default]
