@@ -115,6 +115,7 @@ impl Nla for TcFilterU32Option {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcFilterU32Option
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
@@ -219,6 +220,7 @@ impl Emitable for TcU32Selector {
 impl<T: AsRef<[u8]> + ?Sized> Parseable<TcU32SelectorBuffer<&T>>
     for TcU32Selector
 {
+    type Error = DecodeError;
     fn parse(buf: &TcU32SelectorBuffer<&T>) -> Result<Self, DecodeError> {
         let nkeys = buf.nkeys();
         let mut keys = Vec::<TcU32Key>::with_capacity(nkeys.into());
@@ -279,6 +281,7 @@ impl Emitable for TcU32Key {
 }
 
 impl<T: AsRef<[u8]>> Parseable<TcU32KeyBuffer<T>> for TcU32Key {
+    type Error = DecodeError;
     fn parse(buf: &TcU32KeyBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             mask: buf.mask(),

@@ -31,6 +31,7 @@ buffer!(VfInfoVlanBuffer(VF_INFO_VLAN_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoVlanBuffer<&'a T>>
     for VfInfoVlan
 {
+    type Error = DecodeError;
     fn parse(buf: &VfInfoVlanBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             vf_id: buf.vf_id(),

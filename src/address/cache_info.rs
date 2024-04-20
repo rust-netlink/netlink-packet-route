@@ -24,6 +24,8 @@ buffer!(CacheInfoBuffer(ADDRESSS_CACHE_INFO_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<CacheInfoBuffer<T>> for CacheInfo {
+    type Error = DecodeError;
+
     fn parse(buf: &CacheInfoBuffer<T>) -> Result<Self, DecodeError> {
         Ok(CacheInfo {
             ifa_preferred: buf.ifa_preferred(),

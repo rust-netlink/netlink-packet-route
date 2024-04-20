@@ -59,6 +59,7 @@ impl From<LinkEvent> for u32 {
 }
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for LinkEvent {
+    type Error = DecodeError;
     fn parse(buf: &T) -> Result<Self, DecodeError> {
         Ok(LinkEvent::from(
             parse_u32(buf.as_ref()).context("invalid IFLA_EVENT value")?,

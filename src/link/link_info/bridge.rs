@@ -305,6 +305,7 @@ impl Nla for InfoBridge {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
@@ -530,6 +531,7 @@ buffer!(BridgeIdBuffer(BRIDGE_ID_LEN) {
 });
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<BridgeIdBuffer<&T>> for BridgeId {
+    type Error = DecodeError;
     fn parse(buf: &BridgeIdBuffer<&T>) -> Result<Self, DecodeError> {
         // Priority is encoded in big endian. From kernel's
         // net/bridge/br_netlink.c br_fill_info():
@@ -616,6 +618,7 @@ impl Nla for BridgeQuerierState {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for BridgeQuerierState
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         use self::BridgeQuerierState::*;
         let payload = buf.value();

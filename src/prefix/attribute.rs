@@ -50,6 +50,7 @@ impl nla::Nla for PrefixAttribute {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for PrefixAttribute
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         match buf.kind() {

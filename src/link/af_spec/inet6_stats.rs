@@ -88,6 +88,7 @@ pub struct Inet6Stats {
 }
 
 impl<T: AsRef<[u8]>> Parseable<Inet6StatsBuffer<T>> for Inet6Stats {
+    type Error = DecodeError;
     fn parse(buf: &Inet6StatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             num: buf.num(),

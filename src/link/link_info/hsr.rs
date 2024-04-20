@@ -74,6 +74,7 @@ impl Nla for InfoHsr {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoHsr {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         use self::InfoHsr::*;
         let payload = buf.value();

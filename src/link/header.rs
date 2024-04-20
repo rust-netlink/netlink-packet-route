@@ -86,6 +86,7 @@ impl Emitable for LinkHeader {
 }
 
 impl<T: AsRef<[u8]>> Parseable<LinkMessageBuffer<T>> for LinkHeader {
+    type Error = DecodeError;
     fn parse(buf: &LinkMessageBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             interface_family: buf.interface_family().into(),

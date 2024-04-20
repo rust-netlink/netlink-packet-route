@@ -32,6 +32,7 @@ pub enum TcFqCodelXstats {
 }
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for TcFqCodelXstats {
+    type Error = DecodeError;
     fn parse(buf: &T) -> Result<Self, DecodeError> {
         if buf.as_ref().len() < 4 {
             return Err(DecodeError::from(format!(
@@ -117,6 +118,7 @@ buffer!(TcFqCodelQdStatsBuffer(TC_FQ_CODEL_QD_STATS_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<TcFqCodelQdStatsBuffer<T>> for TcFqCodelQdStats {
+    type Error = DecodeError;
     fn parse(buf: &TcFqCodelQdStatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             maxpacket: buf.maxpacket(),
@@ -172,6 +174,7 @@ buffer!(TcFqCodelClStatsBuffer(TC_FQ_CODEL_CL_STATS_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<TcFqCodelClStatsBuffer<T>> for TcFqCodelClStats {
+    type Error = DecodeError;
     fn parse(buf: &TcFqCodelClStatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             deficit: buf.deficit(),
@@ -285,6 +288,7 @@ impl Nla for TcQdiscFqCodelOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcQdiscFqCodelOption
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {

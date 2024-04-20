@@ -31,6 +31,7 @@ impl Emitable for RuleMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>>
     for RuleMessage
 {
+    type Error = DecodeError;
     fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let header = RuleHeader::parse(buf)
             .context("failed to parse link message header")?;
@@ -43,6 +44,7 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>>
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>>
     for Vec<RuleAttribute>
 {
+    type Error = DecodeError;
     fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut attributes = vec![];
         for nla_buf in buf.attributes() {

@@ -127,6 +127,7 @@ impl Nla for RouteMetric {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for RouteMetric {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
@@ -193,6 +194,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for RouteMetric {
 pub(crate) struct VecRouteMetric(pub(crate) Vec<RouteMetric>);
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for VecRouteMetric {
+    type Error = DecodeError;
     fn parse(payload: &T) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(payload) {

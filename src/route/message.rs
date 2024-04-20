@@ -34,6 +34,7 @@ impl Emitable for RouteMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<RouteMessageBuffer<&'a T>>
     for RouteMessage
 {
+    type Error = DecodeError;
     fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let header = RouteHeader::parse(buf)
             .context("failed to parse route message header")?;
@@ -54,6 +55,7 @@ impl<'a, T: AsRef<[u8]> + 'a>
     ParseableParametrized<RouteMessageBuffer<&'a T>, (AddressFamily, RouteType)>
     for Vec<RouteAttribute>
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &RouteMessageBuffer<&'a T>,
         (address_family, route_type): (AddressFamily, RouteType),

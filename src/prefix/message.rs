@@ -32,6 +32,7 @@ impl Emitable for PrefixMessage {
 }
 
 impl<T: AsRef<[u8]>> Parseable<PrefixMessageBuffer<T>> for PrefixHeader {
+    type Error = DecodeError;
     fn parse(buf: &PrefixMessageBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             prefix_family: buf.prefix_family(),
@@ -46,6 +47,7 @@ impl<T: AsRef<[u8]>> Parseable<PrefixMessageBuffer<T>> for PrefixHeader {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
     for PrefixMessage
 {
+    type Error = DecodeError;
     fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(Self {
             header: PrefixHeader::parse(buf)
@@ -59,6 +61,7 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
     for Vec<PrefixAttribute>
 {
+    type Error = DecodeError;
     fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla_buf in buf.nlas() {

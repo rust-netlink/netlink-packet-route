@@ -39,6 +39,7 @@ impl Emitable for NsidHeader {
 }
 
 impl<T: AsRef<[u8]>> Parseable<NsidMessageBuffer<T>> for NsidHeader {
+    type Error = DecodeError;
     fn parse(buf: &NsidMessageBuffer<T>) -> Result<Self, DecodeError> {
         Ok(NsidHeader {
             family: buf.family().into(),

@@ -32,6 +32,7 @@ impl Emitable for LinkMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<LinkMessageBuffer<&'a T>>
     for LinkMessage
 {
+    type Error = DecodeError;
     fn parse(buf: &LinkMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let header = LinkHeader::parse(buf)
             .context("failed to parse link message header")?;
@@ -47,6 +48,7 @@ impl<'a, T: AsRef<[u8]> + 'a>
     ParseableParametrized<LinkMessageBuffer<&'a T>, AddressFamily>
     for Vec<LinkAttribute>
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &LinkMessageBuffer<&'a T>,
         family: AddressFamily,

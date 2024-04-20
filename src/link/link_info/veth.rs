@@ -48,6 +48,7 @@ impl Nla for InfoVeth {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVeth {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         use self::InfoVeth::*;
         let payload = buf.value();

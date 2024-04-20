@@ -100,6 +100,7 @@ impl<'a, T: AsRef<[u8]>>
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for RouteNextHop
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &RouteNextHopBuffer<&T>,
         (address_family, route_type, encap_type): (
@@ -129,6 +130,7 @@ impl<'a, T: AsRef<[u8]> + 'a>
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for Vec<RouteAttribute>
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &RouteNextHopBuffer<&'a T>,
         (address_family, route_type, encap_type): (

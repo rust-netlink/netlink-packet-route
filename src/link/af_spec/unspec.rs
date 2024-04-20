@@ -48,6 +48,7 @@ pub(crate) struct VecAfSpecUnspec(pub(crate) Vec<AfSpecUnspec>);
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VecAfSpecUnspec
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         let err = "Invalid NLA for IFLA_AF_SPEC(AF_UNSPEC)";

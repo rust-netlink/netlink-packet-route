@@ -21,7 +21,8 @@ byteorder = "1.3.2"
 libc = "0.2.66"
 log = { version = "0.4.20", features = ["std"] }
 netlink-packet-core = { version = "0.7.0" }
-netlink-packet-utils = { version = "0.5.2" }
+netlink-packet-utils = { path = "../netlink-packet-utils" }
+thiserror = "1.0.58"
 
 [[example]]
 name = "dump_packet_links"

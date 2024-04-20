@@ -86,6 +86,7 @@ buffer!(StatsBuffer(LINK_STATS_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<StatsBuffer<T>> for Stats {
+    type Error = DecodeError;
     fn parse(buf: &StatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             rx_packets: buf.rx_packets(),

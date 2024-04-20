@@ -36,6 +36,7 @@ buffer!(RouteViaBuffer(RTVIA_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteViaBuffer<&'a T>>
     for RouteVia
 {
+    type Error = DecodeError;
     fn parse(buf: &RouteViaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let address_family: AddressFamily = (buf.address_family() as u8).into();
         Ok(match address_family {

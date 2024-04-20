@@ -63,6 +63,7 @@ impl Nla for InfoPortKind {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoPortKind, DecodeError> {
         if buf.kind() != IFLA_INFO_PORT_KIND {
             return Err(format!(

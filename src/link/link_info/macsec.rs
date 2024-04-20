@@ -213,6 +213,7 @@ impl Nla for InfoMacSec {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacSec {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         use self::InfoMacSec::*;
         let payload = buf.value();

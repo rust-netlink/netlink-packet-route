@@ -109,6 +109,7 @@ impl Nla for TcAttribute {
 impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, &str>
     for TcAttribute
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: &str,

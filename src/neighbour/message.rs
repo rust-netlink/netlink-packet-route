@@ -34,6 +34,7 @@ impl Emitable for NeighbourMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>>
     for NeighbourMessage
 {
+    type Error = DecodeError;
     fn parse(buf: &NeighbourMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
         let header = NeighbourHeader::parse(buf)
             .context("failed to parse neighbour message header")?;
@@ -53,6 +54,7 @@ impl<'a, T: AsRef<[u8]> + 'a>
     ParseableParametrized<NeighbourMessageBuffer<&'a T>, AddressFamily>
     for Vec<NeighbourAttribute>
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NeighbourMessageBuffer<&'a T>,
         address_family: AddressFamily,

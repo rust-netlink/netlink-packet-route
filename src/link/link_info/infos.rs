@@ -103,6 +103,7 @@ pub(crate) struct VecLinkInfo(pub(crate) Vec<LinkInfo>);
 // The downside is that this impl will not be exposed.
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = Vec::new();
         let mut link_info_kind: Option<InfoKind> = None;
@@ -290,6 +291,7 @@ impl Nla for InfoKind {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoKind, DecodeError> {
         if buf.kind() != IFLA_INFO_KIND {
             return Err(format!(

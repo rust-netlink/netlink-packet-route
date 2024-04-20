@@ -12,6 +12,7 @@ pub(crate) struct VecLinkVfPort(pub(crate) Vec<LinkVfPort>);
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VecLinkVfPort
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
@@ -53,6 +54,7 @@ impl Nla for LinkVfPort {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkVfPort {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
@@ -111,6 +113,7 @@ impl Nla for VfPort {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfPort {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         #[allow(clippy::match_single_binding)]

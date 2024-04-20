@@ -61,6 +61,7 @@ impl Emitable for TcHeader {
 }
 
 impl<T: AsRef<[u8]>> Parseable<TcMessageBuffer<T>> for TcHeader {
+    type Error = DecodeError;
     fn parse(buf: &TcMessageBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             family: buf.family().into(),

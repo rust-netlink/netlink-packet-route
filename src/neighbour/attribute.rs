@@ -106,6 +106,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
     ParseableParametrized<NlaBuffer<&'a T>, AddressFamily>
     for NeighbourAttribute
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         address_family: AddressFamily,

@@ -36,6 +36,7 @@ buffer!(NeighbourTableConfigBuffer(CONFIG_LEN) {
 impl<T: AsRef<[u8]>> Parseable<NeighbourTableConfigBuffer<T>>
     for NeighbourTableConfig
 {
+    type Error = DecodeError;
     fn parse(buf: &NeighbourTableConfigBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             key_len: buf.key_len(),

@@ -33,6 +33,7 @@ impl Emitable for NeighbourTableMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
     for NeighbourTableMessage
 {
+    type Error = DecodeError;
     fn parse(
         buf: &NeighbourTableMessageBuffer<&'a T>,
     ) -> Result<Self, DecodeError> {
@@ -48,6 +49,7 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
     for Vec<NeighbourTableAttribute>
 {
+    type Error = DecodeError;
     fn parse(
         buf: &NeighbourTableMessageBuffer<&'a T>,
     ) -> Result<Self, DecodeError> {

@@ -41,6 +41,7 @@ buffer!(TcStatsBuffer(STATS_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<TcStatsBuffer<T>> for TcStats {
+    type Error = DecodeError;
     fn parse(buf: &TcStatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             bytes: buf.bytes(),

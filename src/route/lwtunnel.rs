@@ -141,6 +141,7 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, RouteLwEnCapType>
 where
     T: AsRef<[u8]> + ?Sized,
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: RouteLwEnCapType,
@@ -163,6 +164,7 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, RouteLwEnCapType>
 where
     T: AsRef<[u8]> + ?Sized,
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: RouteLwEnCapType,

@@ -65,6 +65,7 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcStats2
 where
     T: AsRef<[u8]> + ?Sized,
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: &str,

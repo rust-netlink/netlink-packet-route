@@ -58,6 +58,7 @@ pub struct NeighbourHeader {
 }
 
 impl<T: AsRef<[u8]>> Parseable<NeighbourMessageBuffer<T>> for NeighbourHeader {
+    type Error = DecodeError;
     fn parse(buf: &NeighbourMessageBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             family: buf.family().into(),

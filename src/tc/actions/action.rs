@@ -48,6 +48,7 @@ impl Nla for TcAction {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for TcAction {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut attributes = vec![];
         let mut kind = String::new();
@@ -214,6 +215,7 @@ where
     T: AsRef<[u8]> + ?Sized,
     S: AsRef<str>,
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: S,
@@ -274,6 +276,7 @@ impl Emitable for TcActionGeneric {
 }
 
 impl<T: AsRef<[u8]>> Parseable<TcActionGenericBuffer<T>> for TcActionGeneric {
+    type Error = DecodeError;
     fn parse(buf: &TcActionGenericBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             index: buf.index(),
