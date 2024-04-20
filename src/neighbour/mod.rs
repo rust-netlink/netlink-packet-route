@@ -3,6 +3,7 @@
 mod address;
 mod attribute;
 mod cache_info;
+mod error;
 mod flags;
 mod header;
 mod message;
@@ -14,6 +15,7 @@ mod tests;
 pub use self::address::NeighbourAddress;
 pub use self::attribute::NeighbourAttribute;
 pub use self::cache_info::{NeighbourCacheInfo, NeighbourCacheInfoBuffer};
+pub use self::error::NeighbourError;
 pub use self::flags::NeighbourFlags;
 pub use self::header::{NeighbourHeader, NeighbourMessageBuffer};
 pub use self::message::NeighbourMessage;

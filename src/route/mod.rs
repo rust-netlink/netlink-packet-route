@@ -3,6 +3,7 @@
 mod address;
 mod attribute;
 mod cache_info;
+mod error;
 mod flags;
 mod header;
 mod lwtunnel;
@@ -21,6 +22,7 @@ mod tests;
 pub use self::address::RouteAddress;
 pub use self::attribute::RouteAttribute;
 pub use self::cache_info::{RouteCacheInfo, RouteCacheInfoBuffer};
+pub use self::error::RouteError;
 pub use self::header::{
     RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
 };

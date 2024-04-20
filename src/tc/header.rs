@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
 };
@@ -24,7 +24,7 @@ buffer!(TcMessageBuffer(TC_HEADER_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> TcMessageBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(self.payload())
     }
 }

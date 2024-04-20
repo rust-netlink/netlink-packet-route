@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable},
-    DecodeError,
-};
-
 use super::{
     attribute::PrefixAttribute,
+    error::PrefixError,
     header::{PrefixHeader, PrefixMessageBuffer},
 };
+use netlink_packet_utils::traits::{Emitable, Parseable};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct PrefixMessage {
@@ -32,8 +27,8 @@ impl Emitable for PrefixMessage {
 }
 
 impl<T: AsRef<[u8]>> Parseable<PrefixMessageBuffer<T>> for PrefixHeader {
-    type Error = DecodeError;
-    fn parse(buf: &PrefixMessageBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = ();
+    fn parse(buf: &PrefixMessageBuffer<T>) -> Result<Self, ()> {
         Ok(Self {
             prefix_family: buf.prefix_family(),
             ifindex: buf.ifindex(),
@@ -47,13 +42,12 @@ impl<T: AsRef<[u8]>> Parseable<PrefixMessageBuffer<T>> for PrefixHeader {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
     for PrefixMessage
 {
-    type Error = DecodeError;
-    fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = PrefixError;
+    fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, PrefixError> {
         Ok(Self {
-            header: PrefixHeader::parse(buf)
-                .context("failed to parse prefix message header")?,
-            attributes: Vec::<PrefixAttribute>::parse(buf)
-                .context("failed to parse prefix message attributes")?,
+            // Unwrap: ok, we never return an error above.
+            header: PrefixHeader::parse(buf).unwrap(),
+            attributes: Vec::<PrefixAttribute>::parse(buf)?,
         })
     }
 }
@@ -61,8 +55,8 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
     for Vec<PrefixAttribute>
 {
-    type Error = DecodeError;
-    fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = PrefixError;
+    fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, PrefixError> {
         let mut nlas = vec![];
         for nla_buf in buf.nlas() {
             nlas.push(PrefixAttribute::parse(&nla_buf?)?);

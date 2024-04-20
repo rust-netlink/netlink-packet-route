@@ -119,11 +119,17 @@ impl InfoPortData {
     ) -> Result<InfoPortData, DecodeError> {
         let port_data = match kind {
             InfoPortKind::Bond => NlasIterator::new(payload)
-                .map(|nla| nla.and_then(|nla| InfoBondPort::parse(&nla)))
+                .map(|nla| {
+                    let nla = nla?;
+                    InfoBondPort::parse(&nla)
+                })
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BondPort),
             InfoPortKind::Bridge => NlasIterator::new(payload)
-                .map(|nla| nla.and_then(|nla| InfoBridgePort::parse(&nla)))
+                .map(|nla| {
+                    let nla = nla?;
+                    InfoBridgePort::parse(&nla)
+                })
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BridgePort),
             InfoPortKind::Other(_) => Ok(InfoPortData::Other(payload.to_vec())),

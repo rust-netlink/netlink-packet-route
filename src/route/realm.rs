@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{DecodeError, Emitable};
+use super::RouteError;
+use netlink_packet_utils::Emitable;
 
 const RULE_REALM_LEN: usize = 4;
 
@@ -11,7 +12,7 @@ pub struct RouteRealm {
 }
 
 impl RouteRealm {
-    pub(crate) fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+    pub(crate) fn parse(buf: &[u8]) -> Result<Self, RouteError> {
         let all = u32::from_ne_bytes([buf[0], buf[1], buf[2], buf[3]]);
         if buf.len() == RULE_REALM_LEN {
             Ok(Self {
@@ -19,11 +20,10 @@ impl RouteRealm {
                 destination: (all & 0xFFFF) as u16,
             })
         } else {
-            Err(DecodeError::from(format!(
-                "Invalid rule port range data, expecting \
-                {RULE_REALM_LEN} u8 array, but got {:?}",
-                buf
-            )))
+            Err(RouteError::InvalidRulePortRange {
+                expected: RULE_REALM_LEN,
+                got: buf.len(),
+            })
         }
     }
 }
