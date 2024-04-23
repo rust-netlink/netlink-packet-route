@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::{
+    TcError, TcOption, TcStats, TcStats2, TcStatsBuffer, TcXstats, VecTcOption,
+};
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::{parse_string, parse_u32, parse_u8},
-    DecodeError, Emitable, Parseable, ParseableParametrized,
-};
-
-use super::{
-    TcOption, TcStats, TcStats2, TcStatsBuffer, TcXstats, VecTcOption,
+    Emitable, Parseable, ParseableParametrized,
 };
 
 const TCA_KIND: u16 = 1;
@@ -109,54 +107,70 @@ impl Nla for TcAttribute {
 impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, &str>
     for TcAttribute
 {
-    type Error = DecodeError;
+    type Error = TcError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: &str,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_KIND => TcAttribute::Kind(
-                parse_string(payload).context("invalid TCA_KIND")?,
-            ),
+            TCA_KIND => {
+                TcAttribute::Kind(parse_string(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_KIND",
+                        error,
+                    }
+                })?)
+            }
             TCA_OPTIONS => TcAttribute::Options(
-                VecTcOption::parse_with_param(buf, kind)
-                    .context(format!("Invalid TCA_OPTIONS for kind: {kind}"))?
-                    .0,
+                VecTcOption::parse_with_param(buf, kind)?.0,
             ),
             TCA_STATS => TcAttribute::Stats(
-                TcStats::parse(
-                    &TcStatsBuffer::new_checked(payload)
-                        .context("invalid TCA_STATS")?,
-                )
-                .context("failed to parse TCA_STATS")?,
+                TcStats::parse(&TcStatsBuffer::new_checked(payload).map_err(
+                    |error| TcError::InvalidValue {
+                        kind: "TCA_STATS",
+                        error,
+                    },
+                )?)
+                .map_err(|error| TcError::InvalidValue {
+                    kind: "TCA_STATS",
+                    error,
+                })?,
             ),
-            TCA_XSTATS => TcAttribute::Xstats(
-                TcXstats::parse_with_param(buf, kind)
-                    .context("invalid TCA_XSTATS")?,
-            ),
+            TCA_XSTATS => {
+                TcAttribute::Xstats(TcXstats::parse_with_param(buf, kind)?)
+            }
             TCA_RATE => TcAttribute::Rate(payload.to_vec()),
             TCA_FCNT => TcAttribute::Fcnt(payload.to_vec()),
             TCA_STATS2 => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
-                    let nla = nla.context("invalid TCA_STATS2")?;
-                    nlas.push(TcStats2::parse_with_param(&nla, kind).context(
-                        format!("failed to parse TCA_STATS2 for kind {kind}"),
-                    )?);
+                    let nla = nla?;
+                    nlas.push(TcStats2::parse_with_param(&nla, kind)?);
                 }
                 TcAttribute::Stats2(nlas)
             }
             TCA_STAB => TcAttribute::Stab(payload.to_vec()),
-            TCA_CHAIN => TcAttribute::Chain(
-                parse_u32(payload).context("failed to parse TCA_CHAIN")?,
-            ),
-            TCA_HW_OFFLOAD => TcAttribute::HwOffload(
-                parse_u8(payload).context("failed to parse TCA_HW_OFFLOAD")?,
-            ),
+            TCA_CHAIN => {
+                TcAttribute::Chain(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_CHAIN",
+                        error,
+                    }
+                })?)
+            }
+            TCA_HW_OFFLOAD => {
+                TcAttribute::HwOffload(parse_u8(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_HW_OFFLOAD",
+                        error,
+                    }
+                })?)
+            }
             TCA_DUMP_INVISIBLE => TcAttribute::DumpInvisible(true),
-            _ => TcAttribute::Other(
-                DefaultNla::parse(buf).context("failed to parse tc nla")?,
+            kind => TcAttribute::Other(
+                DefaultNla::parse(buf)
+                    .map_err(|error| TcError::UnknownNla { kind, error })?,
             ),
         })
     }

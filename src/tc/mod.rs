@@ -2,6 +2,7 @@
 
 mod actions;
 mod attribute;
+mod error;
 mod filters;
 mod header;
 mod message;
@@ -16,6 +17,7 @@ pub use self::actions::{
     TcNat, TcNatBuffer, TcNatFlags,
 };
 pub use self::attribute::TcAttribute;
+pub use self::error::TcError;
 pub use self::filters::{
     TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
     TcU32Key, TcU32OptionFlags, TcU32Selector, TcU32SelectorFlags,

@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::{
+    TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
+};
+use crate::tc::{TcError, TcStats2};
 use byteorder::{ByteOrder, NativeEndian};
-
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::{parse_string, parse_u32},
     traits::{Emitable, Parseable, ParseableParametrized},
     DecodeError,
 };
-
-use super::{
-    TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
-};
-use crate::tc::TcStats2;
 
 const TCA_ACT_TAB: u16 = 1;
 
@@ -48,61 +45,62 @@ impl Nla for TcAction {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for TcAction {
-    type Error = DecodeError;
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = TcError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, TcError> {
         let mut attributes = vec![];
         let mut kind = String::new();
 
         for iter in NlasIterator::new(buf.value()) {
-            let buf = iter.context("invalid action nla")?;
+            let buf = iter?;
             let payload = buf.value();
             attributes.push(match buf.kind() {
                 TCA_ACT_KIND => {
-                    kind = parse_string(payload)
-                        .context("failed to parse TCA_ACT_KIND")?;
+                    kind = parse_string(payload).map_err(|error| {
+                        TcError::ParseAction {
+                            kind: "TCA_ACT_KIND",
+                            error,
+                        }
+                    })?;
                     TcActionAttribute::Kind(kind.clone())
                 }
                 TCA_ACT_OPTIONS => {
                     let mut nlas = vec![];
                     for nla in NlasIterator::new(payload) {
-                        let nla = nla.context("invalid TCA_ACT_OPTIONS")?;
-                        nlas.push(
-                            TcActionOption::parse_with_param(&nla, &kind)
-                                .context(format!(
-                                    "failed to parse TCA_ACT_OPTIONS \
-                                    for kind {kind}"
-                                ))?,
-                        )
+                        let nla = nla?;
+                        nlas.push(TcActionOption::parse_with_param(
+                            &nla, &kind,
+                        )?);
                     }
                     TcActionAttribute::Options(nlas)
                 }
-                TCA_ACT_INDEX => TcActionAttribute::Index(
-                    parse_u32(payload)
-                        .context("failed to parse TCA_ACT_INDEX")?,
-                ),
+                TCA_ACT_INDEX => {
+                    TcActionAttribute::Index(parse_u32(payload).map_err(
+                        |error| TcError::ParseAction {
+                            kind: "TCA_ACT_INDEX",
+                            error,
+                        },
+                    )?)
+                }
                 TCA_ACT_STATS => {
                     let mut nlas = vec![];
                     for nla in NlasIterator::new(payload) {
-                        let nla = nla.context("invalid TCA_ACT_STATS")?;
-                        nlas.push(
-                            TcStats2::parse_with_param(&nla, &kind).context(
-                                format!(
-                                    "failed to parse TCA_ACT_STATS for \
-                                    kind {kind}",
-                                ),
-                            )?,
-                        );
+                        let nla = nla?;
+                        nlas.push(TcStats2::parse_with_param(&nla, &kind)?);
                     }
                     TcActionAttribute::Stats(nlas)
                 }
                 TCA_ACT_COOKIE => TcActionAttribute::Cookie(payload.to_vec()),
-                TCA_ACT_IN_HW_COUNT => TcActionAttribute::InHwCount(
-                    parse_u32(payload)
-                        .context("failed to parse TCA_ACT_IN_HW_COUNT")?,
-                ),
-                _ => TcActionAttribute::Other(
+                TCA_ACT_IN_HW_COUNT => {
+                    TcActionAttribute::InHwCount(parse_u32(payload).map_err(
+                        |error| TcError::ParseAction {
+                            kind: "TCA_ACT_IN_HW_COUNT",
+                            error,
+                        },
+                    )?)
+                }
+                kind => TcActionAttribute::Other(
                     DefaultNla::parse(&buf)
-                        .context("failed to parse action nla")?,
+                        .map_err(|error| TcError::UnknownNla { kind, error })?,
                 ),
             });
         }
@@ -215,23 +213,22 @@ where
     T: AsRef<[u8]> + ?Sized,
     S: AsRef<str>,
 {
-    type Error = DecodeError;
+    type Error = TcError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: S,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, TcError> {
         Ok(match kind.as_ref() {
             TcActionMirror::KIND => Self::Mirror(
                 TcActionMirrorOption::parse(buf)
-                    .context("failed to parse mirror action")?,
+                    .map_err(TcError::ParseMirrorAction)?,
             ),
             TcActionNat::KIND => Self::Nat(
                 TcActionNatOption::parse(buf)
-                    .context("failed to parse nat action")?,
+                    .map_err(TcError::ParseMirrorAction)?,
             ),
             _ => Self::Other(
-                DefaultNla::parse(buf)
-                    .context("failed to parse action options")?,
+                DefaultNla::parse(buf).map_err(TcError::ParseMirrorAction)?,
             ),
         })
     }

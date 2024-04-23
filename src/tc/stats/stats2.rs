@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
-};
-
 use super::{
     TcStatsBasic, TcStatsBasicBuffer, TcStatsQueue, TcStatsQueueBuffer,
     TcXstats,
+};
+use crate::tc::TcError;
+use netlink_packet_utils::{
+    nla::{DefaultNla, Nla, NlaBuffer},
+    traits::{Emitable, Parseable, ParseableParametrized},
 };
 
 const TCA_STATS_BASIC: u16 = 1;
@@ -65,24 +64,30 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcStats2
 where
     T: AsRef<[u8]> + ?Sized,
 {
-    type Error = DecodeError;
+    type Error = TcError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: &str,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, TcError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_STATS_APP => Self::App(TcXstats::parse_with_param(buf, kind)?),
-            TCA_STATS_BASIC => Self::Basic(TcStatsBasic::parse(
-                &TcStatsBasicBuffer::new(payload),
-            )?),
-            TCA_STATS_QUEUE => Self::Queue(TcStatsQueue::parse(
-                &TcStatsQueueBuffer::new(payload),
-            )?),
-            TCA_STATS_BASIC_HW => Self::BasicHw(TcStatsBasic::parse(
-                &TcStatsBasicBuffer::new(payload),
-            )?),
-            _ => Self::Other(DefaultNla::parse(buf)?),
+            TCA_STATS_BASIC => Self::Basic(
+                // unwrap: TCStatsBasic doesn't fail to parse.
+                TcStatsBasic::parse(&TcStatsBasicBuffer::new(payload)).unwrap(),
+            ),
+            TCA_STATS_QUEUE => Self::Queue(
+                // unwrap: TCStatsQueue doesn't fail to parse.
+                TcStatsQueue::parse(&TcStatsQueueBuffer::new(payload)).unwrap(),
+            ),
+            TCA_STATS_BASIC_HW => Self::BasicHw(
+                // unwrap: TCStatsBasic doesn't fail to parse.
+                TcStatsBasic::parse(&TcStatsBasicBuffer::new(payload)).unwrap(),
+            ),
+            kind => Self::Other(
+                DefaultNla::parse(buf)
+                    .map_err(|error| TcError::UnknownNla { kind, error })?,
+            ),
         })
     }
 }

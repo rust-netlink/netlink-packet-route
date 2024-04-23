@@ -13,7 +13,7 @@ use crate::{
     prefix::{PrefixError, PrefixMessage, PrefixMessageBuffer},
     route::{RouteError, RouteHeader, RouteMessage, RouteMessageBuffer},
     rule::{RuleError, RuleMessage, RuleMessageBuffer},
-    tc::{TcMessage, TcMessageBuffer},
+    tc::{TcError, TcMessage, TcMessageBuffer},
 };
 use netlink_packet_core::{
     NetlinkDeserializable, NetlinkHeader, NetlinkPayload, NetlinkSerializable,
@@ -100,8 +100,8 @@ pub enum RouteNetlinkMessageParseError {
     #[error(transparent)]
     InvalidFibRuleMessage(#[from] RuleError),
 
-    #[error("Invalid tc message")]
-    InvalidTcMessage(#[source] DecodeError),
+    #[error(transparent)]
+    InvalidTcMessage(#[from] TcError),
 
     #[error(transparent)]
     InvalidNsidMessage(#[from] NsidError),
@@ -290,9 +290,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             | RTM_DELTCLASS | RTM_GETTCLASS | RTM_NEWTFILTER
             | RTM_DELTFILTER | RTM_GETTFILTER | RTM_NEWCHAIN | RTM_DELCHAIN
             | RTM_GETCHAIN => {
-                let msg = TcMessageBuffer::new_checked(&buf.inner())
-                    .and_then(|buffer| TcMessage::parse(&buffer))
-                    .map_err(RouteNetlinkMessageParseError::InvalidTcMessage)?;
+                let buf_inner = buf.inner();
+                let buffer = TcMessageBuffer::new_checked(&buf_inner)
+                    .map_err(RouteNetlinkMessageParseError::ParseBuffer)?;
+                let msg = TcMessage::parse(&buffer)?;
                 match message_type {
                     RTM_NEWQDISC => {
                         RouteNetlinkMessage::NewQueueDiscipline(msg)

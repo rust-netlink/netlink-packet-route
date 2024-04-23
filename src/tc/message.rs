@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use super::{TcAttribute, TcError, TcHeader, TcMessageBuffer};
+use netlink_packet_utils::traits::{
+    Emitable, Parseable, ParseableParametrized,
 };
-
-use super::{TcAttribute, TcHeader, TcMessageBuffer};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -37,13 +34,11 @@ impl TcMessage {
 }
 
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for TcMessage {
-    type Error = DecodeError;
-    fn parse(buf: &TcMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = TcError;
+    fn parse(buf: &TcMessageBuffer<&'a T>) -> Result<Self, TcError> {
         Ok(Self {
-            header: TcHeader::parse(buf)
-                .context("failed to parse tc message header")?,
-            attributes: Vec::<TcAttribute>::parse(buf)
-                .context("failed to parse tc message NLAs")?,
+            header: TcHeader::parse(buf).unwrap(),
+            attributes: Vec::<TcAttribute>::parse(buf)?,
         })
     }
 }
@@ -51,8 +46,8 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>> for TcMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<TcMessageBuffer<&'a T>>
     for Vec<TcAttribute>
 {
-    type Error = DecodeError;
-    fn parse(buf: &TcMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = TcError;
+    fn parse(buf: &TcMessageBuffer<&'a T>) -> Result<Self, TcError> {
         let mut attributes = vec![];
         let mut kind = String::new();
 

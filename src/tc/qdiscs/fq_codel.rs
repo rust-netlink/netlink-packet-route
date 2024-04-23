@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use crate::tc::TcError;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -32,13 +32,10 @@ pub enum TcFqCodelXstats {
 }
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for TcFqCodelXstats {
-    type Error = DecodeError;
-    fn parse(buf: &T) -> Result<Self, DecodeError> {
+    type Error = TcError;
+    fn parse(buf: &T) -> Result<Self, TcError> {
         if buf.as_ref().len() < 4 {
-            return Err(DecodeError::from(format!(
-                "Invalid TcFqCodelXstats {:?}",
-                buf.as_ref()
-            )));
+            return Err(TcError::InvalidXstatsLength(buf.as_ref().len()));
         }
         let mut buf_type_bytes = [0; 4];
         buf_type_bytes.copy_from_slice(&buf.as_ref()[0..4]);
@@ -47,14 +44,22 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for TcFqCodelXstats {
 
         match buf_type {
             TCA_FQ_CODEL_XSTATS_QDISC => {
-                Ok(Self::Qdisc(TcFqCodelQdStats::parse(
-                    &TcFqCodelQdStatsBuffer::new(&buf.as_ref()[4..]),
-                )?))
+                // unwrap: we never fail below to parse TcFqCodelQdStats.
+                Ok(Self::Qdisc(
+                    TcFqCodelQdStats::parse(&TcFqCodelQdStatsBuffer::new(
+                        &buf.as_ref()[4..],
+                    ))
+                    .unwrap(),
+                ))
             }
             TCA_FQ_CODEL_XSTATS_CLASS => {
-                Ok(Self::Class(TcFqCodelClStats::parse(
-                    &TcFqCodelClStatsBuffer::new(&buf.as_ref()[4..]),
-                )?))
+                // unwrap: we never fail below to parse TcFqCodelQdStats.
+                Ok(Self::Class(
+                    TcFqCodelClStats::parse(&TcFqCodelClStatsBuffer::new(
+                        &buf.as_ref()[4..],
+                    ))
+                    .unwrap(),
+                ))
             }
             _ => Ok(Self::Other(buf.as_ref().to_vec())),
         }
@@ -118,8 +123,8 @@ buffer!(TcFqCodelQdStatsBuffer(TC_FQ_CODEL_QD_STATS_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<TcFqCodelQdStatsBuffer<T>> for TcFqCodelQdStats {
-    type Error = DecodeError;
-    fn parse(buf: &TcFqCodelQdStatsBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = ();
+    fn parse(buf: &TcFqCodelQdStatsBuffer<T>) -> Result<Self, ()> {
         Ok(Self {
             maxpacket: buf.maxpacket(),
             drop_overlimit: buf.drop_overlimit(),
@@ -288,58 +293,99 @@ impl Nla for TcQdiscFqCodelOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcQdiscFqCodelOption
 {
-    type Error = DecodeError;
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = TcError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, TcError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_FQ_CODEL_TARGET => Self::Target(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_TARGET")?,
-            ),
-            TCA_FQ_CODEL_LIMIT => Self::Limit(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_LIMIT")?,
-            ),
-            TCA_FQ_CODEL_INTERVAL => Self::Interval(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_INTERVAL")?,
-            ),
-            TCA_FQ_CODEL_ECN => Self::Ecn(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_ECN")?,
-            ),
-            TCA_FQ_CODEL_FLOWS => Self::Flows(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_FLOWS")?,
-            ),
-            TCA_FQ_CODEL_QUANTUM => Self::Quantum(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_QUANTUM")?,
-            ),
-            TCA_FQ_CODEL_CE_THRESHOLD => Self::CeThreshold(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_CETHRESHOLD")?,
-            ),
-            TCA_FQ_CODEL_DROP_BATCH_SIZE => Self::DropBatchSize(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_DROP_BATCH_SIZE")?,
-            ),
-            TCA_FQ_CODEL_MEMORY_LIMIT => Self::MemoryLimit(
-                parse_u32(payload)
-                    .context("failed to parse TCA_FQ_CODEL_MEMORY_LIMIT")?,
-            ),
-            TCA_FQ_CODEL_CE_THRESHOLD_SELECTOR => {
-                Self::CeThresholdSelector(parse_u8(payload).context(
-                    "failed to parse TCA_FQ_CODEL_CE_THRESHOLD_SELECTOR",
-                )?)
+            TCA_FQ_CODEL_TARGET => {
+                Self::Target(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_TARGET",
+                        error,
+                    }
+                })?)
             }
+            TCA_FQ_CODEL_LIMIT => {
+                Self::Limit(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_LIMIT",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_INTERVAL => {
+                Self::Interval(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_INTERVAL",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_ECN => {
+                Self::Ecn(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_ECN",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_FLOWS => {
+                Self::Flows(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_FLOWS",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_QUANTUM => {
+                Self::Quantum(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_QUANTUM",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_CE_THRESHOLD => {
+                Self::CeThreshold(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_CE_THRESHOLD",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_DROP_BATCH_SIZE => {
+                Self::DropBatchSize(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_DROP_BATCH_SIZE",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_MEMORY_LIMIT => {
+                Self::MemoryLimit(parse_u32(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_MEMORY_LIMIT",
+                        error,
+                    }
+                })?)
+            }
+            TCA_FQ_CODEL_CE_THRESHOLD_SELECTOR => Self::CeThresholdSelector(
+                parse_u8(payload).map_err(|error| TcError::InvalidValue {
+                    kind: "TCA_FQ_CODEL_CE_THRESHOLD_SELECTOR",
+                    error,
+                })?,
+            ),
             TCA_FQ_CODEL_CE_THRESHOLD_MASK => {
-                Self::CeThresholdMask(parse_u8(payload).context(
-                    "failed to parse TCA_FQ_CODEL_CE_THRESHOLD_MASK",
-                )?)
+                Self::CeThresholdMask(parse_u8(payload).map_err(|error| {
+                    TcError::InvalidValue {
+                        kind: "TCA_FQ_CODEL_CE_THRESHOLD_MASK",
+                        error,
+                    }
+                })?)
             }
-            _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse u32 nla")?,
+            kind => Self::Other(
+                DefaultNla::parse(buf)
+                    .map_err(|error| TcError::UnknownNla { kind, error })?,
             ),
         })
     }

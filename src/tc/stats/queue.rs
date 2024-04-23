@@ -32,8 +32,8 @@ buffer!(TcStatsQueueBuffer( STATS_QUEUE_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<TcStatsQueueBuffer<T>> for TcStatsQueue {
-    type Error = DecodeError;
-    fn parse(buf: &TcStatsQueueBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = ();
+    fn parse(buf: &TcStatsQueueBuffer<T>) -> Result<Self, ()> {
         Ok(Self {
             qlen: buf.qlen(),
             backlog: buf.backlog(),

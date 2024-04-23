@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 
+use crate::tc::{TcError, TcFqCodelXstats, TcQdiscFqCodel};
 use netlink_packet_utils::{
     nla::NlaBuffer,
     traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
 };
-
-use crate::tc::{TcFqCodelXstats, TcQdiscFqCodel};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -35,11 +33,11 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcXstats
 where
     T: AsRef<[u8]> + ?Sized,
 {
-    type Error = DecodeError;
+    type Error = TcError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: &str,
-    ) -> Result<TcXstats, DecodeError> {
+    ) -> Result<TcXstats, Self::Error> {
         Ok(match kind {
             TcQdiscFqCodel::KIND => {
                 TcXstats::FqCodel(TcFqCodelXstats::parse(buf.value())?)

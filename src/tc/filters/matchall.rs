@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: MIT
 
+use crate::tc::{TcAction, TcError, TcHandle};
 /// Matchall filter
 ///
 /// Matches all packets and performs an action on them.
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::parse_u32,
     traits::{Emitable, Parseable},
-    DecodeError,
 };
-
-use crate::tc::{TcAction, TcHandle};
 
 const TCA_MATCHALL_CLASSID: u16 = 1;
 const TCA_MATCHALL_ACT: u16 = 2;
@@ -71,34 +68,41 @@ impl Nla for TcFilterMatchAllOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcFilterMatchAllOption
 {
-    type Error = DecodeError;
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = TcError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, TcError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_MATCHALL_CLASSID => Self::ClassId(
                 parse_u32(payload)
-                    .context("failed to parse TCA_MATCHALL_UNSPEC")?
+                    .map_err(|error| TcError::ParseFilterMatchallOption {
+                        kind: "TCA_MATCHALL_UNSPEC",
+                        error,
+                    })?
                     .into(),
             ),
             TCA_MATCHALL_ACT => {
                 let mut acts = vec![];
                 for act in NlasIterator::new(payload) {
-                    let act = act.context("invalid TCA_MATCHALL_ACT")?;
-                    acts.push(
-                        TcAction::parse(&act)
-                            .context("failed to parse TCA_MATCHALL_ACT")?,
-                    );
+                    let act = act?;
+                    acts.push(TcAction::parse(&act)?);
                 }
                 Self::Action(acts)
             }
             TCA_MATCHALL_PCNT => Self::Pnct(payload.to_vec()),
-            TCA_MATCHALL_FLAGS => Self::Flags(
-                parse_u32(payload)
-                    .context("failed to parse TCA_MATCHALL_FLAGS")?,
-            ),
-            _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse u32 nla")?,
-            ),
+            TCA_MATCHALL_FLAGS => {
+                Self::Flags(parse_u32(payload).map_err(|error| {
+                    TcError::ParseFilterMatchallOption {
+                        kind: "TCA_MATCHALL_FLAGS",
+                        error,
+                    }
+                })?)
+            }
+            kind => Self::Other(DefaultNla::parse(buf).map_err(|error| {
+                TcError::UnknownFilterMatchAllOption {
+                    kind: kind.to_string(),
+                    error,
+                }
+            })?),
         })
     }
 }

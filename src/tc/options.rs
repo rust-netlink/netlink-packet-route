@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::{
+    TcError, TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32,
+    TcFilterU32Option, TcQdiscFqCodel, TcQdiscFqCodelOption, TcQdiscIngress,
+    TcQdiscIngressOption,
+};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     traits::{Parseable, ParseableParametrized},
-    DecodeError,
-};
-
-use super::{
-    TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
-    TcQdiscFqCodel, TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -62,32 +60,33 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcOption
 where
     T: AsRef<[u8]> + ?Sized,
 {
-    type Error = DecodeError;
+    type Error = TcError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: &str,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, TcError> {
         Ok(match kind {
             TcQdiscIngress::KIND => {
-                Self::Ingress(TcQdiscIngressOption::parse(buf).context(
-                    "failed to parse ingress TCA_OPTIONS attributes",
+                Self::Ingress(TcQdiscIngressOption::parse(buf).map_err(
+                    |error| TcError::ParseTcaOptionAttributes {
+                        kind: "ingress",
+                        error,
+                    },
                 )?)
             }
             TcQdiscFqCodel::KIND => {
-                Self::FqCodel(TcQdiscFqCodelOption::parse(buf).context(
-                    "failed to parse fq_codel TCA_OPTIONS attributes",
-                )?)
+                Self::FqCodel(TcQdiscFqCodelOption::parse(buf)?)
             }
-            TcFilterU32::KIND => Self::U32(
-                TcFilterU32Option::parse(buf)
-                    .context("failed to parse u32 TCA_OPTIONS attributes")?,
-            ),
+            TcFilterU32::KIND => Self::U32(TcFilterU32Option::parse(buf)?),
             TcFilterMatchAll::KIND => {
-                Self::MatchAll(TcFilterMatchAllOption::parse(buf).context(
-                    "failed to parse matchall TCA_OPTIONS attributes",
-                )?)
+                Self::MatchAll(TcFilterMatchAllOption::parse(buf)?)
             }
-            _ => Self::Other(DefaultNla::parse(buf)?),
+            kind => Self::Other(DefaultNla::parse(buf).map_err(|error| {
+                TcError::UnknownOption {
+                    kind: kind.to_string(),
+                    error,
+                }
+            })?),
         })
     }
 }
@@ -98,11 +97,11 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for VecTcOption
 where
     T: AsRef<[u8]> + ?Sized,
 {
-    type Error = DecodeError;
+    type Error = TcError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: &str,
-    ) -> Result<VecTcOption, DecodeError> {
+    ) -> Result<VecTcOption, TcError> {
         Ok(match kind {
             TcFilterU32::KIND
             | TcFilterMatchAll::KIND
@@ -110,16 +109,8 @@ where
             | TcQdiscFqCodel::KIND => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(buf.value()) {
-                    let nla = nla.context(format!(
-                        "Invalid TCA_OPTIONS for kind: {kind}",
-                    ))?;
-                    nlas.push(
-                        TcOption::parse_with_param(&nla, kind).context(
-                            format!(
-                                "Failed to parse TCA_OPTIONS for kind: {kind}",
-                            ),
-                        )?,
-                    )
+                    let nla = nla?;
+                    nlas.push(TcOption::parse_with_param(&nla, kind)?)
                 }
                 Self(nlas)
             }
@@ -127,7 +118,14 @@ where
             // should place a nla_nest here. The `sfq` qdisc kernel code is
             // using single NLA instead nested ones. Hence we are storing
             // unknown Nla as Vec with single item.
-            _ => Self(vec![TcOption::Other(DefaultNla::parse(buf)?)]),
+            kind => {
+                Self(vec![TcOption::Other(DefaultNla::parse(buf).map_err(
+                    |error| TcError::UnknownOption {
+                        kind: kind.to_string(),
+                        error,
+                    },
+                )?)])
+            }
         })
     }
 }
