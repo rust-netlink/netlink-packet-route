@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::{RouteError, RouteMplsIpTunnel};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
 };
-
-use super::RouteMplsIpTunnel;
 
 const LWTUNNEL_ENCAP_NONE: u16 = 0;
 const LWTUNNEL_ENCAP_MPLS: u16 = 1;
@@ -141,10 +138,11 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, RouteLwEnCapType>
 where
     T: AsRef<[u8]> + ?Sized,
 {
+    type Error = RouteError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: RouteLwEnCapType,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         Ok(match kind {
             RouteLwEnCapType::Mpls => {
                 Self::Mpls(RouteMplsIpTunnel::parse(buf)?)
@@ -163,17 +161,16 @@ impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, RouteLwEnCapType>
 where
     T: AsRef<[u8]> + ?Sized,
 {
+    type Error = RouteError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         kind: RouteLwEnCapType,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, RouteError> {
         let mut ret = Vec::new();
         for nla in NlasIterator::new(buf.value()) {
-            let nla =
-                nla.context(format!("Invalid RTA_ENCAP for kind: {kind}"))?;
-            ret.push(RouteLwTunnelEncap::parse_with_param(&nla, kind).context(
-                format!("Failed to parse RTA_ENCAP for kind: {kind}",),
-            )?)
+            let nla = nla
+                .map_err(|error| RouteError::InvalidRtaEncap { error, kind })?;
+            ret.push(RouteLwTunnelEncap::parse_with_param(&nla, kind)?);
         }
         Ok(Self(ret))
     }

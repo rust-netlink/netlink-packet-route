@@ -71,6 +71,7 @@ impl Nla for InfoPortKind {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoPortKind, DecodeError> {
         if buf.kind() != IFLA_INFO_PORT_KIND {
             return Err(format!(
@@ -132,11 +133,17 @@ impl InfoPortData {
     ) -> Result<InfoPortData, DecodeError> {
         let port_data = match kind {
             InfoPortKind::Bond => NlasIterator::new(payload)
-                .map(|nla| nla.and_then(|nla| InfoBondPort::parse(&nla)))
+                .map(|nla| {
+                    let nla = nla?;
+                    InfoBondPort::parse(&nla)
+                })
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BondPort),
             InfoPortKind::Bridge => NlasIterator::new(payload)
-                .map(|nla| nla.and_then(|nla| InfoBridgePort::parse(&nla)))
+                .map(|nla| {
+                    let nla = nla?;
+                    InfoBridgePort::parse(&nla)
+                })
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BridgePort),
             InfoPortKind::Vrf => NlasIterator::new(payload)

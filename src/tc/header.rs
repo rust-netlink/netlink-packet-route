@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 
+use crate::AddressFamily;
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
 };
-
-use crate::AddressFamily;
 
 const TC_HEADER_LEN: usize = 20;
 
@@ -24,7 +23,7 @@ buffer!(TcMessageBuffer(TC_HEADER_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> TcMessageBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(self.payload())
     }
 }
@@ -61,7 +60,8 @@ impl Emitable for TcHeader {
 }
 
 impl<T: AsRef<[u8]>> Parseable<TcMessageBuffer<T>> for TcHeader {
-    fn parse(buf: &TcMessageBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = ();
+    fn parse(buf: &TcMessageBuffer<T>) -> Result<Self, ()> {
         Ok(Self {
             family: buf.family().into(),
             index: buf.index(),

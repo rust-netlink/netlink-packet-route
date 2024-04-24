@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv6Addr;
-
-use anyhow::Context;
+use super::{
+    cache_info::{CacheInfo, CacheInfoBuffer},
+    error::PrefixError,
+};
 use netlink_packet_utils::{
     nla::{self, DefaultNla, NlaBuffer},
     traits::Parseable,
-    DecodeError, Emitable,
+    Emitable,
 };
-
-use super::cache_info::{CacheInfo, CacheInfoBuffer};
+use std::net::Ipv6Addr;
 
 const PREFIX_ADDRESS: u16 = 1;
 const PREFIX_CACHEINFO: u16 = 2;
@@ -50,22 +50,26 @@ impl nla::Nla for PrefixAttribute {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for PrefixAttribute
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = PrefixError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, PrefixError> {
         let payload = buf.value();
         match buf.kind() {
             PREFIX_ADDRESS => {
                 if let Ok(payload) = TryInto::<[u8; 16]>::try_into(payload) {
                     Ok(Self::Address(Ipv6Addr::from(payload)))
                 } else {
-                    Err(DecodeError::from(format!("Invalid PREFIX_ADDRESS, unexpected payload length: {:?}", payload)))
+                    Err(PrefixError::InvalidPrefixAddress {
+                        payload_length: payload.len(),
+                    })
                 }
             }
             PREFIX_CACHEINFO => Ok(Self::CacheInfo(
-                CacheInfo::parse(&CacheInfoBuffer::new(payload)).context(
-                    format!("Invalid PREFIX_CACHEINFO: {:?}", payload),
-                )?,
+                CacheInfo::parse(&CacheInfoBuffer::new(payload))
+                    .map_err(PrefixError::InvalidPrefixCacheInfo)?,
             )),
-            _ => Ok(Self::Other(DefaultNla::parse(buf)?)),
+            _ => Ok(Self::Other(
+                DefaultNla::parse(buf).map_err(PrefixError::Other)?,
+            )),
         }
     }
 }

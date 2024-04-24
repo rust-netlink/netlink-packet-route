@@ -15,6 +15,7 @@ pub struct LinkPhysId {
 }
 
 impl Parseable<[u8]> for LinkPhysId {
+    type Error = DecodeError;
     fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         let len = buf.len() % MAX_PHYS_ITEM_ID_LEN;
         let mut id = [0; MAX_PHYS_ITEM_ID_LEN];

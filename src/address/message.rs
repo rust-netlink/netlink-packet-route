@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use crate::{
+    address::{
+        AddressAttribute, AddressError, AddressHeaderFlags, AddressScope,
+    },
+    AddressFamily,
+};
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
-};
-
-use crate::{
-    address::{AddressAttribute, AddressHeaderFlags, AddressScope},
-    AddressFamily,
 };
 
 const ADDRESS_HEADER_LEN: usize = 8;
@@ -26,7 +26,7 @@ buffer!(AddressMessageBuffer(ADDRESS_HEADER_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> AddressMessageBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(self.payload())
     }
 }
@@ -76,7 +76,8 @@ impl Emitable for AddressMessage {
 }
 
 impl<T: AsRef<[u8]>> Parseable<AddressMessageBuffer<T>> for AddressHeader {
-    fn parse(buf: &AddressMessageBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = ();
+    fn parse(buf: &AddressMessageBuffer<T>) -> Result<Self, ()> {
         Ok(Self {
             family: buf.family().into(),
             prefix_len: buf.prefix_len(),
@@ -90,12 +91,12 @@ impl<T: AsRef<[u8]>> Parseable<AddressMessageBuffer<T>> for AddressHeader {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<AddressMessageBuffer<&'a T>>
     for AddressMessage
 {
-    fn parse(buf: &AddressMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = AddressError;
+    fn parse(buf: &AddressMessageBuffer<&'a T>) -> Result<Self, AddressError> {
         Ok(AddressMessage {
-            header: AddressHeader::parse(buf)
-                .context("failed to parse address message header")?,
-            attributes: Vec::<AddressAttribute>::parse(buf)
-                .context("failed to parse address message NLAs")?,
+            // ok to unwrap, we never fail parsing the header.
+            header: AddressHeader::parse(buf).unwrap(),
+            attributes: Vec::<AddressAttribute>::parse(buf)?,
         })
     }
 }
@@ -103,7 +104,8 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<AddressMessageBuffer<&'a T>>
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<AddressMessageBuffer<&'a T>>
     for Vec<AddressAttribute>
 {
-    fn parse(buf: &AddressMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = AddressError;
+    fn parse(buf: &AddressMessageBuffer<&'a T>) -> Result<Self, AddressError> {
         let mut attributes = vec![];
         for nla_buf in buf.attributes() {
             attributes.push(AddressAttribute::parse(&nla_buf?)?);

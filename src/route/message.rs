@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
-};
-
 use super::{
-    super::AddressFamily, attribute::RTA_ENCAP_TYPE, RouteAttribute,
-    RouteHeader, RouteLwEnCapType, RouteMessageBuffer, RouteType,
+    super::AddressFamily, attribute::RTA_ENCAP_TYPE, error::RouteError,
+    RouteAttribute, RouteHeader, RouteLwEnCapType, RouteMessageBuffer,
+    RouteType,
+};
+use netlink_packet_utils::traits::{
+    Emitable, Parseable, ParseableParametrized,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -34,9 +32,10 @@ impl Emitable for RouteMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<RouteMessageBuffer<&'a T>>
     for RouteMessage
 {
-    fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let header = RouteHeader::parse(buf)
-            .context("failed to parse route message header")?;
+    type Error = RouteError;
+    fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, RouteError> {
+        // unwrap: RouteHeader can't fail.
+        let header = RouteHeader::parse(buf).unwrap();
         let address_family = header.address_family;
         let route_type = header.kind;
         Ok(RouteMessage {
@@ -44,8 +43,7 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<RouteMessageBuffer<&'a T>>
             attributes: Vec::<RouteAttribute>::parse_with_param(
                 buf,
                 (address_family, route_type),
-            )
-            .context("failed to parse route message NLAs")?,
+            )?,
         })
     }
 }
@@ -54,10 +52,11 @@ impl<'a, T: AsRef<[u8]> + 'a>
     ParseableParametrized<RouteMessageBuffer<&'a T>, (AddressFamily, RouteType)>
     for Vec<RouteAttribute>
 {
+    type Error = RouteError;
     fn parse_with_param(
         buf: &RouteMessageBuffer<&'a T>,
         (address_family, route_type): (AddressFamily, RouteType),
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, RouteError> {
         let mut attributes = vec![];
         let mut encap_type = RouteLwEnCapType::None;
         // The RTA_ENCAP_TYPE is provided __after__ RTA_ENCAP, we should find

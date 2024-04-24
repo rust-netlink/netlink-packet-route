@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::error::RouteError;
 use byteorder::{ByteOrder, NativeEndian};
-use std::mem::size_of;
-
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::parse_u32,
     traits::Parseable,
-    DecodeError,
 };
+use std::mem::size_of;
 
 const RTAX_LOCK: u16 = 1;
 const RTAX_MTU: u16 = 2;
@@ -127,65 +125,144 @@ impl Nla for RouteMetric {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for RouteMetric {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = RouteError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, RouteError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            RTAX_LOCK => Self::Lock(
-                parse_u32(payload).context("invalid RTAX_LOCK value")?,
-            ),
-            RTAX_MTU => {
-                Self::Mtu(parse_u32(payload).context("invalid RTAX_MTU value")?)
+            RTAX_LOCK => Self::Lock(parse_u32(payload).map_err(|error| {
+                RouteError::InvalidRouteMetric {
+                    kind: "RTAX_LOCK",
+                    error,
+                }
+            })?),
+            RTAX_MTU => Self::Mtu(parse_u32(payload).map_err(|error| {
+                RouteError::InvalidRouteMetric {
+                    kind: "RTAX_MTU",
+                    error,
+                }
+            })?),
+            RTAX_WINDOW => {
+                Self::Window(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_WINDOW",
+                        error,
+                    }
+                })?)
             }
-            RTAX_WINDOW => Self::Window(
-                parse_u32(payload).context("invalid RTAX_WINDOW value")?,
-            ),
-            RTAX_RTT => {
-                Self::Rtt(parse_u32(payload).context("invalid RTAX_RTT value")?)
+            RTAX_RTT => Self::Rtt(parse_u32(payload).map_err(|error| {
+                RouteError::InvalidRouteMetric {
+                    kind: "RTAX_RTT",
+                    error,
+                }
+            })?),
+            RTAX_RTTVAR => {
+                Self::RttVar(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_RTTVAR",
+                        error,
+                    }
+                })?)
             }
-            RTAX_RTTVAR => Self::RttVar(
-                parse_u32(payload).context("invalid RTAX_RTTVAR value")?,
-            ),
-            RTAX_SSTHRESH => Self::SsThresh(
-                parse_u32(payload).context("invalid RTAX_SSTHRESH value")?,
-            ),
-            RTAX_CWND => Self::Cwnd(
-                parse_u32(payload).context("invalid RTAX_CWND value")?,
-            ),
-            RTAX_ADVMSS => Self::Advmss(
-                parse_u32(payload).context("invalid RTAX_ADVMSS value")?,
-            ),
-            RTAX_REORDERING => Self::Reordering(
-                parse_u32(payload).context("invalid RTAX_REORDERING value")?,
-            ),
-            RTAX_HOPLIMIT => Self::Hoplimit(
-                parse_u32(payload).context("invalid RTAX_HOPLIMIT value")?,
-            ),
-            RTAX_INITCWND => Self::InitCwnd(
-                parse_u32(payload).context("invalid RTAX_INITCWND value")?,
-            ),
-            RTAX_FEATURES => Self::Features(
-                parse_u32(payload).context("invalid RTAX_FEATURES value")?,
-            ),
-            RTAX_RTO_MIN => Self::RtoMin(
-                parse_u32(payload).context("invalid RTAX_RTO_MIN value")?,
-            ),
-            RTAX_INITRWND => Self::InitRwnd(
-                parse_u32(payload).context("invalid RTAX_INITRWND value")?,
-            ),
-            RTAX_QUICKACK => Self::QuickAck(
-                parse_u32(payload).context("invalid RTAX_QUICKACK value")?,
-            ),
-            RTAX_CC_ALGO => Self::CcAlgo(
-                parse_u32(payload).context("invalid RTAX_CC_ALGO value")?,
-            ),
-            RTAX_FASTOPEN_NO_COOKIE => Self::FastopenNoCookie(
-                parse_u32(payload)
-                    .context("invalid RTAX_FASTOPEN_NO_COOKIE value")?,
-            ),
-            _ => Self::Other(
-                DefaultNla::parse(buf)
-                    .context("invalid NLA value (unknown type) value")?,
-            ),
+            RTAX_SSTHRESH => {
+                Self::SsThresh(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_SSHTHRESH",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_CWND => Self::Cwnd(parse_u32(payload).map_err(|error| {
+                RouteError::InvalidRouteMetric {
+                    kind: "RTAX_CWND",
+                    error,
+                }
+            })?),
+            RTAX_ADVMSS => {
+                Self::Advmss(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_ADVMSS",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_REORDERING => {
+                Self::Reordering(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_REORDERING",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_HOPLIMIT => {
+                Self::Hoplimit(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_HOPLIMIT",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_INITCWND => {
+                Self::InitCwnd(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_INITCWND",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_FEATURES => {
+                Self::Features(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_FEATURES",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_RTO_MIN => {
+                Self::RtoMin(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_RTO_MIN",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_INITRWND => {
+                Self::InitRwnd(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_INITRWND",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_QUICKACK => {
+                Self::QuickAck(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_QUICKACK",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_CC_ALGO => {
+                Self::CcAlgo(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_CC_ALGO",
+                        error,
+                    }
+                })?)
+            }
+            RTAX_FASTOPEN_NO_COOKIE => {
+                Self::FastopenNoCookie(parse_u32(payload).map_err(|error| {
+                    RouteError::InvalidRouteMetric {
+                        kind: "RTAX_FASTOPEN_NO_COOKIE",
+                        error,
+                    }
+                })?)
+            }
+            _ => Self::Other(DefaultNla::parse(buf).map_err(|error| {
+                RouteError::InvalidRouteMetric {
+                    kind: "NLA unkwnon",
+                    error,
+                }
+            })?),
         })
     }
 }
@@ -193,11 +270,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for RouteMetric {
 pub(crate) struct VecRouteMetric(pub(crate) Vec<RouteMetric>);
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for VecRouteMetric {
-    fn parse(payload: &T) -> Result<Self, DecodeError> {
+    type Error = RouteError;
+    fn parse(payload: &T) -> Result<Self, RouteError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(payload) {
-            let nla = nla.context("Invalid RTA_METRICS")?;
-            nlas.push(RouteMetric::parse(&nla).context("Invalid RTA_METRICS")?);
+            nlas.push(RouteMetric::parse(&nla?)?);
         }
         Ok(Self(nlas))
     }

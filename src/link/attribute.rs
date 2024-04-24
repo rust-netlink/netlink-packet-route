@@ -14,7 +14,7 @@ use netlink_packet_utils::{
 #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
 use super::af_spec::VecAfSpecBridge;
 #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
-use super::proto_info::VecLinkProtoInfoBridge;
+use super::proto_info::VecanhowLinkProtoInfoBridge;
 use super::{
     af_spec::VecAfSpecUnspec,
     buffer_tool::expand_buffer_if_small,
@@ -367,6 +367,7 @@ impl Nla for LinkAttribute {
 impl<'a, T: AsRef<[u8]> + ?Sized>
     ParseableParametrized<NlaBuffer<&'a T>, AddressFamily> for LinkAttribute
 {
+    type Error = DecodeError;
     fn parse_with_param(
         buf: &NlaBuffer<&'a T>,
         interface_family: AddressFamily,

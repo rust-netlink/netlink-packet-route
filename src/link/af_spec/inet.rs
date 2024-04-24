@@ -27,6 +27,7 @@ pub(crate) struct VecAfSpecInet(pub(crate) Vec<AfSpecInet>);
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VecAfSpecInet
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         let err = "Invalid AF_INET NLA for IFLA_AF_SPEC(AF_UNSPEC)";
@@ -65,6 +66,7 @@ impl nla::Nla for AfSpecInet {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         use self::AfSpecInet::*;
 
@@ -162,6 +164,7 @@ pub struct InetDevConf {
 }
 
 impl<T: AsRef<[u8]>> Parseable<InetDevConfBuffer<T>> for InetDevConf {
+    type Error = DecodeError;
     fn parse(buf: &InetDevConfBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             forwarding: buf.forwarding(),

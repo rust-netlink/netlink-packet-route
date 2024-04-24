@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::NeighbourTableError;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     parsers::{parse_u32, parse_u64},
-    DecodeError, Parseable,
+    Parseable,
 };
 
 const NDTPA_IFINDEX: u16 = 1;
@@ -135,92 +135,160 @@ impl Nla for NeighbourTableParameter {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for NeighbourTableParameter
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = NeighbourTableError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, NeighbourTableError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             NDTPA_IFINDEX => {
-                Self::Ifindex(parse_u32(payload).context(format!(
-                    "invalid NDTPA_IFINDEX value {payload:?}"
-                ))?)
+                Self::Ifindex(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_IFINDEX",
+                        error,
+                    }
+                })?)
             }
             NDTPA_REFCNT => {
-                Self::ReferenceCount(parse_u32(payload).context(format!(
-                    "invalid NDTPA_REFCNT value {payload:?}"
-                ))?)
+                Self::ReferenceCount(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_REFCNT",
+                        error,
+                    }
+                })?)
             }
             NDTPA_REACHABLE_TIME => {
-                Self::ReachableTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_REACHABLE_TIME value {payload:?}"
-                ))?)
+                Self::ReachableTime(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_REACHABLE_TIME",
+                        error,
+                    }
+                })?)
             }
             NDTPA_BASE_REACHABLE_TIME => {
-                Self::BaseReachableTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_BASE_REACHABLE_TIME value {payload:?}"
-                ))?)
+                Self::BaseReachableTime(parse_u64(payload).map_err(
+                    |error| NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_BASE_REACHABLE_TIME",
+                        error,
+                    },
+                )?)
             }
             NDTPA_RETRANS_TIME => {
-                Self::RetransTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_RETRANS_TIME value {payload:?}"
-                ))?)
+                Self::RetransTime(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_RETRANS_TIME",
+                        error,
+                    }
+                })?)
             }
             NDTPA_GC_STALETIME => {
-                Self::GcStaletime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_GC_STALE_TIME value {payload:?}"
-                ))?)
+                Self::GcStaletime(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_GC_STALETIME",
+                        error,
+                    }
+                })?)
             }
             NDTPA_DELAY_PROBE_TIME => {
-                Self::DelayProbeTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_DELAY_PROBE_TIME value {payload:?}"
-                ))?)
+                Self::DelayProbeTime(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_DELAY_PROBE_TIME",
+                        error,
+                    }
+                })?)
             }
-            NDTPA_QUEUE_LEN => Self::QueueLen(parse_u32(payload).context(
-                format!("invalid NDTPA_QUEUE_LEN value {payload:?}"),
-            )?),
-            NDTPA_APP_PROBES => Self::AppProbes(parse_u32(payload).context(
-                format!("invalid NDTPA_APP_PROBES value {payload:?}"),
-            )?),
+            NDTPA_QUEUE_LEN => {
+                Self::QueueLen(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_QUEUE_LEN",
+                        error,
+                    }
+                })?)
+            }
+            NDTPA_APP_PROBES => {
+                Self::AppProbes(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_APP_PROBES",
+                        error,
+                    }
+                })?)
+            }
             NDTPA_UCAST_PROBES => {
-                Self::UcastProbes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_UCAST_PROBES value {payload:?}"
-                ))?)
+                Self::UcastProbes(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_UCAST_PROBES",
+                        error,
+                    }
+                })?)
             }
             NDTPA_MCAST_PROBES => {
-                Self::McastProbes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_MCAST_PROBES value {payload:?}"
-                ))?)
+                Self::McastProbes(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_MCAST_PROBES",
+                        error,
+                    }
+                })?)
             }
             NDTPA_ANYCAST_DELAY => {
-                Self::AnycastDelay(parse_u64(payload).context(format!(
-                    "invalid NDTPA_ANYCAST_DELAY value {payload:?}"
-                ))?)
+                Self::AnycastDelay(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_ANYCAST_DELAY",
+                        error,
+                    }
+                })?)
             }
-            NDTPA_PROXY_DELAY => Self::ProxyDelay(parse_u64(payload).context(
-                format!("invalid NDTPA_PROXY_DELAY value {payload:?}"),
-            )?),
-            NDTPA_PROXY_QLEN => Self::ProxyQlen(parse_u32(payload).context(
-                format!("invalid NDTPA_PROXY_QLEN value {payload:?}"),
-            )?),
-            NDTPA_LOCKTIME => Self::Locktime(parse_u64(payload).context(
-                format!("invalid NDTPA_LOCKTIME value {payload:?}"),
-            )?),
+            NDTPA_PROXY_DELAY => {
+                Self::ProxyDelay(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_PROXY_DELAY",
+                        error,
+                    }
+                })?)
+            }
+            NDTPA_PROXY_QLEN => {
+                Self::ProxyQlen(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_PROXY_QLEN",
+                        error,
+                    }
+                })?)
+            }
+            NDTPA_LOCKTIME => {
+                Self::Locktime(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_LOCKTIME",
+                        error,
+                    }
+                })?)
+            }
             NDTPA_QUEUE_LENBYTES => {
-                Self::QueueLenbytes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_QUEUE_LENBYTES value {payload:?}"
-                ))?)
+                Self::QueueLenbytes(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_QUEUE_LENBYTES",
+                        error,
+                    }
+                })?)
             }
             NDTPA_MCAST_REPROBES => {
-                Self::McastReprobes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_MCAST_PROBES value {payload:?}"
-                ))?)
+                Self::McastReprobes(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_MCAST_REPROBES",
+                        error,
+                    }
+                })?)
             }
-            NDTPA_INTERVAL_PROBE_TIME_MS => Self::IntervalProbeTimeMs(
-                parse_u64(payload).context(format!(
-                    "invalid NDTPA_INTERVAL_PROBE_TIME_MS value {payload:?}"
-                ))?,
-            ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid NDTA_PARMS attribute {payload:?}"
-            ))?),
+            NDTPA_INTERVAL_PROBE_TIME_MS => {
+                Self::IntervalProbeTimeMs(parse_u64(payload).map_err(
+                    |error| NeighbourTableError::InvalidParameter {
+                        kind: "NDTPA_INTERVAL_PROBE_TIME_MS",
+                        error,
+                    },
+                )?)
+            }
+            _ => Self::Other(DefaultNla::parse(buf).map_err(|error| {
+                NeighbourTableError::InvalidParameter {
+                    kind: "NDTA_PARMS",
+                    error,
+                }
+            })?),
         })
     }
 }
@@ -233,12 +301,12 @@ pub(crate) struct VecNeighbourTableParameter(
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VecNeighbourTableParameter
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = NeighbourTableError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, NeighbourTableError> {
         let mut nlas = vec![];
-        let err = "invalid NDTA_PARMS attribute";
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(NeighbourTableParameter::parse(&nla).context(err)?);
+            let nla = nla?;
+            nlas.push(NeighbourTableParameter::parse(&nla)?);
         }
         Ok(Self(nlas))
     }

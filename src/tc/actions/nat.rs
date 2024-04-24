@@ -60,6 +60,7 @@ impl Nla for TcActionNatOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcActionNatOption
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
@@ -124,6 +125,7 @@ impl Emitable for TcNat {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&'a T>> for TcNat {
+    type Error = DecodeError;
     fn parse(buf: &TcNatBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
@@ -139,10 +141,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&'a T>> for TcNat {
 
 fn parse_ipv4(data: &[u8]) -> Result<Ipv4Addr, DecodeError> {
     if data.len() != 4 {
-        Err(DecodeError::from(format!(
-            "Invalid length of IPv4 Address, expecting 4 bytes, but got {:?}",
-            data
-        )))
+        Err(DecodeError::InvalidIPAddress)
     } else {
         Ok(Ipv4Addr::new(data[0], data[1], data[2], data[3]))
     }

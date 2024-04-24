@@ -3,7 +3,6 @@
 // Currently, the qdisc ingress does not have any attribute, kernel
 // just start a empty nla_nest. This is just a place holder
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     DecodeError, Parseable,
@@ -46,9 +45,8 @@ impl Nla for TcQdiscIngressOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcQdiscIngressOption
 {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        Ok(Self::Other(
-            DefaultNla::parse(buf).context("failed to parse ingress nla")?,
-        ))
+        Ok(Self::Other(DefaultNla::parse(buf)?))
     }
 }

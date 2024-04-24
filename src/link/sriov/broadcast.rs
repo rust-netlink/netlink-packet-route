@@ -29,6 +29,7 @@ buffer!(VfInfoBroadcastBuffer(VF_INFO_BROADCAST_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoBroadcastBuffer<&'a T>>
     for VfInfoBroadcast
 {
+    type Error = DecodeError;
     fn parse(buf: &VfInfoBroadcastBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self::new(buf.addr()))
     }

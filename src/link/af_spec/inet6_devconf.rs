@@ -72,6 +72,7 @@ buffer!(Inet6DevConfBuffer(LINK_INET6_DEV_CONF_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<Inet6DevConfBuffer<T>> for Inet6DevConf {
+    type Error = DecodeError;
     fn parse(buf: &Inet6DevConfBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             forwarding: buf.forwarding(),

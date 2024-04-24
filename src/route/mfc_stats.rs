@@ -22,6 +22,7 @@ buffer!(RouteMfcStatsBuffer(MFC_STATS_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<RouteMfcStatsBuffer<T>> for RouteMfcStats {
+    type Error = DecodeError;
     fn parse(
         buf: &RouteMfcStatsBuffer<T>,
     ) -> Result<RouteMfcStats, DecodeError> {

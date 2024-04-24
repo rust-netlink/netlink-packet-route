@@ -92,6 +92,7 @@ impl Nla for LinkXdp {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkXdp {
+    type Error = DecodeError;
     fn parse(nla: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = nla.value();
         Ok(match nla.kind() as u32 {
@@ -138,6 +139,7 @@ pub(crate) struct VecLinkXdp(pub(crate) Vec<LinkXdp>);
 //  nla->data[0].type   <- nla.kind()
 //  nla->data[0].len
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkXdp {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut res = Vec::new();
         let nlas = NlasIterator::new(buf.into_inner());

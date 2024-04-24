@@ -33,6 +33,7 @@ impl Nla for InfoSitTun {
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoSitTun {
+    type Error = DecodeError;
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         #[allow(clippy::match_single_binding)]
         Ok(match buf.kind() {

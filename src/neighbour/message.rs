@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
-};
-
 use super::{
-    super::AddressFamily, NeighbourAttribute, NeighbourHeader,
+    super::AddressFamily, NeighbourAttribute, NeighbourError, NeighbourHeader,
     NeighbourMessageBuffer,
+};
+use netlink_packet_utils::traits::{
+    Emitable, Parseable, ParseableParametrized,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -34,17 +31,19 @@ impl Emitable for NeighbourMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>>
     for NeighbourMessage
 {
-    fn parse(buf: &NeighbourMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let header = NeighbourHeader::parse(buf)
-            .context("failed to parse neighbour message header")?;
+    type Error = NeighbourError;
+    fn parse(
+        buf: &NeighbourMessageBuffer<&'a T>,
+    ) -> Result<Self, NeighbourError> {
+        // unwrap: parsing the header is always ok.
+        let header = NeighbourHeader::parse(buf).unwrap();
         let address_family = header.family;
         Ok(NeighbourMessage {
             header,
             attributes: Vec::<NeighbourAttribute>::parse_with_param(
                 buf,
                 address_family,
-            )
-            .context("failed to parse neighbour message NLAs")?,
+            )?,
         })
     }
 }
@@ -53,10 +52,11 @@ impl<'a, T: AsRef<[u8]> + 'a>
     ParseableParametrized<NeighbourMessageBuffer<&'a T>, AddressFamily>
     for Vec<NeighbourAttribute>
 {
+    type Error = NeighbourError;
     fn parse_with_param(
         buf: &NeighbourMessageBuffer<&'a T>,
         address_family: AddressFamily,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, NeighbourError> {
         let mut attributes = vec![];
         for nla_buf in buf.attributes() {
             attributes.push(NeighbourAttribute::parse_with_param(

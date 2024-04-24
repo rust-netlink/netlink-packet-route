@@ -28,6 +28,7 @@ buffer!(Icmp6StatsBuffer(ICMP6_STATS_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<Icmp6StatsBuffer<T>> for Icmp6Stats {
+    type Error = DecodeError;
     fn parse(buf: &Icmp6StatsBuffer<T>) -> Result<Self, DecodeError> {
         Ok(Self {
             num: buf.num(),

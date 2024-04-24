@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 
+use super::{super::AddressFamily, flags::RouteFlags, RouteError};
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
 };
-
-use super::{super::AddressFamily, flags::RouteFlags};
 
 const ROUTE_HEADER_LEN: usize = 12;
 
@@ -26,7 +25,7 @@ buffer!(RouteMessageBuffer(ROUTE_HEADER_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> RouteMessageBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(self.payload())
     }
 }
@@ -64,7 +63,8 @@ impl RouteHeader {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteMessageBuffer<&'a T>>
     for RouteHeader
 {
-    fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = ();
+    fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, ()> {
         Ok(RouteHeader {
             address_family: buf.address_family().into(),
             destination_prefix_length: buf.destination_prefix_length(),
@@ -246,14 +246,12 @@ impl Default for RouteProtocol {
 }
 
 impl Parseable<[u8]> for RouteProtocol {
-    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+    type Error = RouteError;
+    fn parse(buf: &[u8]) -> Result<Self, RouteError> {
         if buf.len() == 1 {
             Ok(Self::from(buf[0]))
         } else {
-            Err(DecodeError::from(format!(
-                "Expecting single u8 for route protocol, but got {:?}",
-                buf
-            )))
+            Err(RouteError::ParseRouteProtocol)
         }
     }
 }

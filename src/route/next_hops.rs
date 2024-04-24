@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::{
+    super::AddressFamily, RouteAttribute, RouteError, RouteLwEnCapType,
+    RouteType,
+};
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, ParseableParametrized},
     DecodeError,
-};
-
-use super::{
-    super::AddressFamily, RouteAttribute, RouteLwEnCapType, RouteType,
 };
 
 pub(crate) const RTNH_F_DEAD: u8 = 1;
@@ -54,18 +53,18 @@ impl<T: AsRef<[u8]>> RouteNextHopBuffer<T> {
     fn check_buffer_length(&self) -> Result<(), DecodeError> {
         let len = self.buffer.as_ref().len();
         if len < PAYLOAD_OFFSET {
-            return Err(format!(
-                "invalid RouteNextHopBuffer: length {len} < {PAYLOAD_OFFSET}"
-            )
-            .into());
+            return Err(DecodeError::InvalidBufferLength {
+                name: "RouteNextHopBuffer",
+                len,
+                buffer_len: PAYLOAD_OFFSET,
+            });
         }
         if len < self.length() as usize {
-            return Err(format!(
-                "invalid RouteNextHopBuffer: length {} < {}",
+            return Err(DecodeError::InvalidBufferLength {
+                name: "RouteNextHopBuffer",
                 len,
-                8 + self.length()
-            )
-            .into());
+                buffer_len: (8 + self.length()) as usize,
+            });
         }
         Ok(())
     }
@@ -74,7 +73,7 @@ impl<T: AsRef<[u8]>> RouteNextHopBuffer<T> {
 impl<'a, T: AsRef<[u8]> + ?Sized> RouteNextHopBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(
             &self.payload()[..(self.length() as usize - PAYLOAD_OFFSET)],
         )
@@ -100,6 +99,7 @@ impl<'a, T: AsRef<[u8]>>
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for RouteNextHop
 {
+    type Error = RouteError;
     fn parse_with_param(
         buf: &RouteNextHopBuffer<&T>,
         (address_family, route_type, encap_type): (
@@ -107,13 +107,11 @@ impl<'a, T: AsRef<[u8]>>
             RouteType,
             RouteLwEnCapType,
         ),
-    ) -> Result<RouteNextHop, DecodeError> {
+    ) -> Result<RouteNextHop, RouteError> {
         let attributes = Vec::<RouteAttribute>::parse_with_param(
-            &RouteNextHopBuffer::new_checked(buf.buffer)
-                .context("cannot parse route attributes in next-hop")?,
+            &RouteNextHopBuffer::new_checked(buf.buffer)?,
             (address_family, route_type, encap_type),
-        )
-        .context("cannot parse route attributes in next-hop")?;
+        )?;
         Ok(RouteNextHop {
             flags: RouteNextHopFlags::from_bits_retain(buf.flags()),
             hops: buf.hops(),
@@ -129,6 +127,7 @@ impl<'a, T: AsRef<[u8]> + 'a>
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for Vec<RouteAttribute>
 {
+    type Error = RouteError;
     fn parse_with_param(
         buf: &RouteNextHopBuffer<&'a T>,
         (address_family, route_type, encap_type): (
@@ -136,7 +135,7 @@ impl<'a, T: AsRef<[u8]> + 'a>
             RouteType,
             RouteLwEnCapType,
         ),
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, RouteError> {
         let mut nlas = vec![];
         for nla_buf in buf.attributes() {
             nlas.push(RouteAttribute::parse_with_param(

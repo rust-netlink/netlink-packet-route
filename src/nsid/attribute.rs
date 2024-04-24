@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::NsidError;
 use byteorder::{ByteOrder, NativeEndian};
-
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     parsers::{parse_i32, parse_u32},
     traits::Parseable,
-    DecodeError,
 };
 
 const NETNSA_NSID: u16 = 1;
@@ -65,27 +63,47 @@ impl Nla for NsidAttribute {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for NsidAttribute
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = NsidError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, NsidError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            NETNSA_NSID => {
-                Self::Id(parse_i32(payload).context("invalid NETNSA_NSID")?)
+            NETNSA_NSID => Self::Id(parse_i32(payload).map_err(|error| {
+                NsidError::InvalidValue {
+                    kind: "NETNSA_NSID",
+                    error,
+                }
+            })?),
+            NETNSA_PID => Self::Pid(parse_u32(payload).map_err(|error| {
+                NsidError::InvalidValue {
+                    kind: "NETNSA_PID",
+                    error,
+                }
+            })?),
+            NETNSA_FD => Self::Fd(parse_u32(payload).map_err(|error| {
+                NsidError::InvalidValue {
+                    kind: "NETNSA_FD",
+                    error,
+                }
+            })?),
+            NETNSA_TARGET_NSID => {
+                Self::TargetNsid(parse_i32(payload).map_err(|error| {
+                    NsidError::InvalidValue {
+                        kind: "NETNSA_TARGET_NSID",
+                        error,
+                    }
+                })?)
             }
-            NETNSA_PID => {
-                Self::Pid(parse_u32(payload).context("invalid NETNSA_PID")?)
+            NETNSA_CURRENT_NSID => {
+                Self::CurrentNsid(parse_i32(payload).map_err(|error| {
+                    NsidError::InvalidValue {
+                        kind: "NETNSA_CURRENT_NSID",
+                        error,
+                    }
+                })?)
             }
-            NETNSA_FD => {
-                Self::Fd(parse_u32(payload).context("invalid NETNSA_FD")?)
-            }
-            NETNSA_TARGET_NSID => Self::TargetNsid(
-                parse_i32(payload).context("invalid NETNSA_TARGET_NSID")?,
-            ),
-            NETNSA_CURRENT_NSID => Self::CurrentNsid(
-                parse_i32(payload).context("invalid NETNSA_CURRENT_NSID")?,
-            ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
+                    .map_err(|error| NsidError::UnknownNLA { kind, error })?,
             ),
         })
     }

@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable},
-    DecodeError,
-};
-
-use crate::nsid::{NsidAttribute, NsidHeader, NsidMessageBuffer};
+use crate::nsid::{NsidAttribute, NsidError, NsidHeader, NsidMessageBuffer};
+use netlink_packet_utils::traits::{Emitable, Parseable};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -18,12 +13,12 @@ pub struct NsidMessage {
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<NsidMessageBuffer<&'a T>>
     for NsidMessage
 {
-    fn parse(buf: &NsidMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = NsidError;
+    fn parse(buf: &NsidMessageBuffer<&'a T>) -> Result<Self, NsidError> {
         Ok(Self {
-            header: NsidHeader::parse(buf)
-                .context("failed to parse nsid message header")?,
-            attributes: Vec::<NsidAttribute>::parse(buf)
-                .context("failed to parse nsid message NLAs")?,
+            // unwrap: parsing the header can't fail
+            header: NsidHeader::parse(buf).unwrap(),
+            attributes: Vec::<NsidAttribute>::parse(buf)?,
         })
     }
 }
@@ -31,7 +26,8 @@ impl<'a, T: AsRef<[u8]> + 'a> Parseable<NsidMessageBuffer<&'a T>>
 impl<'a, T: AsRef<[u8]> + 'a> Parseable<NsidMessageBuffer<&'a T>>
     for Vec<NsidAttribute>
 {
-    fn parse(buf: &NsidMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = NsidError;
+    fn parse(buf: &NsidMessageBuffer<&'a T>) -> Result<Self, NsidError> {
         let mut attributes = vec![];
         for nla_buf in buf.attributes() {
             attributes.push(NsidAttribute::parse(&nla_buf?)?);

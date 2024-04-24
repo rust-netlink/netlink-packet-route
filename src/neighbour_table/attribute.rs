@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::{
+    param::VecNeighbourTableParameter, NeighbourTableConfig,
+    NeighbourTableConfigBuffer, NeighbourTableError, NeighbourTableParameter,
+    NeighbourTableStats, NeighbourTableStatsBuffer,
+};
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     parsers::{parse_string, parse_u32, parse_u64},
-    DecodeError, Emitable, Parseable,
-};
-
-use super::{
-    param::VecNeighbourTableParameter, NeighbourTableConfig,
-    NeighbourTableConfigBuffer, NeighbourTableParameter, NeighbourTableStats,
-    NeighbourTableStatsBuffer,
+    Emitable, Parseable,
 };
 
 const NDTA_NAME: u16 = 1;
@@ -90,47 +88,88 @@ impl Nla for NeighbourTableAttribute {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for NeighbourTableAttribute
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = NeighbourTableError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            NDTA_NAME => Self::Name(
-                parse_string(payload).context("invalid NDTA_NAME value")?,
-            ),
+            NDTA_NAME => {
+                Self::Name(parse_string(payload).map_err(|error| {
+                    NeighbourTableError::InvalidValue {
+                        kind: "NDTA_NAME",
+                        error,
+                    }
+                })?)
+            }
             NDTA_CONFIG => Self::Config(
                 NeighbourTableConfig::parse(
-                    &NeighbourTableConfigBuffer::new_checked(payload)
-                        .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
+                    &NeighbourTableConfigBuffer::new_checked(payload).map_err(
+                        |error| NeighbourTableError::InvalidValue {
+                            kind: "NDTA_CONFIG",
+                            error,
+                        },
+                    )?,
                 )
-                .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
+                .map_err(|error| {
+                    NeighbourTableError::InvalidValue {
+                        kind: "NDTA_CONFIG",
+                        error,
+                    }
+                })?,
             ),
             NDTA_STATS => Self::Stats(
                 NeighbourTableStats::parse(
-                    &NeighbourTableStatsBuffer::new_checked(payload)
-                        .context(format!("invalid NDTA_STATS {payload:?}"))?,
+                    &NeighbourTableStatsBuffer::new_checked(payload).map_err(
+                        |error| NeighbourTableError::InvalidValue {
+                            kind: "NDTA_STATS",
+                            error,
+                        },
+                    )?,
                 )
-                .context(format!("invalid NDTA_STATS {payload:?}"))?,
+                .map_err(|error| {
+                    NeighbourTableError::InvalidValue {
+                        kind: "NDTA_STATS",
+                        error,
+                    }
+                })?,
             ),
             NDTA_PARMS => Self::Parms(
-                VecNeighbourTableParameter::parse(&NlaBuffer::new(payload))
-                    .context(format!("invalid NDTA_PARMS {payload:?}"))?
-                    .0,
+                VecNeighbourTableParameter::parse(&NlaBuffer::new(payload))?.0,
             ),
-            NDTA_GC_INTERVAL => Self::GcInterval(
-                parse_u64(payload).context("invalid NDTA_GC_INTERVAL value")?,
-            ),
-            NDTA_THRESH1 => Self::Threshold1(
-                parse_u32(payload).context("invalid NDTA_THRESH1 value")?,
-            ),
-            NDTA_THRESH2 => Self::Threshold2(
-                parse_u32(payload).context("invalid NDTA_THRESH2 value")?,
-            ),
-            NDTA_THRESH3 => Self::Threshold3(
-                parse_u32(payload).context("invalid NDTA_THRESH3 value")?,
-            ),
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
-            ),
+            NDTA_GC_INTERVAL => {
+                Self::GcInterval(parse_u64(payload).map_err(|error| {
+                    NeighbourTableError::InvalidValue {
+                        kind: "NDTA_GC_INTERVAL",
+                        error,
+                    }
+                })?)
+            }
+            NDTA_THRESH1 => {
+                Self::Threshold1(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidValue {
+                        kind: "NDTA_THRESH1",
+                        error,
+                    }
+                })?)
+            }
+            NDTA_THRESH2 => {
+                Self::Threshold2(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidValue {
+                        kind: "NDTA_THRESH2",
+                        error,
+                    }
+                })?)
+            }
+            NDTA_THRESH3 => {
+                Self::Threshold3(parse_u32(payload).map_err(|error| {
+                    NeighbourTableError::InvalidValue {
+                        kind: "NDTA_THRESH3",
+                        error,
+                    }
+                })?)
+            }
+            kind => Self::Other(DefaultNla::parse(buf).map_err(|error| {
+                NeighbourTableError::UnknownNla { kind, error }
+            })?),
         })
     }
 }

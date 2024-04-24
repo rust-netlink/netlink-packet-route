@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
 };
@@ -18,7 +18,7 @@ buffer!(NeighbourTableMessageBuffer(NEIGHBOUR_TABLE_HEADER_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> NeighbourTableMessageBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(self.payload())
     }
 }
@@ -32,9 +32,8 @@ pub struct NeighbourTableHeader {
 impl<T: AsRef<[u8]>> Parseable<NeighbourTableMessageBuffer<T>>
     for NeighbourTableHeader
 {
-    fn parse(
-        buf: &NeighbourTableMessageBuffer<T>,
-    ) -> Result<Self, DecodeError> {
+    type Error = ();
+    fn parse(buf: &NeighbourTableMessageBuffer<T>) -> Result<Self, ()> {
         Ok(Self {
             family: buf.family().into(),
         })

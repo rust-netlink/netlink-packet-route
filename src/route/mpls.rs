@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
+use super::error::RouteError;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     parsers::parse_u8,
     traits::{Emitable, Parseable},
-    DecodeError,
 };
 
 const MPLS_IPTUNNEL_DST: u16 = 1;
@@ -50,23 +49,20 @@ impl Nla for RouteMplsIpTunnel {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for RouteMplsIpTunnel
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = RouteError;
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, RouteError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            MPLS_IPTUNNEL_DST => Self::Destination(
-                VecMplsLabel::parse(payload)
-                    .context(format!(
-                        "invalid MPLS_IPTUNNEL_DST value {:?}",
-                        payload
-                    ))?
-                    .0,
-            ),
+            MPLS_IPTUNNEL_DST => {
+                Self::Destination(VecMplsLabel::parse(payload)?.0)
+            }
             MPLS_IPTUNNEL_TTL => Self::Ttl(
-                parse_u8(payload).context("invalid MPLS_IPTUNNEL_TTL value")?,
+                parse_u8(payload)
+                    .map_err(RouteError::InvalidMplsIpTunnelTtl)?,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf)
-                    .context("invalid NLA value (unknown type) value")?,
+                    .map_err(RouteError::InvalidMplsIpTunnelTtl)?,
             ),
         })
     }
@@ -95,18 +91,16 @@ pub struct MplsLabel {
 }
 
 impl MplsLabel {
-    pub(crate) fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+    pub(crate) fn parse(payload: &[u8]) -> Result<Self, RouteError> {
         if payload.len() == 4 {
             Ok(Self::from(u32::from_be_bytes([
                 payload[0], payload[1], payload[2], payload[3],
             ])))
         } else {
-            Err(DecodeError::from(format!(
-                "Invalid u8 array length {}, expecting \
-                4 bytes for MPLS label, got {:?}",
-                payload.len(),
-                payload,
-            )))
+            Err(RouteError::ParseMplsLabel {
+                expected: 4,
+                got: payload.len(),
+            })
         }
     }
 }
@@ -148,7 +142,7 @@ impl From<MplsLabel> for u32 {
 pub(crate) struct VecMplsLabel(pub(crate) Vec<MplsLabel>);
 
 impl VecMplsLabel {
-    pub(crate) fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+    pub(crate) fn parse(payload: &[u8]) -> Result<Self, RouteError> {
         let mut labels = vec![];
         let mut i: usize = 0;
         while i + 4 <= payload.len() {

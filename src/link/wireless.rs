@@ -8,6 +8,7 @@ use netlink_packet_utils::{DecodeError, Emitable, Parseable};
 pub struct LinkWirelessEvent(Vec<u8>);
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for LinkWirelessEvent {
+    type Error = DecodeError;
     fn parse(buf: &T) -> Result<Self, DecodeError> {
         Ok(LinkWirelessEvent(buf.as_ref().to_vec()))
     }
