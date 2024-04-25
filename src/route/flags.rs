@@ -16,7 +16,7 @@ const RTM_F_TRAP: u32 = 0x8000;
 const RTM_F_OFFLOAD_FAILED: u32 = 0x20000000;
 
 bitflags! {
-    #[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
+    #[derive(Clone, Eq, PartialEq, Debug, Copy, Default, Hash)]
     #[non_exhaustive]
     pub struct RouteFlags: u32 {
         const Dead = RTNH_F_DEAD as u32;
