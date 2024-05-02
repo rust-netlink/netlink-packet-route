@@ -32,7 +32,7 @@ impl From<IpAddr> for RouteAddress {
 }
 
 impl RouteAddress {
-    pub(crate) fn parse(
+    pub fn parse(
         address_family: AddressFamily,
         payload: &[u8],
     ) -> Result<Self, DecodeError> {
