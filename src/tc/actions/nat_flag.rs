@@ -9,6 +9,7 @@ const TCA_ACT_FLAGS_NO_RTNL: u32 = 1u32 << (TCA_ACT_FLAGS_USER_BITS + 3);
 const TCA_ACT_FLAGS_AT_INGRESS: u32 = 1u32 << (TCA_ACT_FLAGS_USER_BITS + 4);
 
 bitflags! {
+    /// Network Address Translation flags.
     #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
     #[non_exhaustive]
     pub struct TcNatFlags: u32 {
