@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
+use netlink_packet_core::{
+    NetlinkDeserializable, NetlinkHeader, NetlinkPayload, NetlinkSerializable,
+};
 use netlink_packet_utils::{
     DecodeError, Emitable, Parseable, ParseableParametrized,
 };
 
-use netlink_packet_core::{
-    NetlinkDeserializable, NetlinkHeader, NetlinkPayload, NetlinkSerializable,
-};
-
+use crate::tc::{TcActionMessage, TcActionMessageBuffer};
 use crate::{
     address::{AddressHeader, AddressMessage, AddressMessageBuffer},
     link::{LinkMessage, LinkMessageBuffer},
@@ -46,9 +46,9 @@ const RTM_GETTCLASS: u16 = 42;
 const RTM_NEWTFILTER: u16 = 44;
 const RTM_DELTFILTER: u16 = 45;
 const RTM_GETTFILTER: u16 = 46;
-// const RTM_NEWACTION: u16 = 48;
-// const RTM_DELACTION: u16 = 49;
-// const RTM_GETACTION: u16 = 50;
+const RTM_NEWACTION: u16 = 48;
+const RTM_DELACTION: u16 = 49;
+const RTM_GETACTION: u16 = 50;
 const RTM_NEWPREFIX: u16 = 52;
 // const RTM_GETMULTICAST: u16 = 58;
 // const RTM_GETANYCAST: u16 = 62;
@@ -291,6 +291,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
 
+            RTM_NEWACTION | RTM_DELACTION | RTM_GETACTION => {
+                let err = "invalid tc action message";
+                let msg = TcActionMessage::parse(
+                    &TcActionMessageBuffer::new_checked(&buf.inner())
+                        .context(err)?,
+                )
+                .context(err)?;
+                match message_type {
+                    RTM_NEWACTION => RouteNetlinkMessage::NewTrafficAction(msg),
+                    RTM_DELACTION => RouteNetlinkMessage::DelTrafficAction(msg),
+                    RTM_GETACTION => RouteNetlinkMessage::GetTrafficAction(msg),
+                    _ => unreachable!(),
+                }
+            }
+
             // ND ID Messages
             RTM_NEWNSID | RTM_GETNSID | RTM_DELNSID => {
                 let err = "invalid nsid message";
@@ -348,6 +363,9 @@ pub enum RouteNetlinkMessage {
     NewTrafficFilter(TcMessage),
     DelTrafficFilter(TcMessage),
     GetTrafficFilter(TcMessage),
+    NewTrafficAction(TcActionMessage),
+    DelTrafficAction(TcActionMessage),
+    GetTrafficAction(TcActionMessage),
     NewTrafficChain(TcMessage),
     DelTrafficChain(TcMessage),
     GetTrafficChain(TcMessage),
@@ -460,6 +478,18 @@ impl RouteNetlinkMessage {
         matches!(self, RouteNetlinkMessage::GetTrafficFilter(_))
     }
 
+    pub fn is_new_action(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::NewTrafficAction(_))
+    }
+
+    pub fn is_del_action(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::DelTrafficAction(_))
+    }
+
+    pub fn is_get_action(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::GetTrafficAction(_))
+    }
+
     pub fn is_new_chain(&self) -> bool {
         matches!(self, RouteNetlinkMessage::NewTrafficChain(_))
     }
@@ -528,6 +558,9 @@ impl RouteNetlinkMessage {
             NewTrafficFilter(_) => RTM_NEWTFILTER,
             DelTrafficFilter(_) => RTM_DELTFILTER,
             GetTrafficFilter(_) => RTM_GETTFILTER,
+            NewTrafficAction(_) => RTM_NEWACTION,
+            DelTrafficAction(_) => RTM_DELACTION,
+            GetTrafficAction(_) => RTM_GETACTION,
             NewTrafficChain(_) => RTM_NEWCHAIN,
             DelTrafficChain(_) => RTM_DELCHAIN,
             GetTrafficChain(_) => RTM_GETCHAIN,
@@ -598,7 +631,12 @@ impl Emitable for RouteNetlinkMessage {
             | NewRule(ref msg)
             | DelRule(ref msg)
             | GetRule(ref msg)
-            => msg.buffer_len()
+            => msg.buffer_len(),
+
+            | NewTrafficAction(ref msg)
+            | DelTrafficAction(ref msg)
+            | GetTrafficAction(ref msg)
+            => msg.buffer_len(),
         }
     }
 
@@ -658,7 +696,12 @@ impl Emitable for RouteNetlinkMessage {
             | NewRule(ref msg)
             | DelRule(ref msg)
             | GetRule(ref msg)
-            => msg.emit(buffer)
+            => msg.emit(buffer),
+
+            | NewTrafficAction(ref msg)
+            | DelTrafficAction(ref msg)
+            | GetTrafficAction(ref msg)
+            => msg.emit(buffer),
         }
     }
 }
