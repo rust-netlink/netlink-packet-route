@@ -16,6 +16,7 @@ use super::{nat_flag::TcNatFlags, TcActionGeneric, TcActionGenericBuffer};
 const TCA_NAT_PARMS: u16 = 1;
 const TCA_NAT_TM: u16 = 2;
 
+/// Network address translation action.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub struct TcActionNat {}
@@ -24,11 +25,15 @@ impl TcActionNat {
     pub(crate) const KIND: &'static str = "nat";
 }
 
+/// Options for the [`TcActionNat`] action.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum TcActionNatOption {
+    /// > TODO: document this after we make it something better than `Vec<u8>`
     Tm(Vec<u8>),
+    /// Parameters for the nat action.
     Parms(TcNat),
+    /// Other attributes unknown at the time of writing.
     Other(DefaultNla),
 }
 
@@ -74,13 +79,19 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 
 const TC_NAT_BUF_LEN: usize = TcActionGeneric::BUF_LEN + 16;
 
+/// Network address translation action.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub struct TcNat {
+    /// Common attributes for all actions.
     pub generic: TcActionGeneric,
+    /// Original address.
     pub old_addr: Ipv4Addr,
+    /// New address.
     pub new_addr: Ipv4Addr,
+    /// Mask of the old address
     pub mask: Ipv4Addr,
+    /// Flags for the NAT action.
     pub flags: TcNatFlags,
 }
 
