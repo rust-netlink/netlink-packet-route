@@ -29,7 +29,7 @@ impl TcActionNat {
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum TcActionNatOption {
-    /// > TODO: document this after we make it something better than `Vec<u8>`
+    /// TODO: document this after we make it something better than `Vec<u8>`
     Tm(Vec<u8>),
     /// Parameters for the nat action.
     Parms(TcNat),
