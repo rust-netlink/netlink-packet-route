@@ -8,7 +8,9 @@ use netlink_packet_utils::{
     DecodeError, Emitable, Parseable, ParseableParametrized,
 };
 
-use crate::tc::{TcActionMessage, TcActionMessageBuffer};
+use crate::tc::{
+    TcActionMessage, TcActionMessageBuffer, TcMessage, TcMessageBuffer,
+};
 use crate::{
     address::{AddressHeader, AddressMessage, AddressMessageBuffer},
     link::{LinkMessage, LinkMessageBuffer},
@@ -18,7 +20,6 @@ use crate::{
     prefix::{PrefixMessage, PrefixMessageBuffer},
     route::{RouteHeader, RouteMessage, RouteMessageBuffer},
     rule::{RuleMessage, RuleMessageBuffer},
-    tc::{TcMessage, TcMessageBuffer},
 };
 
 const RTM_NEWLINK: u16 = 16;

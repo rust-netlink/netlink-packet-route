@@ -21,10 +21,14 @@ mod address_family_linux;
 #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
 pub use self::address_family_linux::AddressFamily;
 
+mod enc;
+pub use self::enc::*;
+
 #[cfg(target_os = "freebsd")]
 mod address_family_freebsd;
 #[cfg(target_os = "freebsd")]
 pub use self::address_family_freebsd::AddressFamily;
+pub mod net;
 
 #[cfg(not(any(
     target_os = "linux",
@@ -32,6 +36,7 @@ pub use self::address_family_freebsd::AddressFamily;
     target_os = "freebsd",
 )))]
 mod address_family_fallback;
+
 #[cfg(not(any(
     target_os = "linux",
     target_os = "fuchsia",
