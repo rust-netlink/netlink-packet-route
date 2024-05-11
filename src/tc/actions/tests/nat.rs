@@ -18,9 +18,11 @@ use crate::tc::{
 };
 use crate::AddressFamily;
 
+/// # Setup
+///
 /// Capture of request for
 ///
-/// ```bash
+/// ```shell
 /// tc actions add action nat ingress 1.2.3.4/32 5.6.7.0 index 1
 /// ```
 const TC_ACTION_NAT_EXAMPLE1: &[u8] = &[
@@ -77,9 +79,11 @@ fn emit_tc_action_nat_example1() {
     assert_eq!(buf.as_slice(), TC_ACTION_NAT_EXAMPLE1);
 }
 
+/// # Setup
+///
 /// Capture of request for
 ///
-/// ```bash
+/// ```shell
 /// tc actions add action nat ingress 1.2.3.0/24 5.6.7.9 index 2
 /// ```
 const TC_ACTION_NAT_EXAMPLE2: &[u8] = &[
@@ -138,7 +142,7 @@ fn emit_tc_action_nat_example2() {
 
 /// Capture of request for
 ///
-/// ```bash
+/// ```shell
 /// tc actions add action nat egress 2.3.4.0/24 5.6.7.9 index 3
 /// ```
 const TC_ACTION_NAT_EXAMPLE3: &[u8] = &[
@@ -281,20 +285,21 @@ fn tc_action_nat_option_emit_tm_uses_whole_buffer() {
     }
 }
 
-/// Setup:
+/// # Setup
 ///
-/// ```bash
+/// ```shell
 /// tc actions flush action nat
 /// tc actions add action nat ingress 192.0.2.1/32 203.0.113.1 index 1
 /// ```
 ///
 /// Then capture netlink response message of this command:
 ///
-/// ```bash
+/// ```shell
 /// tc -statistics actions get action nat index 1
 /// ```
 ///
-/// Raw packet modification:
+/// # Packet Modifications
+///
 ///   * cooked header removed (16 bytes).
 ///   * rtnetlink header removed (16 bytes).
 #[test]

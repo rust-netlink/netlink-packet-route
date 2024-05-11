@@ -1,7 +1,7 @@
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::nla::{DefaultNla, Nla, NlaBuffer};
-use netlink_packet_utils::{DecodeError, Parseable};
 use netlink_packet_utils::parsers::parse_u32;
+use netlink_packet_utils::{DecodeError, Parseable};
 
 const TCA_TUNNEL_KEY_ENC_OPT_VXLAN_GPB: u16 = 1; /* u32 */
 
@@ -11,7 +11,6 @@ pub enum Options {
     Gpb(Gpb),
     Other(DefaultNla),
 }
-
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Options {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {

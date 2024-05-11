@@ -55,9 +55,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Options {
             TCA_FLOWER_KEY_ENC_OPT_GTP_PDU_TYPE => {
                 Options::PduType(parse_u8(payload)?)
             }
-            TCA_FLOWER_KEY_ENC_OPT_GTP_QFI => {
-                Options::Qfi(parse_u8(payload)?)
-            }
+            TCA_FLOWER_KEY_ENC_OPT_GTP_QFI => Options::Qfi(parse_u8(payload)?),
             _ => Options::Other(
                 DefaultNla::parse(buf).context("failed to parse gtp nla")?,
             ),

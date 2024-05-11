@@ -12,7 +12,7 @@ impl EncKeyId {
     /// Create a new `EncKeyId` without checking the validity of the ID value.
     ///
     /// # Safety
-    /// 
+    ///
     /// Failure to ensure the ID is within the valid range for the tunnel in
     /// question may lead to semantically invalid netlink messages.
     ///
@@ -37,7 +37,7 @@ impl EncKeyId {
     /// of geneve vni values.
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the ID is greater than or equal to 2^24.
     pub fn new_geneve_vni(id: u32) -> Result<Self, DecodeError> {
         match Self::new_nbit::<24>(id) {
@@ -49,9 +49,9 @@ impl EncKeyId {
     }
 
     /// Create a new `EncKeyId` in the space of valid GRE keys.
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// Since GRE keys are 32 bits and all values are legal, this method is not
     /// failable.
     #[must_use]
@@ -63,7 +63,7 @@ impl EncKeyId {
     /// of gtp tunnel key values.
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the ID is zero.
     pub fn new_gtp_key(id: u32) -> Result<Self, DecodeError> {
         if id == 0 {
@@ -78,7 +78,7 @@ impl EncKeyId {
     /// of N bit values.
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the ID is greater than or equal to 2^N.
     const fn new_nbit<const N: usize>(id: u32) -> Result<Self, KeyTooLarge> {
         if id >= (1 << N) {

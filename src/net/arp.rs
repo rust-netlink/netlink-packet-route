@@ -26,9 +26,9 @@ const OP_EXP1: u8 = 24;
 const OP_EXP2: u8 = 25;
 
 /// Enum of ARP operation codes.
-/// 
+///
 /// List from [iana.org][1]
-/// 
+///
 /// [1]: https://www.iana.org/assignments/arp-parameters/arp-parameters.xhtml
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Ord, PartialOrd, Hash)]
 #[non_exhaustive]

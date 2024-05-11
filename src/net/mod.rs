@@ -1,12 +1,4 @@
-// General purpose networking abstractions.
-#![forbid(unsafe_code)]
-#![deny(
-    clippy::all,
-    clippy::pedantic,
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-)]
+//! General purpose networking abstractions.
 
 pub mod arp;
 pub mod ethernet;

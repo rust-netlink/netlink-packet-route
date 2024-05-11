@@ -162,7 +162,6 @@ impl TcFilterFlower {
 /// [2]: https://www.ieee802.org/1/pages/802.1ag.html
 pub type CfmOpCode = u8;
 
-
 bitflags! {
     // TcpFlags _ARE_ exactly 8 bits.
     // Why flower uses a 16-bit field is a mystery, but we deal with it.
@@ -705,8 +704,9 @@ impl Nla for TcFilterFlowerOption {
                 (flags.bits() as u16).to_be_bytes().as_slice(),
             ),
             Self::KeyTcpFlagsMask(flags) => {
-                buffer
-                    .copy_from_slice(u16::from(*flags).to_be_bytes().as_slice());
+                buffer.copy_from_slice(
+                    u16::from(*flags).to_be_bytes().as_slice(),
+                );
             }
             Self::KeyIpTos(tos) => {
                 buffer.copy_from_slice(tos.to_be_bytes().as_slice());

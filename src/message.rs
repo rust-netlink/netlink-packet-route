@@ -193,18 +193,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 let msg = match RouteMessageBuffer::new_checked(&buf.inner()) {
                     Ok(buf) => RouteMessage::parse(&buf)
                         .context("invalid route message")?,
-                    // HACK: iproute2 sends invalid RTM_GETROUTE message, where
-                    // the header is limited to the
-                    // interface family (1 byte) and 3 bytes of padding.
+                    // HACK: iproute2 sends an invalid RTM_GETROUTE message,
+                    // where the header is limited to the interface family
+                    // (1 byte) and 3 bytes of padding.
                     Err(e) => {
-                        // Not only does iproute2 sends invalid messages, it's
-                        // also inconsistent in
-                        // doing so: for link and address messages, the length
-                        // advertised in the
-                        // netlink header includes the 3 bytes of padding but it
-                        // does not seem to be the case
-                        // for the route message, hence the buf.length() == 1
-                        // check.
+                        // Not only does iproute2 send invalid messages, it's
+                        // also inconsistent in doing so: for link and address
+                        // messages, the length advertised in the netlink header
+                        // includes the 3 bytes of padding, but it does not seem
+                        // to be the case for the route message, hence the
+                        // `buf.length() == 1` check.
                         if (buf.inner().len() == 4 || buf.inner().len() == 1)
                             && message_type == RTM_GETROUTE
                         {
@@ -253,6 +251,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     _ => unreachable!(),
                 }
             }
+
             // TC Messages
             RTM_NEWQDISC | RTM_DELQDISC | RTM_GETQDISC | RTM_NEWTCLASS
             | RTM_DELTCLASS | RTM_GETTCLASS | RTM_NEWTFILTER
@@ -292,13 +291,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
 
+            // TC action messages
             RTM_NEWACTION | RTM_DELACTION | RTM_GETACTION => {
-                let err = "invalid tc action message";
                 let msg = TcActionMessage::parse(
                     &TcActionMessageBuffer::new_checked(&buf.inner())
-                        .context(err)?,
+                        .context("invalid tc action message buffer")?,
                 )
-                .context(err)?;
+                .context("invalid tc action message")?;
                 match message_type {
                     RTM_NEWACTION => RouteNetlinkMessage::NewTrafficAction(msg),
                     RTM_DELACTION => RouteNetlinkMessage::DelTrafficAction(msg),

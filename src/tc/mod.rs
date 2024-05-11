@@ -10,10 +10,11 @@ pub use self::actions::{
 };
 pub use self::attribute::TcAttribute;
 pub use self::filters::{
-    CfmAttribute, ConnectionTrackingFlags, L2Miss, TcFilterFlower,
-    TcFilterFlowerOption, TcFilterMatchAll, TcFilterMatchAllOption,
-    TcFilterU32, TcFilterU32Option, TcFlowerOptionFlags, TcU32Key,
-    TcU32OptionFlags, TcU32Selector, TcU32SelectorFlags, TcpFlags,
+    CfmAttribute, ConnectionTrackingFlags, L2Miss, MaintenanceDomainLevel,
+    TcFilterFlower, TcFilterFlowerOption, TcFilterMatchAll,
+    TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
+    TcFlowerOptionFlags, TcU32Key, TcU32OptionFlags, TcU32Selector,
+    TcU32SelectorFlags, TcpFlags,
 };
 pub use self::header::{TcHandle, TcHeader, TcMessageBuffer};
 pub use self::message::TcMessage;

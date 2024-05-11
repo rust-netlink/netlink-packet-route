@@ -35,7 +35,7 @@ impl Vni {
     pub fn new_unchecked(vni: u32) -> Self {
         Self(vni)
     }
-    
+
     pub const MAX: u32 = (1 << 24) - 1;
     pub const MIN: u32 = 1;
 }
@@ -75,26 +75,25 @@ impl AsRef<u32> for Vni {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn zero_vni_is_invalid() {
         assert!(Vni::new(0).is_err());
     }
-    
+
     #[test]
     fn max_vni_is_valid() {
         assert!(Vni::new(Vni::MAX).is_ok());
     }
-    
+
     #[test]
     fn vni_greater_than_max_is_invalid() {
         assert!(Vni::new(Vni::MAX + 1).is_err());
     }
-    
+
     #[test]
     fn vni_is_converted_to_u32() {
         let vni = Vni::new_unchecked(42);
         assert_eq!(u32::from(vni), 42);
     }
-    
 }

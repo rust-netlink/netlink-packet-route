@@ -146,9 +146,7 @@ impl Nla for Direction {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for Direction
-{
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Direction {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         if buf.value().len() != 1 {
             return Err(DecodeError::from(format!(
@@ -261,9 +259,7 @@ impl Nla for Options {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for Options
-{
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Options {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         Ok(match buf.kind() {
             TCA_FLOWER_KEY_ENC_OPT_ERSPAN_VER => {
