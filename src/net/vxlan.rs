@@ -36,14 +36,16 @@ impl Vni {
         Self(vni)
     }
 
-    pub const MAX: u32 = (1 << 24) - 1;
-    pub const MIN: u32 = 1;
+    /// The largest legal VXLAN VNI
+    pub const MAX: Self = Self((1 << 24) - 1);
+    /// The smallest legal VXLAN VNI
+    pub const MIN: Self = Self(1);
 }
 
 impl TryFrom<u32> for Vni {
     type Error = DecodeError;
 
-    /// Creates a new `Vni` value from a `u32`.
+    /// Creates a new `Vni` value from an `u32`.
     ///
     /// # Errors
     /// Returns an error if the VNI is zero or greater than or equal to 2^24.
@@ -82,13 +84,18 @@ mod tests {
     }
 
     #[test]
+    fn min_vni_is_valid() {
+        assert!(Vni::new(Vni::MIN.0).is_ok());
+    }
+    
+    #[test]
     fn max_vni_is_valid() {
-        assert!(Vni::new(Vni::MAX).is_ok());
+        assert!(Vni::new(Vni::MAX.0).is_ok());
     }
 
     #[test]
     fn vni_greater_than_max_is_invalid() {
-        assert!(Vni::new(Vni::MAX + 1).is_err());
+        assert!(Vni::new(Vni::MAX.0 + 1).is_err());
     }
 
     #[test]

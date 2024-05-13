@@ -208,3 +208,191 @@ impl Nla for Options {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use netlink_packet_utils::Emitable;
+
+    use crate::net::ethernet::Ethertype;
+    use crate::tc::flower::encap::Options::Geneve;
+    use crate::tc::flower::encap::OptionsList;
+    use crate::tc::TcAttribute;
+    use crate::tc::TcFilterFlowerOption::{
+        KeyEncOpts, KeyEncOptsMask, KeyEthType,
+    };
+    use crate::tc::TcOption::Flower;
+    use crate::tc::{
+        TcFilterFlowerOption, TcFlowerOptionFlags, TcHandle, TcHeader,
+        TcMessage, TcMessageBuffer,
+    };
+    use crate::AddressFamily;
+
+    use super::*;
+
+    #[test]
+    fn class_parse_back_zero() {
+        let example = Class::new(0);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Class::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn class_parse_back_example() {
+        let example = Class::new(0x1234);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Class::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn type_parse_back_zero() {
+        let example = Type::new(0);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Type::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn type_parse_back_example() {
+        let example = Type::new(0x12);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Type::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn data_parse_back_zero() {
+        let example = Data::new(vec![0]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Data::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn data_parse_back_example() {
+        let example = Data::new(vec![0x12345678, 0x9abcdef0]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(buffer.as_mut_slice());
+        let parsed =
+            Data::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn options_parse_back_class() {
+        let example = Options::Class(Class::new(0x1234));
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn options_parse_back_type() {
+        let example = Options::Type(Type::new(0x12));
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(buffer.as_mut_slice());
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn options_parse_back_data() {
+        let example = Options::Data(Data::new(vec![0x1234_5678, 0x9abc_def0]));
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    /// Setup
+    ///
+    /// Create a scratch network interface and add a qdisc to it.
+    ///
+    /// ```bash
+    /// ip link add dev dummy type dummy
+    /// tc qdisc add dev dummy clsact
+    /// ```
+    ///
+    /// Then capture the netlink request for
+    ///
+    /// ```bash
+    /// tc filter add dev vtep ingress protocol ip \
+    ///      flower \
+    ///      geneve_opts 1:1:abcdef01
+    /// ```
+    ///
+    /// # Modifications
+    ///
+    /// * Removed cooked header (16 bytes)
+    /// * Removed rtnetlink header (16 bytes)
+    const RAW_CAP: &str = "000000003900000000000000f2ffffff080000000b000100666c6f776572000054000200200054001c0001000600010000010000050002000100000008000300abcdef01200055001c00010006000100ffff000005000200ff00000008000300ffffffff08001600000000000600080008000000";
+
+    /// Returns the message we expected to parse from [`RAW_CAP`].
+    fn expected_message() -> TcMessage {
+        TcMessage {
+            header: TcHeader {
+                family: AddressFamily::Unspec,
+                index: 57,
+                handle: TcHandle { major: 0, minor: 0 },
+                parent: TcHandle {
+                    major: 65535,
+                    minor: 65522,
+                },
+                info: 8,
+            },
+            attributes: vec![
+                TcAttribute::Kind("flower".to_string()),
+                TcAttribute::Options(vec![
+                    Flower(KeyEncOpts(OptionsList(Geneve(vec![
+                        Options::Class(Class::new(1)),
+                        Options::Type(Type::new(1)),
+                        Options::Data(Data::new(vec![0xabcd_ef01])),
+                    ])))),
+                    Flower(KeyEncOptsMask(OptionsList(Geneve(vec![
+                        Options::Class(Class::new(65535)),
+                        Options::Type(Type::new(255)),
+                        Options::Data(Data::new(vec![0xffff_ffff])),
+                    ])))),
+                    Flower(TcFilterFlowerOption::Flags(
+                        TcFlowerOptionFlags::empty(),
+                    )),
+                    Flower(KeyEthType(Ethertype::IPv4)),
+                ]),
+            ],
+        }
+    }
+
+    #[test]
+    fn captured_parses_as_expected() {
+        let raw_cap = hex::decode(RAW_CAP).unwrap();
+        let expected = expected_message();
+        let parsed =
+            TcMessage::parse(&TcMessageBuffer::new_checked(&raw_cap).unwrap())
+                .unwrap();
+        assert_eq!(expected, parsed);
+    }
+
+    #[test]
+    fn expected_emits_as_captured() {
+        let raw_cap = hex::decode(RAW_CAP).unwrap();
+        let expected = expected_message();
+        let mut buffer = vec![0; expected.buffer_len()];
+        expected.emit(&mut buffer);
+        assert_eq!(raw_cap, buffer);
+    }
+}

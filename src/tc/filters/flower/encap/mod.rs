@@ -1,6 +1,9 @@
 use anyhow::Context;
-use netlink_packet_utils::nla::{DefaultNla, Nla, NlaBuffer, NlasIterator};
+use netlink_packet_utils::nla::{DefaultNla, Nla, NLA_F_NESTED, NlaBuffer, NlasIterator};
 use netlink_packet_utils::{DecodeError, Emitable, Parseable};
+
+use crate::tc::filters::cls_flower::TCA_FLOWER_KEY_ENC_OPTS;
+use crate::tc::filters::cls_flower::TCA_FLOWER_KEY_ENC_OPTS_MASK;
 
 pub mod erspan;
 pub mod geneve;
@@ -13,6 +16,22 @@ const TCA_FLOWER_KEY_ENC_OPTS_ERSPAN: u16 = 3;
 const TCA_FLOWER_KEY_ENC_OPTS_GTP: u16 = 4;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[repr(transparent)]
+#[must_use]
+pub struct OptionsList(pub(crate) Options);
+
+impl OptionsList {
+    pub fn new(options: Options) -> Self {
+        Self(options)
+    }
+
+    #[must_use]
+    pub fn into_inner(self) -> Options {
+        self.0
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum Options {
     Geneve(Vec<geneve::Options>),
@@ -20,6 +39,35 @@ pub enum Options {
     Erspan(Vec<erspan::Options>),
     Gtp(Vec<gtp::Options>),
     Other(DefaultNla),
+}
+
+impl Nla for OptionsList {
+    fn value_len(&self) -> usize {
+        self.0.buffer_len()
+    }
+
+    fn kind(&self) -> u16 {
+        TCA_FLOWER_KEY_ENC_OPTS
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        self.0.emit(buffer)
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for OptionsList {
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        match buf.kind() {
+            TCA_FLOWER_KEY_ENC_OPTS | TCA_FLOWER_KEY_ENC_OPTS_MASK => {
+                let nla = NlaBuffer::new_checked(buf.value())
+                    .context("failed to parse encap options")?;
+                Ok(OptionsList(Options::parse(&nla)?))
+            }
+            _ => Err(DecodeError::from(
+                "expected encapsulation options attribute",
+            )),
+        }
+    }
 }
 
 impl Nla for Options {
@@ -36,7 +84,7 @@ impl Nla for Options {
     fn kind(&self) -> u16 {
         match self {
             Self::Geneve(_) => TCA_FLOWER_KEY_ENC_OPTS_GENEVE,
-            Self::Vxlan(_) => TCA_FLOWER_KEY_ENC_OPTS_VXLAN,
+            Self::Vxlan(_) => TCA_FLOWER_KEY_ENC_OPTS_VXLAN | NLA_F_NESTED,
             Self::Erspan(_) => TCA_FLOWER_KEY_ENC_OPTS_ERSPAN,
             Self::Gtp(_) => TCA_FLOWER_KEY_ENC_OPTS_GTP,
             Self::Other(nla) => nla.kind(),
@@ -56,14 +104,7 @@ impl Nla for Options {
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Options {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        Ok(match buf.kind() {
-            crate::tc::filters::cls_flower::TCA_FLOWER_KEY_ENC_OPTS => {
-                let nested = NlaBuffer::new_checked(buf.value())
-                    .context("failed to parse encap opts")?;
-                parse_enc_opts(&nested)?
-            }
-            _ => Self::Other(DefaultNla::parse(buf)?),
-        })
+        parse_enc_opts(buf)
     }
 }
 
@@ -132,5 +173,102 @@ impl From<vxlan::Gpb> for Options {
 impl From<vxlan::Gpb> for Vec<Options> {
     fn from(gpb: vxlan::Gpb) -> Self {
         vec![Options::Vxlan(vec![vxlan::Options::Gpb(gpb)])]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_back_options_geneve_empty() {
+        let example = Options::Geneve(vec![]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn parse_back_options_geneve_example() {
+        let example = Options::Geneve(vec![
+            geneve::Options::Class(geneve::Class::new(0xabcd)),
+            geneve::Options::Data(geneve::Data::new(vec![1, 2, 3, 4])),
+            geneve::Options::Type(geneve::Type::new(0xab)),
+        ]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn parse_back_options_vxlan_empty() {
+        let example = Options::Vxlan(vec![]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn parse_back_options_vxlan_example() {
+        let example =
+            Options::Vxlan(vec![vxlan::Options::Gpb(vxlan::Gpb::new(0xabcd))]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn parse_back_options_erspan_empty() {
+        let example = Options::Erspan(vec![]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn parse_back_options_erspan_example() {
+        let example = Options::Erspan(vec![
+            erspan::Options::Version(erspan::Version::new(0xab)),
+            erspan::Options::Direction(erspan::Direction::Ingress),
+            erspan::Options::Index(erspan::Index::new(0x12345678)),
+        ]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn parse_back_options_gtp_empty() {
+        let example = Options::Gtp(vec![]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
+    }
+
+    #[test]
+    fn parse_back_options_gtp_example() {
+        let example = Options::Gtp(vec![
+            gtp::Options::PduType(0xab),
+            gtp::Options::Qfi(0xcd),
+        ]);
+        let mut buffer = vec![0; example.buffer_len()];
+        example.emit(&mut buffer);
+        let parsed =
+            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
+        assert_eq!(example, parsed);
     }
 }

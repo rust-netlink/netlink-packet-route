@@ -22,6 +22,7 @@ use crate::net::mpls;
 use crate::net::{ethernet, icmpv4, icmpv6};
 use crate::tc::filters::flower;
 use crate::tc::filters::flower::encap;
+use crate::tc::flower::encap::OptionsList;
 use crate::tc::{TcAction, TcFlowerOptionFlags, TcHandle};
 use crate::{EncKeyId, IpProtocol};
 
@@ -266,8 +267,8 @@ pub enum TcFilterFlowerOption {
     KeyEncIpTosMask(u8),
     KeyEncIpTtl(u8),
     KeyEncIpTtlMask(u8),
-    KeyEncOpts(encap::Options),
-    KeyEncOptsMask(encap::Options),
+    KeyEncOpts(encap::OptionsList),
+    KeyEncOptsMask(encap::OptionsList),
     KeyPortSrcMin(u16),
     KeyPortSrcMax(u16),
     KeyPortDstMin(u16),
@@ -381,8 +382,8 @@ impl Nla for TcFilterFlowerOption {
             Self::KeyEncIpTosMask(_) => 1,
             Self::KeyEncIpTtl(_) => 1,
             Self::KeyEncIpTtlMask(_) => 1,
-            Self::KeyEncOpts(opts) => opts.buffer_len(),
-            Self::KeyEncOptsMask(opts) => opts.buffer_len(),
+            Self::KeyEncOpts(opts) => opts.value_len(),
+            Self::KeyEncOptsMask(opts) => opts.value_len(),
             Self::InHwCount(_) => 4,
             Self::KeyPortSrcMin(_) => 2,
             Self::KeyPortSrcMax(_) => 2,
@@ -501,8 +502,28 @@ impl Nla for TcFilterFlowerOption {
             Self::KeyEncIpTosMask(_) => TCA_FLOWER_KEY_ENC_IP_TOS_MASK,
             Self::KeyEncIpTtl(_) => TCA_FLOWER_KEY_ENC_IP_TTL,
             Self::KeyEncIpTtlMask(_) => TCA_FLOWER_KEY_ENC_IP_TTL_MASK,
-            Self::KeyEncOpts(_) => TCA_FLOWER_KEY_ENC_OPTS,
-            Self::KeyEncOptsMask(_) => TCA_FLOWER_KEY_ENC_OPTS_MASK,
+            // NOTE: iproute2 is just not consistent with the use of the NLAF_NESTED flag
+            // for encap options.
+            Self::KeyEncOpts(OptionsList(opts)) => {
+                TCA_FLOWER_KEY_ENC_OPTS
+                    | match opts {
+                        encap::Options::Geneve(_) => 0,
+                        encap::Options::Vxlan(_) => NLA_F_NESTED,
+                        encap::Options::Erspan(_) => 0,
+                        encap::Options::Gtp(_) => 0,
+                        encap::Options::Other(_) => 0,
+                    }
+            }
+            Self::KeyEncOptsMask(OptionsList(opts)) => {
+                TCA_FLOWER_KEY_ENC_OPTS_MASK
+                    | match opts {
+                        encap::Options::Geneve(_) => 0,
+                        encap::Options::Vxlan(_) => NLA_F_NESTED,
+                        encap::Options::Erspan(_) => 0,
+                        encap::Options::Gtp(_) => 0,
+                        encap::Options::Other(_) => 0,
+                    }
+            }
             Self::InHwCount(_) => TCA_FLOWER_IN_HW_COUNT,
             Self::KeyPortSrcMin(_) => TCA_FLOWER_KEY_PORT_SRC_MIN,
             Self::KeyPortSrcMax(_) => TCA_FLOWER_KEY_PORT_SRC_MAX,
@@ -740,8 +761,8 @@ impl Nla for TcFilterFlowerOption {
             Self::KeyEncIpTtlMask(ttl) => {
                 buffer.copy_from_slice(ttl.to_be_bytes().as_slice());
             }
-            Self::KeyEncOpts(opts) => opts.emit(buffer),
-            Self::KeyEncOptsMask(opts) => opts.emit(buffer),
+            Self::KeyEncOpts(opts) => opts.emit_value(buffer),
+            Self::KeyEncOptsMask(opts) => opts.emit_value(buffer),
             Self::InHwCount(count) => {
                 NativeEndian::write_u32(buffer, *count);
             }
@@ -1495,10 +1516,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 Self::KeyEncIpTtlMask(payload[0])
             }
             TCA_FLOWER_KEY_ENC_OPTS => {
-                Self::KeyEncOpts(encap::Options::parse(buf)?)
+                Self::KeyEncOpts(encap::OptionsList::parse(buf)?)
             }
             TCA_FLOWER_KEY_ENC_OPTS_MASK => {
-                Self::KeyEncOptsMask(encap::Options::parse(buf)?)
+                Self::KeyEncOptsMask(encap::OptionsList::parse(buf)?)
             }
             TCA_FLOWER_IN_HW_COUNT => Self::InHwCount(
                 parse_u32(payload)
