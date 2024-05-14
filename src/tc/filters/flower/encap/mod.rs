@@ -13,7 +13,7 @@ pub mod gtp;
 pub mod vxlan;
 
 #[cfg(test)]
-pub mod tests;
+mod tests;
 
 const TCA_FLOWER_KEY_ENC_OPTS_GENEVE: u16 = 1;
 const TCA_FLOWER_KEY_ENC_OPTS_VXLAN: u16 = 2;

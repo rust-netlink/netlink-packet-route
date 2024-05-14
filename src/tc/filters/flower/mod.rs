@@ -1,5 +1,6 @@
 pub mod encap;
 pub mod mpls;
+mod tests;
 
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
