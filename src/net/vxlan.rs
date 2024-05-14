@@ -87,7 +87,7 @@ mod tests {
     fn min_vni_is_valid() {
         assert!(Vni::new(Vni::MIN.0).is_ok());
     }
-    
+
     #[test]
     fn max_vni_is_valid() {
         assert!(Vni::new(Vni::MAX.0).is_ok());

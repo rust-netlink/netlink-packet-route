@@ -1,5 +1,7 @@
 use anyhow::Context;
-use netlink_packet_utils::nla::{DefaultNla, Nla, NLA_F_NESTED, NlaBuffer, NlasIterator};
+use netlink_packet_utils::nla::{
+    DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED,
+};
 use netlink_packet_utils::{DecodeError, Emitable, Parseable};
 
 use crate::tc::filters::cls_flower::TCA_FLOWER_KEY_ENC_OPTS;
@@ -9,6 +11,9 @@ pub mod erspan;
 pub mod geneve;
 pub mod gtp;
 pub mod vxlan;
+
+#[cfg(test)]
+pub mod tests;
 
 const TCA_FLOWER_KEY_ENC_OPTS_GENEVE: u16 = 1;
 const TCA_FLOWER_KEY_ENC_OPTS_VXLAN: u16 = 2;
@@ -173,102 +178,5 @@ impl From<vxlan::Gpb> for Options {
 impl From<vxlan::Gpb> for Vec<Options> {
     fn from(gpb: vxlan::Gpb) -> Self {
         vec![Options::Vxlan(vec![vxlan::Options::Gpb(gpb)])]
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_back_options_geneve_empty() {
-        let example = Options::Geneve(vec![]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
-    }
-
-    #[test]
-    fn parse_back_options_geneve_example() {
-        let example = Options::Geneve(vec![
-            geneve::Options::Class(geneve::Class::new(0xabcd)),
-            geneve::Options::Data(geneve::Data::new(vec![1, 2, 3, 4])),
-            geneve::Options::Type(geneve::Type::new(0xab)),
-        ]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
-    }
-
-    #[test]
-    fn parse_back_options_vxlan_empty() {
-        let example = Options::Vxlan(vec![]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
-    }
-
-    #[test]
-    fn parse_back_options_vxlan_example() {
-        let example =
-            Options::Vxlan(vec![vxlan::Options::Gpb(vxlan::Gpb::new(0xabcd))]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
-    }
-
-    #[test]
-    fn parse_back_options_erspan_empty() {
-        let example = Options::Erspan(vec![]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
-    }
-
-    #[test]
-    fn parse_back_options_erspan_example() {
-        let example = Options::Erspan(vec![
-            erspan::Options::Version(erspan::Version::new(0xab)),
-            erspan::Options::Direction(erspan::Direction::Ingress),
-            erspan::Options::Index(erspan::Index::new(0x12345678)),
-        ]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
-    }
-
-    #[test]
-    fn parse_back_options_gtp_empty() {
-        let example = Options::Gtp(vec![]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
-    }
-
-    #[test]
-    fn parse_back_options_gtp_example() {
-        let example = Options::Gtp(vec![
-            gtp::Options::PduType(0xab),
-            gtp::Options::Qfi(0xcd),
-        ]);
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed =
-            Options::parse(&NlaBuffer::new_checked(&buffer).unwrap()).unwrap();
-        assert_eq!(example, parsed);
     }
 }

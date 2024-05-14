@@ -502,8 +502,8 @@ impl Nla for TcFilterFlowerOption {
             Self::KeyEncIpTosMask(_) => TCA_FLOWER_KEY_ENC_IP_TOS_MASK,
             Self::KeyEncIpTtl(_) => TCA_FLOWER_KEY_ENC_IP_TTL,
             Self::KeyEncIpTtlMask(_) => TCA_FLOWER_KEY_ENC_IP_TTL_MASK,
-            // NOTE: iproute2 is just not consistent with the use of the NLAF_NESTED flag
-            // for encap options.
+            // NOTE: iproute2 is just not consistent with the use of the
+            // NLAF_NESTED flag for encap options.
             Self::KeyEncOpts(OptionsList(opts)) => {
                 TCA_FLOWER_KEY_ENC_OPTS
                     | match opts {
