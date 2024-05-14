@@ -28,27 +28,11 @@ bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy, Default, PartialOrd, Ord, Hash)]
     #[non_exhaustive]
     pub struct TcActionMessageFlags: u32 {
-        /// From `iproute2`'s [`rtnetlink.h`]
-        ///
-        /// If set, this flag enables more than TCA_ACT_MAX_PRIO actions in a single
+        /// If set, this flag enables more than `TCA_ACT_MAX_PRIO` actions in a single
         /// actions listing operation.
-        ///
-        /// > TCA_ACT_FLAG_LARGE_DUMP_ON user->kernel to request for larger than
-        ///   TCA_ACT_MAX_PRIO actions in a dump.
-        ///   All dump responses will contain the number of actions being dumped
-        ///   stored in for user app's consumption in TCA_ROOT_COUNT
-        ///
-        /// [`rtnetlink.h`]: https://github.com/iproute2/iproute2/blob/89210b9ec1c445ae963d181b5816d12a0cdafbb6/include/uapi/linux/rtnetlink.h#L803-L806
         const LargeDump = TCA_ACT_FLAG_LARGE_DUMP_ON;
         /// If set, this flag restricts an action dump to only include essential
         /// details.
-        ///
-        /// From `iproute2`'s [`rtnetlink.h`]:
-        ///
-        /// > TCA_ACT_FLAG_TERSE_DUMP user->kernel to request terse (brief) dump
-        ///   that only includes essential action info (kind, index, etc.)
-        ///
-        /// [`rtnetlink.h`]: https://github.com/iproute2/iproute2/blob/89210b9ec1c445ae963d181b5816d12a0cdafbb6/include/uapi/linux/rtnetlink.h#L808-L809
         const TerseDump = TCA_ACT_FLAG_TERSE_DUMP;
         const _ = !0;
     }
@@ -147,7 +131,7 @@ const TCA_ROOT_TIME_DELTA: u16 = 4;
 const TCA_ROOT_EXT_WARN_MSG: u16 = 5;
 
 /// This enum is used to represent the different types of attributes that can be
-/// part of a `TcActionMessage`.
+/// part of a [`TcActionMessage`].
 ///
 /// This enum is non-exhaustive, additional variants may be added in the future.
 #[derive(Debug, PartialEq, Eq, Clone)]

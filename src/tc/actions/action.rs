@@ -25,7 +25,10 @@ const TCA_ACT_TAB: u16 = 1;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub struct TcAction {
-    /// Table id.  Corresponds to the `Kind` of the action.
+    /// Table id.
+    /// Corresponds to the [`Kind`] of the action.
+    ///
+    /// [`Kind`]: crate::tc::TcActionAttribute::Kind
     pub tab: u16,
     /// Attributes of the action.
     pub attributes: Vec<TcActionAttribute>,
@@ -203,17 +206,7 @@ impl Nla for TcActionAttribute {
     fn kind(&self) -> u16 {
         match self {
             Self::Kind(_) => TCA_ACT_KIND,
-            Self::Options(opts) => {
-                // NOTE: the kernel simply doesn't consistently use the nested
-                // flag based on captured messages.
-                // This is heuristically trying to match the kernel's behavior
-                // but may not be correct.
-                if opts.len() == 1 {
-                    TCA_ACT_OPTIONS | NLA_F_NESTED
-                } else {
-                    TCA_ACT_OPTIONS
-                }
-            }
+            Self::Options(_) => TCA_ACT_OPTIONS | NLA_F_NESTED,
             Self::Index(_) => TCA_ACT_INDEX,
             Self::Stats(_) => TCA_ACT_STATS,
             Self::Cookie(_) => TCA_ACT_COOKIE,
@@ -274,8 +267,8 @@ where
     }
 }
 
-/// `TcActionOption` is a netlink message attribute that describes an option of
-/// a [tc-actions] action.
+/// [`TcActionOption`] is a netlink message attribute that describes an option
+/// of a [tc-actions] action.
 ///
 /// This enum is non-exhaustive as new action types may be added to the kernel
 /// at any time.
