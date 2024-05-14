@@ -23,7 +23,14 @@ use crate::AddressFamily;
 /// ```bash
 /// tc actions add action nat ingress 1.2.3.4/32 5.6.7.0 index 1
 /// ```
-const TC_ACTION_NAT_EXAMPLE1: &str = "000000003c00010038000100080001006e6174002c0002802800010001000000000000000000000000000000000000000102030405060700ffffffff00000000";
+const TC_ACTION_NAT_EXAMPLE1: &[u8] = &[
+    0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x01, 0x00, 0x38, 0x00, 0x01, 0x00,
+    0x08, 0x00, 0x01, 0x00, 0x6e, 0x61, 0x74, 0x00, 0x2c, 0x00, 0x02, 0x80,
+    0x28, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0xff, 0xff, 0xff, 0xff,
+    0x00, 0x00, 0x00, 0x00,
+];
 
 fn tc_action_message_nat_example1() -> TcActionMessage {
     TcActionMessage {
@@ -34,7 +41,7 @@ fn tc_action_message_nat_example1() -> TcActionMessage {
             tab: 1,
             attributes: vec![
                 Kind("nat".into()),
-                Options(vec![Nat(TcActionNatOption::Parms(TcNat {
+                Options(vec![Nat(Parms(TcNat {
                     generic: TcActionGeneric {
                         index: 1,
                         capab: 0,
@@ -54,7 +61,7 @@ fn tc_action_message_nat_example1() -> TcActionMessage {
 
 #[test]
 fn parse_tc_action_nat_example1() {
-    let buf = hex::decode(TC_ACTION_NAT_EXAMPLE1).unwrap();
+    let buf = TC_ACTION_NAT_EXAMPLE1;
     let parsed = TcActionMessage::parse(
         &TcActionMessageBuffer::new_checked(&buf).unwrap(),
     )
@@ -67,7 +74,7 @@ fn emit_tc_action_nat_example1() {
     let example = tc_action_message_nat_example1();
     let mut buf = vec![0; example.buffer_len()];
     example.emit(&mut buf);
-    assert_eq!(buf, hex::decode(TC_ACTION_NAT_EXAMPLE1).unwrap());
+    assert_eq!(buf.as_slice(), TC_ACTION_NAT_EXAMPLE1);
 }
 
 /// Capture of request for
@@ -75,7 +82,14 @@ fn emit_tc_action_nat_example1() {
 /// ```bash
 /// tc actions add action nat ingress 1.2.3.0/24 5.6.7.9 index 2
 /// ```
-const TC_ACTION_NAT_EXAMPLE2: &str = "000000003c00010038000100080001006e6174002c0002802800010002000000000000000000000000000000000000000102030005060709ffffff0000000000";
+const TC_ACTION_NAT_EXAMPLE2: &[u8] = &[
+    0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x01, 0x00, 0x38, 0x00, 0x01, 0x00,
+    0x08, 0x00, 0x01, 0x00, 0x6e, 0x61, 0x74, 0x00, 0x2c, 0x00, 0x02, 0x80,
+    0x28, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x02, 0x03, 0x00, 0x05, 0x06, 0x07, 0x09, 0xff, 0xff, 0xff, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+];
 
 fn tc_action_message_nat_example2() -> TcActionMessage {
     TcActionMessage {
@@ -86,7 +100,7 @@ fn tc_action_message_nat_example2() -> TcActionMessage {
             tab: 1,
             attributes: vec![
                 Kind("nat".into()),
-                Options(vec![Nat(TcActionNatOption::Parms(TcNat {
+                Options(vec![Nat(Parms(TcNat {
                     generic: TcActionGeneric {
                         index: 2,
                         capab: 0,
@@ -106,7 +120,7 @@ fn tc_action_message_nat_example2() -> TcActionMessage {
 
 #[test]
 fn parse_tc_action_nat_example2() {
-    let buf = hex::decode(TC_ACTION_NAT_EXAMPLE2).unwrap();
+    let buf = TC_ACTION_NAT_EXAMPLE2;
     let parsed = TcActionMessage::parse(
         &TcActionMessageBuffer::new_checked(&buf).unwrap(),
     )
@@ -119,7 +133,7 @@ fn emit_tc_action_nat_example2() {
     let example = tc_action_message_nat_example2();
     let mut buf = vec![0; example.buffer_len()];
     example.emit(&mut buf);
-    assert_eq!(buf, hex::decode(TC_ACTION_NAT_EXAMPLE2).unwrap());
+    assert_eq!(buf.as_slice(), TC_ACTION_NAT_EXAMPLE2);
 }
 
 /// Capture of request for
@@ -127,7 +141,14 @@ fn emit_tc_action_nat_example2() {
 /// ```bash
 /// tc actions add action nat egress 2.3.4.0/24 5.6.7.9 index 3
 /// ```
-const TC_ACTION_NAT_EXAMPLE3: &str = "000000003c00010038000100080001006e6174002c0002802800010003000000000000000000000000000000000000000203040005060709ffffff0001000000";
+const TC_ACTION_NAT_EXAMPLE3: &[u8] = &[
+    0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x01, 0x00, 0x38, 0x00, 0x01, 0x00,
+    0x08, 0x00, 0x01, 0x00, 0x6e, 0x61, 0x74, 0x00, 0x2c, 0x00, 0x02, 0x80,
+    0x28, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x02, 0x03, 0x04, 0x00, 0x05, 0x06, 0x07, 0x09, 0xff, 0xff, 0xff, 0x00,
+    0x01, 0x00, 0x00, 0x00,
+];
 
 fn tc_action_message_nat_example3() -> TcActionMessage {
     TcActionMessage {
@@ -138,7 +159,7 @@ fn tc_action_message_nat_example3() -> TcActionMessage {
             tab: 1,
             attributes: vec![
                 Kind("nat".into()),
-                Options(vec![Nat(TcActionNatOption::Parms(TcNat {
+                Options(vec![Nat(Parms(TcNat {
                     generic: TcActionGeneric {
                         index: 3,
                         capab: 0,
@@ -158,7 +179,7 @@ fn tc_action_message_nat_example3() -> TcActionMessage {
 
 #[test]
 fn parse_tc_action_nat_example3() {
-    let buf = hex::decode(TC_ACTION_NAT_EXAMPLE3).unwrap();
+    let buf = TC_ACTION_NAT_EXAMPLE3;
     let parsed = TcActionMessage::parse(
         &TcActionMessageBuffer::new_checked(&buf).unwrap(),
     )
@@ -171,11 +192,11 @@ fn emit_tc_action_nat_example3() {
     let example = tc_action_message_nat_example3();
     let mut buf = vec![0x00; example.buffer_len()];
     example.emit(&mut buf);
-    assert_eq!(buf, hex::decode(TC_ACTION_NAT_EXAMPLE3).unwrap());
+    assert_eq!(buf.as_slice(), TC_ACTION_NAT_EXAMPLE3);
 }
 
 const TC_ACTION_NAT_OPTION_PARAMS_EXAMPLES: [TcActionNatOption; 2] = [
-    TcActionNatOption::Parms(TcNat {
+    Parms(TcNat {
         flags: TcNatFlags::empty(),
         generic: TcActionGeneric {
             action: TcActionType::Reclassify,
@@ -188,7 +209,7 @@ const TC_ACTION_NAT_OPTION_PARAMS_EXAMPLES: [TcActionNatOption; 2] = [
         new_addr: Ipv4Addr::new(1, 2, 3, 4),
         old_addr: Ipv4Addr::new(5, 6, 7, 8),
     }),
-    TcActionNatOption::Parms(TcNat {
+    Parms(TcNat {
         flags: TcNatFlags::empty(),
         generic: TcActionGeneric {
             action: TcActionType::Pipe,
@@ -229,16 +250,16 @@ fn tc_action_nat_option_emit_uses_whole_buffer() {
 
 fn tc_action_nat_option_tm_examples() -> [TcActionNatOption; 4] {
     [
-        TcActionNatOption::Tm(vec![]),
-        TcActionNatOption::Tm(vec![1]),
-        TcActionNatOption::Tm(vec![1, 2, 3, 4]),
-        TcActionNatOption::Tm(vec![99; 10]),
+        Tm(vec![]),
+        Tm(vec![1]),
+        Tm(vec![1, 2, 3, 4]),
+        Tm(vec![99; 10]),
     ]
 }
 
 #[test]
 fn tc_action_nat_option_parse_back_example_tm() {
-    for example in tc_action_nat_option_tm_examples().iter() {
+    for example in &tc_action_nat_option_tm_examples() {
         let mut buffer = vec![0; example.buffer_len()];
         example.emit(&mut buffer);
         let parsed = TcActionNatOption::parse(
@@ -251,7 +272,7 @@ fn tc_action_nat_option_parse_back_example_tm() {
 
 #[test]
 fn tc_action_nat_option_emit_tm_uses_whole_buffer() {
-    for example in tc_action_nat_option_tm_examples().iter() {
+    for example in &tc_action_nat_option_tm_examples() {
         let mut buffer1 = vec![0x00; example.buffer_len()];
         let mut buffer2 = vec![0xff; example.buffer_len()];
         example.emit(&mut buffer1);
@@ -278,8 +299,23 @@ fn tc_action_nat_option_emit_tm_uses_whole_buffer() {
 ///   * rtnetlink header removed (16 bytes).
 #[test]
 fn test_get_filter_nat() {
-    const RAW: &str = "00000000ac000100a8000100080001006e617400440004001400010000000000000000000000000000000000140007000000000000000000000000000000000018000300000000000000000000000000000000000000000008000a000000000050000200280001000100000000000000000000000100000000000000c0000201cb007101ffffffff00000000240002000000000000000000000000000000000000000000000000000000000000000000";
-    let raw = hex::decode(RAW).unwrap();
+    const RAW: &[u8] = &[
+        0x00, 0x00, 0x00, 0x00, 0xac, 0x00, 0x01, 0x00, 0xa8, 0x00, 0x01, 0x00,
+        0x08, 0x00, 0x01, 0x00, 0x6e, 0x61, 0x74, 0x00, 0x44, 0x00, 0x04, 0x00,
+        0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x07, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x50, 0x00, 0x02, 0x80, 0x28, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x02, 0x01, 0xcb, 0x00, 0x71, 0x01,
+        0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x24, 0x00, 0x02, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
 
     let expected = TcActionMessage {
         header: TcActionMessageHeader {
@@ -332,12 +368,12 @@ fn test_get_filter_nat() {
 
     assert_eq!(
         expected,
-        TcActionMessage::parse(&TcActionMessageBuffer::new(&raw)).unwrap()
+        TcActionMessage::parse(&TcActionMessageBuffer::new(&RAW)).unwrap()
     );
 
     let mut buf = vec![0; expected.buffer_len()];
 
     expected.emit(&mut buf);
 
-    assert_eq!(buf, raw);
+    assert_eq!(buf, RAW);
 }

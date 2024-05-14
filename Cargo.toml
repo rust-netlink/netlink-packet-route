@@ -27,6 +27,5 @@ netlink-packet-utils = { version = "0.5.2" }
 name = "dump_packet_links"
 
 [dev-dependencies]
-hex = "0.4.3"
 netlink-sys = { version = "0.8.5" }
 pretty_assertions = "0.7.2"
