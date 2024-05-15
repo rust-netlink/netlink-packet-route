@@ -10,10 +10,11 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use crate::tc::TcStats2;
+use crate::tc::{TcActionTunnelKeyOption, TcStats2};
 
 use super::{
     TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
+    TcActionTunnelKey,
 };
 
 /// TODO: determine when and why to use this as opposed to the buffer's `kind`.
@@ -287,6 +288,11 @@ pub enum TcActionOption {
     ///
     /// These options type can be used to perform network address translation.
     Nat(TcActionNatOption),
+    /// Tunnel key options
+    ///
+    /// These options can be used to set or release the tunnel key for the
+    /// packet.
+    TunnelKey(TcActionTunnelKeyOption),
     /// Other action types not yet supported by this library.
     Other(DefaultNla),
 }
@@ -296,6 +302,7 @@ impl Nla for TcActionOption {
         match self {
             Self::Mirror(nla) => nla.value_len(),
             Self::Nat(nla) => nla.value_len(),
+            Self::TunnelKey(nla) => nla.value_len(),
             Self::Other(nla) => nla.value_len(),
         }
     }
@@ -304,6 +311,7 @@ impl Nla for TcActionOption {
         match self {
             Self::Mirror(nla) => nla.emit_value(buffer),
             Self::Nat(nla) => nla.emit_value(buffer),
+            Self::TunnelKey(nla) => nla.emit_value(buffer),
             Self::Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -312,6 +320,7 @@ impl Nla for TcActionOption {
         match self {
             Self::Mirror(nla) => nla.kind(),
             Self::Nat(nla) => nla.kind(),
+            Self::TunnelKey(nla) => nla.kind(),
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -334,6 +343,10 @@ where
             TcActionNat::KIND => Self::Nat(
                 TcActionNatOption::parse(buf)
                     .context("failed to parse nat action")?,
+            ),
+            TcActionTunnelKey::KIND => Self::TunnelKey(
+                TcActionTunnelKeyOption::parse(buf)
+                    .context("failed to parse tunnel key action")?,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf)
