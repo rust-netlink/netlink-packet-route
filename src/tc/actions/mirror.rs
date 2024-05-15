@@ -14,21 +14,27 @@ use netlink_packet_utils::{
 
 use super::{TcActionGeneric, TcActionGenericBuffer};
 
+/// Traffic control action used to mirror or redirect packets.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub struct TcActionMirror {}
 impl TcActionMirror {
+    /// The `TcActionAttribute::Kind` of this action.
     pub const KIND: &'static str = "mirred";
 }
 
 const TCA_MIRRED_TM: u16 = 1;
 const TCA_MIRRED_PARMS: u16 = 2;
 
+/// Options for the `TcActionMirror` action.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum TcActionMirrorOption {
+    /// TODO: document this after we make it something better than `Vec<u8>`
     Tm(Vec<u8>),
+    /// Parameters for the mirred action.
     Parms(TcMirror),
+    /// Other attributes unknown at the time of writing.
     Other(DefaultNla),
 }
 
@@ -74,11 +80,15 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 
 const TC_MIRRED_BUF_LEN: usize = TcActionGeneric::BUF_LEN + 8;
 
+/// Parameters for the mirred action.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct TcMirror {
+    /// Generic action parameters.
     pub generic: TcActionGeneric,
+    /// Describes how the packet be mirrored or redirected.
     pub eaction: TcMirrorActionType,
+    /// Interface index to mirror or redirect to.
     pub ifindex: u32,
 }
 
@@ -121,14 +131,20 @@ const TCA_EGRESS_MIRROR: i32 = 2;
 const TCA_INGRESS_REDIR: i32 = 3;
 const TCA_INGRESS_MIRROR: i32 = 4;
 
+/// Type of mirroring or redirecting action.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 #[non_exhaustive]
 pub enum TcMirrorActionType {
     #[default]
+    /// Redirect to the egress pipeline.
     EgressRedir,
+    /// Mirror to the egress pipeline.
     EgressMirror,
+    /// Redirect to the ingress pipeline.
     IngressRedir,
+    /// Mirror to the ingress pipeline.
     IngressMirror,
+    /// Other action type unknown at the time of writing.
     Other(i32),
 }
 

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+use crate::tc::filters::{
+    TcFilterFlowerOption, TcFilterMatchAllOption, TcFilterU32Option,
+};
 use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
@@ -8,8 +11,8 @@ use netlink_packet_utils::{
 };
 
 use super::{
-    TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
-    TcQdiscFqCodel, TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
+    TcFilterFlower, TcFilterMatchAll, TcFilterU32, TcQdiscFqCodel,
+    TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -20,6 +23,8 @@ pub enum TcOption {
     Ingress(TcQdiscIngressOption),
     // Filter specific options
     U32(TcFilterU32Option),
+    // Flower specific options
+    Flower(TcFilterFlowerOption),
     // matchall options
     MatchAll(TcFilterMatchAllOption),
     // Other options
@@ -32,6 +37,7 @@ impl Nla for TcOption {
             Self::FqCodel(u) => u.value_len(),
             Self::Ingress(u) => u.value_len(),
             Self::U32(u) => u.value_len(),
+            Self::Flower(u) => u.value_len(),
             Self::MatchAll(m) => m.value_len(),
             Self::Other(o) => o.value_len(),
         }
@@ -42,6 +48,7 @@ impl Nla for TcOption {
             Self::FqCodel(u) => u.emit_value(buffer),
             Self::Ingress(u) => u.emit_value(buffer),
             Self::U32(u) => u.emit_value(buffer),
+            Self::Flower(u) => u.emit_value(buffer),
             Self::MatchAll(m) => m.emit_value(buffer),
             Self::Other(o) => o.emit_value(buffer),
         }
@@ -52,6 +59,7 @@ impl Nla for TcOption {
             Self::FqCodel(u) => u.kind(),
             Self::Ingress(u) => u.kind(),
             Self::U32(u) => u.kind(),
+            Self::Flower(u) => u.kind(),
             Self::MatchAll(m) => m.kind(),
             Self::Other(o) => o.kind(),
         }
@@ -86,6 +94,10 @@ where
                     "failed to parse matchall TCA_OPTIONS attributes",
                 )?)
             }
+            TcFilterFlower::KIND => Self::Flower(
+                TcFilterFlowerOption::parse(buf)
+                    .context("failed to parse flower TCA_OPTIONS attributes")?,
+            ),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
@@ -104,6 +116,7 @@ where
         Ok(match kind {
             TcFilterU32::KIND
             | TcFilterMatchAll::KIND
+            | TcFilterFlower::KIND
             | TcQdiscIngress::KIND
             | TcQdiscFqCodel::KIND => {
                 let mut nlas = vec![];

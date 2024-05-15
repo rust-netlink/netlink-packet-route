@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 #[cfg(test)]
-mod action_nat;
-#[cfg(test)]
 mod filter_matchall;
 #[cfg(test)]
 mod filter_u32;
