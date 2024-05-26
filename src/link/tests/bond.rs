@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
 use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    BondMode, BondPortState, InfoBond, InfoBondPort, InfoData, InfoKind,
-    InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
-    LinkLayerType, LinkMessage, LinkMessageBuffer, MiiStatus,
+    ArpValidate, BondMode, BondPortState, InfoBond, InfoBondPort, InfoData,
+    InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map, MiiStatus,
+    State, Stats, Stats64,
 };
-use crate::AddressFamily;
+use crate::{AddressFamily, RouteNetlinkMessage};
 
 #[test]
 fn test_bond_link_info() {
@@ -56,14 +58,14 @@ fn test_bond_link_info() {
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::Bond),
             LinkInfo::Data(InfoData::Bond(vec![
-                InfoBond::Mode(BondMode::BalanceRr),
+                InfoBond::Mode(BondMode::default()),
                 InfoBond::MiiMon(0),
                 InfoBond::UpDelay(0),
                 InfoBond::DownDelay(0),
                 InfoBond::PeerNotifDelay(0),
                 InfoBond::UseCarrier(1),
                 InfoBond::ArpInterval(0),
-                InfoBond::ArpValidate(0),
+                InfoBond::ArpValidate(ArpValidate::default()),
                 InfoBond::ArpAllTargets(0),
                 InfoBond::PrimaryReselect(0),
                 InfoBond::FailOverMac(0),
@@ -148,4 +150,84 @@ fn test_bond_port_link_info() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_bond_arp_validate() {
+    let raw: Vec<u8> = vec![
+        0xfc, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0xa5, 0xb9, 0x52, 0x66,
+        0x37, 0xa7, 0x3d, 0x00, 0x00, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00,
+        0x02, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x03, 0x00,
+        0x62, 0x6f, 0x6e, 0x64, 0x30, 0x00, 0x00, 0x00, 0x08, 0x00, 0x0d, 0x00,
+        0xe8, 0x03, 0x00, 0x00, 0x05, 0x00, 0x10, 0x00, 0x02, 0x00, 0x00, 0x00,
+        0x05, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x04, 0x00,
+        0xdc, 0x05, 0x00, 0x00, 0x08, 0x00, 0x32, 0x00, 0x44, 0x00, 0x00, 0x00,
+        0x08, 0x00, 0x33, 0x00, 0xff, 0xff, 0x00, 0x00, 0x08, 0x00, 0x1b, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x1e, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x08, 0x00, 0x1f, 0x00, 0x10, 0x00, 0x00, 0x00, 0x08, 0x00, 0x28, 0x00,
+        0xff, 0xff, 0x00, 0x00, 0x08, 0x00, 0x29, 0x00, 0x00, 0x00, 0x01, 0x00,
+        0x08, 0x00, 0x20, 0x00, 0x10, 0x00, 0x00, 0x00, 0x05, 0x00, 0x21, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x06, 0x00, 0x6e, 0x6f, 0x6f, 0x70,
+        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x23, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x08, 0x00, 0x2f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x30, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x27, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x24, 0x00, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x0a, 0x00, 0x01, 0x00, 0x92, 0xb3, 0xba, 0x20, 0xd7, 0xa0, 0x00, 0x00,
+        0x0a, 0x00, 0x02, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00,
+    ];
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 5,
+            link_layer_type: LinkLayerType::Ether,
+            flags: LinkFlags::Broadcast
+                | LinkFlags::Controller
+                | LinkFlags::Multicast,
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![
+            LinkAttribute::IfName("bond0".into()),
+            LinkAttribute::TxQueueLen(1000),
+            LinkAttribute::OperState(State::Down),
+            LinkAttribute::Mode(0),
+            LinkAttribute::Mtu(1500),
+            LinkAttribute::MinMtu(68),
+            LinkAttribute::MaxMtu(65535),
+            LinkAttribute::Group(0),
+            LinkAttribute::Promiscuity(0),
+            LinkAttribute::NumTxQueues(16),
+            LinkAttribute::GsoMaxSegs(65535),
+            LinkAttribute::GsoMaxSize(65536),
+            LinkAttribute::NumRxQueues(16),
+            LinkAttribute::Carrier(0),
+            LinkAttribute::Qdisc("noop".into()),
+            LinkAttribute::CarrierChanges(1),
+            LinkAttribute::CarrierUpCount(0),
+            LinkAttribute::CarrierDownCount(1),
+            LinkAttribute::ProtoDown(0),
+            LinkAttribute::Map(Map {
+                memory_start: 0,
+                memory_end: 0,
+                base_address: 0,
+                irq: 0,
+                dma: 0,
+                port: 0,
+            }),
+            LinkAttribute::Address(vec![0x92, 0xb3, 0xba, 0x20, 0xd7, 0xa0]),
+            LinkAttribute::Broadcast(vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+        ],
+    };
+    let mut packet = NetlinkMessage::new(
+        NetlinkHeader::default(),
+        NetlinkPayload::from(RouteNetlinkMessage::NewLink(expected)),
+    );
+    packet.header.sequence_number = 1716697509;
+    packet.header.port_number = 4040503;
+    packet.finalize();
+    let mut buf = vec![0u8; packet.buffer_len()];
+    packet.serialize(&mut buf);
+
+    assert_eq!(raw, buf);
 }
