@@ -1,4 +1,15 @@
 # Changelog
+## [0.20.1] - 2024-06-29
+### Breaking changes
+ - N/A
+
+### New features
+ - Support for tc-actions. (65f699a, 0227234)
+ - Support IFLA_VRF_PORT_TABLE attribute. (abfadc1)
+
+### Bug fixes
+ - N/A
+
 ## [0.20.0] - 2024-01-31
 ### Breaking changes
  - Use bitflags. (3c08f7f, 5072f3a, 9271b33, 8564ed9, e26b489, b337e00,
