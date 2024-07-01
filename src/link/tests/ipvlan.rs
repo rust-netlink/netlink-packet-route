@@ -4,8 +4,8 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    InfoData, InfoIpVlan, InfoKind, IpVlanMode, LinkAttribute, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    InfoData, InfoIpVlan, InfoKind, IpVlanFlag, IpVlanMode, LinkAttribute,
+    LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
 };
 use crate::AddressFamily;
 
@@ -16,7 +16,7 @@ fn test_ipvlan_link_info() {
         0x00, 0x00, 0x00, 0x00, 0x24, 0x00, 0x12, 0x00, 0x0b, 0x00, 0x01, 0x00,
         0x69, 0x70, 0x76, 0x6c, 0x61, 0x6e, 0x00, 0x00, 0x14, 0x00, 0x02, 0x00,
         0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x02, 0x00,
-        0x02, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
     ];
 
     let expected = LinkMessage {
@@ -31,7 +31,7 @@ fn test_ipvlan_link_info() {
             LinkInfo::Kind(InfoKind::IpVlan),
             LinkInfo::Data(InfoData::IpVlan(vec![
                 InfoIpVlan::Mode(IpVlanMode::L2),
-                InfoIpVlan::Flags(2),
+                InfoIpVlan::Flags(IpVlanFlag::Bridge),
             ])),
         ])],
     };
