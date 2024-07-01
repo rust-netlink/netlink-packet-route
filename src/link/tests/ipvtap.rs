@@ -4,8 +4,8 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    InfoData, InfoIpVtap, InfoKind, IpVtapMode, LinkAttribute, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    InfoData, InfoIpVtap, InfoKind, IpVtapFlags, IpVtapMode, LinkAttribute,
+    LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
 };
 use crate::AddressFamily;
 
@@ -31,7 +31,7 @@ fn test_ipvtap_link_info() {
             LinkInfo::Kind(InfoKind::IpVtap),
             LinkInfo::Data(InfoData::IpVtap(vec![
                 InfoIpVtap::Mode(IpVtapMode::L2),
-                InfoIpVtap::Flags(2),
+                InfoIpVtap::Flags(IpVtapFlags::Vepa),
             ])),
         ])],
     };
