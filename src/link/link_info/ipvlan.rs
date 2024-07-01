@@ -16,7 +16,7 @@ const IFLA_IPVLAN_FLAGS: u16 = 2;
 #[non_exhaustive]
 pub enum InfoIpVlan {
     Mode(IpVlanMode),
-    Flags(u16),
+    Flags(IpVlanFlag),
     Other(DefaultNla),
 }
 
@@ -33,7 +33,7 @@ impl Nla for InfoIpVlan {
         use self::InfoIpVlan::*;
         match self {
             Mode(value) => NativeEndian::write_u16(buffer, (*value).into()),
-            Flags(value) => NativeEndian::write_u16(buffer, *value),
+            Flags(value) => NativeEndian::write_u16(buffer, (*value).into()),
             Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -60,7 +60,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
             ),
             IFLA_IPVLAN_FLAGS => Flags(
                 parse_u16(payload)
-                    .context("invalid IFLA_IPVLAN_FLAGS value")?,
+                    .context("invalid IFLA_IPVLAN_FLAGS value")?
+                    .into(),
             ),
             kind => Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)"
@@ -73,7 +74,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
 #[non_exhaustive]
 pub enum InfoIpVtap {
     Mode(IpVtapMode),
-    Flags(u16),
+    Flags(IpVtapFlag),
     Other(DefaultNla),
 }
 
@@ -90,7 +91,7 @@ impl Nla for InfoIpVtap {
         use self::InfoIpVtap::*;
         match self {
             Mode(value) => NativeEndian::write_u16(buffer, (*value).into()),
-            Flags(value) => NativeEndian::write_u16(buffer, *value),
+            Flags(value) => NativeEndian::write_u16(buffer, (*value).into()),
             Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -117,7 +118,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVtap {
             ),
             IFLA_IPVLAN_FLAGS => Flags(
                 parse_u16(payload)
-                    .context("invalid IFLA_IPVLAN_FLAGS value")?,
+                    .context("invalid IFLA_IPVLAN_FLAGS value")?
+                    .into(),
             ),
             kind => Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)"
@@ -162,6 +164,46 @@ impl From<IpVlanMode> for u16 {
             IpVlanMode::L3 => IPVLAN_MODE_L3,
             IpVlanMode::L3S => IPVLAN_MODE_L3S,
             IpVlanMode::Other(d) => d,
+        }
+    }
+}
+
+const IPVLAN_FLAG_BRIDGE: u16 = 0;
+const IPVLAN_FLAG_PRIVATE: u16 = 1;
+const IPVLAN_FLAG_VEPA: u16 = 2;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum IpVlanFlag {
+    Bridge,
+    Private,
+    Vepa,
+    Other(u16),
+}
+
+pub type IpVtapFlag = IpVlanFlag;
+
+impl From<u16> for IpVlanFlag {
+    fn from(d: u16) -> Self {
+        match d {
+            IPVLAN_FLAG_BRIDGE => Self::Bridge,
+            IPVLAN_FLAG_PRIVATE => Self::Private,
+            IPVLAN_FLAG_VEPA => Self::Vepa,
+            _ => {
+                log::warn!("Unknown IP VLAN flag {}", d);
+                Self::Other(d)
+            }
+        }
+    }
+}
+
+impl From<IpVlanFlag> for u16 {
+    fn from(v: IpVlanFlag) -> u16 {
+        match v {
+            IpVlanFlag::Bridge => IPVLAN_FLAG_BRIDGE,
+            IpVlanFlag::Private => IPVLAN_FLAG_PRIVATE,
+            IpVlanFlag::Vepa => IPVLAN_FLAG_VEPA,
+            IpVlanFlag::Other(d) => d,
         }
     }
 }
