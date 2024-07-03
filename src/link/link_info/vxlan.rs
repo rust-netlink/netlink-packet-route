@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+use std::net::{Ipv4Addr, Ipv6Addr};
+
 use anyhow::Context;
 use byteorder::{BigEndian, ByteOrder, NativeEndian};
 use netlink_packet_utils::{
@@ -45,11 +47,11 @@ const IFLA_VXLAN_LOCALBYPASS: u16 = 31;
 #[non_exhaustive]
 pub enum InfoVxlan {
     Id(u32),
-    Group(Vec<u8>),
-    Group6(Vec<u8>),
+    Group(Ipv4Addr),
+    Group6(Ipv6Addr),
     Link(u32),
-    Local(Vec<u8>),
-    Local6(Vec<u8>),
+    Local(Ipv4Addr),
+    Local6(Ipv6Addr),
     Tos(u8),
     Ttl(u8),
     Label(u32),
@@ -105,11 +107,10 @@ impl Nla for InfoVxlan {
             | Self::Link(_)
             | Self::Ageing(_)
             | Self::Limit(_)
-            | Self::PortRange(_) => 4,
-            Self::Local(bytes)
-            | Self::Local6(bytes)
-            | Self::Group(bytes)
-            | Self::Group6(bytes) => bytes.len(),
+            | Self::PortRange(_)
+            | Self::Group(_)
+            | Self::Local(_) => 4,
+            Self::Group6(_) | Self::Local6(_) => 16,
             Self::Other(nla) => nla.value_len(),
         }
     }
@@ -141,10 +142,12 @@ impl Nla for InfoVxlan {
             | Self::RemCsumTX(value)
             | Self::RemCsumRX(value)
             | Self::TtlInherit(value) => buffer[0] = *value as u8,
-            Self::Local(value)
-            | Self::Group(value)
-            | Self::Group6(value)
-            | Self::Local6(value) => buffer.copy_from_slice(value.as_slice()),
+            Self::Group(value) | Self::Local(value) => {
+                buffer.copy_from_slice(&value.octets())
+            }
+            Self::Group6(value) | Self::Local6(value) => {
+                buffer.copy_from_slice(&value.octets())
+            }
             Self::Port(value) => BigEndian::write_u16(buffer, *value),
             Self::PortRange(range) => {
                 BigEndian::write_u16(buffer, range.0);
@@ -199,13 +202,61 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
             IFLA_VXLAN_ID => {
                 Self::Id(parse_u32(payload).context("invalid IFLA_VXLAN_ID value")?)
             }
-            IFLA_VXLAN_GROUP => Self::Group(payload.to_vec()),
-            IFLA_VXLAN_GROUP6 => Self::Group6(payload.to_vec()),
+            IFLA_VXLAN_GROUP => {
+                if payload.len() == 4 {
+                    let mut data = [0u8; 4];
+                    data.copy_from_slice(&payload[0..4]);
+                    Self::Group(Ipv4Addr::from(data))
+                } else {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_VXLAN_GROUP, got unexpected length \
+                        of IPv4 address payload {:?}",
+                        payload
+                    )));
+                }
+            }
+            IFLA_VXLAN_LOCAL => {
+                if payload.len() == 4 {
+                    let mut data = [0u8; 4];
+                    data.copy_from_slice(&payload[0..4]);
+                    Self::Local(Ipv4Addr::from(data))
+                } else {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_VXLAN_LOCAL, got unexpected length \
+                        of IPv4 address payload {:?}",
+                        payload
+                    )));
+                }
+            }
+            IFLA_VXLAN_GROUP6 => {
+                if payload.len() == 16 {
+                    let mut data = [0u8; 16];
+                    data.copy_from_slice(&payload[0..16]);
+                    Self::Group6(Ipv6Addr::from(data))
+                } else {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_VXLAN_GROUP6, got unexpected length \
+                        of IPv6 address payload {:?}",
+                        payload
+                    )));
+                }
+            },
+            IFLA_VXLAN_LOCAL6 => {
+                if payload.len() == 16 {
+                    let mut data = [0u8; 16];
+                    data.copy_from_slice(&payload[0..16]);
+                    Self::Local6(Ipv6Addr::from(data))
+                } else {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_VXLAN_LOCAL6, got unexpected length \
+                        of IPv6 address payload {:?}",
+                        payload
+                    )));
+                }
+            },
             IFLA_VXLAN_LINK => Self::Link(
                 parse_u32(payload).context("invalid IFLA_VXLAN_LINK value")?,
             ),
-            IFLA_VXLAN_LOCAL => Self::Local(payload.to_vec()),
-            IFLA_VXLAN_LOCAL6 => Self::Local6(payload.to_vec()),
             IFLA_VXLAN_TOS => {
                 Self::Tos(parse_u8(payload)
                     .context("invalid IFLA_VXLAN_TOS value")?)
