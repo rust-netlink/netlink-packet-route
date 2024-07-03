@@ -8,10 +8,10 @@ use netlink_packet_utils::{
 };
 
 use super::super::{
-    InfoBond, InfoBridge, InfoGreTap, InfoGreTap6, InfoGreTun, InfoGreTun6,
-    InfoGtp, InfoHsr, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec,
-    InfoMacVlan, InfoMacVtap, InfoSitTun, InfoTun, InfoVeth, InfoVlan, InfoVrf,
-    InfoVti, InfoVxlan, InfoXfrm,
+    InfoBond, InfoBridge, InfoGeneve, InfoGreTap, InfoGreTap6, InfoGreTun,
+    InfoGreTun6, InfoGtp, InfoHsr, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind,
+    InfoMacSec, InfoMacVlan, InfoMacVtap, InfoSitTun, InfoTun, InfoVeth,
+    InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -41,6 +41,7 @@ pub enum InfoData {
     Xfrm(Vec<InfoXfrm>),
     MacSec(Vec<InfoMacSec>),
     Hsr(Vec<InfoHsr>),
+    Geneve(Vec<InfoGeneve>),
     Other(Vec<u8>),
 }
 
@@ -69,6 +70,7 @@ impl Nla for InfoData {
             Self::GreTun6(nlas) => nlas.as_slice().buffer_len(),
             Self::Vti(nlas) => nlas.as_slice().buffer_len(),
             Self::Gtp(nlas) => nlas.as_slice().buffer_len(),
+            Self::Geneve(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(v) => v.len(),
         }
     }
@@ -97,6 +99,7 @@ impl Nla for InfoData {
             Self::GreTun6(nlas) => nlas.as_slice().emit(buffer),
             Self::Vti(nlas) => nlas.as_slice().emit(buffer),
             Self::Gtp(nlas) => nlas.as_slice().emit(buffer),
+            Self::Geneve(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
         }
     }
@@ -349,6 +352,17 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::Hsr(v)
+            }
+            InfoKind::Geneve => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoGeneve::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Geneve(v)
             }
             _ => InfoData::Other(payload.to_vec()),
         })

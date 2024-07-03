@@ -4,6 +4,7 @@ mod bond;
 mod bond_port;
 mod bridge;
 mod bridge_port;
+mod geneve;
 mod gre;
 mod gre6;
 mod gre_tap;
@@ -35,6 +36,7 @@ pub use self::bridge::{
 pub use self::bridge_port::{
     BridgePortMulticastRouter, BridgePortState, InfoBridgePort,
 };
+pub use self::geneve::{GeneveDf, InfoGeneve};
 pub use self::gre::InfoGreTun;
 pub use self::gre6::InfoGreTun6;
 pub use self::gre_tap::InfoGreTap;
