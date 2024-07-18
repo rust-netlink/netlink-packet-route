@@ -9,6 +9,7 @@ use crate::{
         filters::{TcU32OptionFlags, TcU32SelectorFlags},
         TcAttribute, TcFilterU32Option, TcHandle, TcHeader, TcMessage,
         TcMessageBuffer, TcOption, TcU32Key, TcU32Selector,
+        TcU32SelectorBuffer,
     },
     AddressFamily,
 };
@@ -111,4 +112,24 @@ fn test_get_filter_u32() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+}
+
+// Verify that [`TcU32Selector`] fails to parse a buffer with an
+// invalid number of keys.
+#[test]
+fn test_tcu32_selector_invalid_nkeys() {
+    // TC u32 selector buffer layout:
+    // |byte0|byte1|byte2|byte3|byte4|byte5|byte6|byte7|
+    // |-----|-----|-----|-----|-----|-----|-----|-----|
+    // |flags|shift|nkeys|pad  |  offmask  |    off    |
+    // |-----|-----|-----|-----|-----|-----|-----|-----|
+    // |   offoff  |   hoff    |         hmask         |
+    // |-----|-----|-----|-----|-----|-----|-----|-----|
+    // |                     keys                      |
+    // |                      ...                      |
+    let buffer = [
+        0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    ];
+    assert!(TcU32SelectorBuffer::new_checked(buffer).is_err());
 }
