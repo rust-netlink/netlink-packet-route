@@ -31,7 +31,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 buf.value()
             ))?;
             if nla.kind() == IFLA_VF_INFO {
-                nlas.push(LinkVfInfo::parse(&NlaBuffer::new(nla.value()))?);
+                nlas.push(LinkVfInfo::parse(&NlaBuffer::new_checked(
+                    nla.value(),
+                )?)?);
             } else {
                 log::warn!(
                     "BUG: Expecting IFLA_VF_INFO in IFLA_VFINFO_LIST, \
