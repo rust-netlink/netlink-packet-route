@@ -110,11 +110,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 )
                 .context(format!("invalid NDTA_STATS {payload:?}"))?,
             ),
-            NDTA_PARMS => Self::Parms(
-                VecNeighbourTableParameter::parse(&NlaBuffer::new(payload))
-                    .context(format!("invalid NDTA_PARMS {payload:?}"))?
+            NDTA_PARMS => {
+                let err = |payload| format!("invalid NDTA_PARMS {payload:?}");
+                Self::Parms(
+                    VecNeighbourTableParameter::parse(
+                        &NlaBuffer::new_checked(payload)
+                            .context(err(payload))?,
+                    )
+                    .context(err(payload))?
                     .0,
-            ),
+                )
+            }
             NDTA_GC_INTERVAL => Self::GcInterval(
                 parse_u64(payload).context("invalid NDTA_GC_INTERVAL value")?,
             ),

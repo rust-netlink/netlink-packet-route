@@ -20,7 +20,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 buf.value()
             ))?;
             if nla.kind() == IFLA_VF_PORT {
-                nlas.push(LinkVfPort::parse(&NlaBuffer::new(nla.value()))?);
+                nlas.push(LinkVfPort::parse(&NlaBuffer::new_checked(
+                    nla.value(),
+                )?)?);
             } else {
                 log::warn!(
                     "BUG: Expecting IFLA_VF_PORT in IFLA_VF_PORTS, \
