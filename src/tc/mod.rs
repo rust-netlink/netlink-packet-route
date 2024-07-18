@@ -20,7 +20,8 @@ pub use self::actions::{
 pub use self::attribute::TcAttribute;
 pub use self::filters::{
     TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
-    TcU32Key, TcU32OptionFlags, TcU32Selector, TcU32SelectorFlags,
+    TcU32Key, TcU32OptionFlags, TcU32Selector, TcU32SelectorBuffer,
+    TcU32SelectorFlags,
 };
 pub use self::header::{TcHandle, TcHeader, TcMessageBuffer};
 pub use self::message::TcMessage;
