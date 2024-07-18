@@ -8,7 +8,7 @@ use netlink_packet_utils::traits::{Emitable, Parseable};
 use crate::route::flags::RouteFlags;
 use crate::route::{
     RouteAttribute, RouteHeader, RouteMessage, RouteMessageBuffer,
-    RouteProtocol, RouteScope, RouteType,
+    RouteNextHopBuffer, RouteProtocol, RouteScope, RouteType,
 };
 use crate::AddressFamily;
 
@@ -53,4 +53,16 @@ fn test_ipv6_add_route_onlink() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+}
+
+// Verify that [`RouteNextHopBuffer`] rejects the buffer when provided with
+// an invalid length.
+#[test]
+fn test_next_hop_max_buffer_len() {
+    // Route next-hop buffer layout:
+    // |byte0|byte1|byte2|byte3|byte4|byte5|byte6|byte7|bytes8+|
+    // |-----|-----|-----|-----|-----|-----|-----|-----|-------|
+    // |  length   |flags|hops |    Interface Index    |Payload|
+    let buffer = [0xff, 0xff, 0, 0, 0, 0, 0, 0];
+    assert!(RouteNextHopBuffer::new_checked(buffer).is_err());
 }

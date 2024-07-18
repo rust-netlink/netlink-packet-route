@@ -63,7 +63,7 @@ impl<T: AsRef<[u8]>> RouteNextHopBuffer<T> {
             return Err(format!(
                 "invalid RouteNextHopBuffer: length {} < {}",
                 len,
-                8 + self.length()
+                self.length(),
             )
             .into());
         }
