@@ -38,7 +38,7 @@ pub use self::ext_mask::LinkExtentMask;
 pub use self::header::{LinkHeader, LinkMessageBuffer};
 pub use self::link_flag::LinkFlags;
 pub use self::link_info::{
-    BondAdInfo, BondMode, BondPortState, BridgeId, BridgeIdBuffer,
+    ArpValidate, BondAdInfo, BondMode, BondPortState, BridgeId, BridgeIdBuffer,
     BridgePortMulticastRouter, BridgePortState, BridgeQuerierState,
     HsrProtocol, InfoBond, InfoBondPort, InfoBridge, InfoBridgePort, InfoData,
     InfoGreTap, InfoGreTap6, InfoGreTun, InfoGreTun6, InfoGtp, InfoHsr,
