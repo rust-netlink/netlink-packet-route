@@ -594,10 +594,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context("invalid IFLA_OPERSTATE value")?
                     .into(),
             ),
-            IFLA_MAP => Self::Map(
-                super::Map::parse(&MapBuffer::new(payload))
-                    .context(format!("Invalid IFLA_MAP value {:?}", payload))?,
-            ),
+            IFLA_MAP => {
+                let err =
+                    |payload| format!("Invalid IFLA_MAP value {:?}", payload);
+                Self::Map(
+                    super::Map::parse(
+                        &MapBuffer::new_checked(payload)
+                            .context(err(payload))?,
+                    )
+                    .context(err(payload))?,
+                )
+            }
             IFLA_STATS => Self::Stats(
                 super::Stats::parse(&StatsBuffer::new(
                     expand_buffer_if_small(
