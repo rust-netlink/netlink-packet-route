@@ -38,16 +38,16 @@ pub use self::ext_mask::LinkExtentMask;
 pub use self::header::{LinkHeader, LinkMessageBuffer};
 pub use self::link_flag::LinkFlags;
 pub use self::link_info::{
-    BondAdInfo, BondMode, BondPortState, BridgeId, BridgeIdBuffer,
-    BridgePortMulticastRouter, BridgePortState, BridgeQuerierState, GeneveDf,
-    HsrProtocol, InfoBond, InfoBondPort, InfoBridge, InfoBridgePort, InfoData,
-    InfoGeneve, InfoGreTap, InfoGreTap6, InfoGreTun, InfoGreTun6, InfoGtp,
-    InfoHsr, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec,
-    InfoMacVlan, InfoMacVtap, InfoPortData, InfoPortKind, InfoSitTun, InfoTun,
-    InfoVeth, InfoVlan, InfoVrf, InfoVrfPort, InfoVti, InfoVxlan, InfoXfrm,
-    IpVlanMode, IpVtapMode, LinkInfo, LinkXstats, MacSecCipherId,
-    MacSecOffload, MacSecValidate, MacVlanMode, MacVtapMode, MiiStatus,
-    VlanQosMapping,
+    BondAdInfo, BondArpValidate, BondMode, BondPortState, BridgeId,
+    BridgeIdBuffer, BridgePortMulticastRouter, BridgePortState,
+    BridgeQuerierState, GeneveDf, HsrProtocol, InfoBond, InfoBondPort,
+    InfoBridge, InfoBridgePort, InfoData, InfoGeneve, InfoGreTap, InfoGreTap6,
+    InfoGreTun, InfoGreTun6, InfoGtp, InfoHsr, InfoIpVlan, InfoIpVtap,
+    InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoPortData,
+    InfoPortKind, InfoSitTun, InfoTun, InfoVeth, InfoVlan, InfoVrf,
+    InfoVrfPort, InfoVti, InfoVxlan, InfoXfrm, IpVlanMode, IpVtapMode,
+    LinkInfo, LinkXstats, MacSecCipherId, MacSecOffload, MacSecValidate,
+    MacVlanMode, MacVtapMode, MiiStatus, VlanQosMapping,
 };
 pub use self::link_layer_type::LinkLayerType;
 pub use self::link_state::State;
