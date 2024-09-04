@@ -177,7 +177,7 @@ pub struct TcU32Selector {
     pub keys: Vec<TcU32Key>,
 }
 
-buffer!(TcU32SelectorBuffer(TC_U32_SEL_BUF_LEN) {
+buffer!(TcU32SelectorBuffer {
     flags: (u8, 0),
     offshift: (u8, 1),
     nkeys: (u8, 2),
@@ -189,6 +189,35 @@ buffer!(TcU32SelectorBuffer(TC_U32_SEL_BUF_LEN) {
     hmask: (u32, 12..TC_U32_SEL_BUF_LEN),
     keys: (slice, TC_U32_SEL_BUF_LEN..),
 });
+
+impl<T: AsRef<[u8]>> TcU32SelectorBuffer<T> {
+    pub fn new_checked(buffer: T) -> Result<Self, DecodeError> {
+        let packet = Self::new(buffer);
+        packet.check_buffer_length()?;
+        Ok(packet)
+    }
+
+    fn check_buffer_length(&self) -> Result<(), DecodeError> {
+        let len = self.buffer.as_ref().len();
+        if len < TC_U32_SEL_BUF_LEN {
+            return Err(format!(
+                "invalid TcU32SelectorBuffer: length {len} < {TC_U32_SEL_BUF_LEN}"
+            )
+            .into());
+        }
+        // Expect the buffer to be large enough to hold `nkeys`.
+        let expected_len =
+            ((self.nkeys() as usize) * TC_U32_KEY_BUF_LEN) + TC_U32_SEL_BUF_LEN;
+        if len < expected_len {
+            return Err(format!(
+                "invalid RouteNextHopBuffer: length {} < {}",
+                len, expected_len,
+            )
+            .into());
+        }
+        Ok(())
+    }
+}
 
 impl Emitable for TcU32Selector {
     fn buffer_len(&self) -> usize {
