@@ -40,9 +40,7 @@ fn test_geneve_link_info() {
             LinkInfo::Kind(InfoKind::Geneve),
             LinkInfo::Data(InfoData::Geneve(vec![
                 InfoGeneve::Id(42),
-                InfoGeneve::Remote6(
-                    Ipv6Addr::from_str("2001:db8::1").unwrap().into(),
-                ),
+                InfoGeneve::Remote6(Ipv6Addr::from_str("2001:db8::1").unwrap()),
                 InfoGeneve::UdpZeroCsum6Tx(false),
                 InfoGeneve::Ttl(10),
                 InfoGeneve::Tos(18),

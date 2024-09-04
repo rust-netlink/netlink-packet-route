@@ -229,13 +229,9 @@ fn test_parsing_link_vxlan() {
                 LinkInfo::Kind(InfoKind::Vxlan),
                 LinkInfo::Data(InfoData::Vxlan(vec![
                     InfoVxlan::Id(101),
-                    InfoVxlan::Group(
-                        Ipv4Addr::from_str("8.8.8.8").unwrap().into(),
-                    ),
+                    InfoVxlan::Group(Ipv4Addr::from_str("8.8.8.8").unwrap()),
                     InfoVxlan::Link(13),
-                    InfoVxlan::Local(
-                        Ipv4Addr::from_str("1.1.1.1").unwrap().into(),
-                    ),
+                    InfoVxlan::Local(Ipv4Addr::from_str("1.1.1.1").unwrap()),
                     InfoVxlan::Ttl(0),
                     InfoVxlan::TtlInherit(false),
                     InfoVxlan::Tos(0),
@@ -463,13 +459,9 @@ fn test_parsing_link_vxlan_ipv6() {
                 LinkInfo::Kind(InfoKind::Vxlan),
                 LinkInfo::Data(InfoData::Vxlan(vec![
                     InfoVxlan::Id(12),
-                    InfoVxlan::Group6(
-                        Ipv6Addr::from_str("ff00::1").unwrap().into(),
-                    ),
+                    InfoVxlan::Group6(Ipv6Addr::from_str("ff00::1").unwrap()),
                     InfoVxlan::Link(2),
-                    InfoVxlan::Local6(
-                        Ipv6Addr::from_str("fd01::2").unwrap().into(),
-                    ),
+                    InfoVxlan::Local6(Ipv6Addr::from_str("fd01::2").unwrap()),
                     InfoVxlan::Ttl(0),
                     InfoVxlan::TtlInherit(false),
                     InfoVxlan::Tos(0),
