@@ -352,7 +352,7 @@ fn test_link_info_with_ifla_vrf_port_table() {
     };
     let link = LinkMessage::parse(&LinkMessageBuffer::new(&data)).unwrap();
     assert_eq!(expected, link);
-    let mut buf = vec![0; data.len()];
+    let _buf = vec![0; data.len()];
     // FIXME: the packet we write is not a perfect match with the
     // packet we received from the kernel.
     //

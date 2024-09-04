@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
 use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
     BondArpValidate, BondMode, BondPortState, InfoBond, InfoBondPort, InfoData,
     InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
-    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map, MiiStatus,
-    State, Stats, Stats64,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, Map, MiiStatus, State,
 };
 use crate::{AddressFamily, RouteNetlinkMessage};
 
