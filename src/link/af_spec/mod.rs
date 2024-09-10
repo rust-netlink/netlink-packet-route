@@ -10,7 +10,10 @@ mod inet6_iface_flag;
 mod inet6_stats;
 mod unspec;
 
-pub use self::bridge::{AfSpecBridge, BridgeVlanInfo};
+pub use self::bridge::{
+    AfSpecBridge, BridgeFlag, BridgeMode, BridgeVlanInfo, BridgeVlanInfoFlags,
+    BridgeVlanTunnelInfo,
+};
 pub use self::inet::{AfSpecInet, InetDevConf};
 pub use self::inet6::AfSpecInet6;
 pub use self::inet6_cache::{Inet6CacheInfo, Inet6CacheInfoBuffer};
