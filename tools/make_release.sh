@@ -55,7 +55,7 @@ git fetch upstream || (git remote add upstream $UPSTERAM_GIT; \
 git reset --hard upstream/$MAIN_BRANCH_NAME
 
 echo "Checking 'cargo publish --dry-run'"
-
+cargo set-version $NEXT_VERSION
 cargo publish --dry-run
 
 echo "# Changelog" > $TMP_CHANGELOG_FILE
@@ -75,13 +75,11 @@ if [ $(wc -l < $TMP_CHANGELOG_FILE) -lt 2 ];then
     exit 1
 fi
 
-cargo set-version $NEXT_VERSION
-
 CHANGELOG_STR=$(sed -n '3,$p' $TMP_CHANGELOG_FILE|tr '#' '=')
 sed -n '2,$p' CHANGELOG >> $TMP_CHANGELOG_FILE
 
 mv $TMP_CHANGELOG_FILE $CODE_BASE_DIR/CHANGELOG
-git commit --signoff $CODE_BASE_DIR/CHANGELOG -m "New release ${NEXT_VERSION}" \
+git commit --signoff -a -m "New release ${NEXT_VERSION}" \
     -m "$CHANGELOG_STR"
 git push origin +new_release
 echo "Please visit github to create pull request for this breach"

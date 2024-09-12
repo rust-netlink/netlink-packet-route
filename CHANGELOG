@@ -1,4 +1,25 @@
 # Changelog
+## [0.21.0] - 2024-09-12
+### Breaking changes
+ - `InfoIpVlan::Flags` changed from u16 to `IpVlanFlags`. (321e4d5)
+ - `AfSpecBridge::Flags` changed from u16 to `BridgeFlag`. (40d090b)
+ - `InfoBond::ArpValidate` changed from u32 to `BondArpValidate`.(5246712)
+ - `InfoVxlan::Group` changed from `Vec<u8>` to `Ipv4Addr`. (538e13b)
+ - `InfoVxlan::Group6` changed from `Vec<u8>` to `Ipv6Addr`. (538e13b)
+ - `InfoVxlan::Local` changed from `Vec<u8>` to `Ipv4Addr`. (538e13b)
+ - `InfoVxlan::Local6` changed from `Vec<u8>` to `Ipv6Addr`. (538e13b)
+
+### New features
+ - bridge port: Introduce BridgeFlag, BridgeMode and BridgeVlanTunnelInfo.
+   (40d090b)
+ - Add support for geneve links. (7391b19)
+
+### Bug fixes
+ - Avoid panic in TcU32Selector parsing. (c49e3ac)
+ - Avoid panic in RouteNextHopBuffer length checks. (666edbc)
+ - Check NLA buffers on creation. (fceb9c2)
+ - Check Map buffers on creation. (d53bbad)
+
 ## [0.20.1] - 2024-06-29
 ### Breaking changes
  - N/A
