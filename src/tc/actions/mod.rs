@@ -16,6 +16,9 @@ pub use self::mirror::{
     TcMirrorBuffer,
 };
 pub use self::nat::{TcActionNat, TcActionNatOption, TcNat, TcNatBuffer};
+pub use self::tunnel_key::{
+    TcActionTunnelKey, TcActionTunnelKeyOption, TcTunnelKey,
+};
 
 mod action;
 mod header;
@@ -23,6 +26,7 @@ mod message;
 mod mirror;
 mod nat;
 mod nat_flag;
+mod tunnel_key;
 
 #[cfg(test)]
 pub mod tests;
