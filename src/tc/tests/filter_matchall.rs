@@ -8,6 +8,7 @@ use crate::{
         TcActionOption, TcActionType, TcAttribute, TcFilterMatchAllOption,
         TcHandle, TcHeader, TcMessage, TcMessageBuffer, TcMirror,
         TcMirrorActionType, TcOption, TcStats2, TcStatsBasic, TcStatsQueue,
+        Tcf,
     },
     AddressFamily,
 };
@@ -155,12 +156,12 @@ fn test_get_filter_matchall() {
                                     }),
                                 ),
                                 TcActionOption::Mirror(
-                                    // TODO(Gris Ge)
-                                    TcActionMirrorOption::Tm(vec![
-                                        144, 3, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-                                        2, 0, 0, 0, 0, 0, 0,
-                                    ]),
+                                    TcActionMirrorOption::Tm(Tcf {
+                                        install: 912,
+                                        lastuse: 514,
+                                        expires: 0,
+                                        firstuse: 514,
+                                    }),
                                 ),
                             ]),
                         ],

@@ -14,7 +14,7 @@ use crate::tc::TcActionOption::Nat;
 use crate::tc::TcStats2::{Basic, BasicHw, Queue};
 use crate::tc::{
     TcAction, TcActionGeneric, TcActionNatOption, TcActionType, TcNat,
-    TcNatFlags, TcStatsBasic, TcStatsQueue,
+    TcNatFlags, TcStatsBasic, TcStatsQueue, Tcf,
 };
 use crate::AddressFamily;
 
@@ -248,39 +248,6 @@ fn tc_action_nat_option_emit_uses_whole_buffer() {
     }
 }
 
-fn tc_action_nat_option_tm_examples() -> [TcActionNatOption; 4] {
-    [
-        Tm(vec![]),
-        Tm(vec![1]),
-        Tm(vec![1, 2, 3, 4]),
-        Tm(vec![99; 10]),
-    ]
-}
-
-#[test]
-fn tc_action_nat_option_parse_back_example_tm() {
-    for example in &tc_action_nat_option_tm_examples() {
-        let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
-        let parsed = TcActionNatOption::parse(
-            &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(example, &parsed);
-    }
-}
-
-#[test]
-fn tc_action_nat_option_emit_tm_uses_whole_buffer() {
-    for example in &tc_action_nat_option_tm_examples() {
-        let mut buffer1 = vec![0x00; example.buffer_len()];
-        let mut buffer2 = vec![0xff; example.buffer_len()];
-        example.emit(&mut buffer1);
-        example.emit(&mut buffer2);
-        assert_eq!(buffer1, buffer2);
-    }
-}
-
 /// Setup:
 ///
 /// ```bash
@@ -357,10 +324,12 @@ fn test_get_filter_nat() {
                         mask: Ipv4Addr::BROADCAST,
                         flags: TcNatFlags::empty(),
                     })),
-                    Nat(Tm(vec![
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    ])),
+                    Nat(Tm(Tcf {
+                        install: 0,
+                        lastuse: 0,
+                        expires: 0,
+                        firstuse: 0,
+                    })),
                 ]),
             ],
         }])],
