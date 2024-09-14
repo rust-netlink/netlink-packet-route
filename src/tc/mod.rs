@@ -14,8 +14,9 @@ pub use self::actions::{
     TcActionMessage, TcActionMessageAttribute, TcActionMessageBuffer,
     TcActionMessageFlags, TcActionMessageFlagsWithSelector, TcActionMirror,
     TcActionMirrorOption, TcActionNat, TcActionNatOption, TcActionOption,
-    TcActionType, TcMirror, TcMirrorActionType, TcMirrorBuffer, TcNat,
-    TcNatBuffer, TcNatFlags, Tcf,
+    TcActionTunnelKey, TcActionTunnelKeyOption, TcActionType, TcMirror,
+    TcMirrorActionType, TcMirrorBuffer, TcNat, TcNatBuffer, TcNatFlags,
+    TcTunnelKey, Tcf,
 };
 pub use self::attribute::TcAttribute;
 pub use self::filters::{
