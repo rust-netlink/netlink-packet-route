@@ -548,3 +548,46 @@ impl From<TcActionType> for i32 {
         }
     }
 }
+
+pub const TC_TCF_BUF_LEN: usize = 32;
+
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct Tcf {
+    pub install: u64,
+    pub lastuse: u64,
+    pub expires: u64,
+    pub firstuse: u64,
+}
+
+// kernel struct `tcf_t`
+buffer!(TcfBuffer(TC_TCF_BUF_LEN) {
+    install: (u64, 0..8),
+    lastuse: (u64, 8..16),
+    expires: (u64, 16..24),
+    firstuse: (u64, 24..32),
+});
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcfBuffer<&'a T>> for Tcf {
+    fn parse(buf: &TcfBuffer<&T>) -> Result<Self, DecodeError> {
+        Ok(Self {
+            install: buf.install(),
+            lastuse: buf.lastuse(),
+            expires: buf.expires(),
+            firstuse: buf.firstuse(),
+        })
+    }
+}
+
+impl Emitable for Tcf {
+    fn buffer_len(&self) -> usize {
+        TC_TCF_BUF_LEN
+    }
+
+    fn emit(&self, buffer: &mut [u8]) {
+        let mut packet = TcfBuffer::new(buffer);
+        packet.set_install(self.install);
+        packet.set_lastuse(self.lastuse);
+        packet.set_expires(self.expires);
+        packet.set_firstuse(self.firstuse);
+    }
+}

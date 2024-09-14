@@ -4,7 +4,7 @@ pub use nat_flag::TcNatFlags;
 
 pub use self::action::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
-    TcActionOption, TcActionType,
+    TcActionOption, TcActionType, Tcf, TcfBuffer, TC_TCF_BUF_LEN,
 };
 pub use self::header::{TcActionMessageBuffer, TcActionMessageHeader};
 pub use self::message::{

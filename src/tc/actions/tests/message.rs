@@ -33,7 +33,7 @@ mod mirror {
     use crate::tc::TcMirrorActionType::{EgressRedir, IngressMirror};
     use crate::tc::TcStats2::{Basic, BasicHw, Queue};
     use crate::tc::{
-        TcAction, TcActionGeneric, TcMirror, TcStatsBasic, TcStatsQueue,
+        TcAction, TcActionGeneric, TcMirror, TcStatsBasic, TcStatsQueue, Tcf,
     };
     use crate::AddressFamily;
 
@@ -223,11 +223,12 @@ mod mirror {
                                     eaction: EgressRedir,
                                     ifindex: 1,
                                 })),
-                                Mirror(Tm(vec![
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0,
-                                ])),
+                                Mirror(Tm(Tcf {
+                                    install: 0,
+                                    lastuse: 0,
+                                    expires: 0,
+                                    firstuse: 0,
+                                })),
                             ]),
                         ],
                     },
@@ -269,11 +270,12 @@ mod mirror {
                                     eaction: IngressMirror,
                                     ifindex: 1,
                                 })),
-                                Mirror(Tm(vec![
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0,
-                                ])),
+                                Mirror(Tm(Tcf {
+                                    install: 0,
+                                    lastuse: 0,
+                                    expires: 0,
+                                    firstuse: 0,
+                                })),
                             ]),
                         ],
                     },

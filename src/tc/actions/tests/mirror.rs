@@ -4,8 +4,10 @@ use netlink_packet_utils::nla::NlaBuffer;
 use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::tc::{
-    TcActionGeneric, TcActionGenericBuffer, TcActionMirrorOption, TcActionType,
-    TcMirror, TcMirrorActionType, TcMirrorBuffer,
+    TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
+    TcActionMirrorOption, TcActionOption, TcActionType, TcMirror,
+    TcMirrorActionType, TcMirrorBuffer, TcStats2, TcStatsBasic, TcStatsQueue,
+    Tcf,
 };
 
 #[test]
@@ -64,22 +66,76 @@ fn tc_mirror_example_parse_back() {
     assert_eq!(orig, parsed);
 }
 
+//      > act actions add action mirred egress redirect dev veth1
+//      > tools/nl_dump.py dump_actions mirred
+//      Note: 5.15 and 6.8 kernels do NOT set NLA_F_NESTED for TCA_ACT_OPTIONS
+//
 #[test]
-fn tc_mirror_tm_default_parse_back() {
-    let mirror_option = TcActionMirrorOption::Tm(vec![]);
-    let mut buffer = vec![0; mirror_option.buffer_len()];
-    mirror_option.emit(&mut buffer);
-    let nla_buf = NlaBuffer::new_checked(&buffer).unwrap();
-    let parsed = TcActionMirrorOption::parse(&nla_buf).unwrap();
-    assert_eq!(mirror_option, parsed);
-}
+fn get_mirred_eggress_redirect_action() {
+    let raw = vec![
+        0x9C, 0x00, 0x00, 0x00, 0x0B, 0x00, 0x01, 0x00, 0x6D, 0x69, 0x72, 0x72,
+        0x65, 0x64, 0x00, 0x00, 0x44, 0x00, 0x04, 0x00, 0x14, 0x00, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x18, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0x00, 0x02, 0x80, 0x20, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
+        0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
+        0x24, 0x00, 0x01, 0x00, 0x68, 0x3D, 0xB6, 0x02, 0x00, 0x00, 0x00, 0x00,
+        0x68, 0x3D, 0xB6, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
 
-#[test]
-fn tc_mirror_tm_example_parse_back() {
-    let mirror_option = TcActionMirrorOption::Tm(vec![1, 2, 3]);
-    let mut buffer = vec![0; mirror_option.buffer_len()];
-    mirror_option.emit(&mut buffer);
-    let nla_buf = NlaBuffer::new_checked(&buffer).unwrap();
-    let parsed = TcActionMirrorOption::parse(&nla_buf).unwrap();
-    assert_eq!(mirror_option, parsed);
+    let expected = TcAction {
+        tab: 0,
+        attributes: vec![
+            TcActionAttribute::Kind("mirred".to_string()),
+            TcActionAttribute::Stats(vec![
+                TcStats2::Basic(TcStatsBasic {
+                    bytes: 0,
+                    packets: 0,
+                }),
+                TcStats2::BasicHw(TcStatsBasic {
+                    bytes: 0,
+                    packets: 0,
+                }),
+                TcStats2::Queue(TcStatsQueue {
+                    qlen: 0,
+                    backlog: 0,
+                    drops: 0,
+                    requeues: 0,
+                    overlimits: 0,
+                }),
+            ]),
+            TcActionAttribute::Options(vec![
+                TcActionOption::Mirror(TcActionMirrorOption::Parms(TcMirror {
+                    generic: TcActionGeneric {
+                        index: 1,
+                        capab: 0,
+                        action: TcActionType::Ok,
+                        refcnt: 2,
+                        bindcnt: 2,
+                    },
+                    eaction: TcMirrorActionType::EgressRedir,
+                    ifindex: 3,
+                })),
+                TcActionOption::Mirror(TcActionMirrorOption::Tm(Tcf {
+                    install: 45497704,
+                    lastuse: 45497704,
+                    expires: 0,
+                    firstuse: 0,
+                })),
+            ]),
+        ],
+    };
+
+    assert_eq!(expected, TcAction::parse(&NlaBuffer::new(&raw)).unwrap());
+
+    let mut buf = vec![0; expected.buffer_len()];
+
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
 }
