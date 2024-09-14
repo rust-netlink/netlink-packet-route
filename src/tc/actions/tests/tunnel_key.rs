@@ -10,7 +10,8 @@ use crate::tc::{
 };
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-//      > tc actions add action tunnel_key set id 33 src_ip 1.2.3.4 dst_ip 2.3.4.5 dst_port 4789 tos 1 ttl 2
+//      > tc actions add action tunnel_key set id 33 src_ip 1.2.3.4 dst_ip
+//      > 2.3.4.5 dst_port 4789 tos 1 ttl 2
 //      > tools/nl_dump.py dump_actions tunnel_key
 //      Note: 5.15 and 6.8 kernels do NOT set NLA_F_NESTED for TCA_ACT_OPTIONS
 #[test]
@@ -106,7 +107,8 @@ fn get_tunnel_key_vxlan_action_ipv4() {
     assert_eq!(buf, raw);
 }
 
-//      > tc actions add action tunnel_key set id 33 src_ip 2a00:1:: dst_ip 2a01:2:: dst_port 4789 tos 1 ttl 2
+//      > tc actions add action tunnel_key set id 33 src_ip 2a00:1:: dst_ip
+//      > 2a01:2:: dst_port 4789 tos 1 ttl 2
 //      > tools/nl_dump.py dump_actions tunnel_key
 //      Note: 5.15 and 6.8 kernels do NOT set NLA_F_NESTED for TCA_ACT_OPTIONS
 #[test]

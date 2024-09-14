@@ -290,7 +290,8 @@ pub enum TcActionOption {
     Nat(TcActionNatOption),
     /// Tunnel key options.
     ///
-    /// These options type can be used to assign encapsulation properties to the packet.
+    /// These options type can be used to assign encapsulation properties to
+    /// the packet.
     TunnelKey(TcActionTunnelKeyOption),
     /// Other action types not yet supported by this library.
     Other(DefaultNla),
