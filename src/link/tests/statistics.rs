@@ -378,6 +378,7 @@ fn test_parsing_link_statistics_on_kernel_4_18() {
                         out_msgs: 6,
                         out_errors: 0,
                         csum_errors: 0,
+                        rate_limit_host: 0,
                     }),
                     AfSpecInet6::Token(std::net::Ipv6Addr::UNSPECIFIED),
                     AfSpecInet6::AddrGenMode(1),
