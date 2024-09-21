@@ -339,7 +339,7 @@ fn test_parsing_link_statistics_on_kernel_4_18() {
                         in_octets: 182870,
                         in_delivers: 0,
                         out_forw_datagrams: 0,
-                        out_pkts: 6,
+                        out_requests: 6,
                         out_octets: 528,
                         in_hdr_errors: 0,
                         in_too_big_errors: 0,
@@ -370,6 +370,8 @@ fn test_parsing_link_statistics_on_kernel_4_18() {
                         in_ect1_pkts: 0,
                         in_ect0_pkts: 0,
                         in_ce_pkts: 0,
+                        reasm_overlaps: 0,
+                        out_pkts: 0,
                     }),
                     AfSpecInet6::Icmp6Stats(Icmp6Stats {
                         num: 6,

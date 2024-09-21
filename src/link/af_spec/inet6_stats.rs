@@ -5,7 +5,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-pub(crate) const INET6_STATS_LEN: usize = 288;
+pub(crate) const INET6_STATS_LEN: usize = 304;
 
 buffer!(Inet6StatsBuffer(INET6_STATS_LEN) {
     num: (i64, 0..8),
@@ -13,7 +13,7 @@ buffer!(Inet6StatsBuffer(INET6_STATS_LEN) {
     in_octets: (i64, 16..24),
     in_delivers: (i64, 24..32),
     out_forw_datagrams: (i64, 32..40),
-    out_pkts: (i64, 40..48),
+    out_requests: (i64, 40..48),
     out_octets: (i64, 48..56),
     in_hdr_errors: (i64, 56..64),
     in_too_big_errors: (i64, 64..72),
@@ -44,6 +44,8 @@ buffer!(Inet6StatsBuffer(INET6_STATS_LEN) {
     in_ect1_pkts: (i64, 264..272),
     in_ect0_pkts: (i64, 272..280),
     in_ce_pkts: (i64, 280..288),
+    reasm_overlaps: (i64, 288..296),
+    out_pkts: (i64, 296..304),
 });
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
@@ -54,7 +56,7 @@ pub struct Inet6Stats {
     pub in_octets: i64,
     pub in_delivers: i64,
     pub out_forw_datagrams: i64,
-    pub out_pkts: i64,
+    pub out_requests: i64,
     pub out_octets: i64,
     pub in_hdr_errors: i64,
     pub in_too_big_errors: i64,
@@ -85,6 +87,8 @@ pub struct Inet6Stats {
     pub in_ect1_pkts: i64,
     pub in_ect0_pkts: i64,
     pub in_ce_pkts: i64,
+    pub reasm_overlaps: i64,
+    pub out_pkts: i64,
 }
 
 impl<T: AsRef<[u8]>> Parseable<Inet6StatsBuffer<T>> for Inet6Stats {
@@ -95,7 +99,7 @@ impl<T: AsRef<[u8]>> Parseable<Inet6StatsBuffer<T>> for Inet6Stats {
             in_octets: buf.in_octets(),
             in_delivers: buf.in_delivers(),
             out_forw_datagrams: buf.out_forw_datagrams(),
-            out_pkts: buf.out_pkts(),
+            out_requests: buf.out_requests(),
             out_octets: buf.out_octets(),
             in_hdr_errors: buf.in_hdr_errors(),
             in_too_big_errors: buf.in_too_big_errors(),
@@ -126,6 +130,8 @@ impl<T: AsRef<[u8]>> Parseable<Inet6StatsBuffer<T>> for Inet6Stats {
             in_ect1_pkts: buf.in_ect1_pkts(),
             in_ect0_pkts: buf.in_ect0_pkts(),
             in_ce_pkts: buf.in_ce_pkts(),
+            reasm_overlaps: buf.reasm_overlaps(),
+            out_pkts: buf.out_pkts(),
         })
     }
 }
@@ -142,7 +148,7 @@ impl Emitable for Inet6Stats {
         buffer.set_in_octets(self.in_octets);
         buffer.set_in_delivers(self.in_delivers);
         buffer.set_out_forw_datagrams(self.out_forw_datagrams);
-        buffer.set_out_pkts(self.out_pkts);
+        buffer.set_out_requests(self.out_requests);
         buffer.set_out_octets(self.out_octets);
         buffer.set_in_hdr_errors(self.in_hdr_errors);
         buffer.set_in_too_big_errors(self.in_too_big_errors);
@@ -173,5 +179,7 @@ impl Emitable for Inet6Stats {
         buffer.set_in_ect1_pkts(self.in_ect1_pkts);
         buffer.set_in_ect0_pkts(self.in_ect0_pkts);
         buffer.set_in_ce_pkts(self.in_ce_pkts);
+        buffer.set_reasm_overlaps(self.reasm_overlaps);
+        buffer.set_out_pkts(self.out_pkts);
     }
 }
