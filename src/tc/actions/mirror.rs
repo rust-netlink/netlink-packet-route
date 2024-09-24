@@ -12,7 +12,9 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{TcActionGeneric, TcActionGenericBuffer};
+use super::{
+    TcActionGeneric, TcActionGenericBuffer, Tcf, TcfBuffer, TC_TCF_BUF_LEN,
+};
 
 /// Traffic control action used to mirror or redirect packets.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -30,8 +32,8 @@ const TCA_MIRRED_PARMS: u16 = 2;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum TcActionMirrorOption {
-    /// TODO: document this after we make it something better than `Vec<u8>`
-    Tm(Vec<u8>),
+    /// Rule installation and usage time
+    Tm(Tcf),
     /// Parameters for the mirred action.
     Parms(TcMirror),
     /// Other attributes unknown at the time of writing.
@@ -41,7 +43,7 @@ pub enum TcActionMirrorOption {
 impl Nla for TcActionMirrorOption {
     fn value_len(&self) -> usize {
         match self {
-            Self::Tm(bytes) => bytes.len(),
+            Self::Tm(_) => TC_TCF_BUF_LEN,
             Self::Parms(_) => TC_MIRRED_BUF_LEN,
             Self::Other(attr) => attr.value_len(),
         }
@@ -49,7 +51,7 @@ impl Nla for TcActionMirrorOption {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Tm(bytes) => buffer.copy_from_slice(bytes.as_slice()),
+            Self::Tm(p) => p.emit(buffer),
             Self::Parms(p) => p.emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }
@@ -69,7 +71,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_MIRRED_TM => Self::Tm(payload.to_vec()),
+            TCA_MIRRED_TM => {
+                Self::Tm(Tcf::parse(&TcfBuffer::new_checked(payload)?)?)
+            }
             TCA_MIRRED_PARMS => Self::Parms(TcMirror::parse(
                 &TcMirrorBuffer::new_checked(payload)?,
             )?),

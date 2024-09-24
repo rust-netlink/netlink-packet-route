@@ -14,6 +14,7 @@ use crate::tc::TcStats2;
 
 use super::{
     TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
+    TcActionTunnelKey, TcActionTunnelKeyOption,
 };
 
 /// TODO: determine when and why to use this as opposed to the buffer's `kind`.
@@ -287,6 +288,11 @@ pub enum TcActionOption {
     ///
     /// These options type can be used to perform network address translation.
     Nat(TcActionNatOption),
+    /// Tunnel key options.
+    ///
+    /// These options type can be used to assign encapsulation properties to
+    /// the packet.
+    TunnelKey(TcActionTunnelKeyOption),
     /// Other action types not yet supported by this library.
     Other(DefaultNla),
 }
@@ -296,6 +302,7 @@ impl Nla for TcActionOption {
         match self {
             Self::Mirror(nla) => nla.value_len(),
             Self::Nat(nla) => nla.value_len(),
+            Self::TunnelKey(nla) => nla.value_len(),
             Self::Other(nla) => nla.value_len(),
         }
     }
@@ -304,6 +311,7 @@ impl Nla for TcActionOption {
         match self {
             Self::Mirror(nla) => nla.emit_value(buffer),
             Self::Nat(nla) => nla.emit_value(buffer),
+            Self::TunnelKey(nla) => nla.emit_value(buffer),
             Self::Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -312,6 +320,7 @@ impl Nla for TcActionOption {
         match self {
             Self::Mirror(nla) => nla.kind(),
             Self::Nat(nla) => nla.kind(),
+            Self::TunnelKey(nla) => nla.kind(),
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -334,6 +343,10 @@ where
             TcActionNat::KIND => Self::Nat(
                 TcActionNatOption::parse(buf)
                     .context("failed to parse nat action")?,
+            ),
+            TcActionTunnelKey::KIND => Self::TunnelKey(
+                TcActionTunnelKeyOption::parse(buf)
+                    .context("failed to parse tunnel_key action")?,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf)
@@ -546,5 +559,48 @@ impl From<TcActionType> for i32 {
             TcActionType::Trap => TC_ACT_TRAP,
             TcActionType::Other(d) => d,
         }
+    }
+}
+
+pub const TC_TCF_BUF_LEN: usize = 32;
+
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct Tcf {
+    pub install: u64,
+    pub lastuse: u64,
+    pub expires: u64,
+    pub firstuse: u64,
+}
+
+// kernel struct `tcf_t`
+buffer!(TcfBuffer(TC_TCF_BUF_LEN) {
+    install: (u64, 0..8),
+    lastuse: (u64, 8..16),
+    expires: (u64, 16..24),
+    firstuse: (u64, 24..32),
+});
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcfBuffer<&'a T>> for Tcf {
+    fn parse(buf: &TcfBuffer<&T>) -> Result<Self, DecodeError> {
+        Ok(Self {
+            install: buf.install(),
+            lastuse: buf.lastuse(),
+            expires: buf.expires(),
+            firstuse: buf.firstuse(),
+        })
+    }
+}
+
+impl Emitable for Tcf {
+    fn buffer_len(&self) -> usize {
+        TC_TCF_BUF_LEN
+    }
+
+    fn emit(&self, buffer: &mut [u8]) {
+        let mut packet = TcfBuffer::new(buffer);
+        packet.set_install(self.install);
+        packet.set_lastuse(self.lastuse);
+        packet.set_expires(self.expires);
+        packet.set_firstuse(self.firstuse);
     }
 }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 #[cfg(test)]
+mod filter_flower;
+#[cfg(test)]
 mod filter_matchall;
 #[cfg(test)]
 mod filter_u32;

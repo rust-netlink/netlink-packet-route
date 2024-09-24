@@ -14,14 +14,16 @@ pub use self::actions::{
     TcActionMessage, TcActionMessageAttribute, TcActionMessageBuffer,
     TcActionMessageFlags, TcActionMessageFlagsWithSelector, TcActionMirror,
     TcActionMirrorOption, TcActionNat, TcActionNatOption, TcActionOption,
-    TcActionType, TcMirror, TcMirrorActionType, TcMirrorBuffer, TcNat,
-    TcNatBuffer, TcNatFlags,
+    TcActionTunnelKey, TcActionTunnelKeyOption, TcActionType, TcMirror,
+    TcMirrorActionType, TcMirrorBuffer, TcNat, TcNatBuffer, TcNatFlags,
+    TcTunnelKey, Tcf,
 };
 pub use self::attribute::TcAttribute;
 pub use self::filters::{
-    TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
-    TcU32Key, TcU32OptionFlags, TcU32Selector, TcU32SelectorBuffer,
-    TcU32SelectorFlags,
+    TcFilterFlower, TcFilterFlowerMplsLseOption, TcFilterFlowerMplsOption,
+    TcFilterFlowerOption, TcFilterMatchAll, TcFilterMatchAllOption,
+    TcFilterU32, TcFilterU32Option, TcU32Key, TcU32OptionFlags, TcU32Selector,
+    TcU32SelectorBuffer, TcU32SelectorFlags,
 };
 pub use self::header::{TcHandle, TcHeader, TcMessageBuffer};
 pub use self::message::TcMessage;

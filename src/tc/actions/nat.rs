@@ -11,7 +11,10 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::{nat_flag::TcNatFlags, TcActionGeneric, TcActionGenericBuffer};
+use super::{
+    nat_flag::TcNatFlags, TcActionGeneric, TcActionGenericBuffer, Tcf,
+    TcfBuffer, TC_TCF_BUF_LEN,
+};
 
 const TCA_NAT_PARMS: u16 = 1;
 const TCA_NAT_TM: u16 = 2;
@@ -29,8 +32,8 @@ impl TcActionNat {
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum TcActionNatOption {
-    /// TODO: document this after we make it something better than `Vec<u8>`
-    Tm(Vec<u8>),
+    /// Rule installation and usage time
+    Tm(Tcf),
     /// Parameters for the nat action.
     Parms(TcNat),
     /// Other attributes unknown at the time of writing.
@@ -40,7 +43,7 @@ pub enum TcActionNatOption {
 impl Nla for TcActionNatOption {
     fn value_len(&self) -> usize {
         match self {
-            Self::Tm(bytes) => bytes.len(),
+            Self::Tm(_) => TC_TCF_BUF_LEN,
             Self::Parms(v) => v.buffer_len(),
             Self::Other(attr) => attr.value_len(),
         }
@@ -48,7 +51,7 @@ impl Nla for TcActionNatOption {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Tm(bytes) => buffer.copy_from_slice(bytes.as_slice()),
+            Self::Tm(p) => p.emit(buffer),
             Self::Parms(p) => p.emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }
@@ -68,7 +71,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_NAT_TM => Self::Tm(payload.to_vec()),
+            TCA_NAT_TM => {
+                Self::Tm(Tcf::parse(&TcfBuffer::new_checked(payload)?)?)
+            }
             TCA_NAT_PARMS => {
                 Self::Parms(TcNat::parse(&TcNatBuffer::new_checked(payload)?)?)
             }

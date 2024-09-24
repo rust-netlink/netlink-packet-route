@@ -8,8 +8,9 @@ use netlink_packet_utils::{
 };
 
 use super::{
-    TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
-    TcQdiscFqCodel, TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
+    TcFilterFlower, TcFilterFlowerOption, TcFilterMatchAll,
+    TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option, TcQdiscFqCodel,
+    TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -19,6 +20,7 @@ pub enum TcOption {
     // Qdisc specific options
     Ingress(TcQdiscIngressOption),
     // Filter specific options
+    Flower(TcFilterFlowerOption),
     U32(TcFilterU32Option),
     // matchall options
     MatchAll(TcFilterMatchAllOption),
@@ -32,6 +34,7 @@ impl Nla for TcOption {
             Self::FqCodel(u) => u.value_len(),
             Self::Ingress(u) => u.value_len(),
             Self::U32(u) => u.value_len(),
+            Self::Flower(u) => u.value_len(),
             Self::MatchAll(m) => m.value_len(),
             Self::Other(o) => o.value_len(),
         }
@@ -41,6 +44,7 @@ impl Nla for TcOption {
         match self {
             Self::FqCodel(u) => u.emit_value(buffer),
             Self::Ingress(u) => u.emit_value(buffer),
+            Self::Flower(u) => u.emit_value(buffer),
             Self::U32(u) => u.emit_value(buffer),
             Self::MatchAll(m) => m.emit_value(buffer),
             Self::Other(o) => o.emit_value(buffer),
@@ -51,6 +55,7 @@ impl Nla for TcOption {
         match self {
             Self::FqCodel(u) => u.kind(),
             Self::Ingress(u) => u.kind(),
+            Self::Flower(u) => u.kind(),
             Self::U32(u) => u.kind(),
             Self::MatchAll(m) => m.kind(),
             Self::Other(o) => o.kind(),
@@ -72,6 +77,10 @@ where
                     "failed to parse ingress TCA_OPTIONS attributes",
                 )?)
             }
+            TcFilterFlower::KIND => Self::Flower(
+                TcFilterFlowerOption::parse(buf)
+                    .context("failed to parse flower TCA_OPTIONS attributes")?,
+            ),
             TcQdiscFqCodel::KIND => {
                 Self::FqCodel(TcQdiscFqCodelOption::parse(buf).context(
                     "failed to parse fq_codel TCA_OPTIONS attributes",
@@ -104,6 +113,7 @@ where
         Ok(match kind {
             TcFilterU32::KIND
             | TcFilterMatchAll::KIND
+            | TcFilterFlower::KIND
             | TcQdiscIngress::KIND
             | TcQdiscFqCodel::KIND => {
                 let mut nlas = vec![];
