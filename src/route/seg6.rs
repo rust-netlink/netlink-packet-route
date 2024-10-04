@@ -127,7 +127,7 @@ impl From<Seg6IpTunnelMode> for u32 {
 /// IPv6 segment routing encapsulation
 pub struct Seg6IpTunnelEncap {
     /// Mode
-    pub mode: u32,
+    pub mode: Seg6IpTunnelMode,
     /// IPv6 segment routing headers
     pub ipv6_sr_hdr: VecIpv6SrHdr,
 }
@@ -183,7 +183,7 @@ impl Seg6IpTunnelEncap {
             (_, segments) = segments.split_at(16usize);
         }
         Ok(Self {
-            mode,
+            mode: mode.into(),
             ipv6_sr_hdr: VecIpv6SrHdr(vec![ipv6_sr_hdr]),
         })
     }
@@ -199,7 +199,8 @@ impl Emitable for Seg6IpTunnelEncap {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        buffer[..4].copy_from_slice(self.mode.to_ne_bytes().as_slice());
+        let mode: u32 = self.mode.into();
+        buffer[..4].copy_from_slice(mode.to_ne_bytes().as_slice());
         let mut index = 4;
         for ipv6_sr_hdr in self.ipv6_sr_hdr.0.iter() {
             let len = ipv6_sr_hdr.buffer_len();

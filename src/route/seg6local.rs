@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv6Addr;
+// use std::net::Ipv6Addr;
 
 use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u16, parse_u32},
+    parsers::parse_u32,
     traits::{Emitable, Parseable},
     DecodeError,
 };
@@ -29,7 +29,7 @@ const SEG6_LOCAL_FLAVORS: u16 = 11;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum RouteSeg6LocalIpTunnel {
-    Seg6LocalAction(u32),
+    Seg6LocalAction(Seg6LocalAction),
     Seg6LocalIpTunnel(Seg6LocalIpTunnelEncap),
     Other(DefaultNla),
 }
@@ -55,7 +55,8 @@ impl Nla for RouteSeg6LocalIpTunnel {
         match self {
             Self::Seg6LocalIpTunnel(v) => v.emit(buffer),
             Self::Seg6LocalAction(v) => {
-                buffer[..2].copy_from_slice(v.to_ne_bytes().as_slice())
+                let action: u32 = (*v).into();
+                buffer[..4].copy_from_slice(action.to_ne_bytes().as_slice())
             }
 
             Self::Other(attr) => attr.emit_value(buffer),
@@ -77,7 +78,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             ),
             SEG6_LOCAL_ACTION => Self::Seg6LocalAction(
                 parse_u32(payload)
-                    .context("invalid SEG6_LOCAL_ACTION value")?,
+                    .context("invalid SEG6_LOCAL_ACTION value")?
+                    .into(),
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf)
@@ -163,7 +165,7 @@ impl Seg6LocalIpTunnelEncap {
     }
 }
 
-//
+// Seg6 action.
 const SEG6_LOCAL_ACTION_UNSPEC: u32 = 0;
 const SEG6_LOCAL_ACTION_END: u32 = 1;
 const SEG6_LOCAL_ACTION_END_X: u32 = 2;
@@ -182,3 +184,76 @@ const SEG6_LOCAL_ACTION_END_AM: u32 = 14;
 const SEG6_LOCAL_ACTION_END_BPF: u32 = 15;
 const SEG6_LOCAL_ACTION_END_DT46: u32 = 16;
 
+#[derive(Debug, PartialEq, Eq, Clone, Default, Copy)]
+#[non_exhaustive]
+pub enum Seg6LocalAction {
+    #[default]
+    Unspec,
+    End,
+    EndX,
+    EndT,
+    EndDx2,
+    EndDx6,
+    EndDx4,
+    EndDt6,
+    EndDt4,
+    EndB6,
+    EndB6Encap,
+    EndBm,
+    EndS,
+    EndAs,
+    EndAm,
+    EndBpf,
+    EndDt46,
+    Other(u32),
+}
+
+impl From<u32> for Seg6LocalAction {
+    fn from(d: u32) -> Self {
+        match d {
+            SEG6_LOCAL_ACTION_UNSPEC => Self::Unspec,
+            SEG6_LOCAL_ACTION_END => Self::End,
+            SEG6_LOCAL_ACTION_END_X => Self::EndX,
+            SEG6_LOCAL_ACTION_END_T => Self::EndT,
+            SEG6_LOCAL_ACTION_END_DX2 => Self::EndDx2,
+            SEG6_LOCAL_ACTION_END_DX6 => Self::EndDx6,
+            SEG6_LOCAL_ACTION_END_DX4 => Self::EndDx4,
+            SEG6_LOCAL_ACTION_END_DT6 => Self::EndDt6,
+            SEG6_LOCAL_ACTION_END_DT4 => Self::EndDt4,
+            SEG6_LOCAL_ACTION_END_B6 => Self::EndB6,
+            SEG6_LOCAL_ACTION_END_B6_ENCAP => Self::EndB6Encap,
+            SEG6_LOCAL_ACTION_END_BM => Self::EndBm,
+            SEG6_LOCAL_ACTION_END_S => Self::EndS,
+            SEG6_LOCAL_ACTION_END_AS => Self::EndAs,
+            SEG6_LOCAL_ACTION_END_AM => Self::EndAm,
+            SEG6_LOCAL_ACTION_END_BPF => Self::EndBpf,
+            SEG6_LOCAL_ACTION_END_DT46 => Self::EndDt46,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<Seg6LocalAction> for u32 {
+    fn from(v: Seg6LocalAction) -> u32 {
+        match v {
+            Seg6LocalAction::Unspec => SEG6_LOCAL_ACTION_UNSPEC,
+            Seg6LocalAction::End => SEG6_LOCAL_ACTION_END,
+            Seg6LocalAction::EndX => SEG6_LOCAL_ACTION_END_X,
+            Seg6LocalAction::EndT => SEG6_LOCAL_ACTION_END_T,
+            Seg6LocalAction::EndDx2 => SEG6_LOCAL_ACTION_END_DX2,
+            Seg6LocalAction::EndDx6 => SEG6_LOCAL_ACTION_END_DX6,
+            Seg6LocalAction::EndDx4 => SEG6_LOCAL_ACTION_END_DX4,
+            Seg6LocalAction::EndDt6 => SEG6_LOCAL_ACTION_END_DT6,
+            Seg6LocalAction::EndDt4 => SEG6_LOCAL_ACTION_END_DT4,
+            Seg6LocalAction::EndB6 => SEG6_LOCAL_ACTION_END_B6,
+            Seg6LocalAction::EndB6Encap => SEG6_LOCAL_ACTION_END_B6_ENCAP,
+            Seg6LocalAction::EndBm => SEG6_LOCAL_ACTION_END_BM,
+            Seg6LocalAction::EndS => SEG6_LOCAL_ACTION_END_S,
+            Seg6LocalAction::EndAs => SEG6_LOCAL_ACTION_END_AS,
+            Seg6LocalAction::EndAm => SEG6_LOCAL_ACTION_END_AM,
+            Seg6LocalAction::EndBpf => SEG6_LOCAL_ACTION_END_BPF,
+            Seg6LocalAction::EndDt46 => SEG6_LOCAL_ACTION_END_DT46,
+            Seg6LocalAction::Other(d) => d,
+        }
+    }
+}
