@@ -31,6 +31,7 @@ const SEG6_LOCAL_FLAVORS: u16 = 11;
 pub enum RouteSeg6LocalIpTunnel {
     Seg6LocalAction(Seg6LocalAction),
     Seg6LocalIpTunnel(Seg6LocalIpTunnelEncap),
+    Table(u32),
     VrfTable(u32),
     Other(DefaultNla),
 }
@@ -40,6 +41,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
         match self {
             Self::Seg6LocalIpTunnel(v) => v.buffer_len(),
             Self::Seg6LocalAction(_) => 4,
+            Self::Table(_) => 4,
             Self::VrfTable(_) => 4,
             Self::Other(attr) => attr.value_len(),
         }
@@ -49,6 +51,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
         match self {
             Self::Seg6LocalIpTunnel(_) => SEG6_LOCAL_SRH,
             Self::Seg6LocalAction(_) => SEG6_LOCAL_ACTION,
+            Self::Table(_) => SEG6_LOCAL_TABLE,
             Self::VrfTable(_) => SEG6_LOCAL_VRFTABLE,
             Self::Other(attr) => attr.kind(),
         }
@@ -60,6 +63,9 @@ impl Nla for RouteSeg6LocalIpTunnel {
             Self::Seg6LocalAction(v) => {
                 let action: u32 = (*v).into();
                 buffer[..4].copy_from_slice(action.to_ne_bytes().as_slice())
+            }
+            Self::Table(v) => {
+                buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
             }
             Self::VrfTable(v) => {
                 buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
@@ -86,9 +92,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context("invalid SEG6_LOCAL_ACTION value")?
                     .into(),
             ),
+            SEG6_LOCAL_TABLE => Self::Table(
+                parse_u32(payload).context("invalid SEG6_LOCAL_TABLE value")?,
+            ),
             SEG6_LOCAL_VRFTABLE => Self::VrfTable(
                 parse_u32(payload)
-                    .context("invalid SEG6_LOCAL_ACTION value")?,
+                    .context("invalid SEG6_LOCAL_VRFTABLE value")?,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf)
