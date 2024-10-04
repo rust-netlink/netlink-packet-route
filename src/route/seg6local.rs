@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-// use std::net::Ipv6Addr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u32,
+    parsers::{parse_u32, parse_u64},
     traits::{Emitable, Parseable},
     DecodeError,
 };
 
-//
-const SEG6_LOCAL_UNSPEC: u16 = 0;
+use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
+use crate::route::Ipv6SrHdr;
+
 const SEG6_LOCAL_ACTION: u16 = 1;
 const SEG6_LOCAL_SRH: u16 = 2;
 const SEG6_LOCAL_TABLE: u16 = 3;
@@ -29,46 +30,74 @@ const SEG6_LOCAL_FLAVORS: u16 = 11;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum RouteSeg6LocalIpTunnel {
-    Seg6LocalAction(Seg6LocalAction),
-    Seg6LocalIpTunnel(Seg6LocalIpTunnelEncap),
+    Action(Seg6LocalAction),
+    Srh(Ipv6SrHdr),
     Table(u32),
+    Nh4(Ipv4Addr),
+    Nh6(Ipv6Addr),
+    Iif(u32),
+    Oif(u32),
     VrfTable(u32),
+    Counters(u64, u64, u64),
     Other(DefaultNla),
 }
 
 impl Nla for RouteSeg6LocalIpTunnel {
     fn value_len(&self) -> usize {
         match self {
-            Self::Seg6LocalIpTunnel(v) => v.buffer_len(),
-            Self::Seg6LocalAction(_) => 4,
+            Self::Srh(v) => v.buffer_len(),
+            Self::Action(_) => 4,
             Self::Table(_) => 4,
+            Self::Nh4(_) => 4,
+            Self::Nh6(_) => 16,
+            Self::Iif(_) => 4,
+            Self::Oif(_) => 4,
             Self::VrfTable(_) => 4,
+            Self::Counters(_, _, _) => 24,
             Self::Other(attr) => attr.value_len(),
         }
     }
 
     fn kind(&self) -> u16 {
         match self {
-            Self::Seg6LocalIpTunnel(_) => SEG6_LOCAL_SRH,
-            Self::Seg6LocalAction(_) => SEG6_LOCAL_ACTION,
+            Self::Srh(_) => SEG6_LOCAL_SRH,
+            Self::Action(_) => SEG6_LOCAL_ACTION,
             Self::Table(_) => SEG6_LOCAL_TABLE,
+            Self::Nh4(_) => SEG6_LOCAL_NH4,
+            Self::Nh6(_) => SEG6_LOCAL_NH6,
+            Self::Iif(_) => SEG6_LOCAL_IIF,
+            Self::Oif(_) => SEG6_LOCAL_OIF,
             Self::VrfTable(_) => SEG6_LOCAL_VRFTABLE,
+            Self::Counters(_, _, _) => SEG6_LOCAL_COUNTERS,
             Self::Other(attr) => attr.kind(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Seg6LocalIpTunnel(v) => v.emit(buffer),
-            Self::Seg6LocalAction(v) => {
+            Self::Srh(v) => v.emit(buffer),
+            Self::Action(v) => {
                 let action: u32 = (*v).into();
                 buffer[..4].copy_from_slice(action.to_ne_bytes().as_slice())
             }
             Self::Table(v) => {
                 buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
             }
+            Self::Nh4(v) => buffer[..4].copy_from_slice(&v.octets()),
+            Self::Nh6(v) => buffer[..16].copy_from_slice(&v.octets()),
+            Self::Iif(v) => {
+                buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
+            }
+            Self::Oif(v) => {
+                buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
+            }
             Self::VrfTable(v) => {
                 buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
+            }
+            Self::Counters(v1, v2, v3) => {
+                buffer[..8].copy_from_slice(v1.to_ne_bytes().as_slice());
+                buffer[8..16].copy_from_slice(v2.to_ne_bytes().as_slice());
+                buffer[16..24].copy_from_slice(v3.to_ne_bytes().as_slice());
             }
             Self::Other(attr) => attr.emit_value(buffer),
         }
@@ -81,13 +110,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            SEG6_LOCAL_SRH => Self::Seg6LocalIpTunnel(
-                Seg6LocalIpTunnelEncap::parse(payload).context(format!(
-                    "invalid SEG6_LOCAL_SRH value {:?}",
-                    payload
-                ))?,
-            ),
-            SEG6_LOCAL_ACTION => Self::Seg6LocalAction(
+            SEG6_LOCAL_SRH => Self::Srh(Ipv6SrHdr::parse(payload).context(
+                format!("invalid SEG6_LOCAL_SRH value {:?}", payload),
+            )?),
+            SEG6_LOCAL_ACTION => Self::Action(
                 parse_u32(payload)
                     .context("invalid SEG6_LOCAL_ACTION value")?
                     .into(),
@@ -95,91 +121,35 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             SEG6_LOCAL_TABLE => Self::Table(
                 parse_u32(payload).context("invalid SEG6_LOCAL_TABLE value")?,
             ),
+            SEG6_LOCAL_NH4 => Self::Nh4(parse_ipv4_addr(payload).context(
+                format!("invalid SEG6_LOCAL_NH4 value {:?}", payload),
+            )?),
+            SEG6_LOCAL_NH6 => Self::Nh6(parse_ipv6_addr(payload).context(
+                format!("invalid SEG6_LOCAL_NH6 value {:?}", payload),
+            )?),
+            SEG6_LOCAL_IIF => Self::Iif(
+                parse_u32(payload).context("invalid SEG6_LOCAL_IIF value")?,
+            ),
+            SEG6_LOCAL_OIF => Self::Oif(
+                parse_u32(payload).context("invalid SEG6_LOCAL_OIF value")?,
+            ),
             SEG6_LOCAL_VRFTABLE => Self::VrfTable(
                 parse_u32(payload)
                     .context("invalid SEG6_LOCAL_VRFTABLE value")?,
+            ),
+            SEG6_LOCAL_COUNTERS => Self::Counters(
+                parse_u64(payload)
+                    .context("invalid SEG6_LOCAL_COUNTERS value")?,
+                parse_u64(&payload[8..16])
+                    .context("invalid SEG6_LOCAL_COUNTERS value")?,
+                parse_u64(&payload[16..24])
+                    .context("invalid SEG6_LOCAL_COUNTERS value")?,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf)
                     .context("invalid NLA value (unknown type) value")?,
             ),
         })
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-/// IPv6 segment routing encapsulation
-pub struct Seg6LocalIpTunnelEncap {
-    /// Mode
-    pub mode: u32,
-}
-
-impl Emitable for Seg6LocalIpTunnelEncap {
-    fn buffer_len(&self) -> usize {
-        let len: usize = 4; // mode.
-        len
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer[..4].copy_from_slice(self.mode.to_ne_bytes().as_slice());
-    }
-}
-
-impl Seg6LocalIpTunnelEncap {
-    pub(crate) fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        // if payload.len() < 4 {
-        //     return Err(DecodeError::from(format!(
-        //         "Invalid u8 array length {}, expecting \
-        //         4 bytes for IPv6 segment routing mode, got {:?}",
-        //         payload.len(),
-        //         payload,
-        //     )));
-        // }
-        // let mode = parse_u32(&payload[..4])
-        //     .context("invalid IPv6 segment routing mode")?;
-        // let (_, payload) = payload.split_at(4usize);
-        // if payload.len() < 8 {
-        //     return Err(DecodeError::from(format!(
-        //         "Invalid u8 array length {}, expecting \
-        //         8 bytes for IPv6 segment routing header, got {:?}",
-        //         payload.len(),
-        //         payload,
-        //     )));
-        // }
-        // let mut ipv6_sr_hdr = Ipv6SrHdr {
-        //     nexthdr: payload[0],
-        //     hdrlen: payload[1],
-        //     typ: payload[2],
-        //     segments_left: payload[3],
-        //     first_segment: payload[4],
-        //     flags: payload[5],
-        //     tag: 0u16,
-        //     segments: vec![],
-        // };
-        // ipv6_sr_hdr.tag = parse_u16(&payload[6..8])
-        //     .context("invalid IPv6 segment rougint header tag")?;
-        // let (_, payload) = payload.split_at(8usize);
-        // if (payload.len() % 16) != 0 {
-        //     return Err(DecodeError::from(format!(
-        //         "Invalid u8 array alignment {}, expecting \
-        //         16 bytes for IPv6 segments, got {:?}",
-        //         payload.len(),
-        //         payload,
-        //     )));
-        // }
-        // let mut segments = payload;
-        // while !segments.is_empty() {
-        //     let bytes: &[u8; 16] =
-        //         segments[0..16].try_into().context("invalid IPv6 segment")?;
-        //     let segment: Ipv6Addr = Ipv6Addr::from(*bytes);
-        //     ipv6_sr_hdr.segments.push(segment);
-        //     (_, segments) = segments.split_at(16usize);
-        // }
-        // Ok(Self {
-        //     mode,
-        //     ipv6_sr_hdr: VecIpv6SrHdr(vec![ipv6_sr_hdr]),
-        // })
-        Ok(Self { mode: 0 })
     }
 }
 
