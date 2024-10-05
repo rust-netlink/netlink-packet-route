@@ -4,8 +4,8 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 
 use anyhow::Context;
 use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u32, parse_u64},
+    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
+    parsers::{parse_u32, parse_u64, parse_u8},
     traits::{Emitable, Parseable},
     DecodeError,
 };
@@ -20,7 +20,7 @@ const SEG6_LOCAL_NH4: u16 = 4;
 const SEG6_LOCAL_NH6: u16 = 5;
 const SEG6_LOCAL_IIF: u16 = 6;
 const SEG6_LOCAL_OIF: u16 = 7;
-const SEG6_LOCAL_BPF: u16 = 8;
+// const SEG6_LOCAL_BPF: u16 = 8;  TODO
 const SEG6_LOCAL_VRFTABLE: u16 = 9;
 const SEG6_LOCAL_COUNTERS: u16 = 10;
 const SEG6_LOCAL_FLAVORS: u16 = 11;
@@ -39,6 +39,7 @@ pub enum RouteSeg6LocalIpTunnel {
     Oif(u32),
     VrfTable(u32),
     Counters(u64, u64, u64),
+    Flavors(Vec<Seg6LocalFlavors>),
     Other(DefaultNla),
 }
 
@@ -54,6 +55,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
             Self::Oif(_) => 4,
             Self::VrfTable(_) => 4,
             Self::Counters(_, _, _) => 24,
+            Self::Flavors(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -68,7 +70,8 @@ impl Nla for RouteSeg6LocalIpTunnel {
             Self::Iif(_) => SEG6_LOCAL_IIF,
             Self::Oif(_) => SEG6_LOCAL_OIF,
             Self::VrfTable(_) => SEG6_LOCAL_VRFTABLE,
-            Self::Counters(_, _, _) => SEG6_LOCAL_COUNTERS,
+            Self::Counters(_, _, _) => SEG6_LOCAL_COUNTERS | NLA_F_NESTED,
+            Self::Flavors(_) => SEG6_LOCAL_FLAVORS | NLA_F_NESTED,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -99,6 +102,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
                 buffer[8..16].copy_from_slice(v2.to_ne_bytes().as_slice());
                 buffer[16..24].copy_from_slice(v3.to_ne_bytes().as_slice());
             }
+            Self::Flavors(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }
     }
@@ -145,6 +149,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 parse_u64(&payload[16..24])
                     .context("invalid SEG6_LOCAL_COUNTERS value")?,
             ),
+            SEG6_LOCAL_FLAVORS => {
+                let mut v = Vec::new();
+                let err = "failed to parse SEG6_LOCAL_FLAVORS";
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(err)?;
+                    let parsed = Seg6LocalFlavors::parse(nla).context(err)?;
+                    v.push(parsed);
+                }
+                Self::Flavors(v)
+            }
             _ => Self::Other(
                 DefaultNla::parse(buf)
                     .context("invalid NLA value (unknown type) value")?,
@@ -242,6 +256,121 @@ impl From<Seg6LocalAction> for u32 {
             Seg6LocalAction::EndBpf => SEG6_LOCAL_ACTION_END_BPF,
             Seg6LocalAction::EndDt46 => SEG6_LOCAL_ACTION_END_DT46,
             Seg6LocalAction::Other(d) => d,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
+pub enum Seg6LocalFlavors {
+    Operation(u32),
+    Lblen(u8),
+    Nflen(u8),
+    Other(DefaultNla),
+}
+
+const SEG6_LOCAL_FLV_OPERATION: u16 = 1;
+const SEG6_LOCAL_FLV_LCBLOCK_BITS: u16 = 2;
+const SEG6_LOCAL_FLV_LCNODE_FN_BITS: u16 = 3;
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+    for Seg6LocalFlavors
+{
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            SEG6_LOCAL_FLV_OPERATION => {
+                Self::Operation(parse_u32(payload).context("")?)
+            }
+            SEG6_LOCAL_FLV_LCBLOCK_BITS => {
+                Self::Lblen(parse_u8(payload).context("")?)
+            }
+            SEG6_LOCAL_FLV_LCNODE_FN_BITS => {
+                Self::Nflen(parse_u8(payload).context("")?)
+            }
+            _ => {
+                Self::Other(DefaultNla::parse(buf).context(format!(
+                    "invalid NLA value (unknown type) value"
+                ))?)
+            }
+        })
+    }
+}
+
+impl Nla for Seg6LocalFlavors {
+    fn value_len(&self) -> usize {
+        use self::Seg6LocalFlavors::*;
+        match self {
+            Operation(_) => 4,
+            Lblen(_) => 1,
+            Nflen(_) => 1,
+            Other(nla) => nla.value_len(),
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        use self::Seg6LocalFlavors::*;
+        match self {
+            Operation(_) => SEG6_LOCAL_FLV_OPERATION,
+            Lblen(_) => SEG6_LOCAL_FLV_LCBLOCK_BITS,
+            Nflen(_) => SEG6_LOCAL_FLV_LCNODE_FN_BITS,
+            Other(nla) => nla.kind(),
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        use self::Seg6LocalFlavors::*;
+        match self {
+            Operation(v) => {
+                buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
+            }
+            Lblen(v) => buffer[0] = *v,
+            Nflen(v) => buffer[0] = *v,
+            Other(nla) => nla.emit_value(buffer),
+        }
+    }
+}
+
+const SEG6_LOCAL_FLV_OP_UNSPEC: u32 = 1 << 0;
+const SEG6_LOCAL_FLV_OP_PSP: u32 = 1 << 1;
+const SEG6_LOCAL_FLV_OP_USP: u32 = 1 << 2;
+const SEG6_LOCAL_FLV_OP_USD: u32 = 1 << 3;
+const SEG6_LOCAL_FLV_OP_NEXT_CSID: u32 = 1 << 4;
+
+#[derive(Debug, PartialEq, Eq, Clone, Default, Copy)]
+#[non_exhaustive]
+pub enum Seg6LocalFlavorOps {
+    #[default]
+    Unspec,
+    Psp,
+    Usp,
+    Usd,
+    NextCsid,
+    Other(u32),
+}
+
+impl From<u32> for Seg6LocalFlavorOps {
+    fn from(d: u32) -> Self {
+        match d {
+            SEG6_LOCAL_FLV_OP_UNSPEC => Self::Unspec,
+            SEG6_LOCAL_FLV_OP_PSP => Self::Psp,
+            SEG6_LOCAL_FLV_OP_USP => Self::Usp,
+            SEG6_LOCAL_FLV_OP_USD => Self::Usd,
+            SEG6_LOCAL_FLV_OP_NEXT_CSID => Self::NextCsid,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<Seg6LocalFlavorOps> for u32 {
+    fn from(v: Seg6LocalFlavorOps) -> u32 {
+        match v {
+            Seg6LocalFlavorOps::Unspec => SEG6_LOCAL_FLV_OP_UNSPEC,
+            Seg6LocalFlavorOps::Psp => SEG6_LOCAL_FLV_OP_PSP,
+            Seg6LocalFlavorOps::Usp => SEG6_LOCAL_FLV_OP_USP,
+            Seg6LocalFlavorOps::Usd => SEG6_LOCAL_FLV_OP_USD,
+            Seg6LocalFlavorOps::NextCsid => SEG6_LOCAL_FLV_OP_NEXT_CSID,
+            Seg6LocalFlavorOps::Other(d) => d,
         }
     }
 }
