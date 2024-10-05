@@ -301,7 +301,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     }
 }
 
-/////
 impl Nla for Seg6LocalCounters {
     fn value_len(&self) -> usize {
         use self::Seg6LocalCounters::*;
@@ -340,7 +339,7 @@ impl Nla for Seg6LocalCounters {
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum Seg6LocalFlavors {
-    Operation(u32),
+    Operation(Seg6LocalFlavorOps),
     Lblen(u8),
     Nflen(u8),
     Other(DefaultNla),
@@ -357,7 +356,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             SEG6_LOCAL_FLV_OPERATION => {
-                Self::Operation(parse_u32(payload).context("")?)
+                Self::Operation(parse_u32(payload).context("")?.into())
             }
             SEG6_LOCAL_FLV_LCBLOCK_BITS => {
                 Self::Lblen(parse_u8(payload).context("")?)
@@ -399,7 +398,8 @@ impl Nla for Seg6LocalFlavors {
         use self::Seg6LocalFlavors::*;
         match self {
             Operation(v) => {
-                buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
+                let operation: u32 = (*v).into();
+                buffer[..4].copy_from_slice(operation.to_ne_bytes().as_slice())
             }
             Lblen(v) => buffer[0] = *v,
             Nflen(v) => buffer[0] = *v,
