@@ -38,7 +38,7 @@ pub enum RouteSeg6LocalIpTunnel {
     Iif(u32),
     Oif(u32),
     VrfTable(u32),
-    Counters(u64, u64, u64),
+    Counters(Vec<Seg6LocalCounters>),
     Flavors(Vec<Seg6LocalFlavors>),
     Other(DefaultNla),
 }
@@ -54,7 +54,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
             Self::Iif(_) => 4,
             Self::Oif(_) => 4,
             Self::VrfTable(_) => 4,
-            Self::Counters(_, _, _) => 24,
+            Self::Counters(nlas) => nlas.as_slice().buffer_len(),
             Self::Flavors(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(attr) => attr.value_len(),
         }
@@ -70,7 +70,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
             Self::Iif(_) => SEG6_LOCAL_IIF,
             Self::Oif(_) => SEG6_LOCAL_OIF,
             Self::VrfTable(_) => SEG6_LOCAL_VRFTABLE,
-            Self::Counters(_, _, _) => SEG6_LOCAL_COUNTERS | NLA_F_NESTED,
+            Self::Counters(_) => SEG6_LOCAL_COUNTERS | NLA_F_NESTED,
             Self::Flavors(_) => SEG6_LOCAL_FLAVORS | NLA_F_NESTED,
             Self::Other(attr) => attr.kind(),
         }
@@ -97,11 +97,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
             Self::VrfTable(v) => {
                 buffer[..4].copy_from_slice(v.to_ne_bytes().as_slice())
             }
-            Self::Counters(v1, v2, v3) => {
-                buffer[..8].copy_from_slice(v1.to_ne_bytes().as_slice());
-                buffer[8..16].copy_from_slice(v2.to_ne_bytes().as_slice());
-                buffer[16..24].copy_from_slice(v3.to_ne_bytes().as_slice());
-            }
+            Self::Counters(nlas) => nlas.as_slice().emit(buffer),
             Self::Flavors(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }
@@ -141,14 +137,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 parse_u32(payload)
                     .context("invalid SEG6_LOCAL_VRFTABLE value")?,
             ),
-            SEG6_LOCAL_COUNTERS => Self::Counters(
-                parse_u64(payload)
-                    .context("invalid SEG6_LOCAL_COUNTERS value")?,
-                parse_u64(&payload[8..16])
-                    .context("invalid SEG6_LOCAL_COUNTERS value")?,
-                parse_u64(&payload[16..24])
-                    .context("invalid SEG6_LOCAL_COUNTERS value")?,
-            ),
+            SEG6_LOCAL_COUNTERS => {
+                let mut v = Vec::new();
+                let err = "failed to parse SEG6_LOCAL_COUNTERS";
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(err)?;
+                    let parsed = Seg6LocalCounters::parse(nla).context(err)?;
+                    v.push(parsed);
+                }
+                Self::Counters(v)
+            }
             SEG6_LOCAL_FLAVORS => {
                 let mut v = Vec::new();
                 let err = "failed to parse SEG6_LOCAL_FLAVORS";
@@ -256,6 +254,85 @@ impl From<Seg6LocalAction> for u32 {
             Seg6LocalAction::EndBpf => SEG6_LOCAL_ACTION_END_BPF,
             Seg6LocalAction::EndDt46 => SEG6_LOCAL_ACTION_END_DT46,
             Seg6LocalAction::Other(d) => d,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
+pub enum Seg6LocalCounters {
+    Unspec,
+    Padding(usize),
+    Packets(u64),
+    Bytes(u64),
+    Errors(u64),
+    Other(DefaultNla),
+}
+
+const SEG6_LOCAL_CNT_UNSPEC: u16 = 0;
+const SEG6_LOCAL_CNT_PAD: u16 = 1;
+const SEG6_LOCAL_CNT_PACKETS: u16 = 2;
+const SEG6_LOCAL_CNT_BYTES: u16 = 3;
+const SEG6_LOCAL_CNT_ERRORS: u16 = 4;
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+    for Seg6LocalCounters
+{
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            SEG6_LOCAL_CNT_UNSPEC => Self::Unspec,
+            SEG6_LOCAL_CNT_PAD => Self::Padding(payload.len()),
+            SEG6_LOCAL_CNT_PACKETS => {
+                Self::Packets(parse_u64(payload).context("")?)
+            }
+            SEG6_LOCAL_CNT_BYTES => {
+                Self::Bytes(parse_u64(payload).context("")?)
+            }
+            SEG6_LOCAL_CNT_ERRORS => {
+                Self::Errors(parse_u64(payload).context("")?)
+            }
+            _ => {
+                Self::Other(DefaultNla::parse(buf).context(format!(
+                    "invalid NLA value (unknown type) value"
+                ))?)
+            }
+        })
+    }
+}
+
+/////
+impl Nla for Seg6LocalCounters {
+    fn value_len(&self) -> usize {
+        use self::Seg6LocalCounters::*;
+        match self {
+            Unspec => 0,
+            Padding(v) => *v,
+            Packets(_) | Bytes(_) | Errors(_) => 8,
+            Other(nla) => nla.value_len(),
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        use self::Seg6LocalCounters::*;
+        match self {
+            Unspec => SEG6_LOCAL_CNT_UNSPEC,
+            Padding(_) => SEG6_LOCAL_CNT_PAD,
+            Packets(_) => SEG6_LOCAL_CNT_PACKETS,
+            Bytes(_) => SEG6_LOCAL_CNT_BYTES,
+            Errors(_) => SEG6_LOCAL_CNT_ERRORS,
+            Other(nla) => nla.kind(),
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        use self::Seg6LocalCounters::*;
+        match self {
+            Unspec | Padding(_) => {}
+            Packets(v) | Bytes(v) | Errors(v) => {
+                buffer[..8].copy_from_slice(v.to_ne_bytes().as_slice())
+            }
+            Other(nla) => nla.emit_value(buffer),
         }
     }
 }
