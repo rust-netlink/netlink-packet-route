@@ -78,10 +78,10 @@ bitflags! {
     #[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
     #[non_exhaustive]
     pub struct SrhFlags: u8 {
-        const Protected = SR6_FLAG1_PROTECTED as u8;
-        const Oam = SR6_FLAG1_OAM as u8;
-        const Alert = SR6_FLAG1_ALERT as u8;
-        const Hmac = SR6_FLAG1_HMAC as u8;
+        const Protected = SR6_FLAG1_PROTECTED;
+        const Oam = SR6_FLAG1_OAM;
+        const Alert = SR6_FLAG1_ALERT;
+        const Hmac = SR6_FLAG1_HMAC;
         const _ = !0;
     }
 }
@@ -191,7 +191,7 @@ impl Ipv6SrHdr {
             (_, segments) = segments.split_at(16usize);
         }
 
-        if payload.len() > 0 {
+        if !payload.is_empty() {
             // Type and length.
             if payload.len() < 4 {
                 return Err(DecodeError::from(format!(

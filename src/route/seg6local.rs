@@ -283,20 +283,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         Ok(match buf.kind() {
             SEG6_LOCAL_CNT_UNSPEC => Self::Unspec,
             SEG6_LOCAL_CNT_PAD => Self::Padding(payload.len()),
-            SEG6_LOCAL_CNT_PACKETS => {
-                Self::Packets(parse_u64(payload).context("")?)
-            }
-            SEG6_LOCAL_CNT_BYTES => {
-                Self::Bytes(parse_u64(payload).context("")?)
-            }
-            SEG6_LOCAL_CNT_ERRORS => {
-                Self::Errors(parse_u64(payload).context("")?)
-            }
-            _ => {
-                Self::Other(DefaultNla::parse(buf).context(format!(
-                    "invalid NLA value (unknown type) value"
-                ))?)
-            }
+            SEG6_LOCAL_CNT_PACKETS => Self::Packets(
+                parse_u64(payload)
+                    .context("invalid SEG6_LOCAL_CNT_PACKETS value")?,
+            ),
+            SEG6_LOCAL_CNT_BYTES => Self::Bytes(
+                parse_u64(payload)
+                    .context("invalid SEG6_LOCAL_CNT_BYTES value")?,
+            ),
+            SEG6_LOCAL_CNT_ERRORS => Self::Errors(
+                parse_u64(payload)
+                    .context("invalid SEG6_LOCAL_CNT_ERRORS value")?,
+            ),
+            _ => Self::Other(
+                DefaultNla::parse(buf)
+                    .context("invalid NLA value (unknown type) value")?,
+            ),
         })
     }
 }
@@ -355,20 +357,23 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            SEG6_LOCAL_FLV_OPERATION => {
-                Self::Operation(parse_u32(payload).context("")?.into())
-            }
-            SEG6_LOCAL_FLV_LCBLOCK_BITS => {
-                Self::Lblen(parse_u8(payload).context("")?)
-            }
-            SEG6_LOCAL_FLV_LCNODE_FN_BITS => {
-                Self::Nflen(parse_u8(payload).context("")?)
-            }
-            _ => {
-                Self::Other(DefaultNla::parse(buf).context(format!(
-                    "invalid NLA value (unknown type) value"
-                ))?)
-            }
+            SEG6_LOCAL_FLV_OPERATION => Self::Operation(
+                parse_u32(payload)
+                    .context("invalid SEG6_LOCAL_FLV_OPERATION value")?
+                    .into(),
+            ),
+            SEG6_LOCAL_FLV_LCBLOCK_BITS => Self::Lblen(
+                parse_u8(payload)
+                    .context("invalid SEG6_LOCAL_FLV_LCBLOCK_BITS value")?,
+            ),
+            SEG6_LOCAL_FLV_LCNODE_FN_BITS => Self::Nflen(
+                parse_u8(payload)
+                    .context("invalid SEG6_LOCAL_FLV_LCNODE_FN_BITS value")?,
+            ),
+            _ => Self::Other(
+                DefaultNla::parse(buf)
+                    .context("invalid NLA value (unknown type) value")?,
+            ),
         })
     }
 }
