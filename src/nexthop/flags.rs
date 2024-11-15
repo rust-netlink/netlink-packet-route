@@ -16,7 +16,7 @@ bitflags! {
     pub struct NexthopFlags: u32 {
         const Dead = RTNH_F_DEAD;
         const Pervasive = RTNH_F_PERVASIVE;
-        const Onlink =RTNH_F_ONLINK;
+        const Onlink = RTNH_F_ONLINK;
         const Offload  = RTNH_F_OFFLOAD;
         const Linkdown = RTNH_F_LINKDOWN;
         const Unresolved = RTNH_F_UNRESOLVED;
