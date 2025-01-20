@@ -34,7 +34,7 @@ impl Emitable for RouteRealm {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let all = (self.source as u32) << 16 | self.destination as u32;
+        let all = ((self.source as u32) << 16) | self.destination as u32;
         buffer.copy_from_slice(&all.to_ne_bytes());
     }
 }

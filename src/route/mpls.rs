@@ -138,10 +138,10 @@ impl From<u32> for MplsLabel {
 
 impl From<MplsLabel> for u32 {
     fn from(v: MplsLabel) -> u32 {
-        v.label << MPLS_LS_LABEL_SHIFT
-            | (v.traffic_class as u32) << MPLS_LS_TC_SHIFT
-            | (v.bottom_of_stack as u32) << MPLS_LS_S_SHIFT
-            | (v.ttl as u32) << MPLS_LS_TTL_SHIFT
+        (v.label << MPLS_LS_LABEL_SHIFT)
+            | ((v.traffic_class as u32) << MPLS_LS_TC_SHIFT)
+            | ((v.bottom_of_stack as u32) << MPLS_LS_S_SHIFT)
+            | ((v.ttl as u32) << MPLS_LS_TTL_SHIFT)
     }
 }
 

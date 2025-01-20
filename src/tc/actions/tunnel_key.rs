@@ -189,9 +189,7 @@ impl Emitable for TcTunnelKey {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcTunnelKeyBuffer<&'a T>>
-    for TcTunnelKey
-{
+impl<T: AsRef<[u8]> + ?Sized> Parseable<TcTunnelKeyBuffer<&T>> for TcTunnelKey {
     fn parse(buf: &TcTunnelKeyBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(

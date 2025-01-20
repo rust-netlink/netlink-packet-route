@@ -33,9 +33,7 @@ buffer!(VfInfoMacBuffer(VF_INFO_MAC_LEN) {
     mac: (slice, 4..VF_INFO_MAC_LEN),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoMacBuffer<&'a T>>
-    for VfInfoMac
-{
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoMacBuffer<&T>> for VfInfoMac {
     fn parse(buf: &VfInfoMacBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self::new(buf.vf_id(), buf.mac()))
     }

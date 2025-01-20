@@ -188,7 +188,7 @@ impl Nla for LinkAttribute {
             Self::IfName(string)
             | Self::Qdisc(string)
             | Self::IfAlias(string)
-            | Self::PhysPortName(string) => string.as_bytes().len() + 1,
+            | Self::PhysPortName(string) => string.len() + 1,
 
             Self::Mode(_) | Self::Carrier(_) | Self::ProtoDown(_) => 1,
 

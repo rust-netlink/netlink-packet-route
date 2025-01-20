@@ -22,7 +22,7 @@ buffer!(VfInfoTxRateBuffer(VF_INFO_TX_RATE_LEN) {
     rate: (u32, 4..8),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoTxRateBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoTxRateBuffer<&T>>
     for VfInfoTxRate
 {
     fn parse(buf: &VfInfoTxRateBuffer<&T>) -> Result<Self, DecodeError> {

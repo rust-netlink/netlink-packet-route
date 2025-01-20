@@ -26,7 +26,7 @@ buffer!(VfInfoBroadcastBuffer(VF_INFO_BROADCAST_LEN) {
     addr: (slice, 0..VF_INFO_BROADCAST_LEN),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoBroadcastBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoBroadcastBuffer<&T>>
     for VfInfoBroadcast
 {
     fn parse(buf: &VfInfoBroadcastBuffer<&T>) -> Result<Self, DecodeError> {

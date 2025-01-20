@@ -116,9 +116,7 @@ impl Emitable for TcMirror {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcMirrorBuffer<&'a T>>
-    for TcMirror
-{
+impl<T: AsRef<[u8]> + ?Sized> Parseable<TcMirrorBuffer<&T>> for TcMirror {
     fn parse(buf: &TcMirrorBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(

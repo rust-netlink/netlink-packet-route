@@ -192,9 +192,8 @@ impl Nla for TcActionAttribute {
         match self {
             Self::Cookie(bytes) => buffer.copy_from_slice(bytes.as_slice()),
             Self::Kind(string) => {
-                buffer[..string.as_bytes().len()]
-                    .copy_from_slice(string.as_bytes());
-                buffer[string.as_bytes().len()] = 0;
+                buffer[..string.len()].copy_from_slice(string.as_bytes());
+                buffer[string.len()] = 0;
             }
             Self::Options(opt) => opt.as_slice().emit(buffer),
             Self::Index(value) | Self::InHwCount(value) => {
@@ -580,7 +579,7 @@ buffer!(TcfBuffer(TC_TCF_BUF_LEN) {
     firstuse: (u64, 24..32),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcfBuffer<&'a T>> for Tcf {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<TcfBuffer<&T>> for Tcf {
     fn parse(buf: &TcfBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             install: buf.install(),

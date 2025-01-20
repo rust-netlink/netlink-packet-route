@@ -22,9 +22,7 @@ buffer!(VfInfoGuidBuffer(VF_INFO_GUID_LEN) {
     guid: (u64, 4..12),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoGuidBuffer<&'a T>>
-    for VfInfoGuid
-{
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoGuidBuffer<&T>> for VfInfoGuid {
     fn parse(buf: &VfInfoGuidBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self::new(buf.vf_id(), buf.guid()))
     }

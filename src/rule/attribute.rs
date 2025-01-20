@@ -80,7 +80,7 @@ impl Nla for RuleAttribute {
             Self::SourcePortRange(v) | Self::DestinationPortRange(v) => {
                 v.buffer_len()
             }
-            Self::Iifname(s) | Self::Oifname(s) => s.as_bytes().len() + 1,
+            Self::Iifname(s) | Self::Oifname(s) => s.len() + 1,
             Self::Priority(_)
             | Self::FwMark(_)
             | Self::FwMask(_)
