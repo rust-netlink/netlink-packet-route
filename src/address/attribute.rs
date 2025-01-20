@@ -60,7 +60,7 @@ impl Nla for AddressAttribute {
                     IPV4_ADDR_LEN
                 }
             }
-            Self::Label(ref string) => string.as_bytes().len() + 1,
+            Self::Label(ref string) => string.len() + 1,
 
             Self::Flags(_) => size_of::<u32>(),
 

@@ -90,9 +90,7 @@ buffer!(VfVlanInfoBuffer(VF_VLAN_INFO_LEN) {
     protocol: (u16, 12..14),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfVlanInfoBuffer<&'a T>>
-    for VfVlanInfo
-{
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfVlanInfoBuffer<&T>> for VfVlanInfo {
     fn parse(buf: &VfVlanInfoBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             vf_id: buf.vf_id(),

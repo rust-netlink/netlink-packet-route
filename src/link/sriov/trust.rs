@@ -22,9 +22,7 @@ buffer!(VfInfoTrustBuffer(VF_INFO_TRUST_LEN) {
     setting: (u32, 4..8),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoTrustBuffer<&'a T>>
-    for VfInfoTrust
-{
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoTrustBuffer<&T>> for VfInfoTrust {
     fn parse(buf: &VfInfoTrustBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self::new(
             buf.vf_id(),

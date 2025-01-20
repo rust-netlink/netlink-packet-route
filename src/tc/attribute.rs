@@ -60,7 +60,7 @@ impl Nla for TcAttribute {
             Self::HwOffload(_) => 1,
             Self::Stats2(ref v) => v.as_slice().buffer_len(),
             Self::Stats(ref v) => v.buffer_len(),
-            Self::Kind(ref string) => string.as_bytes().len() + 1,
+            Self::Kind(ref string) => string.len() + 1,
             Self::Options(ref opt) => opt.as_slice().buffer_len(),
             Self::DumpInvisible(_) => 0, // The existence of NLA means true
             Self::Other(ref attr) => attr.value_len(),
@@ -78,9 +78,8 @@ impl Nla for TcAttribute {
             Self::Stats2(ref stats) => stats.as_slice().emit(buffer),
             Self::Stats(ref stats) => stats.emit(buffer),
             Self::Kind(ref string) => {
-                buffer[..string.as_bytes().len()]
-                    .copy_from_slice(string.as_bytes());
-                buffer[string.as_bytes().len()] = 0;
+                buffer[..string.len()].copy_from_slice(string.as_bytes());
+                buffer[string.len()] = 0;
             }
             Self::Options(ref opt) => opt.as_slice().emit(buffer),
             Self::DumpInvisible(_) => (),

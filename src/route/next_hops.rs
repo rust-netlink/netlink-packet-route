@@ -94,9 +94,9 @@ pub struct RouteNextHop {
     pub attributes: Vec<RouteAttribute>,
 }
 
-impl<'a, T: AsRef<[u8]>>
+impl<T: AsRef<[u8]>>
     ParseableParametrized<
-        RouteNextHopBuffer<&'a T>,
+        RouteNextHopBuffer<&T>,
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for RouteNextHop
 {

@@ -1,5 +1,27 @@
 // SPDX-License-Identifier: MIT
 
+//! The `netlink-packet-route` crate is designed to abstract Netlink route
+//! protocol(`rtnetlink`) packet into Rust data types. The goal of this crate is
+//! saving netlink user from reading Kernel Netlink codes.
+//!
+//! This crate grouped Netlink route protocol into these modules:
+//!  * `link`: NIC interface, similar to to `ip link` command.
+//!  * `address`: IP address, similar to `ip address` command.
+//!  * `route`: Route, similar to `ip route` command.
+//!  * `rule`: Route rule, similar to `ip rule` command.
+//!  * `tc`: Traffic control, similar to `tc` command.
+//!  * `neighbour`: Neighbour, similar to `ip neighbour` command.
+//!  * `neighbour_table`: Neighbour table, similar to `ip ntable` command.
+//!  * `nsid`: Namespace, similar to `ip netns` command.
+//!
+//! At the top level of this crate, we also provide:
+//!  * [AddressFamily]
+//!
+//! Normally, you should use [`rtnetlink`][rtnetlink_url] instead of using this
+//! crate directly.
+//!
+//! [rtnetlink_url]: https://docs.rs/rtnetlink
+
 pub mod address;
 pub mod link;
 pub mod neighbour;
@@ -41,28 +63,6 @@ pub use self::address_family_fallback::AddressFamily;
 
 pub use self::ip::IpProtocol;
 pub use self::message::{RouteNetlinkMessage, RouteNetlinkMessageBuffer};
-
-/// The `netlink-packet-route` crate is designed to abstract Netlink route
-/// protocol(`rtnetlink`) packet into Rust data types. The goal of this crate is
-/// saving netlink user from reading Kernel Netlink codes.
-///
-/// This crate grouped Netlink route protocol into these modules:
-///  * `link`: NIC interface, similar to to `ip link` command.
-///  * `address`: IP address, similar to `ip address` command.
-///  * `route`: Route, similar to `ip route` command.
-///  * `rule`: Route rule, similar to `ip rule` command.
-///  * `tc`: Traffic control, similar to `tc` command.
-///  * `neighbour`: Neighbour, similar to `ip neighbour` command.
-///  * `neighbour_table`: Neighbour table, similar to `ip ntable` command.
-///  * `nsid`: Namespace, similar to `ip netns` command.
-///
-/// At the top level of this crate, we also provide:
-///  * [AddressFamily]
-///
-/// Normally, you should use [`rtnetlink`][rtnetlink_url] instead of using this
-/// crate directly.
-///
-/// [rtnetlink_url]: https://docs.rs/rtnetlink
 
 #[macro_use]
 extern crate netlink_packet_utils;

@@ -22,7 +22,7 @@ buffer!(VfInfoRssQueryEnBuffer(VF_INFO_RSS_QUERY_EN_LEN) {
     setting: (u32, 4..8),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRssQueryEnBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRssQueryEnBuffer<&T>>
     for VfInfoRssQueryEn
 {
     fn parse(buf: &VfInfoRssQueryEnBuffer<&T>) -> Result<Self, DecodeError> {

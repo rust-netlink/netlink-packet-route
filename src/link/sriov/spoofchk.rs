@@ -22,7 +22,7 @@ buffer!(VfInfoSpoofCheckBuffer(VF_INFO_SPOOFCHK_LEN) {
     setting: (u32, 4..8),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoSpoofCheckBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoSpoofCheckBuffer<&T>>
     for VfInfoSpoofCheck
 {
     fn parse(buf: &VfInfoSpoofCheckBuffer<&T>) -> Result<Self, DecodeError> {

@@ -22,7 +22,7 @@ impl Nla for Prop {
     fn value_len(&self) -> usize {
         use self::Prop::*;
         match self {
-            AltIfName(ref string) => string.as_bytes().len() + 1,
+            AltIfName(ref string) => string.len() + 1,
             Other(nla) => nla.value_len()
         }
     }

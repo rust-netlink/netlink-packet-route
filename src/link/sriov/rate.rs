@@ -28,9 +28,7 @@ buffer!(VfInfoRateBuffer(VF_INFO_RATE_LEN) {
     max_tx_rate: (u32, 8..12)
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRateBuffer<&'a T>>
-    for VfInfoRate
-{
+impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRateBuffer<&T>> for VfInfoRate {
     fn parse(buf: &VfInfoRateBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             vf_id: buf.vf_id(),

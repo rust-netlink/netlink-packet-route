@@ -139,7 +139,7 @@ impl Emitable for TcNat {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&'a T>> for TcNat {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&T>> for TcNat {
     fn parse(buf: &TcNatBuffer<&T>) -> Result<Self, DecodeError> {
         Ok(Self {
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
