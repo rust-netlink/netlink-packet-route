@@ -8,6 +8,7 @@ use netlink_packet_utils::{
     DecodeError, Emitable, Parseable, ParseableParametrized,
 };
 
+use crate::nexthop::{NexthopMessage, NexthopMessageBuffer};
 use crate::tc::{TcActionMessage, TcActionMessageBuffer};
 use crate::{
     address::{AddressHeader, AddressMessage, AddressMessageBuffer},
@@ -76,6 +77,9 @@ const RTM_GETNSID: u16 = 90;
 const RTM_NEWCHAIN: u16 = 100;
 const RTM_DELCHAIN: u16 = 101;
 const RTM_GETCHAIN: u16 = 102;
+const RTM_NEWNEXTHOP: u16 = 104;
+const RTM_DELNEXTHOP: u16 = 105;
+const RTM_GETNEXTHOP: u16 = 106;
 const RTM_NEWLINKPROP: u16 = 108;
 const RTM_DELLINKPROP: u16 = 109;
 
@@ -322,6 +326,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
 
+            // Nexthop Messages
+            RTM_NEWNEXTHOP | RTM_DELNEXTHOP | RTM_GETNEXTHOP => {
+                let err = "invalid nexthop message";
+                let msg = NexthopMessage::parse(
+                    &NexthopMessageBuffer::new_checked(&buf.inner())
+                        .context(err)?,
+                )
+                .context(err)?;
+                match message_type {
+                    RTM_NEWNEXTHOP => RouteNetlinkMessage::NewNexthop(msg),
+                    RTM_DELNEXTHOP => RouteNetlinkMessage::DelNexthop(msg),
+                    RTM_GETNEXTHOP => RouteNetlinkMessage::GetNexthop(msg),
+                    _ => unreachable!(),
+                }
+            }
+
             _ => {
                 return Err(
                     format!("Unknown message type: {message_type}").into()
@@ -369,6 +389,9 @@ pub enum RouteNetlinkMessage {
     NewTrafficChain(TcMessage),
     DelTrafficChain(TcMessage),
     GetTrafficChain(TcMessage),
+    NewNexthop(NexthopMessage),
+    DelNexthop(NexthopMessage),
+    GetNexthop(NexthopMessage),
     NewNsId(NsidMessage),
     DelNsId(NsidMessage),
     GetNsId(NsidMessage),
@@ -526,6 +549,18 @@ impl RouteNetlinkMessage {
         matches!(self, RouteNetlinkMessage::DelRule(_))
     }
 
+    pub fn is_get_nexthop(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::GetNexthop(_))
+    }
+
+    pub fn is_new_nexthop(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::NewNexthop(_))
+    }
+
+    pub fn is_del_nexthop(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::DelNexthop(_))
+    }
+
     pub fn message_type(&self) -> u16 {
         use self::RouteNetlinkMessage::*;
 
@@ -570,6 +605,9 @@ impl RouteNetlinkMessage {
             GetRule(_) => RTM_GETRULE,
             NewRule(_) => RTM_NEWRULE,
             DelRule(_) => RTM_DELRULE,
+            NewNexthop(_) => RTM_NEWNEXTHOP,
+            DelNexthop(_) => RTM_DELNEXTHOP,
+            GetNexthop(_) => RTM_GETNEXTHOP,
         }
     }
 }
@@ -637,7 +675,12 @@ impl Emitable for RouteNetlinkMessage {
             | DelTrafficAction(ref msg)
             | GetTrafficAction(ref msg)
             => msg.buffer_len(),
-        }
+
+            | NewNexthop(ref msg)
+            | DelNexthop(ref msg)
+            | GetNexthop(ref msg)
+            => msg.buffer_len(),
+}
     }
 
     #[rustfmt::skip]
@@ -702,7 +745,12 @@ impl Emitable for RouteNetlinkMessage {
             | DelTrafficAction(ref msg)
             | GetTrafficAction(ref msg)
             => msg.emit(buffer),
-        }
+
+            | NewNexthop(ref msg)
+            | DelNexthop(ref msg)
+            | GetNexthop(ref msg)
+            => msg.emit(buffer),
+}
     }
 }
 
