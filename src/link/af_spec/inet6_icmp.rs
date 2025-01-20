@@ -7,6 +7,8 @@ use netlink_packet_utils::{
 
 pub(crate) const ICMP6_STATS_LEN: usize = 56;
 
+// Reference: https://github.com/torvalds/linux/blob/master/include/uapi/linux/snmp.h#L106
+
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
 #[non_exhaustive]
 pub struct Icmp6Stats {
