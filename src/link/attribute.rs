@@ -636,12 +636,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 AddressFamily::Unspec => {
                     let err = "invalid IFLA_AF_SPEC value for AF_UNSPEC";
                     Self::AfSpecUnspec(
-                        VecAfSpecUnspec::parse(
-                            &NlaBuffer::new_checked(&buf.value())
-                                .context(err)?,
-                        )
-                        .context(err)?
-                        .0,
+                        VecAfSpecUnspec::parse(&NlaBuffer::new(&buf.value()))
+                            .context(err)?
+                            .0,
                     )
                 }
                 #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
