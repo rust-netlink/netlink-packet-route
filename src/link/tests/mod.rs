@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 #[cfg(test)]
+mod afspec;
+#[cfg(test)]
 mod bond;
 #[cfg(test)]
 mod bridge;
