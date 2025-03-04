@@ -39,7 +39,9 @@ pub enum AddressFamily {
     Pppox,
     Wanpipe,
     Llc,
+    #[cfg(not(target_os = "android"))]
     Ib,
+    #[cfg(not(target_os = "android"))]
     Mpls,
     Can,
     Tipc,
@@ -93,7 +95,9 @@ impl From<u8> for AddressFamily {
             d if d == libc::AF_PPPOX as u8 => Self::Pppox,
             d if d == libc::AF_WANPIPE as u8 => Self::Wanpipe,
             d if d == libc::AF_LLC as u8 => Self::Llc,
+            #[cfg(not(target_os = "android"))]
             d if d == libc::AF_IB as u8 => Self::Ib,
+            #[cfg(not(target_os = "android"))]
             d if d == libc::AF_MPLS as u8 => Self::Mpls,
             d if d == libc::AF_CAN as u8 => Self::Can,
             d if d == libc::AF_TIPC as u8 => Self::Tipc,
@@ -149,7 +153,9 @@ impl From<AddressFamily> for u8 {
             AddressFamily::Pppox => libc::AF_PPPOX as u8,
             AddressFamily::Wanpipe => libc::AF_WANPIPE as u8,
             AddressFamily::Llc => libc::AF_LLC as u8,
+            #[cfg(not(target_os = "android"))]
             AddressFamily::Ib => libc::AF_IB as u8,
+            #[cfg(not(target_os = "android"))]
             AddressFamily::Mpls => libc::AF_MPLS as u8,
             AddressFamily::Can => libc::AF_CAN as u8,
             AddressFamily::Tipc => libc::AF_TIPC as u8,

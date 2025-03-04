@@ -11,9 +11,17 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-#[cfg(any(target_os = "linux", target_os = "fuchsia",))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "fuchsia",
+    target_os = "android"
+))]
 use super::af_spec::VecAfSpecBridge;
-#[cfg(any(target_os = "linux", target_os = "fuchsia",))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "fuchsia",
+    target_os = "android"
+))]
 use super::proto_info::VecLinkProtoInfoBridge;
 use super::{
     af_spec::VecAfSpecUnspec,
@@ -441,7 +449,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         .context(err(payload))?
                         .0,
                     ),
-                    #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
+                    #[cfg(any(
+                        target_os = "linux",
+                        target_os = "fuchsia",
+                        target_os = "android"
+                    ))]
                     AddressFamily::Bridge => Self::ProtoInfoBridge(
                         VecLinkProtoInfoBridge::parse(&NlaBuffer::new_checked(
                             payload,
@@ -650,7 +662,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         .0,
                     )
                 }
-                #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
+                #[cfg(any(
+                    target_os = "linux",
+                    target_os = "fuchsia",
+                    target_os = "android"
+                ))]
                 AddressFamily::Bridge => {
                     let err = "invalid IFLA_AF_SPEC value for AF_BRIDGE";
                     Self::AfSpecBridge(
