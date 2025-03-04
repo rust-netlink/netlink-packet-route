@@ -23,7 +23,11 @@ pub use self::inet6_iface_flag::Inet6IfaceFlags;
 pub use self::inet6_stats::{Inet6Stats, Inet6StatsBuffer};
 pub use self::unspec::AfSpecUnspec;
 
-#[cfg(any(target_os = "linux", target_os = "fuchsia"))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "fuchsia",
+    target_os = "android"
+))]
 pub(crate) use self::bridge::VecAfSpecBridge;
 pub(crate) use self::inet::VecAfSpecInet;
 pub(crate) use self::inet6::VecAfSpecInet6;
