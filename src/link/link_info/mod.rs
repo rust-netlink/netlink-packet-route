@@ -15,6 +15,7 @@ mod info_data;
 mod info_port;
 mod infos;
 mod ipoib;
+mod iptunnel;
 mod ipvlan;
 mod mac_vlan;
 mod macsec;
@@ -50,6 +51,9 @@ pub use self::info_data::InfoData;
 pub use self::info_port::{InfoPortData, InfoPortKind, InfoVrfPort};
 pub use self::infos::{InfoKind, LinkInfo};
 pub use self::ipoib::InfoIpoib;
+pub use self::iptunnel::{
+    InfoIpTunnel, TunnelEncapFlags, TunnelEncapType, TunnelFlags,
+};
 pub use self::ipvlan::{
     InfoIpVlan, InfoIpVtap, IpVlanFlags, IpVlanMode, IpVtapFlags, IpVtapMode,
 };
