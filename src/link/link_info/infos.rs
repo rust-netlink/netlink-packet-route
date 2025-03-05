@@ -29,6 +29,7 @@ const MACVTAP: &str = "macvtap";
 const GRETAP: &str = "gretap";
 const IP6GRETAP: &str = "ip6gretap";
 const IPIP: &str = "ipip";
+const IP6TNL: &str = "ip6tnl";
 const SIT: &str = "sit";
 const GRE: &str = "gre";
 const IP6GRE: &str = "ip6gre";
@@ -186,7 +187,8 @@ pub enum InfoKind {
     MacVtap,
     GreTap,
     GreTap6,
-    IpTun,
+    IpIp,
+    Ip6Tnl,
     SitTun,
     GreTun,
     GreTun6,
@@ -223,7 +225,8 @@ impl std::fmt::Display for InfoKind {
                 Self::MacVtap => MACVTAP,
                 Self::GreTap => GRETAP,
                 Self::GreTap6 => IP6GRETAP,
-                Self::IpTun => IPIP,
+                Self::IpIp => IPIP,
+                Self::Ip6Tnl => IP6TNL,
                 Self::SitTun => SIT,
                 Self::GreTun => GRE,
                 Self::GreTun6 => IP6GRE,
@@ -260,7 +263,8 @@ impl Nla for InfoKind {
             Self::MacVtap => MACVTAP.len(),
             Self::GreTap => GRETAP.len(),
             Self::GreTap6 => IP6GRETAP.len(),
-            Self::IpTun => IPIP.len(),
+            Self::IpIp => IPIP.len(),
+            Self::Ip6Tnl => IP6TNL.len(),
             Self::SitTun => SIT.len(),
             Self::GreTun => GRE.len(),
             Self::GreTun6 => IP6GRE.len(),
@@ -317,7 +321,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
             MACVTAP => Self::MacVtap,
             GRETAP => Self::GreTap,
             IP6GRETAP => Self::GreTap6,
-            IPIP => Self::IpTun,
+            IPIP => Self::IpIp,
+            IP6TNL => Self::Ip6Tnl,
             SIT => Self::SitTun,
             GRE => Self::GreTun,
             IP6GRE => Self::GreTun6,
