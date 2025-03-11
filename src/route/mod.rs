@@ -13,6 +13,7 @@ mod mpls;
 mod next_hops;
 mod preference;
 mod realm;
+mod seg6;
 mod via;
 
 #[cfg(test)]
@@ -34,5 +35,6 @@ pub use self::next_hops::{
 };
 pub use self::preference::RoutePreference;
 pub use self::realm::RouteRealm;
+pub use self::seg6::{RouteSeg6IpTunnel, Seg6Header, Seg6Mode};
 pub use self::via::{RouteVia, RouteViaBuffer};
 pub use flags::RouteFlags;
