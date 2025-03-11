@@ -7,7 +7,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-use super::RouteMplsIpTunnel;
+use super::{RouteMplsIpTunnel, RouteSeg6IpTunnel};
 
 const LWTUNNEL_ENCAP_NONE: u16 = 0;
 const LWTUNNEL_ENCAP_MPLS: u16 = 1;
@@ -110,6 +110,7 @@ impl std::fmt::Display for RouteLwEnCapType {
 #[non_exhaustive]
 pub enum RouteLwTunnelEncap {
     Mpls(RouteMplsIpTunnel),
+    Seg6(RouteSeg6IpTunnel),
     Other(DefaultNla),
 }
 
@@ -117,6 +118,7 @@ impl Nla for RouteLwTunnelEncap {
     fn value_len(&self) -> usize {
         match self {
             Self::Mpls(v) => v.value_len(),
+            Self::Seg6(v) => v.value_len(),
             Self::Other(v) => v.value_len(),
         }
     }
@@ -124,6 +126,7 @@ impl Nla for RouteLwTunnelEncap {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Mpls(v) => v.emit_value(buffer),
+            Self::Seg6(v) => v.emit_value(buffer),
             Self::Other(v) => v.emit_value(buffer),
         }
     }
@@ -131,6 +134,7 @@ impl Nla for RouteLwTunnelEncap {
     fn kind(&self) -> u16 {
         match self {
             Self::Mpls(v) => v.kind(),
+            Self::Seg6(v) => v.kind(),
             Self::Other(v) => v.kind(),
         }
     }
@@ -148,6 +152,9 @@ where
         Ok(match kind {
             RouteLwEnCapType::Mpls => {
                 Self::Mpls(RouteMplsIpTunnel::parse(buf)?)
+            }
+            RouteLwEnCapType::Seg6 => {
+                Self::Seg6(RouteSeg6IpTunnel::parse(buf)?)
             }
             _ => Self::Other(DefaultNla::parse(buf)?),
         })

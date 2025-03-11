@@ -186,6 +186,16 @@ impl Nla for RouteAttribute {
             Self::Other(ref attr) => attr.kind(),
         }
     }
+
+    fn is_nested(&self) -> bool {
+        if let Self::Encap(encap) = self {
+            encap
+                .iter()
+                .any(|e| matches!(e, RouteLwTunnelEncap::Seg6(_)))
+        } else {
+            false
+        }
+    }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized>
