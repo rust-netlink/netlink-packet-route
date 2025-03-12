@@ -1,12 +1,19 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
-    Parseable,
+    DecodeError, Parseable,
 };
-use std::net::Ipv6Addr;
+use std::net::{IpAddr, Ipv6Addr};
+
+use crate::ip::{emit_ip_addr, parse_ipv6_addr};
+
+const SEG6_IPTUN_MODE_INLINE: u32 = 0;
+const SEG6_IPTUN_MODE_ENCAP: u32 = 1;
+//const SEG6_IPTUN_MODE_L2ENCAP: u32 = 2;
+//const SEG6_IPTUN_MODE_ENCAP_RED: u32 = 3;
+//const SEG6_IPTUN_MODE_L2ENCAP_RED: u32 = 4;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
@@ -24,8 +31,8 @@ pub enum Seg6Mode {
 impl From<Seg6Mode> for u32 {
     fn from(value: Seg6Mode) -> Self {
         match value {
-            Seg6Mode::Inline => 0,
-            Seg6Mode::Encap => 1,
+            Seg6Mode::Inline => SEG6_IPTUN_MODE_INLINE,
+            Seg6Mode::Encap => SEG6_IPTUN_MODE_ENCAP,
             Seg6Mode::Other(i) => i,
         }
     }
@@ -34,8 +41,8 @@ impl From<Seg6Mode> for u32 {
 impl From<u32> for Seg6Mode {
     fn from(value: u32) -> Self {
         match value {
-            0 => Seg6Mode::Inline,
-            1 => Seg6Mode::Encap,
+            SEG6_IPTUN_MODE_INLINE => Seg6Mode::Inline,
+            SEG6_IPTUN_MODE_ENCAP => Seg6Mode::Encap,
             v => Seg6Mode::Other(v),
         }
     }
@@ -76,6 +83,27 @@ impl Nla for RouteSeg6IpTunnel {
     }
 }
 
+const SEG6_HEADER_LEN: usize = 12;
+
+buffer!(Seg6MessageBuffer(SEG6_HEADER_LEN) {
+    mode: (u32, 0..4),
+    nexthdr: (u8, 4),
+    hdrlen: (u8, 5),
+    seg_type: (u8, 6),
+    segments_left: (u8, 7),
+    first_segment: (u8, 8),
+    flags: (u8, 9),
+    tag: (u16, 10..12),
+    segments: (slice, SEG6_HEADER_LEN..),
+});
+
+const SEG6_SEGMENT_LEN: usize = 16;
+
+buffer!(Seg6SegmentBuffer(SEG6_SEGMENT_LEN) {
+    segment: (slice, 0..SEG6_SEGMENT_LEN),
+    rest: (slice, SEG6_SEGMENT_LEN..)
+});
+
 /// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to
 /// `LWTUNNEL_ENCAP_SEG6`.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -87,9 +115,36 @@ pub struct Seg6Header {
     pub segments: Vec<Ipv6Addr>,
 }
 
+impl Seg6Header {
+    fn push_segments(buf: &mut [u8], mut segments: Vec<Ipv6Addr>) {
+        if let Some(segment) = segments.pop() {
+            let mut segment_buffer = Seg6SegmentBuffer::new(buf);
+            emit_ip_addr(&IpAddr::V6(segment), segment_buffer.segment_mut());
+            Self::push_segments(segment_buffer.rest_mut(), segments);
+        }
+    }
+
+    fn get_segments(
+        buf: &[u8],
+        segments: &mut Vec<Ipv6Addr>,
+    ) -> Result<(), DecodeError> {
+        // are there any remaining segments ?
+        if buf.len() >= SEG6_SEGMENT_LEN {
+            let segment_buffer = Seg6SegmentBuffer::new(buf);
+            let segment = parse_ipv6_addr(segment_buffer.segment())?;
+            segments.push(segment);
+            Self::get_segments(segment_buffer.rest(), segments)?;
+        }
+        Ok(())
+    }
+}
+
 impl Nla for Seg6Header {
     fn value_len(&self) -> usize {
         let segments = match self.mode {
+            // in inline mode, seg6 add an additional segment (::) at the
+            // end of the segment list, thus must have one additional
+            // segment slot in the payload
             Seg6Mode::Inline => self.segments.len() + 1,
             Seg6Mode::Encap => self.segments.len(),
             Seg6Mode::Other(_) => self.segments.len(),
@@ -103,9 +158,15 @@ impl Nla for Seg6Header {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         // Some sources for understanding the format of Seg6 in Netlink
-        // https://github.com/torvalds/linux/blob/master/include/uapi/linux/seg6.h
-        // https://github.com/iproute2/iproute2/blob/main/include/uapi/linux/seg6_iptunnel.h#L27
-        // https://github.com/iproute2/iproute2/blob/e3f9681d4a777fb2595a322b421abf0036ab1aae/ip/iproute_lwtunnel.c#L952
+        //
+        // torvalds/linux:
+        //      include/uapi/linux/seg6.h
+        //      include/uapi/linux/seg6_iptunnel.h
+        //
+        // iproute2/iproute2
+        //      ip/iproute_lwtunnel.c parse_encap_seg6()
+
+        let mut seg6_header = Seg6MessageBuffer::new(buffer);
 
         let mut number_segments = self.segments.len();
         if matches!(self.mode, Seg6Mode::Inline) {
@@ -114,37 +175,23 @@ impl Nla for Seg6Header {
 
         let srhlen = 8 + 16 * number_segments;
 
-        // mode : 4 bytes
-        NativeEndian::write_u32(&mut buffer[..4], self.mode.into());
-        // nexthdr : 1 bytes
-        buffer[4] = 0;
-        // hdrlen : 1 bytes
-        buffer[5] = ((srhlen >> 3) - 1) as u8;
-        // type : 1 byte
-        buffer[6] = 4;
-        // segments_left : 1 byte
-        buffer[7] = (number_segments - 1) as u8;
-        // first_segment : 1 byte
-        buffer[8] = (number_segments - 1) as u8;
-        // flags : 1 byte
-        buffer[9] = 0;
-        // tag : 2 bytes
-        NativeEndian::write_u16(&mut buffer[10..12], 0);
+        seg6_header.set_mode(self.mode.into());
+        seg6_header.set_nexthdr(0);
+        seg6_header.set_hdrlen(((srhlen >> 3) - 1) as u8);
+        seg6_header.set_seg_type(4);
+        seg6_header.set_segments_left((number_segments - 1) as u8);
+        seg6_header.set_first_segment((number_segments - 1) as u8);
+        seg6_header.set_flags(0);
+        seg6_header.set_tag(0);
 
-        let mut offset = 12;
+        let mut segments = self.segments.clone();
 
         // Add the last segment (::) if working in inline mode
         if matches!(self.mode, Seg6Mode::Inline) {
-            let addr: Ipv6Addr = "::".parse().expect("Impossible error");
-            buffer[offset..offset + 16].copy_from_slice(&addr.octets());
-            offset += 16;
+            segments.push("::".parse().expect("Impossible error"))
         }
 
-        // Add all segments in reverse order
-        for addr in self.segments.iter().rev() {
-            buffer[offset..offset + 16].copy_from_slice(&addr.octets());
-            offset += 16;
-        }
+        Seg6Header::push_segments(seg6_header.segments_mut(), segments);
     }
 }
 
@@ -157,29 +204,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             SEG6_IPTUNNEL_SRH => {
-                let mode = NativeEndian::read_u32(payload).into();
+                let seg6_header = Seg6MessageBuffer::new(payload);
 
-                let number_segments = payload[7];
-
-                let mut offset = 12;
                 let mut segments: Vec<Ipv6Addr> = vec![];
-                for _ in 0..number_segments + 1 {
-                    let slice: [u8; 16] = payload[offset..offset + 16]
-                        .try_into()
-                        .expect("Impossible to fail");
-                    let ip_addr = Ipv6Addr::from(slice);
-                    segments.push(ip_addr);
-                    offset += 16;
-                }
+                Seg6Header::get_segments(
+                    seg6_header.segments(),
+                    &mut segments,
+                )?;
 
                 let mut segments: Vec<Ipv6Addr> =
                     segments.into_iter().rev().collect();
 
-                if matches!(mode, Seg6Mode::Inline) {
+                if matches!(seg6_header.mode().into(), Seg6Mode::Inline) {
                     segments.pop(); // remove last inline segment
                 }
 
-                RouteSeg6IpTunnel::Seg6(Seg6Header { mode, segments })
+                RouteSeg6IpTunnel::Seg6(Seg6Header {
+                    mode: seg6_header.mode().into(),
+                    segments,
+                })
             }
             _ => Self::Other(
                 DefaultNla::parse(buf)
