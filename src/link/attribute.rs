@@ -376,14 +376,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_VFINFO_LIST => {
                 let err =
                     |payload| format!("invalid IFLA_VFINFO_LIST {payload:?}");
-                Self::VfInfoList(
-                    VecLinkVfInfo::parse(
-                        &NlaBuffer::new_checked(payload)
-                            .context(err(payload))?,
+                if !payload.is_empty() {
+                    Self::VfInfoList(
+                        VecLinkVfInfo::parse(
+                            &NlaBuffer::new_checked(payload)
+                                .context(err(payload))?,
+                        )
+                        .context(err(payload))?
+                        .0,
                     )
-                    .context(err(payload))?
-                    .0,
-                )
+                } else {
+                    // Empty IFLA_VFINFO_LIST, this is likely a netdevsim device
+                    // no need to parse it, it is empty
+                    Self::VfInfoList(vec![])
+                }
             }
             IFLA_VF_PORTS => {
                 let err =

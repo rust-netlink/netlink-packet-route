@@ -183,3 +183,20 @@ fn test_parsing_link_sriov() {
 
     assert_eq!(buf, raw);
 }
+
+// tcpdump capture of nlmon on a netdevsim device without VF info configure.
+// Only IFLA_VFINFO_LIST was included.
+#[test]
+fn test_parsing_empty_link_sriov_vf_info() {
+    let raw = vec![0x04, 0x00, 0x16, 0x00];
+    let expected = LinkAttribute::VfInfoList(vec![]);
+
+    assert_eq!(
+        expected,
+        LinkAttribute::parse_with_param(
+            &NlaBuffer::new_checked(&raw).unwrap(),
+            AddressFamily::Unspec
+        )
+        .unwrap(),
+    );
+}
