@@ -5,6 +5,8 @@ mod cache_info;
 #[cfg(test)]
 mod expires;
 #[cfg(test)]
+mod ip6_tunnel;
+#[cfg(test)]
 mod loopback;
 #[cfg(test)]
 mod mpls;
