@@ -1,4 +1,18 @@
 # Changelog
+## [0.22.0] - 2025-03-17
+### Breaking changes
+ - Changed `tc::TcActionMirrorOption::Tm` from `Vec<u8>` to `Tcf`. (f3953b8)
+ - Changed `tc::TcActionNatOption::Tm` from `Vec<u8>` to `Tcf`. (f3953b8)
+ - Changed `Inet6Stats::out_pkts` to `Inet6Stats::out_requests`. (201d99b)
+
+### New features
+ - tc: Add support of tunnel key. (f5535f3)
+ - tc: Add flower support. (55e4835)
+ - ip6 state: Add support of reasm_overlaps and out_pkts. (201d99b)
+
+### Bug fixes
+ - Fix error on decoding empty IFLA_VFINFO_LIST. (8ac7c2a)
+
 ## [0.21.0] - 2024-09-12
 ### Breaking changes
  - `InfoIpVlan::Flags` changed from u16 to `IpVlanFlags`. (321e4d5)
