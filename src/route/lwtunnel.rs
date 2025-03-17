@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: MIT
 
+use std::net::Ipv6Addr;
+
 use anyhow::Context;
+use byteorder::{BigEndian, ByteOrder, NetworkEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
+    parsers::{parse_u16_be, parse_u8},
     traits::{Emitable, Parseable, ParseableParametrized},
     DecodeError,
 };
+
+use crate::ip::parse_ipv6_addr;
 
 use super::RouteMplsIpTunnel;
 
@@ -20,6 +26,20 @@ const LWTUNNEL_ENCAP_SEG6_LOCAL: u16 = 7;
 const LWTUNNEL_ENCAP_RPL: u16 = 8;
 const LWTUNNEL_ENCAP_IOAM6: u16 = 9;
 const LWTUNNEL_ENCAP_XFRM: u16 = 10;
+
+const LWTUNNEL_IP6_UNSPEC: u16 = 0;
+const LWTUNNEL_IP6_ID: u16 = 1;
+const LWTUNNEL_IP6_DST: u16 = 2;
+const LWTUNNEL_IP6_SRC: u16 = 3;
+const LWTUNNEL_IP6_HOPLIMIT: u16 = 4;
+const LWTUNNEL_IP6_TC: u16 = 5;
+const LWTUNNEL_IP6_FLAGS: u16 = 6;
+//const LWTUNNEL_IP6_PAD: u16 = 7;
+//const LWTUNNEL_IP6_OPTS: u16 = 8;
+
+const TUNNEL_CSUM: u16 = 1;
+const TUNNEL_KEY: u16 = 4;
+const TUNNEL_SEQ: u16 = 8;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 #[non_exhaustive]
@@ -106,10 +126,136 @@ impl std::fmt::Display for RouteLwEnCapType {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+pub enum RouteIp6Tunnel {
+    #[default]
+    Unspecified,
+    Id(u64),
+    Destination(Ipv6Addr),
+    Source(Ipv6Addr),
+    Hoplimit(u8),
+    Tc(u8),
+    Flags(u16),
+}
+
+impl std::fmt::Display for RouteIp6Tunnel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unspecified => write!(f, "unspecified"),
+            Self::Id(id) => write!(f, "id {id}"),
+            Self::Destination(dst) => write!(f, "dst {dst}"),
+            Self::Source(src) => write!(f, "src, {src}"),
+            Self::Hoplimit(hoplimit) => write!(f, "hoplimit {hoplimit}"),
+            Self::Tc(tc) => write!(f, "tc {tc}"),
+            Self::Flags(flags) => {
+                if flags & TUNNEL_KEY != 0 {
+                    write!(f, "key ")?;
+                }
+                if flags & TUNNEL_CSUM != 0 {
+                    write!(f, "csum ")?;
+                }
+
+                if flags & TUNNEL_SEQ != 0 {
+                    write!(f, "seq ")?;
+                }
+
+                Ok(())
+            }
+        }
+    }
+}
+
+impl Nla for RouteIp6Tunnel {
+    fn value_len(&self) -> usize {
+        match self {
+            Self::Unspecified => 0,
+            Self::Id(_) => const { size_of::<u64>() },
+            Self::Destination(_) => const { size_of::<Ipv6Addr>() },
+            Self::Source(_) => const { size_of::<Ipv6Addr>() },
+            Self::Hoplimit(_) => const { size_of::<u8>() },
+            Self::Tc(_) => const { size_of::<u8>() },
+            Self::Flags(_) => const { size_of::<u16>() },
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        match self {
+            Self::Unspecified => LWTUNNEL_IP6_UNSPEC,
+            Self::Id(_) => LWTUNNEL_IP6_ID,
+            Self::Destination(_) => LWTUNNEL_IP6_DST,
+            Self::Source(_) => LWTUNNEL_IP6_SRC,
+            Self::Hoplimit(_) => LWTUNNEL_IP6_HOPLIMIT,
+            Self::Tc(_) => LWTUNNEL_IP6_TC,
+            Self::Flags(_) => LWTUNNEL_IP6_FLAGS,
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        match self {
+            Self::Unspecified => {}
+            Self::Id(id) => NetworkEndian::write_u64(buffer, *id),
+            Self::Destination(ip) | Self::Source(ip) => {
+                buffer.copy_from_slice(&ip.octets());
+            }
+            Self::Hoplimit(value) | Self::Tc(value) => buffer[0] = *value,
+            Self::Flags(flags) => BigEndian::write_u16(buffer, *flags),
+        }
+    }
+}
+
+// should probably be in utils
+fn parse_u64_be(payload: &[u8]) -> Result<u64, DecodeError> {
+    if payload.len() != size_of::<u64>() {
+        return Err(format!("invalid u64: {payload:?}").into());
+    }
+    Ok(BigEndian::read_u64(payload))
+}
+
+impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteIp6Tunnel
+where
+    T: AsRef<[u8]> + ?Sized,
+{
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            LWTUNNEL_IP6_UNSPEC => Self::Unspecified,
+            LWTUNNEL_IP6_ID => Self::Id(
+                parse_u64_be(payload)
+                    .context("invalid LWTUNNEL_IP6_ID value")?,
+            ),
+            LWTUNNEL_IP6_DST => Self::Destination(
+                parse_ipv6_addr(payload)
+                    .context("invalid LWTUNNEL_IP6_DST value")?,
+            ),
+            LWTUNNEL_IP6_SRC => Self::Source(
+                parse_ipv6_addr(payload)
+                    .context("invalid LWTUNNEL_IP6_SRC value")?,
+            ),
+            LWTUNNEL_IP6_HOPLIMIT => Self::Hoplimit(
+                parse_u8(payload)
+                    .context("invalid LWTUNNEL_IP6_HOPLIMIT value")?,
+            ),
+            LWTUNNEL_IP6_TC => Self::Tc(
+                parse_u8(payload).context("invalid LWTUNNEL_IP6_TC value")?,
+            ),
+            LWTUNNEL_IP6_FLAGS => Self::Flags(
+                parse_u16_be(payload)
+                    .context("invalid LWTUNNEL_IP6_FLAGS value")?,
+            ),
+            _ => {
+                return Err(DecodeError::from(
+                    "invalid NLA value (unknown type) value",
+                ))
+            }
+        })
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum RouteLwTunnelEncap {
     Mpls(RouteMplsIpTunnel),
+    Ip6(RouteIp6Tunnel),
     Other(DefaultNla),
 }
 
@@ -117,6 +263,7 @@ impl Nla for RouteLwTunnelEncap {
     fn value_len(&self) -> usize {
         match self {
             Self::Mpls(v) => v.value_len(),
+            Self::Ip6(v) => v.value_len(),
             Self::Other(v) => v.value_len(),
         }
     }
@@ -124,6 +271,7 @@ impl Nla for RouteLwTunnelEncap {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Mpls(v) => v.emit_value(buffer),
+            Self::Ip6(v) => v.emit_value(buffer),
             Self::Other(v) => v.emit_value(buffer),
         }
     }
@@ -131,6 +279,7 @@ impl Nla for RouteLwTunnelEncap {
     fn kind(&self) -> u16 {
         match self {
             Self::Mpls(v) => v.kind(),
+            Self::Ip6(v) => v.kind(),
             Self::Other(v) => v.kind(),
         }
     }
@@ -149,6 +298,7 @@ where
             RouteLwEnCapType::Mpls => {
                 Self::Mpls(RouteMplsIpTunnel::parse(buf)?)
             }
+            RouteLwEnCapType::Ip6 => Self::Ip6(RouteIp6Tunnel::parse(buf)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
