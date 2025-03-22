@@ -66,3 +66,15 @@ fn test_next_hop_max_buffer_len() {
     let buffer = [0xff, 0xff, 0, 0, 0, 0, 0, 0];
     assert!(RouteNextHopBuffer::new_checked(buffer).is_err());
 }
+
+#[test]
+fn test_invalid_next_hop() {
+    let buffer = [
+        0, 0, // length
+        0, // flags,
+        0, // hops
+        0, 0, 0, 0, // interface index
+        0, 0, 0, 0, 0, 0, 0, 0, // payload
+    ];
+    assert!(RouteNextHopBuffer::new_checked(buffer).is_err());
+}
