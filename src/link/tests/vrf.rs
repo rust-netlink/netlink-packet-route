@@ -5,6 +5,7 @@ use std::net::Ipv6Addr;
 use netlink_packet_utils::nla::DefaultNla;
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::link::af_spec::In6AddrGenMode;
 use crate::link::link_flag::LinkFlags;
 use crate::link::link_info::InfoVrfPort;
 use crate::link::{
@@ -345,7 +346,7 @@ fn test_link_info_with_ifla_vrf_port_table() {
                         ..Default::default()
                     }),
                     AfSpecInet6::Token(Ipv6Addr::UNSPECIFIED),
-                    AfSpecInet6::AddrGenMode(0),
+                    AfSpecInet6::AddrGenMode(In6AddrGenMode::Eui64),
                 ]),
             ]),
         ],
