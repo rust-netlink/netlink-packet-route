@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 
 use netlink_packet_utils::{
@@ -62,31 +61,18 @@ impl Nla for NsidAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for NsidAttribute
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for NsidAttribute {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            NETNSA_NSID => {
-                Self::Id(parse_i32(payload).context("invalid NETNSA_NSID")?)
-            }
-            NETNSA_PID => {
-                Self::Pid(parse_u32(payload).context("invalid NETNSA_PID")?)
-            }
-            NETNSA_FD => {
-                Self::Fd(parse_u32(payload).context("invalid NETNSA_FD")?)
-            }
-            NETNSA_TARGET_NSID => Self::TargetNsid(
-                parse_i32(payload).context("invalid NETNSA_TARGET_NSID")?,
-            ),
-            NETNSA_CURRENT_NSID => Self::CurrentNsid(
-                parse_i32(payload).context("invalid NETNSA_CURRENT_NSID")?,
-            ),
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
-            ),
+            NETNSA_NSID => Self::Id(parse_i32(payload)?),
+            NETNSA_PID => Self::Pid(parse_u32(payload)?),
+            NETNSA_FD => Self::Fd(parse_u32(payload)?),
+            NETNSA_TARGET_NSID => Self::TargetNsid(parse_i32(payload)?),
+            NETNSA_CURRENT_NSID => Self::CurrentNsid(parse_i32(payload)?),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

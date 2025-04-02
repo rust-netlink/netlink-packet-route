@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     traits::Parseable,
@@ -18,14 +17,12 @@ pub(crate) struct VecLinkProtoInfoBridge(pub(crate) Vec<LinkProtoInfoBridge>);
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VecLinkProtoInfoBridge
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(format!(
-                "invalid bridge IFLA_PROTINFO {:?}",
-                buf.value()
-            ))?;
-            nlas.push(LinkProtoInfoBridge::parse(&nla)?);
+            nlas.push(LinkProtoInfoBridge::parse(&nla?)?);
         }
         Ok(Self(nlas))
     }
@@ -51,13 +48,10 @@ impl Nla for LinkProtoInfoBridge {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for LinkProtoInfoBridge
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        Ok(Self::Other(DefaultNla::parse(buf).context(format!(
-            "invalid bridge IFLA_PROTINFO {:?}",
-            buf.value()
-        ))?))
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for LinkProtoInfoBridge {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
+        Ok(Self::Other(DefaultNla::parse(buf)?))
     }
 }

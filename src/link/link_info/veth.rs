@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     traits::{Emitable, Parseable},
@@ -47,21 +46,18 @@ impl Nla for InfoVeth {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVeth {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoVeth {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoVeth::*;
         let payload = buf.value();
         Ok(match buf.kind() {
             VETH_INFO_PEER => {
-                let err = "failed to parse veth link info";
-                let buffer =
-                    LinkMessageBuffer::new_checked(&payload).context(err)?;
-                Peer(LinkMessage::parse(&buffer).context(err)?)
+                let buffer = LinkMessageBuffer::new_checked(&payload)?;
+                Peer(LinkMessage::parse(&buffer)?)
             }
-            kind => Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
-            ),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }

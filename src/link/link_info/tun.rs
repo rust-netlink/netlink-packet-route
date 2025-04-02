@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     DecodeError, Parseable,
@@ -32,13 +31,13 @@ impl Nla for InfoTun {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoTun {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoTun {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         #[allow(clippy::match_single_binding)]
         Ok(match buf.kind() {
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(vrf)"
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

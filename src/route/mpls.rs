@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     parsers::parse_u8,
@@ -47,27 +46,17 @@ impl Nla for RouteMplsIpTunnel {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for RouteMplsIpTunnel
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for RouteMplsIpTunnel {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            MPLS_IPTUNNEL_DST => Self::Destination(
-                VecMplsLabel::parse(payload)
-                    .context(format!(
-                        "invalid MPLS_IPTUNNEL_DST value {:?}",
-                        payload
-                    ))?
-                    .0,
-            ),
-            MPLS_IPTUNNEL_TTL => Self::Ttl(
-                parse_u8(payload).context("invalid MPLS_IPTUNNEL_TTL value")?,
-            ),
-            _ => Self::Other(
-                DefaultNla::parse(buf)
-                    .context("invalid NLA value (unknown type) value")?,
-            ),
+            MPLS_IPTUNNEL_DST => {
+                Self::Destination(VecMplsLabel::parse(payload)?.0)
+            }
+            MPLS_IPTUNNEL_TTL => Self::Ttl(parse_u8(payload)?),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

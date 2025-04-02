@@ -3,7 +3,6 @@
 /// Matchall filter
 ///
 /// Matches all packets and performs an action on them.
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
@@ -71,33 +70,22 @@ impl Nla for TcFilterMatchAllOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcFilterMatchAllOption
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_MATCHALL_CLASSID => Self::ClassId(
-                parse_u32(payload)
-                    .context("failed to parse TCA_MATCHALL_UNSPEC")?
-                    .into(),
-            ),
+            TCA_MATCHALL_CLASSID => Self::ClassId(parse_u32(payload)?.into()),
             TCA_MATCHALL_ACT => {
                 let mut acts = vec![];
                 for act in NlasIterator::new(payload) {
-                    let act = act.context("invalid TCA_MATCHALL_ACT")?;
-                    acts.push(
-                        TcAction::parse(&act)
-                            .context("failed to parse TCA_MATCHALL_ACT")?,
-                    );
+                    acts.push(TcAction::parse(&act?)?);
                 }
                 Self::Action(acts)
             }
             TCA_MATCHALL_PCNT => Self::Pnct(payload.to_vec()),
-            TCA_MATCHALL_FLAGS => Self::Flags(
-                parse_u32(payload)
-                    .context("failed to parse TCA_MATCHALL_FLAGS")?,
-            ),
-            _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse u32 nla")?,
-            ),
+            TCA_MATCHALL_FLAGS => Self::Flags(parse_u32(payload)?),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

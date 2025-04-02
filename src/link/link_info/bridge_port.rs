@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 use crate::link::{BridgeId, BridgeIdBuffer};
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -271,252 +270,128 @@ impl Nla for InfoBridgePort {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for InfoBridgePort
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoBridgePort {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
 
         Ok(match buf.kind() {
-            IFLA_BRPORT_STATE => InfoBridgePort::State(
-                parse_u8(payload)
-                    .with_context(|| {
-                        format!("invalid IFLA_BRPORT_STATE {payload:?}")
-                    })?
-                    .into(),
-            ),
+            IFLA_BRPORT_STATE => {
+                InfoBridgePort::State(parse_u8(payload)?.into())
+            }
             IFLA_BRPORT_PRIORITY => {
-                InfoBridgePort::Priority(parse_u16(payload).with_context(
-                    || format!("invalid IFLA_BRPORT_PRIORITY {payload:?}"),
-                )?)
+                InfoBridgePort::Priority(parse_u16(payload)?)
             }
-            IFLA_BRPORT_COST => {
-                InfoBridgePort::Cost(parse_u32(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_COST {payload:?}")
-                })?)
+            IFLA_BRPORT_COST => InfoBridgePort::Cost(parse_u32(payload)?),
+            IFLA_BRPORT_MODE => {
+                InfoBridgePort::HairpinMode(parse_u8(payload)? > 0)
             }
-            IFLA_BRPORT_MODE => InfoBridgePort::HairpinMode(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MODE {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_GUARD => InfoBridgePort::Guard(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_GUARD {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_PROTECT => InfoBridgePort::Protect(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_PROTECT {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_FAST_LEAVE => InfoBridgePort::FastLeave(
-                parse_u8(payload).with_context(|| {
-                    format!(
-                        "invalid IFLA_BRPORT_FAST_LEAVE {payload:?}"
-                    )
-                })? > 0,
-            ),
-            IFLA_BRPORT_LEARNING => InfoBridgePort::Learning(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_LEARNING {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_UNICAST_FLOOD => InfoBridgePort::UnicastFlood(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_UNICAST_FLOOD {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_PROXYARP => InfoBridgePort::ProxyARP(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_PROXYARP {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_PROXYARP_WIFI => InfoBridgePort::ProxyARPWifi(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_PROXYARP_WIFI {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_ROOT_ID => Self::RootId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(|| {
-                    format!("invalid IFLA_BRPORT_ROOT_ID {payload:?}")
-                })?,
-            ),
-            IFLA_BRPORT_BRIDGE_ID => Self::BridgeId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(|| {
-                    format!("invalid IFLA_BRPORT_BRIDGE_ID {payload:?}")
-                })?,
-            ),
-            IFLA_BRPORT_DESIGNATED_PORT => InfoBridgePort::DesignatedPort(
-                parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_DESIGNATED_PORT {payload:?}")
-                })?,
-            ),
-            IFLA_BRPORT_DESIGNATED_COST => InfoBridgePort::DesignatedCost(
-                parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_DESIGNATED_COST {payload:?}")
-                })?,
-            ),
-            IFLA_BRPORT_ID => {
-                InfoBridgePort::PortId(parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_ID {payload:?}")
-                })?)
+            IFLA_BRPORT_GUARD => InfoBridgePort::Guard(parse_u8(payload)? > 0),
+            IFLA_BRPORT_PROTECT => {
+                InfoBridgePort::Protect(parse_u8(payload)? > 0)
             }
-            IFLA_BRPORT_NO => {
-                InfoBridgePort::PortNumber(parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_NO {payload:?}")
-                })?)
+            IFLA_BRPORT_FAST_LEAVE => {
+                InfoBridgePort::FastLeave(parse_u8(payload)? > 0)
             }
+            IFLA_BRPORT_LEARNING => {
+                InfoBridgePort::Learning(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_UNICAST_FLOOD => {
+                InfoBridgePort::UnicastFlood(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_PROXYARP => {
+                InfoBridgePort::ProxyARP(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_PROXYARP_WIFI => {
+                InfoBridgePort::ProxyARPWifi(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_ROOT_ID => {
+                Self::RootId(BridgeId::parse(&BridgeIdBuffer::new(payload))?)
+            }
+            IFLA_BRPORT_BRIDGE_ID => {
+                Self::BridgeId(BridgeId::parse(&BridgeIdBuffer::new(payload))?)
+            }
+            IFLA_BRPORT_DESIGNATED_PORT => {
+                InfoBridgePort::DesignatedPort(parse_u16(payload)?)
+            }
+            IFLA_BRPORT_DESIGNATED_COST => {
+                InfoBridgePort::DesignatedCost(parse_u16(payload)?)
+            }
+            IFLA_BRPORT_ID => InfoBridgePort::PortId(parse_u16(payload)?),
+            IFLA_BRPORT_NO => InfoBridgePort::PortNumber(parse_u16(payload)?),
             IFLA_BRPORT_TOPOLOGY_CHANGE_ACK => {
-                InfoBridgePort::TopologyChangeAck(
-                    parse_u8(payload).with_context(|| {
-                        format!(
-                            "invalid IFLA_BRPORT_TOPOLOGY_CHANGE_ACK {payload:?}"
-                        )
-                    })? > 0,
-                )
+                InfoBridgePort::TopologyChangeAck(parse_u8(payload)? > 0)
             }
-            IFLA_BRPORT_CONFIG_PENDING => InfoBridgePort::ConfigPending(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_CONFIG_PENDING {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_MESSAGE_AGE_TIMER => InfoBridgePort::MessageAgeTimer(
-                parse_u64(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MESSAGE_AGE_TIMER {payload:?}")
-                })?,
-            ),
+            IFLA_BRPORT_CONFIG_PENDING => {
+                InfoBridgePort::ConfigPending(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_MESSAGE_AGE_TIMER => {
+                InfoBridgePort::MessageAgeTimer(parse_u64(payload)?)
+            }
             IFLA_BRPORT_FORWARD_DELAY_TIMER => {
-                InfoBridgePort::ForwardDelayTimer(
-                    parse_u64(payload).with_context(|| {
-                        format!(
-                            "invalid IFLA_BRPORT_FORWARD_DELAY_TIMER {payload:?}"
-                        )
-                    })?,
-                )
+                InfoBridgePort::ForwardDelayTimer(parse_u64(payload)?)
             }
             IFLA_BRPORT_HOLD_TIMER => {
-                InfoBridgePort::HoldTimer(parse_u64(payload).with_context(
-                    || format!("invalid IFLA_BRPORT_HOLD_TIMER {payload:?}"),
-                )?)
+                InfoBridgePort::HoldTimer(parse_u64(payload)?)
             }
             IFLA_BRPORT_FLUSH => InfoBridgePort::Flush,
-            IFLA_BRPORT_MULTICAST_ROUTER => InfoBridgePort::MulticastRouter(
-                parse_u8(payload)
-                    .with_context(|| {
-                        format!(
-                            "invalid IFLA_BRPORT_MULTICAST_ROUTER {payload:?}"
-                        )
-                    })?
-                    .into(),
-            ),
-            IFLA_BRPORT_MCAST_FLOOD => InfoBridgePort::MulticastFlood(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MCAST_FLOOD {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_MCAST_TO_UCAST => InfoBridgePort::MulticastToUnicast(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MCAST_TO_UCAST {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_VLAN_TUNNEL => InfoBridgePort::VlanTunnel(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_VLAN_TUNNEL {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_BCAST_FLOOD => InfoBridgePort::BroadcastFlood(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_BCAST_FLOOD {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_GROUP_FWD_MASK => InfoBridgePort::GroupFwdMask(
-                parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_GROUP_FWD_MASK {payload:?}")
-                })?,
-            ),
-            IFLA_BRPORT_NEIGH_SUPPRESS => InfoBridgePort::NeighSupress(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_NEIGH_SUPPRESS {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_ISOLATED => InfoBridgePort::Isolated(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_ISOLATED {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_BACKUP_PORT => {
-                InfoBridgePort::BackupPort(parse_u32(payload).with_context(
-                    || format!("invalid IFLA_BRPORT_BACKUP_PORT {payload:?}"),
-                )?)
+            IFLA_BRPORT_MULTICAST_ROUTER => {
+                InfoBridgePort::MulticastRouter(parse_u8(payload)?.into())
             }
-            IFLA_BRPORT_MRP_RING_OPEN => InfoBridgePort::MrpRingOpen(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MRP_RING_OPEN {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_MRP_IN_OPEN => InfoBridgePort::MrpInOpen(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MRP_IN_OPEN {payload:?}")
-                })? > 0,
-            ),
+            IFLA_BRPORT_MCAST_FLOOD => {
+                InfoBridgePort::MulticastFlood(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_MCAST_TO_UCAST => {
+                InfoBridgePort::MulticastToUnicast(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_VLAN_TUNNEL => {
+                InfoBridgePort::VlanTunnel(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_BCAST_FLOOD => {
+                InfoBridgePort::BroadcastFlood(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_GROUP_FWD_MASK => {
+                InfoBridgePort::GroupFwdMask(parse_u16(payload)?)
+            }
+            IFLA_BRPORT_NEIGH_SUPPRESS => {
+                InfoBridgePort::NeighSupress(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_ISOLATED => {
+                InfoBridgePort::Isolated(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_BACKUP_PORT => {
+                InfoBridgePort::BackupPort(parse_u32(payload)?)
+            }
+            IFLA_BRPORT_MRP_RING_OPEN => {
+                InfoBridgePort::MrpRingOpen(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_MRP_IN_OPEN => {
+                InfoBridgePort::MrpInOpen(parse_u8(payload)? > 0)
+            }
             IFLA_BRPORT_MCAST_EHT_HOSTS_LIMIT => {
-                InfoBridgePort::MulticastEhtHostsLimit(
-                    parse_u32(payload).with_context(|| {
-                        format!(
-                            "invalid IFLA_BRPORT_MCAST_EHT_HOSTS_LIMIT {payload:?}"
-                        )
-                    })?,
-                )
+                InfoBridgePort::MulticastEhtHostsLimit(parse_u32(payload)?)
             }
             IFLA_BRPORT_MCAST_EHT_HOSTS_CNT => {
-                InfoBridgePort::MulticastEhtHostsCnt(
-                    parse_u32(payload).with_context(|| {
-                        format!(
-                            "invalid IFLA_BRPORT_MCAST_EHT_HOSTS_CNT {payload:?}"
-                        )
-                    })?
-                )
+                InfoBridgePort::MulticastEhtHostsCnt(parse_u32(payload)?)
             }
-            IFLA_BRPORT_LOCKED => InfoBridgePort::Locked(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_LOCKED {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_MAB => InfoBridgePort::Mab(
-                parse_u8(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MAB {payload:?}")
-                })? > 0,
-            ),
-            IFLA_BRPORT_MCAST_N_GROUPS => InfoBridgePort::MulticastNGroups(
-                parse_u32(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MCAST_N_GROUPS {payload:?}")
-                })?,
-            ),
-            IFLA_BRPORT_MCAST_MAX_GROUPS => InfoBridgePort::MulticastMaxGroups(
-                parse_u32(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_MCAST_MAX_GROUPS {payload:?}")
-                })?,
-            ),
-            IFLA_BRPORT_NEIGH_VLAN_SUPPRESS => InfoBridgePort::NeighVlanSupress(
-                parse_u8(payload).with_context(|| {
-                    format!(
-                        "invalid IFLA_BRPORT_NEIGH_VLAN_SUPPRESS {payload:?}"
-                    )
-                })? > 0,
-            ),
-            IFLA_BRPORT_BACKUP_NHID => InfoBridgePort::BackupNextHopId(
-                parse_u32(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_BACKUP_NHID {payload:?}")
-                })?,
-            ),
-            kind => InfoBridgePort::Other(
-                DefaultNla::parse(buf).with_context(|| {
-                    format!(
-                        "failed to parse bridge port NLA of type '{kind}' into DefaultNla"
-                    )
-                })?,
-            ),
+            IFLA_BRPORT_LOCKED => {
+                InfoBridgePort::Locked(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_MAB => InfoBridgePort::Mab(parse_u8(payload)? > 0),
+            IFLA_BRPORT_MCAST_N_GROUPS => {
+                InfoBridgePort::MulticastNGroups(parse_u32(payload)?)
+            }
+            IFLA_BRPORT_MCAST_MAX_GROUPS => {
+                InfoBridgePort::MulticastMaxGroups(parse_u32(payload)?)
+            }
+            IFLA_BRPORT_NEIGH_VLAN_SUPPRESS => {
+                InfoBridgePort::NeighVlanSupress(parse_u8(payload)? > 0)
+            }
+            IFLA_BRPORT_BACKUP_NHID => {
+                InfoBridgePort::BackupNextHopId(parse_u32(payload)?)
+            }
+            _ => InfoBridgePort::Other(DefaultNla::parse(buf)?),
         })
     }
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, ParseableParametrized},
     DecodeError,
 };
@@ -74,7 +73,7 @@ impl<T: AsRef<[u8]>> RouteNextHopBuffer<T> {
 impl<'a, T: AsRef<[u8]> + ?Sized> RouteNextHopBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(
             &self.payload()[..(self.length() as usize - PAYLOAD_OFFSET)],
         )
@@ -100,6 +99,8 @@ impl<T: AsRef<[u8]>>
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for RouteNextHop
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
         buf: &RouteNextHopBuffer<&T>,
         (address_family, route_type, encap_type): (
@@ -109,11 +110,9 @@ impl<T: AsRef<[u8]>>
         ),
     ) -> Result<RouteNextHop, DecodeError> {
         let attributes = Vec::<RouteAttribute>::parse_with_param(
-            &RouteNextHopBuffer::new_checked(buf.buffer)
-                .context("cannot parse route attributes in next-hop")?,
+            &RouteNextHopBuffer::new_checked(buf.buffer)?,
             (address_family, route_type, encap_type),
-        )
-        .context("cannot parse route attributes in next-hop")?;
+        )?;
         Ok(RouteNextHop {
             flags: RouteNextHopFlags::from_bits_retain(buf.flags()),
             hops: buf.hops(),
@@ -123,20 +122,22 @@ impl<T: AsRef<[u8]>>
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a>
+impl<T: AsRef<[u8]>>
     ParseableParametrized<
-        RouteNextHopBuffer<&'a T>,
+        RouteNextHopBuffer<&T>,
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for Vec<RouteAttribute>
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
-        buf: &RouteNextHopBuffer<&'a T>,
+        buf: &RouteNextHopBuffer<&T>,
         (address_family, route_type, encap_type): (
             AddressFamily,
             RouteType,
             RouteLwEnCapType,
         ),
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         let mut nlas = vec![];
         for nla_buf in buf.attributes() {
             nlas.push(RouteAttribute::parse_with_param(

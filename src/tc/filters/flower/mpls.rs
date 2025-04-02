@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
@@ -8,13 +7,6 @@ use netlink_packet_utils::{
     traits::Emitable,
     DecodeError, Parseable,
 };
-
-macro_rules! nla_err {
-    // Match rule that takes an argument expression
-    ($message:expr) => {
-        format!("failed to parse {} value", stringify!($message))
-    };
-}
 
 /*
  * NLA layout:
@@ -60,27 +52,21 @@ impl Nla for TcFilterFlowerMplsOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>>
     for TcFilterFlowerMplsOption
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         Ok(match buf.kind() {
             TCA_FLOWER_KEY_MPLS_OPT_LSE => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(buf.value()) {
-                    let nla =
-                        nla.context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE))?;
-                    nlas.push(
-                        TcFilterFlowerMplsLseOption::parse(&nla)
-                            .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE))?,
-                    )
+                    nlas.push(TcFilterFlowerMplsLseOption::parse(&nla?)?)
                 }
                 Self::Lse(nlas)
             }
-            _ => Self::Other(
-                DefaultNla::parse(buf)
-                    .context("failed to parse mpls option nla")?,
-            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -141,38 +127,27 @@ impl Nla for TcFilterFlowerMplsLseOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>>
     for TcFilterFlowerMplsLseOption
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_FLOWER_KEY_MPLS_OPT_LSE_DEPTH => Self::LseDepth(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE_DEPTH))?,
-            ),
-            TCA_FLOWER_KEY_MPLS_OPT_LSE_TTL => Self::LseTtl(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE_TTL))?,
-            ),
-            TCA_FLOWER_KEY_MPLS_OPT_LSE_BOS => Self::LseBos(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE_BOS))?,
-            ),
+            TCA_FLOWER_KEY_MPLS_OPT_LSE_DEPTH => {
+                Self::LseDepth(parse_u8(payload)?)
+            }
+            TCA_FLOWER_KEY_MPLS_OPT_LSE_TTL => Self::LseTtl(parse_u8(payload)?),
+            TCA_FLOWER_KEY_MPLS_OPT_LSE_BOS => Self::LseBos(parse_u8(payload)?),
 
-            TCA_FLOWER_KEY_MPLS_OPT_LSE_TC => Self::LseTc(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE_TC))?,
-            ),
+            TCA_FLOWER_KEY_MPLS_OPT_LSE_TC => Self::LseTc(parse_u8(payload)?),
 
-            TCA_FLOWER_KEY_MPLS_OPT_LSE_LABEL => Self::LseLabel(
-                parse_u32(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE_LABEL))?,
-            ),
+            TCA_FLOWER_KEY_MPLS_OPT_LSE_LABEL => {
+                Self::LseLabel(parse_u32(payload)?)
+            }
 
-            _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse mpls nla")?,
-            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

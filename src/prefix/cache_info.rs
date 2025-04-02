@@ -17,7 +17,9 @@ buffer!(CacheInfoBuffer(CACHE_INFO_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<CacheInfoBuffer<T>> for CacheInfo {
-    fn parse(buf: &CacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &CacheInfoBuffer<T>) -> Result<Self, Self::Error> {
         Ok(CacheInfo {
             preferred_time: buf.preferred_time(),
             valid_time: buf.valid_time(),

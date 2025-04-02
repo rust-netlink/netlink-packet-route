@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     DecodeError, Emitable, Parseable,
@@ -12,13 +11,12 @@ pub(crate) struct VecLinkVfPort(pub(crate) Vec<LinkVfPort>);
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VecLinkVfPort
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, Self::Error> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.context(format!(
-                "invalid IFLA_VF_PORTS value: {:?}",
-                buf.value()
-            ))?;
+            let nla = &nla?;
             if nla.kind() == IFLA_VF_PORT {
                 nlas.push(LinkVfPort::parse(&NlaBuffer::new_checked(
                     nla.value(),
@@ -54,15 +52,13 @@ impl Nla for LinkVfPort {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkVfPort {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for LinkVfPort {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.context(format!(
-                "invalid IFLA_VF_PORT value {:?}",
-                buf.value()
-            ))?;
-            nlas.push(VfPort::parse(nla)?);
+            nlas.push(VfPort::parse(&nla?)?);
         }
         Ok(Self(nlas))
     }
@@ -112,14 +108,13 @@ impl Nla for VfPort {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfPort {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let payload = buf.value();
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for VfPort {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         #[allow(clippy::match_single_binding)]
         Ok(match buf.kind() {
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "failed to parse {kind} as DefaultNla: {payload:?}"
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

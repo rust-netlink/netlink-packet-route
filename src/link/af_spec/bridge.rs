@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
@@ -65,39 +64,26 @@ impl Nla for AfSpecBridge {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for AfSpecBridge {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BRIDGE_FLAGS => Self::Flags(
-                parse_u16(payload)
-                    .context("Invalid IFLA_BRIDGE_FLAGS value")?
-                    .into(),
-            ),
-            IFLA_BRIDGE_MODE => Self::Mode(
-                parse_u16(payload)
-                    .context("Invalid IFLA_BRIDGE_MODE value")?
-                    .into(),
-            ),
-            IFLA_BRIDGE_VLAN_INFO => Self::VlanInfo(
-                BridgeVlanInfo::try_from(payload)
-                    .context("Invalid IFLA_BRIDGE_VLAN_INFO value")?,
-            ),
+            IFLA_BRIDGE_FLAGS => Self::Flags(parse_u16(payload)?.into()),
+            IFLA_BRIDGE_MODE => Self::Mode(parse_u16(payload)?.into()),
+            IFLA_BRIDGE_VLAN_INFO => {
+                Self::VlanInfo(BridgeVlanInfo::try_from(payload)?)
+            }
             IFLA_BRIDGE_VLAN_TUNNEL_INFO => {
                 let mut nlas = Vec::new();
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(format!(
-                        "Invalid IFLA_BRIDGE_VLAN_TUNNEL_INFO for {payload:?}"
-                    ))?;
-                    let parsed = BridgeVlanTunnelInfo::parse(nla)?;
+                    let parsed = BridgeVlanTunnelInfo::parse(&nla?)?;
                     nlas.push(parsed);
                 }
                 Self::VlanTunnelInfo(nlas)
             }
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("Unknown NLA type {kind}"))?,
-            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -106,15 +92,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
 pub(crate) struct VecAfSpecBridge(pub(crate) Vec<AfSpecBridge>);
 
 #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecAfSpecBridge
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for VecAfSpecBridge {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let mut nlas = vec![];
-        let err = "Invalid AF_INET NLA for IFLA_AF_SPEC(AF_BRIDGE)";
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(AfSpecBridge::parse(&nla).context(err)?);
+            nlas.push(AfSpecBridge::parse(&nla?)?);
         }
         Ok(Self(nlas))
     }
@@ -178,14 +162,10 @@ impl TryFrom<&[u8]> for BridgeVlanInfo {
     fn try_from(raw: &[u8]) -> Result<Self, DecodeError> {
         if raw.len() == 4 {
             Ok(Self {
-                flags: BridgeVlanInfoFlags::from_bits_retain(
-                    parse_u16(&raw[0..2]).context(format!(
-                        "Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}"
-                    ))?,
-                ),
-                vid: parse_u16(&raw[2..4]).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}"
-                ))?,
+                flags: BridgeVlanInfoFlags::from_bits_retain(parse_u16(
+                    &raw[0..2],
+                )?),
+                vid: parse_u16(&raw[2..4])?,
             })
         } else {
             Err(DecodeError::from(format!(
@@ -313,32 +293,20 @@ impl Nla for BridgeVlanTunnelInfo {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>>
     for BridgeVlanTunnelInfo
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BRIDGE_VLAN_TUNNEL_ID => {
-                Self::Id(parse_u32(payload).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_TUNNEL_ID {payload:?}"
-                ))?)
-            }
-            IFLA_BRIDGE_VLAN_TUNNEL_VID => {
-                Self::Vid(parse_u16(payload).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_TUNNEL_VID {payload:?}"
-                ))?)
-            }
-            IFLA_BRIDGE_VLAN_TUNNEL_FLAGS => {
-                Self::Flags(BridgeVlanInfoFlags::from_bits_retain(
-                    parse_u16(payload).context(format!(
-                        "Invalid IFLA_BRIDGE_VLAN_TUNNEL_VID {payload:?}"
-                    ))?,
-                ))
-            }
-            _ => {
-                Self::Other(DefaultNla::parse(buf).context("Unknown NLA type")?)
-            }
+            IFLA_BRIDGE_VLAN_TUNNEL_ID => Self::Id(parse_u32(payload)?),
+            IFLA_BRIDGE_VLAN_TUNNEL_VID => Self::Vid(parse_u16(payload)?),
+            IFLA_BRIDGE_VLAN_TUNNEL_FLAGS => Self::Flags(
+                BridgeVlanInfoFlags::from_bits_retain(parse_u16(payload)?),
+            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

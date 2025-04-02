@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{self, DefaultNla, NlaBuffer, NlasIterator},
     traits::{Emitable, Parseable},
@@ -24,15 +23,13 @@ pub enum AfSpecInet {
 
 pub(crate) struct VecAfSpecInet(pub(crate) Vec<AfSpecInet>);
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecAfSpecInet
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for VecAfSpecInet {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let mut nlas = vec![];
-        let err = "Invalid AF_INET NLA for IFLA_AF_SPEC(AF_UNSPEC)";
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(AfSpecInet::parse(&nla)?);
+            nlas.push(AfSpecInet::parse(&nla?)?);
         }
         Ok(Self(nlas))
     }
@@ -64,8 +61,10 @@ impl nla::Nla for AfSpecInet {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for AfSpecInet {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::AfSpecInet::*;
 
         let payload = buf.value();
@@ -80,9 +79,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
                     .as_slice(),
                 ))?)
             }
-            kind => Other(DefaultNla::parse(buf).context(format!(
-                "Unknown NLA type {kind} for IFLA_AF_SPEC(inet)"
-            ))?),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -162,7 +159,9 @@ pub struct InetDevConf {
 }
 
 impl<T: AsRef<[u8]>> Parseable<InetDevConfBuffer<T>> for InetDevConf {
-    fn parse(buf: &InetDevConfBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &InetDevConfBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             forwarding: buf.forwarding(),
             mc_forwarding: buf.mc_forwarding(),

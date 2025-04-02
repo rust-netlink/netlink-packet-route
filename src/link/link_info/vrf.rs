@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -44,17 +43,15 @@ impl Nla for InfoVrf {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVrf {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoVrf {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoVrf::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VRF_TABLE => TableId(
-                parse_u32(payload).context("invalid IFLA_VRF_TABLE value")?,
-            ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(vrf)"
-            ))?),
+            IFLA_VRF_TABLE => TableId(parse_u32(payload)?),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }

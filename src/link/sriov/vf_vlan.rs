@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     DecodeError, Emitable, Parseable,
@@ -40,18 +39,16 @@ impl Nla for VfVlan {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfVlan {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for VfVlan {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VF_VLAN_INFO => Self::Info(
-                VfVlanInfo::parse(&VfVlanInfoBuffer::new(payload)).context(
-                    format!("invalid IFLA_VF_VLAN_INFO {payload:?}"),
-                )?,
-            ),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "failed to parse {kind} as DefaultNla: {payload:?}"
-            ))?),
+            IFLA_VF_VLAN_INFO => {
+                Self::Info(VfVlanInfo::parse(&VfVlanInfoBuffer::new(payload))?)
+            }
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -91,7 +88,9 @@ buffer!(VfVlanInfoBuffer(VF_VLAN_INFO_LEN) {
 });
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<VfVlanInfoBuffer<&T>> for VfVlanInfo {
-    fn parse(buf: &VfVlanInfoBuffer<&T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &VfVlanInfoBuffer<&T>) -> Result<Self, Self::Error> {
         Ok(Self {
             vf_id: buf.vf_id(),
             vlan_id: buf.vlan_id(),

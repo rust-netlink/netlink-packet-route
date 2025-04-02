@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-use anyhow::Context;
+
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -157,39 +157,22 @@ impl Nla for InfoBondPort {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBondPort {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoBondPort {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoBondPort::*;
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BOND_PORT_LINK_FAILURE_COUNT => {
-                LinkFailureCount(parse_u32(payload).context(
-                    "invalid IFLA_BOND_PORT_LINK_FAILURE_COUNT value",
-                )?)
+                LinkFailureCount(parse_u32(payload)?)
             }
-            IFLA_BOND_PORT_MII_STATUS => MiiStatus(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_PORT_MII_STATUS value")?
-                    .into(),
-            ),
+            IFLA_BOND_PORT_MII_STATUS => MiiStatus(parse_u8(payload)?.into()),
             IFLA_BOND_PORT_PERM_HWADDR => PermHwaddr(payload.to_vec()),
-            IFLA_BOND_PORT_PRIO => Prio(
-                parse_i32(payload)
-                    .context("invalid IFLA_BOND_PORT_PRIO value")?,
-            ),
-            IFLA_BOND_PORT_QUEUE_ID => QueueId(
-                parse_u16(payload)
-                    .context("invalid IFLA_BOND_PORT_QUEUE_ID value")?,
-            ),
-            IFLA_BOND_PORT_STATE => BondPortState(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_PORT_STATE value")?
-                    .into(),
-            ),
-            kind => Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
-            ),
+            IFLA_BOND_PORT_PRIO => Prio(parse_i32(payload)?),
+            IFLA_BOND_PORT_QUEUE_ID => QueueId(parse_u16(payload)?),
+            IFLA_BOND_PORT_STATE => BondPortState(parse_u8(payload)?.into()),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }

@@ -32,7 +32,9 @@ buffer!(RouteCacheInfoBuffer(CACHE_INFO_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<RouteCacheInfoBuffer<T>> for RouteCacheInfo {
-    fn parse(buf: &RouteCacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &RouteCacheInfoBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             clntref: buf.clntref(),
             last_use: buf.last_use(),

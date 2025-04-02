@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     traits::{Emitable, Parseable},
     DecodeError,
@@ -28,22 +27,20 @@ impl Emitable for RuleMessage {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>>
-    for RuleMessage
-{
-    fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let header = RuleHeader::parse(buf)
-            .context("failed to parse link message header")?;
-        let attributes = Vec::<RuleAttribute>::parse(buf)
-            .context("failed to parse link message NLAs")?;
+impl<T: AsRef<[u8]>> Parseable<RuleMessageBuffer<&T>> for RuleMessage {
+    type Error = DecodeError;
+
+    fn parse(buf: &RuleMessageBuffer<&T>) -> Result<Self, Self::Error> {
+        let header = RuleHeader::parse(buf)?;
+        let attributes = Vec::<RuleAttribute>::parse(buf)?;
         Ok(RuleMessage { header, attributes })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<RuleMessageBuffer<&'a T>>
-    for Vec<RuleAttribute>
-{
-    fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]>> Parseable<RuleMessageBuffer<&T>> for Vec<RuleAttribute> {
+    type Error = DecodeError;
+
+    fn parse(buf: &RuleMessageBuffer<&T>) -> Result<Self, Self::Error> {
         let mut attributes = vec![];
         for nla_buf in buf.attributes() {
             attributes.push(RuleAttribute::parse(&nla_buf?)?);

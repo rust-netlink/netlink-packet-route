@@ -25,7 +25,9 @@ buffer!(VfInfoRssQueryEnBuffer(VF_INFO_RSS_QUERY_EN_LEN) {
 impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRssQueryEnBuffer<&T>>
     for VfInfoRssQueryEn
 {
-    fn parse(buf: &VfInfoRssQueryEnBuffer<&T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &VfInfoRssQueryEnBuffer<&T>) -> Result<Self, Self::Error> {
         Ok(Self::new(
             buf.vf_id(),
             buf.setting() > 0 && buf.setting() != u32::MAX,

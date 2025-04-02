@@ -89,7 +89,9 @@ pub struct Stats64 {
 }
 
 impl<T: AsRef<[u8]>> Parseable<Stats64Buffer<T>> for Stats64 {
-    fn parse(buf: &Stats64Buffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &Stats64Buffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             rx_packets: buf.rx_packets(),
             tx_packets: buf.tx_packets(),

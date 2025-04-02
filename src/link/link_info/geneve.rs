@@ -2,7 +2,6 @@
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use anyhow::Context;
 use byteorder::{BigEndian, ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -136,15 +135,14 @@ impl Nla for InfoGeneve {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoGeneve {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoGeneve::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_GENEVE_ID => {
-                Id(parse_u32(payload)
-                    .context("invalid IFLA_GENEVE_ID value")?)
-            }
+            IFLA_GENEVE_ID => Id(parse_u32(payload)?),
             IFLA_GENEVE_REMOTE => {
                 if payload.len() == 4 {
                     let mut data = [0u8; 4];
@@ -171,51 +169,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
                     )));
                 }
             }
-            IFLA_GENEVE_TTL => {
-                Ttl(parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_TTL value")?)
-            }
-            IFLA_GENEVE_TOS => {
-                Tos(parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_TOS value")?)
-            }
-            IFLA_GENEVE_PORT => Port(
-                parse_u16_be(payload)
-                    .context("invalid IFLA_GENEVE_PORT value")?,
-            ),
+            IFLA_GENEVE_TTL => Ttl(parse_u8(payload)?),
+            IFLA_GENEVE_TOS => Tos(parse_u8(payload)?),
+            IFLA_GENEVE_PORT => Port(parse_u16_be(payload)?),
             IFLA_GENEVE_COLLECT_METADATA => CollectMetadata,
-            IFLA_GENEVE_UDP_CSUM => UdpCsum(
-                parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_UDP_CSUM value")?
-                    > 0,
-            ),
-            IFLA_GENEVE_UDP_ZERO_CSUM6_TX => UdpZeroCsum6Tx(
-                parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_UDP_ZERO_CSUM6_TX value")?
-                    > 0,
-            ),
-            IFLA_GENEVE_UDP_ZERO_CSUM6_RX => UdpZeroCsum6Rx(
-                parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_UDP_ZERO_CSUM6_RX value")?
-                    > 0,
-            ),
-            IFLA_GENEVE_LABEL => Label(
-                parse_u32_be(payload)
-                    .context("invalid IFLA_GENEVE_LABEL value")?,
-            ),
-            IFLA_GENEVE_TTL_INHERIT => TtlInherit(
-                parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_TTL_INHERIT value")?
-                    > 0,
-            ),
-            IFLA_GENEVE_DF => Df(parse_u8(payload)
-                .context("invalid IFLA_GENEVE_DF value")?
-                .into()),
+            IFLA_GENEVE_UDP_CSUM => UdpCsum(parse_u8(payload)? > 0),
+            IFLA_GENEVE_UDP_ZERO_CSUM6_TX => {
+                UdpZeroCsum6Tx(parse_u8(payload)? > 0)
+            }
+            IFLA_GENEVE_UDP_ZERO_CSUM6_RX => {
+                UdpZeroCsum6Rx(parse_u8(payload)? > 0)
+            }
+            IFLA_GENEVE_LABEL => Label(parse_u32_be(payload)?),
+            IFLA_GENEVE_TTL_INHERIT => TtlInherit(parse_u8(payload)? > 0),
+            IFLA_GENEVE_DF => Df(parse_u8(payload)?.into()),
             IFLA_GENEVE_INNER_PROTO_INHERIT => InnerProtoInherit,
-            kind => Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
-            ),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }
