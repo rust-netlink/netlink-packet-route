@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
@@ -89,57 +88,32 @@ impl Nla for InfoMacVlan {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoMacVlan {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoMacVlan::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_MACVLAN_MODE => Mode(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MODE value")?
-                    .into(),
-            ),
-            IFLA_MACVLAN_FLAGS => Flags(
-                parse_u16(payload)
-                    .context("invalid IFLA_MACVLAN_FLAGS value")?,
-            ),
-            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MACADDR_MODE value")?,
-            ),
-            IFLA_MACVLAN_MACADDR => MacAddr(
-                parse_mac(payload)
-                    .context("invalid IFLA_MACVLAN_MACADDR value")?,
-            ),
+            IFLA_MACVLAN_MODE => Mode(parse_u32(payload)?.into()),
+            IFLA_MACVLAN_FLAGS => Flags(parse_u16(payload)?),
+            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(parse_u32(payload)?),
+            IFLA_MACVLAN_MACADDR => MacAddr(parse_mac(payload)?),
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
-                let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(err)?;
-                    let parsed = InfoMacVlan::parse(nla).context(err)?;
+                    let parsed = InfoMacVlan::parse(&nla?)?;
                     mac_data.push(parsed);
                 }
                 MacAddrData(mac_data)
             }
-            IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
-            ),
-            IFLA_MACVLAN_BC_QUEUE_LEN => BcQueueLen(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN value")?,
-            ),
-            IFLA_MACVLAN_BC_QUEUE_LEN_USED => BcQueueLenUsed(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN_USED value")?,
-            ),
-            IFLA_MACVLAN_BC_CUTOFF => BcCutoff(
-                parse_i32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
-            ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(mac_vlan)"
-            ))?),
+            IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(parse_u32(payload)?),
+            IFLA_MACVLAN_BC_QUEUE_LEN => BcQueueLen(parse_u32(payload)?),
+            IFLA_MACVLAN_BC_QUEUE_LEN_USED => {
+                BcQueueLenUsed(parse_u32(payload)?)
+            }
+            IFLA_MACVLAN_BC_CUTOFF => BcCutoff(parse_i32(payload)?),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -209,57 +183,32 @@ impl Nla for InfoMacVtap {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoMacVtap {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoMacVtap::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_MACVLAN_MODE => Mode(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MODE value")?
-                    .into(),
-            ),
-            IFLA_MACVLAN_FLAGS => Flags(
-                parse_u16(payload)
-                    .context("invalid IFLA_MACVLAN_FLAGS value")?,
-            ),
-            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MACADDR_MODE value")?,
-            ),
-            IFLA_MACVLAN_MACADDR => MacAddr(
-                parse_mac(payload)
-                    .context("invalid IFLA_MACVLAN_MACADDR value")?,
-            ),
+            IFLA_MACVLAN_MODE => Mode(parse_u32(payload)?.into()),
+            IFLA_MACVLAN_FLAGS => Flags(parse_u16(payload)?),
+            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(parse_u32(payload)?),
+            IFLA_MACVLAN_MACADDR => MacAddr(parse_mac(payload)?),
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
-                let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(err)?;
-                    let parsed = InfoMacVtap::parse(nla).context(err)?;
+                    let parsed = InfoMacVtap::parse(&nla?)?;
                     mac_data.push(parsed);
                 }
                 MacAddrData(mac_data)
             }
-            IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
-            ),
-            IFLA_MACVLAN_BC_QUEUE_LEN => BcQueueLen(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN value")?,
-            ),
-            IFLA_MACVLAN_BC_QUEUE_LEN_USED => BcQueueLenUsed(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN_USED value")?,
-            ),
-            IFLA_MACVLAN_BC_CUTOFF => BcCutoff(
-                parse_i32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
-            ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(mac_vtap)"
-            ))?),
+            IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(parse_u32(payload)?),
+            IFLA_MACVLAN_BC_QUEUE_LEN => BcQueueLen(parse_u32(payload)?),
+            IFLA_MACVLAN_BC_QUEUE_LEN_USED => {
+                BcQueueLenUsed(parse_u32(payload)?)
+            }
+            IFLA_MACVLAN_BC_CUTOFF => BcCutoff(parse_i32(payload)?),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }

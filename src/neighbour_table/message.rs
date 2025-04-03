@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     traits::{Emitable, Parseable},
     DecodeError,
@@ -30,27 +29,29 @@ impl Emitable for NeighbourTableMessage {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
+impl<T: AsRef<[u8]>> Parseable<NeighbourTableMessageBuffer<&T>>
     for NeighbourTableMessage
 {
+    type Error = DecodeError;
+
     fn parse(
-        buf: &NeighbourTableMessageBuffer<&'a T>,
-    ) -> Result<Self, DecodeError> {
+        buf: &NeighbourTableMessageBuffer<&T>,
+    ) -> Result<Self, Self::Error> {
         Ok(NeighbourTableMessage {
-            header: NeighbourTableHeader::parse(buf)
-                .context("failed to parse neighbour table message header")?,
-            attributes: Vec::<NeighbourTableAttribute>::parse(buf)
-                .context("failed to parse neighbour table message NLAs")?,
+            header: NeighbourTableHeader::parse(buf)?,
+            attributes: Vec::<NeighbourTableAttribute>::parse(buf)?,
         })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
+impl<T: AsRef<[u8]>> Parseable<NeighbourTableMessageBuffer<&T>>
     for Vec<NeighbourTableAttribute>
 {
+    type Error = DecodeError;
+
     fn parse(
-        buf: &NeighbourTableMessageBuffer<&'a T>,
-    ) -> Result<Self, DecodeError> {
+        buf: &NeighbourTableMessageBuffer<&T>,
+    ) -> Result<Self, Self::Error> {
         let mut attributes = vec![];
         for nla_buf in buf.attributes() {
             attributes.push(NeighbourTableAttribute::parse(&nla_buf?)?);

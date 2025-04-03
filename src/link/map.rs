@@ -28,7 +28,9 @@ pub struct Map {
 }
 
 impl<T: AsRef<[u8]>> Parseable<MapBuffer<T>> for Map {
-    fn parse(buf: &MapBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &MapBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             memory_start: buf.memory_start(),
             memory_end: buf.memory_end(),

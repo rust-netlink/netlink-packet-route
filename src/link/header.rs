@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     traits::{Emitable, Parseable},
     DecodeError,
 };
@@ -25,7 +25,7 @@ buffer!(LinkMessageBuffer(LINK_HEADER_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> LinkMessageBuffer<&'a T> {
     pub fn attributes(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(self.payload())
     }
 }
@@ -86,7 +86,9 @@ impl Emitable for LinkHeader {
 }
 
 impl<T: AsRef<[u8]>> Parseable<LinkMessageBuffer<T>> for LinkHeader {
-    fn parse(buf: &LinkMessageBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &LinkMessageBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             interface_family: buf.interface_family().into(),
             link_layer_type: buf.link_layer_type().into(),

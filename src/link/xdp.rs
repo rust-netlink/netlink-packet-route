@@ -2,7 +2,6 @@
 
 use std::{mem::size_of, os::fd::RawFd};
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
@@ -91,40 +90,24 @@ impl Nla for LinkXdp {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkXdp {
-    fn parse(nla: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for LinkXdp {
+    type Error = DecodeError;
+
+    fn parse(nla: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = nla.value();
         Ok(match nla.kind() as u32 {
-            IFLA_XDP_FD => Self::Fd(
-                parse_i32(payload).context("invalid IFLA_XDP_FD value")?,
-            ),
+            IFLA_XDP_FD => Self::Fd(parse_i32(payload)?),
             IFLA_XDP_ATTACHED => {
-                let err = "invalid IFLA_XDP_ATTACHED value";
-                let value = parse_u8(payload).context(err)?;
-                Self::Attached(XdpAttached::try_from(value).context(err)?)
+                let value = parse_u8(payload)?;
+                Self::Attached(XdpAttached::try_from(value)?)
             }
-            IFLA_XDP_FLAGS => Self::Flags(
-                parse_u32(payload).context("invalid IFLA_XDP_FLAGS value")?,
-            ),
-            IFLA_XDP_PROG_ID => Self::ProgId(
-                parse_u32(payload).context("invalid IFLA_XDP_PROG_ID value")?,
-            ),
-            IFLA_XDP_DRV_PROG_ID => Self::DrvProgId(
-                parse_u32(payload).context("invalid IFLA_XDP_PROG_ID value")?,
-            ),
-            IFLA_XDP_SKB_PROG_ID => Self::SkbProgId(
-                parse_u32(payload).context("invalid IFLA_XDP_PROG_ID value")?,
-            ),
-            IFLA_XDP_HW_PROG_ID => Self::HwProgId(
-                parse_u32(payload).context("invalid IFLA_XDP_PROG_ID value")?,
-            ),
-            IFLA_XDP_EXPECTED_FD => Self::ExpectedFd(
-                parse_u32(payload).context("invalid IFLA_XDP_PROG_ID value")?,
-            ),
-            _ => Self::Other(
-                DefaultNla::parse(nla)
-                    .context(format!("unknown NLA type {}", nla.kind()))?,
-            ),
+            IFLA_XDP_FLAGS => Self::Flags(parse_u32(payload)?),
+            IFLA_XDP_PROG_ID => Self::ProgId(parse_u32(payload)?),
+            IFLA_XDP_DRV_PROG_ID => Self::DrvProgId(parse_u32(payload)?),
+            IFLA_XDP_SKB_PROG_ID => Self::SkbProgId(parse_u32(payload)?),
+            IFLA_XDP_HW_PROG_ID => Self::HwProgId(parse_u32(payload)?),
+            IFLA_XDP_EXPECTED_FD => Self::ExpectedFd(parse_u32(payload)?),
+            _ => Self::Other(DefaultNla::parse(nla)?),
         })
     }
 }
@@ -137,8 +120,10 @@ pub(crate) struct VecLinkXdp(pub(crate) Vec<LinkXdp>);
 // nla->data[]   // <- You are here == Vec<Xdp>
 //  nla->data[0].type   <- nla.kind()
 //  nla->data[0].len
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkXdp {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for VecLinkXdp {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let mut res = Vec::new();
         let nlas = NlasIterator::new(buf.into_inner());
         for nla in nlas {

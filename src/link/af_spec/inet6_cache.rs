@@ -24,7 +24,9 @@ buffer!(Inet6CacheInfoBuffer(LINK_INET6_CACHE_INFO_LEN) {
 });
 
 impl<T: AsRef<[u8]>> Parseable<Inet6CacheInfoBuffer<T>> for Inet6CacheInfo {
-    fn parse(buf: &Inet6CacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &Inet6CacheInfoBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             max_reasm_len: buf.max_reasm_len(),
             tstamp: buf.tstamp(),

@@ -28,13 +28,15 @@ impl Emitable for LinkXstats {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized>
-    ParseableParametrized<NlaBuffer<&'a T>, &InfoKind> for LinkXstats
+impl<T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&T>, &InfoKind>
+    for LinkXstats
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<&T>,
         _kind: &InfoKind,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         Ok(Self::Other(buf.value().to_vec()))
     }
 }

@@ -36,7 +36,9 @@ buffer!(NeighbourTableConfigBuffer(CONFIG_LEN) {
 impl<T: AsRef<[u8]>> Parseable<NeighbourTableConfigBuffer<T>>
     for NeighbourTableConfig
 {
-    fn parse(buf: &NeighbourTableConfigBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NeighbourTableConfigBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             key_len: buf.key_len(),
             entry_size: buf.entry_size(),

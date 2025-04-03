@@ -4,7 +4,7 @@
 // detailed sub-component parsing. Each component has their own tests moduel.
 
 use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
-use netlink_packet_utils::Emitable;
+use netlink_packet_utils::traits::Emitable;
 
 use crate::{
     link::{LinkAttribute, LinkExtentMask, LinkMessage},

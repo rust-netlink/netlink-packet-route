@@ -33,10 +33,10 @@ buffer!(RouteViaBuffer(RTVIA_LEN) {
     address: (slice, RTVIA_LEN..),
 });
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteViaBuffer<&'a T>>
-    for RouteVia
-{
-    fn parse(buf: &RouteViaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<RouteViaBuffer<&T>> for RouteVia {
+    type Error = DecodeError;
+
+    fn parse(buf: &RouteViaBuffer<&T>) -> Result<Self, Self::Error> {
         let address_family: AddressFamily = (buf.address_family() as u8).into();
         Ok(match address_family {
             AddressFamily::Inet => Self::Inet(parse_ipv4_addr(buf.address())?),

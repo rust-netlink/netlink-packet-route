@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::nla::NLA_F_NESTED;
 use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
+    nla::{DefaultNla, Nla, NlaBuffer, NlaError, NlasIterator},
     parsers::{parse_string, parse_u32},
     traits::{Emitable, Parseable, ParseableParametrized},
     DecodeError,
@@ -58,8 +57,10 @@ impl Nla for TcAction {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for TcAction {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for TcAction {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         // We need to find the `Kind` attribute before we can parse the others,
         // as kind is used in calls to parse_with_param for the other
         // attributes.
@@ -73,17 +74,15 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for TcAction {
             .filter_map(|nla| {
                 let nla = match nla {
                     Ok(nla) => nla,
-                    Err(e) => {
-                        return Some(
-                            Err(e).context("failed to parse action nla"),
-                        )
-                    }
+                    Err(e) => return Some(Err(e)),
                 };
                 match nla.kind() {
-                    TCA_ACT_KIND => Some(
-                        parse_string(nla.value())
-                            .context("failed to parse TCA_ACT_KIND"),
-                    ),
+                    TCA_ACT_KIND => {
+                        Some(parse_string(nla.value()).map_err(|_| {
+                            // Placeholder error, as we need to return a NlaError
+                            NlaError::InvalidLength { nla_len: 0 }
+                        }))
+                    }
                     _ => None,
                 }
             })
@@ -216,53 +215,40 @@ impl Nla for TcActionAttribute {
     }
 }
 
-impl<'a, T, P> ParseableParametrized<NlaBuffer<&'a T>, P> for TcActionAttribute
+impl<T, P> ParseableParametrized<NlaBuffer<&T>, P> for TcActionAttribute
 where
     T: AsRef<[u8]> + ?Sized,
     P: AsRef<str>,
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<&T>,
         kind: P,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         Ok(match buf.kind() {
             TCA_ACT_KIND => {
                 let buf_value = buf.value();
-                TcActionAttribute::Kind(
-                    parse_string(buf_value)
-                        .context("failed to parse TCA_ACT_KIND")?,
-                )
+                TcActionAttribute::Kind(parse_string(buf_value)?)
             }
             TCA_ACT_OPTIONS => TcActionAttribute::Options(
                 NlasIterator::new(buf.value())
                     .map(|nla| {
-                        let nla = nla.context("invalid TCA_ACT_OPTIONS")?;
-                        TcActionOption::parse_with_param(&nla, kind.as_ref())
-                            .context("failed to parse TCA_ACT_OPTIONS")
+                        TcActionOption::parse_with_param(&nla?, kind.as_ref())
                     })
                     .collect::<Result<Vec<_>, _>>()?,
             ),
-            TCA_ACT_INDEX => TcActionAttribute::Index(
-                parse_u32(buf.value())
-                    .context("failed to parse TCA_ACT_INDEX")?,
-            ),
+            TCA_ACT_INDEX => TcActionAttribute::Index(parse_u32(buf.value())?),
             TCA_ACT_STATS => TcActionAttribute::Stats(
                 NlasIterator::new(buf.value())
-                    .map(|nla| {
-                        let nla = nla.context("invalid TCA_ACT_STATS")?;
-                        TcStats2::parse_with_param(&nla, kind.as_ref())
-                            .context("failed to parse TCA_ACT_STATS")
-                    })
+                    .map(|nla| TcStats2::parse_with_param(&nla?, kind.as_ref()))
                     .collect::<Result<Vec<_>, _>>()?,
             ),
             TCA_ACT_COOKIE => TcActionAttribute::Cookie(buf.value().to_vec()),
-            TCA_ACT_IN_HW_COUNT => TcActionAttribute::InHwCount(
-                parse_u32(buf.value())
-                    .context("failed to parse TCA_ACT_IN_HW_COUNT")?,
-            ),
-            _ => TcActionAttribute::Other(
-                DefaultNla::parse(buf).context("failed to parse action nla")?,
-            ),
+            TCA_ACT_IN_HW_COUNT => {
+                TcActionAttribute::InHwCount(parse_u32(buf.value())?)
+            }
+            _ => TcActionAttribute::Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -325,32 +311,26 @@ impl Nla for TcActionOption {
     }
 }
 
-impl<'a, T, S> ParseableParametrized<NlaBuffer<&'a T>, S> for TcActionOption
+impl<T, S> ParseableParametrized<NlaBuffer<&T>, S> for TcActionOption
 where
     T: AsRef<[u8]> + ?Sized,
     S: AsRef<str>,
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<&T>,
         kind: S,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         Ok(match kind.as_ref() {
-            TcActionMirror::KIND => Self::Mirror(
-                TcActionMirrorOption::parse(buf)
-                    .context("failed to parse mirror action")?,
-            ),
-            TcActionNat::KIND => Self::Nat(
-                TcActionNatOption::parse(buf)
-                    .context("failed to parse nat action")?,
-            ),
-            TcActionTunnelKey::KIND => Self::TunnelKey(
-                TcActionTunnelKeyOption::parse(buf)
-                    .context("failed to parse tunnel_key action")?,
-            ),
-            _ => Self::Other(
-                DefaultNla::parse(buf)
-                    .context("failed to parse action options")?,
-            ),
+            TcActionMirror::KIND => {
+                Self::Mirror(TcActionMirrorOption::parse(buf)?)
+            }
+            TcActionNat::KIND => Self::Nat(TcActionNatOption::parse(buf)?),
+            TcActionTunnelKey::KIND => {
+                Self::TunnelKey(TcActionTunnelKeyOption::parse(buf)?)
+            }
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -451,7 +431,9 @@ impl Emitable for TcActionGeneric {
 }
 
 impl<T: AsRef<[u8]>> Parseable<TcActionGenericBuffer<T>> for TcActionGeneric {
-    fn parse(buf: &TcActionGenericBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &TcActionGenericBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             index: buf.index(),
             capab: buf.capab(),
@@ -580,7 +562,9 @@ buffer!(TcfBuffer(TC_TCF_BUF_LEN) {
 });
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<TcfBuffer<&T>> for Tcf {
-    fn parse(buf: &TcfBuffer<&T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &TcfBuffer<&T>) -> Result<Self, Self::Error> {
         Ok(Self {
             install: buf.install(),
             lastuse: buf.lastuse(),

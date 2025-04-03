@@ -2,7 +2,6 @@
 
 use std::os::unix::io::RawFd;
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
@@ -364,25 +363,23 @@ impl Nla for LinkAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized>
-    ParseableParametrized<NlaBuffer<&'a T>, AddressFamily> for LinkAttribute
+impl<T: AsRef<[u8]> + ?Sized>
+    ParseableParametrized<NlaBuffer<&T>, AddressFamily> for LinkAttribute
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<&T>,
         interface_family: AddressFamily,
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VFINFO_LIST => {
-                let err =
-                    |payload| format!("invalid IFLA_VFINFO_LIST {payload:?}");
                 if !payload.is_empty() {
                     Self::VfInfoList(
-                        VecLinkVfInfo::parse(
-                            &NlaBuffer::new_checked(payload)
-                                .context(err(payload))?,
-                        )
-                        .context(err(payload))?
+                        VecLinkVfInfo::parse(&NlaBuffer::new_checked(
+                            payload,
+                        )?)?
                         .0,
                     )
                 } else {
@@ -391,102 +388,46 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     Self::VfInfoList(vec![])
                 }
             }
-            IFLA_VF_PORTS => {
-                let err =
-                    |payload| format!("invalid IFLA_VF_PORTS {payload:?}");
-                Self::VfPorts(
-                    VecLinkVfPort::parse(
-                        &NlaBuffer::new_checked(payload)
-                            .context(err(payload))?,
-                    )
-                    .context(err(payload))?
-                    .0,
-                )
-            }
-            IFLA_PORT_SELF => {
-                let err =
-                    |payload| format!("invalid IFLA_PORT_SELF {payload:?}");
-                Self::PortSelf(
-                    LinkVfPort::parse(
-                        &NlaBuffer::new_checked(payload)
-                            .context(err(payload))?,
-                    )
-                    .context(err(payload))?,
-                )
-            }
-            IFLA_PHYS_PORT_ID => {
-                Self::PhysPortId(LinkPhysId::parse(payload).context(
-                    format!("invalid IFLA_PHYS_PORT_ID value {payload:?}"),
-                )?)
-            }
+            IFLA_VF_PORTS => Self::VfPorts(
+                VecLinkVfPort::parse(&NlaBuffer::new_checked(payload)?)?.0,
+            ),
+            IFLA_PORT_SELF => Self::PortSelf(LinkVfPort::parse(
+                &NlaBuffer::new_checked(payload)?,
+            )?),
+            IFLA_PHYS_PORT_ID => Self::PhysPortId(LinkPhysId::parse(payload)?),
             IFLA_PHYS_SWITCH_ID => {
-                Self::PhysSwitchId(LinkPhysId::parse(payload).context(
-                    format!("invalid IFLA_PHYS_SWITCH_ID value {payload:?}"),
-                )?)
+                Self::PhysSwitchId(LinkPhysId::parse(payload)?)
             }
-            IFLA_WIRELESS => Self::Wireless(
-                LinkWirelessEvent::parse(payload)
-                    .context(format!("invalid IFLA_WIRELESS {payload:?}"))?,
-            ),
-            IFLA_PROTINFO => {
-                let err = |payload| {
-                    format!("invalid IFLA_PROTINFO for AF_INET6 {payload:?}")
-                };
-                match interface_family {
-                    AddressFamily::Inet6 => Self::ProtoInfoInet6(
-                        VecLinkProtoInfoInet6::parse(
-                            &NlaBuffer::new_checked(payload)
-                                .context(err(payload))?,
-                        )
-                        .context(err(payload))?
-                        .0,
-                    ),
-                    #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
-                    AddressFamily::Bridge => Self::ProtoInfoBridge(
-                        VecLinkProtoInfoBridge::parse(&NlaBuffer::new_checked(
-                            payload,
-                        )?)
-                        .context(format!(
-                            "invalid IFLA_PROTINFO for AF_INET6 {payload:?}"
-                        ))?
-                        .0,
-                    ),
-                    _ => Self::ProtoInfoUnknown(
-                        DefaultNla::parse(buf).context(format!(
-                            "invalid IFLA_PROTINFO for \
-                        {interface_family:?}: {payload:?}"
-                        ))?,
-                    ),
-                }
+            IFLA_WIRELESS => Self::Wireless(LinkWirelessEvent::parse(payload)?),
+            IFLA_PROTINFO => match interface_family {
+                AddressFamily::Inet6 => Self::ProtoInfoInet6(
+                    VecLinkProtoInfoInet6::parse(&NlaBuffer::new_checked(
+                        payload,
+                    )?)?
+                    .0,
+                ),
+                #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
+                AddressFamily::Bridge => Self::ProtoInfoBridge(
+                    VecLinkProtoInfoBridge::parse(&NlaBuffer::new_checked(
+                        payload,
+                    )?)?
+                    .0,
+                ),
+                _ => Self::ProtoInfoUnknown(DefaultNla::parse(buf)?),
+            },
+            IFLA_EVENT => Self::Event(LinkEvent::parse(payload)?),
+            IFLA_NEW_NETNSID => Self::NewNetnsId(parse_i32(payload)?),
+            IFLA_IF_NETNSID => Self::IfNetnsId(parse_i32(payload)?),
+            IFLA_CARRIER_UP_COUNT => Self::CarrierUpCount(parse_u32(payload)?),
+            IFLA_CARRIER_DOWN_COUNT => {
+                Self::CarrierDownCount(parse_u32(payload)?)
             }
-            IFLA_EVENT => Self::Event(
-                LinkEvent::parse(payload)
-                    .context(format!("invalid IFLA_EVENT {payload:?}"))?,
-            ),
-            IFLA_NEW_NETNSID => Self::NewNetnsId(
-                parse_i32(payload).context("invalid IFLA_NEW_NETNSID value")?,
-            ),
-            IFLA_IF_NETNSID => Self::IfNetnsId(
-                parse_i32(payload).context("invalid IFLA_IF_NETNSID value")?,
-            ),
-            IFLA_CARRIER_UP_COUNT => Self::CarrierUpCount(
-                parse_u32(payload)
-                    .context("invalid IFLA_CARRIER_UP_COUNT value")?,
-            ),
-            IFLA_CARRIER_DOWN_COUNT => Self::CarrierDownCount(
-                parse_u32(payload)
-                    .context("invalid IFLA_CARRIER_DOWN_COUNT value")?,
-            ),
-            IFLA_NEW_IFINDEX => Self::NewIfIndex(
-                parse_i32(payload).context("invalid IFLA_NEW_IFINDEX value")?,
-            ),
+            IFLA_NEW_IFINDEX => Self::NewIfIndex(parse_i32(payload)?),
 
             IFLA_PROP_LIST => {
-                let error_msg = "invalid IFLA_PROP_LIST value";
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(error_msg)?;
-                    let parsed = Prop::parse(nla).context(error_msg)?;
+                    let parsed = Prop::parse(&nla?)?;
                     nlas.push(parsed);
                 }
                 Self::PropList(nlas)
@@ -494,9 +435,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_PROTO_DOWN_REASON => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
-                    let nla =
-                        &nla.context("invalid IFLA_PROTO_DOWN_REASON value")?;
-                    let parsed = LinkProtocolDownReason::parse(nla)?;
+                    let parsed = LinkProtocolDownReason::parse(&nla?)?;
                     nlas.push(parsed);
                 }
                 Self::ProtoDownReason(nlas)
@@ -508,181 +447,76 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_BROADCAST => Self::Broadcast(payload.to_vec()),
             IFLA_PERM_ADDRESS => Self::PermAddress(payload.to_vec()),
             // String
-            IFLA_IFNAME => Self::IfName(
-                parse_string(payload).context("invalid IFLA_IFNAME value")?,
-            ),
-            IFLA_QDISC => Self::Qdisc(
-                parse_string(payload).context("invalid IFLA_QDISC value")?,
-            ),
-            IFLA_IFALIAS => Self::IfAlias(
-                parse_string(payload).context("invalid IFLA_IFALIAS value")?,
-            ),
-            IFLA_PHYS_PORT_NAME => Self::PhysPortName(
-                parse_string(payload)
-                    .context("invalid IFLA_PHYS_PORT_NAME value")?,
-            ),
-            IFLA_LINKMODE => Self::Mode(
-                parse_u8(payload).context("invalid IFLA_LINKMODE value")?,
-            ),
-            IFLA_CARRIER => Self::Carrier(
-                parse_u8(payload).context("invalid IFLA_CARRIER value")?,
-            ),
-            IFLA_PROTO_DOWN => Self::ProtoDown(
-                parse_u8(payload).context("invalid IFLA_PROTO_DOWN value")?,
-            ),
+            IFLA_IFNAME => Self::IfName(parse_string(payload)?),
+            IFLA_QDISC => Self::Qdisc(parse_string(payload)?),
+            IFLA_IFALIAS => Self::IfAlias(parse_string(payload)?),
+            IFLA_PHYS_PORT_NAME => Self::PhysPortName(parse_string(payload)?),
+            IFLA_LINKMODE => Self::Mode(parse_u8(payload)?),
+            IFLA_CARRIER => Self::Carrier(parse_u8(payload)?),
+            IFLA_PROTO_DOWN => Self::ProtoDown(parse_u8(payload)?),
 
-            IFLA_MTU => {
-                Self::Mtu(parse_u32(payload).context("invalid IFLA_MTU value")?)
+            IFLA_MTU => Self::Mtu(parse_u32(payload)?),
+            IFLA_LINK => Self::Link(parse_u32(payload)?),
+            IFLA_MASTER => Self::Controller(parse_u32(payload)?),
+            IFLA_TXQLEN => Self::TxQueueLen(parse_u32(payload)?),
+            IFLA_NET_NS_PID => Self::NetNsPid(parse_u32(payload)?),
+            IFLA_NUM_VF => Self::NumVf(parse_u32(payload)?),
+            IFLA_GROUP => Self::Group(parse_u32(payload)?),
+            IFLA_NET_NS_FD => Self::NetNsFd(parse_i32(payload)?),
+            IFLA_EXT_MASK => {
+                Self::ExtMask(VecLinkExtentMask::from(parse_u32(payload)?).0)
             }
-            IFLA_LINK => Self::Link(
-                parse_u32(payload).context("invalid IFLA_LINK value")?,
-            ),
-            IFLA_MASTER => Self::Controller(
-                parse_u32(payload).context("invalid IFLA_MASTER value")?,
-            ),
-            IFLA_TXQLEN => Self::TxQueueLen(
-                parse_u32(payload).context("invalid IFLA_TXQLEN value")?,
-            ),
-            IFLA_NET_NS_PID => Self::NetNsPid(
-                parse_u32(payload).context("invalid IFLA_NET_NS_PID value")?,
-            ),
-            IFLA_NUM_VF => Self::NumVf(
-                parse_u32(payload).context("invalid IFLA_NUM_VF value")?,
-            ),
-            IFLA_GROUP => Self::Group(
-                parse_u32(payload).context("invalid IFLA_GROUP value")?,
-            ),
-            IFLA_NET_NS_FD => Self::NetNsFd(
-                parse_i32(payload).context("invalid IFLA_NET_NS_FD value")?,
-            ),
-            IFLA_EXT_MASK => Self::ExtMask(
-                VecLinkExtentMask::from(
-                    parse_u32(payload)
-                        .context("invalid IFLA_EXT_MASK value")?,
-                )
-                .0,
-            ),
-            IFLA_PROMISCUITY => Self::Promiscuity(
-                parse_u32(payload).context("invalid IFLA_PROMISCUITY value")?,
-            ),
-            IFLA_NUM_TX_QUEUES => Self::NumTxQueues(
-                parse_u32(payload)
-                    .context("invalid IFLA_NUM_TX_QUEUES value")?,
-            ),
-            IFLA_NUM_RX_QUEUES => Self::NumRxQueues(
-                parse_u32(payload)
-                    .context("invalid IFLA_NUM_RX_QUEUES value")?,
-            ),
-            IFLA_CARRIER_CHANGES => Self::CarrierChanges(
-                parse_u32(payload)
-                    .context("invalid IFLA_CARRIER_CHANGES value")?,
-            ),
-            IFLA_GSO_MAX_SEGS => Self::GsoMaxSegs(
-                parse_u32(payload)
-                    .context("invalid IFLA_GSO_MAX_SEGS value")?,
-            ),
-            IFLA_GSO_MAX_SIZE => Self::GsoMaxSize(
-                parse_u32(payload)
-                    .context("invalid IFLA_GSO_MAX_SIZE value")?,
-            ),
-            IFLA_MIN_MTU => Self::MinMtu(
-                parse_u32(payload).context("invalid IFLA_MIN_MTU value")?,
-            ),
-            IFLA_MAX_MTU => Self::MaxMtu(
-                parse_u32(payload).context("invalid IFLA_MAX_MTU value")?,
-            ),
-            IFLA_LINK_NETNSID => Self::LinkNetNsId(
-                parse_i32(payload)
-                    .context("invalid IFLA_LINK_NETNSID value")?,
-            ),
-            IFLA_OPERSTATE => Self::OperState(
-                parse_u8(payload)
-                    .context("invalid IFLA_OPERSTATE value")?
-                    .into(),
-            ),
+            IFLA_PROMISCUITY => Self::Promiscuity(parse_u32(payload)?),
+            IFLA_NUM_TX_QUEUES => Self::NumTxQueues(parse_u32(payload)?),
+            IFLA_NUM_RX_QUEUES => Self::NumRxQueues(parse_u32(payload)?),
+            IFLA_CARRIER_CHANGES => Self::CarrierChanges(parse_u32(payload)?),
+            IFLA_GSO_MAX_SEGS => Self::GsoMaxSegs(parse_u32(payload)?),
+            IFLA_GSO_MAX_SIZE => Self::GsoMaxSize(parse_u32(payload)?),
+            IFLA_MIN_MTU => Self::MinMtu(parse_u32(payload)?),
+            IFLA_MAX_MTU => Self::MaxMtu(parse_u32(payload)?),
+            IFLA_LINK_NETNSID => Self::LinkNetNsId(parse_i32(payload)?),
+            IFLA_OPERSTATE => Self::OperState(parse_u8(payload)?.into()),
             IFLA_MAP => {
-                let err =
-                    |payload| format!("Invalid IFLA_MAP value {:?}", payload);
-                Self::Map(
-                    super::Map::parse(
-                        &MapBuffer::new_checked(payload)
-                            .context(err(payload))?,
-                    )
-                    .context(err(payload))?,
-                )
+                Self::Map(super::Map::parse(&MapBuffer::new_checked(payload)?)?)
             }
-            IFLA_STATS => Self::Stats(
-                super::Stats::parse(&StatsBuffer::new(
-                    expand_buffer_if_small(
-                        payload,
-                        LINK_STATS_LEN,
-                        "IFLA_STATS",
-                    )
+            IFLA_STATS => Self::Stats(super::Stats::parse(&StatsBuffer::new(
+                expand_buffer_if_small(payload, LINK_STATS_LEN, "IFLA_STATS")
                     .as_slice(),
-                ))
-                .context(format!("Invalid IFLA_STATS value {:?}", payload))?,
-            ),
+            ))?),
             IFLA_STATS64 => {
                 let payload = expand_buffer_if_small(
                     payload,
                     LINK_STATS64_LEN,
                     "IFLA_STATS64",
                 );
-                Self::Stats64(
-                    super::Stats64::parse(&Stats64Buffer::new(
-                        payload.as_slice(),
-                    ))
-                    .context(format!(
-                        "Invalid IFLA_STATS64 value {:?}",
-                        payload
-                    ))?,
-                )
+                Self::Stats64(super::Stats64::parse(&Stats64Buffer::new(
+                    payload.as_slice(),
+                ))?)
             }
             IFLA_AF_SPEC => match interface_family {
-                AddressFamily::Unspec => {
-                    let err = "invalid IFLA_AF_SPEC value for AF_UNSPEC";
-                    Self::AfSpecUnspec(
-                        VecAfSpecUnspec::parse(
-                            &NlaBuffer::new_checked(&buf.value())
-                                .context(err)?,
-                        )
-                        .context(err)?
-                        .0,
-                    )
-                }
+                AddressFamily::Unspec => Self::AfSpecUnspec(
+                    VecAfSpecUnspec::parse(&NlaBuffer::new_checked(
+                        &buf.value(),
+                    )?)?
+                    .0,
+                ),
                 #[cfg(any(target_os = "linux", target_os = "fuchsia",))]
-                AddressFamily::Bridge => {
-                    let err = "invalid IFLA_AF_SPEC value for AF_BRIDGE";
-                    Self::AfSpecBridge(
-                        VecAfSpecBridge::parse(
-                            &NlaBuffer::new_checked(&buf.value())
-                                .context(err)?,
-                        )
-                        .context(err)?
-                        .0,
-                    )
-                }
+                AddressFamily::Bridge => Self::AfSpecBridge(
+                    VecAfSpecBridge::parse(&NlaBuffer::new_checked(
+                        &buf.value(),
+                    )?)?
+                    .0,
+                ),
                 _ => Self::AfSpecUnknown(payload.to_vec()),
             },
-            IFLA_LINKINFO => {
-                let err = "invalid IFLA_LINKINFO value";
-                Self::LinkInfo(
-                    VecLinkInfo::parse(
-                        &NlaBuffer::new_checked(&buf.value()).context(err)?,
-                    )
-                    .context(err)?
-                    .0,
-                )
-            }
-            IFLA_XDP => {
-                let err = "invalid IFLA_XDP value";
-                let buf = NlaBuffer::new_checked(payload).context(err)?;
-                Self::Xdp(VecLinkXdp::parse(&buf).context(err)?.0)
-            }
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
+            IFLA_LINKINFO => Self::LinkInfo(
+                VecLinkInfo::parse(&NlaBuffer::new_checked(&buf.value())?)?.0,
             ),
+            IFLA_XDP => {
+                let buf = NlaBuffer::new_checked(payload)?;
+                Self::Xdp(VecLinkXdp::parse(&buf)?.0)
+            }
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

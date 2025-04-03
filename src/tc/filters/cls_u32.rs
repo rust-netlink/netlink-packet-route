@@ -7,7 +7,6 @@
 /// described below, are compared with the currently processed IP packet
 /// until the first match occurs, and then the associated action is
 /// performed.
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
@@ -112,41 +111,26 @@ impl Nla for TcFilterU32Option {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcFilterU32Option
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for TcFilterU32Option {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_U32_CLASSID => Self::ClassId(TcHandle::from(
-                parse_u32(payload).context("failed to parse TCA_U32_UNSPEC")?,
-            )),
-            TCA_U32_HASH => Self::Hash(
-                parse_u32(payload).context("failed to parse TCA_U32_HASH")?,
-            ),
-            TCA_U32_LINK => Self::Link(
-                parse_u32(payload).context("failed to parse TCA_U32_LINK")?,
-            ),
-            TCA_U32_DIVISOR => Self::Divisor(
-                parse_u32(payload)
-                    .context("failed to parse TCA_U32_DIVISOR")?,
-            ),
-            TCA_U32_SEL => Self::Selector(
-                TcU32Selector::parse(
-                    &TcU32SelectorBuffer::new_checked(payload)
-                        .context("invalid TCA_U32_SEL")?,
-                )
-                .context("failed to parse TCA_U32_SEL")?,
-            ),
+            TCA_U32_CLASSID => {
+                Self::ClassId(TcHandle::from(parse_u32(payload)?))
+            }
+            TCA_U32_HASH => Self::Hash(parse_u32(payload)?),
+            TCA_U32_LINK => Self::Link(parse_u32(payload)?),
+            TCA_U32_DIVISOR => Self::Divisor(parse_u32(payload)?),
+            TCA_U32_SEL => Self::Selector(TcU32Selector::parse(
+                &TcU32SelectorBuffer::new_checked(payload)?,
+            )?),
             TCA_U32_POLICE => Self::Police(payload.to_vec()),
             TCA_U32_ACT => {
                 let mut acts = vec![];
                 for act in NlasIterator::new(payload) {
-                    let act = act.context("invalid TCA_U32_ACT")?;
-                    acts.push(
-                        TcAction::parse(&act)
-                            .context("failed to parse TCA_U32_ACT")?,
-                    );
+                    acts.push(TcAction::parse(&act?)?);
                 }
                 Self::Action(acts)
             }
@@ -154,11 +138,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             TCA_U32_PCNT => Self::Pnct(payload.to_vec()),
             TCA_U32_MARK => Self::Mark(payload.to_vec()),
             TCA_U32_FLAGS => Self::Flags(TcU32OptionFlags::from_bits_retain(
-                parse_u32(payload).context("failed to parse TCA_U32_FLAGS")?,
+                parse_u32(payload)?,
             )),
-            _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse u32 nla")?,
-            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -248,7 +230,9 @@ impl Emitable for TcU32Selector {
 impl<T: AsRef<[u8]> + ?Sized> Parseable<TcU32SelectorBuffer<&T>>
     for TcU32Selector
 {
-    fn parse(buf: &TcU32SelectorBuffer<&T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &TcU32SelectorBuffer<&T>) -> Result<Self, Self::Error> {
         let nkeys = buf.nkeys();
         let mut keys = Vec::<TcU32Key>::with_capacity(nkeys.into());
         let key_payload = buf.keys();
@@ -257,11 +241,8 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<TcU32SelectorBuffer<&T>>
             let keybuf = TcU32KeyBuffer::new_checked(
                 &key_payload
                     [(i * TC_U32_KEY_BUF_LEN)..(i + 1) * TC_U32_KEY_BUF_LEN],
-            )
-            .context("invalid u32 key")?;
-            keys.push(
-                TcU32Key::parse(&keybuf).context("failed to parse u32 key")?,
-            );
+            )?;
+            keys.push(TcU32Key::parse(&keybuf)?);
         }
 
         Ok(Self {
@@ -308,7 +289,8 @@ impl Emitable for TcU32Key {
 }
 
 impl<T: AsRef<[u8]>> Parseable<TcU32KeyBuffer<T>> for TcU32Key {
-    fn parse(buf: &TcU32KeyBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+    fn parse(buf: &TcU32KeyBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             mask: buf.mask(),
             val: buf.val(),

@@ -26,7 +26,9 @@ buffer!(NeighbourCacheInfoBuffer(NEIGHBOUR_CACHE_INFO_LEN) {
 impl<T: AsRef<[u8]>> Parseable<NeighbourCacheInfoBuffer<T>>
     for NeighbourCacheInfo
 {
-    fn parse(buf: &NeighbourCacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NeighbourCacheInfoBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             confirmed: buf.confirmed(),
             used: buf.used(),

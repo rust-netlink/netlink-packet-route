@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -188,20 +187,22 @@ impl Nla for RouteAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized>
+impl<T: AsRef<[u8]> + ?Sized>
     ParseableParametrized<
-        NlaBuffer<&'a T>,
+        NlaBuffer<&T>,
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for RouteAttribute
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<&T>,
         (address_family, route_type, encap_type): (
             AddressFamily,
             RouteType,
             RouteLwEnCapType,
         ),
-    ) -> Result<Self, DecodeError> {
+    ) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
             RTA_DST => {
@@ -216,20 +217,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             RTA_PREFSRC => {
                 Self::PrefSource(RouteAddress::parse(address_family, payload)?)
             }
-            RTA_VIA => Self::Via(
-                RouteVia::parse(
-                    &RouteViaBuffer::new_checked(payload).context(format!(
-                        "Invalid RTA_VIA value {:?}",
-                        payload
-                    ))?,
-                )
-                .context(format!("Invalid RTA_VIA value {:?}", payload))?,
-            ),
-            RTA_NEWDST => Self::NewDestination(
-                VecMplsLabel::parse(payload)
-                    .context(format!("Invalid RTA_NEWDST value {:?}", payload))?
-                    .0,
-            ),
+            RTA_VIA => Self::Via(RouteVia::parse(
+                &RouteViaBuffer::new_checked(payload)?,
+            )?),
+            RTA_NEWDST => Self::NewDestination(VecMplsLabel::parse(payload)?.0),
 
             RTA_PREF => Self::Preference(parse_u8(payload)?.into()),
             RTA_ENCAP => Self::Encap(
@@ -237,81 +228,42 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             ),
             RTA_EXPIRES => {
                 if route_type == RouteType::Multicast {
-                    Self::MulticastExpires(parse_u64(payload).context(
-                        format!(
-                            "invalid RTA_EXPIRES (multicast) value {:?}",
-                            payload
-                        ),
-                    )?)
+                    Self::MulticastExpires(parse_u64(payload)?)
                 } else {
-                    Self::Expires(parse_u32(payload).context(format!(
-                        "invalid RTA_EXPIRES value {:?}",
-                        payload
-                    ))?)
+                    Self::Expires(parse_u32(payload)?)
                 }
             }
-            RTA_UID => Self::Uid(
-                parse_u32(payload)
-                    .context(format!("invalid RTA_UID value {:?}", payload))?,
-            ),
+            RTA_UID => Self::Uid(parse_u32(payload)?),
             RTA_TTL_PROPAGATE => Self::TtlPropagate(
-                RouteMplsTtlPropagation::from(parse_u8(payload).context(
-                    format!("invalid RTA_TTL_PROPAGATE {:?}", payload),
-                )?),
+                RouteMplsTtlPropagation::from(parse_u8(payload)?),
             ),
-            RTA_ENCAP_TYPE => Self::EncapType(RouteLwEnCapType::from(
-                parse_u16(payload).context("invalid RTA_ENCAP_TYPE value")?,
-            )),
-            RTA_IIF => {
-                Self::Iif(parse_u32(payload).context("invalid RTA_IIF value")?)
+            RTA_ENCAP_TYPE => {
+                Self::EncapType(RouteLwEnCapType::from(parse_u16(payload)?))
             }
-            RTA_OIF => {
-                Self::Oif(parse_u32(payload).context("invalid RTA_OIF value")?)
-            }
-            RTA_PRIORITY => Self::Priority(
-                parse_u32(payload).context("invalid RTA_PRIORITY value")?,
-            ),
-            RTA_FLOW => Self::Realm(
-                RouteRealm::parse(payload).context("invalid RTA_FLOW value")?,
-            ),
-            RTA_TABLE => Self::Table(
-                parse_u32(payload).context("invalid RTA_TABLE value")?,
-            ),
-            RTA_MARK => Self::Mark(
-                parse_u32(payload).context("invalid RTA_MARK value")?,
-            ),
+            RTA_IIF => Self::Iif(parse_u32(payload)?),
+            RTA_OIF => Self::Oif(parse_u32(payload)?),
+            RTA_PRIORITY => Self::Priority(parse_u32(payload)?),
+            RTA_FLOW => Self::Realm(RouteRealm::parse(payload)?),
+            RTA_TABLE => Self::Table(parse_u32(payload)?),
+            RTA_MARK => Self::Mark(parse_u32(payload)?),
 
-            RTA_CACHEINFO => Self::CacheInfo(
-                RouteCacheInfo::parse(
-                    &RouteCacheInfoBuffer::new_checked(payload)
-                        .context("invalid RTA_CACHEINFO value")?,
-                )
-                .context("invalid RTA_CACHEINFO value")?,
-            ),
-            RTA_MFC_STATS => Self::MfcStats(
-                RouteMfcStats::parse(
-                    &RouteMfcStatsBuffer::new_checked(payload)
-                        .context("invalid RTA_MFC_STATS value")?,
-                )
-                .context("invalid RTA_MFC_STATS value")?,
-            ),
-            RTA_METRICS => Self::Metrics(
-                VecRouteMetric::parse(payload)
-                    .context("invalid RTA_METRICS value")?
-                    .0,
-            ),
+            RTA_CACHEINFO => Self::CacheInfo(RouteCacheInfo::parse(
+                &RouteCacheInfoBuffer::new_checked(payload)?,
+            )?),
+            RTA_MFC_STATS => Self::MfcStats(RouteMfcStats::parse(
+                &RouteMfcStatsBuffer::new_checked(payload)?,
+            )?),
+            RTA_METRICS => Self::Metrics(VecRouteMetric::parse(payload)?.0),
             RTA_MULTIPATH => {
                 let mut next_hops = vec![];
                 let mut buf = payload;
                 loop {
-                    let nh_buf = RouteNextHopBuffer::new_checked(&buf)
-                        .context("invalid RTA_MULTIPATH value")?;
+                    let nh_buf = RouteNextHopBuffer::new_checked(&buf)?;
                     let len = nh_buf.length() as usize;
                     let nh = RouteNextHop::parse_with_param(
                         &nh_buf,
                         (address_family, route_type, encap_type),
-                    )
-                    .context("invalid RTA_MULTIPATH value")?;
+                    )?;
                     next_hops.push(nh);
                     if buf.len() == len {
                         break;
@@ -320,9 +272,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
                 Self::MultiPath(next_hops)
             }
-            _ => Self::Other(
-                DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?,
-            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

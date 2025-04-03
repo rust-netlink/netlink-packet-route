@@ -5,7 +5,6 @@ use std::{
     ops::Deref,
 };
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
@@ -118,34 +117,24 @@ impl Nla for BondAdInfo {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for BondAdInfo {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for BondAdInfo {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BOND_AD_INFO_AGGREGATOR => Self::Aggregator(
-                parse_u16(payload)
-                    .context("invalid IFLA_BOND_AD_INFO_AGGREGATOR value")?,
-            ),
-            IFLA_BOND_AD_INFO_NUM_PORTS => Self::NumPorts(
-                parse_u16(payload)
-                    .context("invalid IFLA_BOND_AD_INFO_NUM_PORTS value")?,
-            ),
-            IFLA_BOND_AD_INFO_ACTOR_KEY => Self::ActorKey(
-                parse_u16(payload)
-                    .context("invalid IFLA_BOND_AD_INFO_ACTOR_KEY value")?,
-            ),
-            IFLA_BOND_AD_INFO_PARTNER_KEY => Self::PartnerKey(
-                parse_u16(payload)
-                    .context("invalid IFLA_BOND_AD_INFO_PARTNER_KEY value")?,
-            ),
-            IFLA_BOND_AD_INFO_PARTNER_MAC => Self::PartnerMac(
-                parse_mac(payload)
-                    .context("invalid IFLA_BOND_AD_INFO_PARTNER_MAC value")?,
-            ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid NLA for {}: {payload:?}",
-                buf.kind()
-            ))?),
+            IFLA_BOND_AD_INFO_AGGREGATOR => {
+                Self::Aggregator(parse_u16(payload)?)
+            }
+            IFLA_BOND_AD_INFO_NUM_PORTS => Self::NumPorts(parse_u16(payload)?),
+            IFLA_BOND_AD_INFO_ACTOR_KEY => Self::ActorKey(parse_u16(payload)?),
+            IFLA_BOND_AD_INFO_PARTNER_KEY => {
+                Self::PartnerKey(parse_u16(payload)?)
+            }
+            IFLA_BOND_AD_INFO_PARTNER_MAC => {
+                Self::PartnerMac(parse_mac(payload)?)
+            }
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
@@ -500,159 +489,87 @@ impl Nla for InfoBond {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoBond {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_BOND_MODE => Self::Mode(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_MODE value")?
-                    .into(),
-            ),
-            IFLA_BOND_ACTIVE_PORT => Self::ActivePort(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_ACTIVE_PORT value")?,
-            ),
-            IFLA_BOND_MIIMON => Self::MiiMon(
-                parse_u32(payload).context("invalid IFLA_BOND_MIIMON value")?,
-            ),
-            IFLA_BOND_UPDELAY => Self::UpDelay(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_UPDELAY value")?,
-            ),
-            IFLA_BOND_DOWNDELAY => Self::DownDelay(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_DOWNDELAY value")?,
-            ),
-            IFLA_BOND_USE_CARRIER => Self::UseCarrier(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_USE_CARRIER value")?,
-            ),
-            IFLA_BOND_ARP_INTERVAL => Self::ArpInterval(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_ARP_INTERVAL value")?,
-            ),
+            IFLA_BOND_MODE => Self::Mode(parse_u8(payload)?.into()),
+            IFLA_BOND_ACTIVE_PORT => Self::ActivePort(parse_u32(payload)?),
+            IFLA_BOND_MIIMON => Self::MiiMon(parse_u32(payload)?),
+            IFLA_BOND_UPDELAY => Self::UpDelay(parse_u32(payload)?),
+            IFLA_BOND_DOWNDELAY => Self::DownDelay(parse_u32(payload)?),
+            IFLA_BOND_USE_CARRIER => Self::UseCarrier(parse_u8(payload)?),
+            IFLA_BOND_ARP_INTERVAL => Self::ArpInterval(parse_u32(payload)?),
             IFLA_BOND_ARP_IP_TARGET => {
                 let mut addrs = Vec::<Ipv4Addr>::new();
                 for nla in NlasIterator::new(payload) {
-                    let nla =
-                        &nla.context("invalid IFLA_BOND_ARP_IP_TARGET value")?;
-                    if let Ok(IpAddr::V4(addr)) = parse_ip(nla.value()) {
+                    if let Ok(IpAddr::V4(addr)) = parse_ip(nla?.value()) {
                         addrs.push(addr);
                     }
                 }
                 Self::ArpIpTarget(addrs)
             }
-            IFLA_BOND_ARP_VALIDATE => Self::ArpValidate(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_ARP_VALIDATE value")?
-                    .into(),
-            ),
-            IFLA_BOND_ARP_ALL_TARGETS => Self::ArpAllTargets(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_ARP_ALL_TARGETS value")?,
-            ),
-            IFLA_BOND_PRIMARY => Self::Primary(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_PRIMARY value")?,
-            ),
-            IFLA_BOND_PRIMARY_RESELECT => Self::PrimaryReselect(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?,
-            ),
-            IFLA_BOND_FAIL_OVER_MAC => Self::FailOverMac(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_FAIL_OVER_MAC value")?,
-            ),
-            IFLA_BOND_XMIT_HASH_POLICY => Self::XmitHashPolicy(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_XMIT_HASH_POLICY value")?,
-            ),
-            IFLA_BOND_RESEND_IGMP => Self::ResendIgmp(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_RESEND_IGMP value")?,
-            ),
-            IFLA_BOND_NUM_PEER_NOTIF => Self::NumPeerNotif(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_NUM_PEER_NOTIF value")?,
-            ),
-            IFLA_BOND_ALL_PORTS_ACTIVE => Self::AllPortsActive(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_ALL_PORTS_ACTIVE value")?,
-            ),
-            IFLA_BOND_MIN_LINKS => Self::MinLinks(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_MIN_LINKS value")?,
-            ),
-            IFLA_BOND_LP_INTERVAL => Self::LpInterval(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_LP_INTERVAL value")?,
-            ),
-            IFLA_BOND_PACKETS_PER_PORT => Self::PacketsPerPort(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_PACKETS_PER_PORT value")?,
-            ),
-            IFLA_BOND_AD_LACP_RATE => Self::AdLacpRate(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_AD_LACP_RATE value")?,
-            ),
-            IFLA_BOND_AD_SELECT => Self::AdSelect(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_AD_SELECT value")?,
-            ),
+            IFLA_BOND_ARP_VALIDATE => {
+                Self::ArpValidate(parse_u32(payload)?.into())
+            }
+            IFLA_BOND_ARP_ALL_TARGETS => {
+                Self::ArpAllTargets(parse_u32(payload)?)
+            }
+            IFLA_BOND_PRIMARY => Self::Primary(parse_u32(payload)?),
+            IFLA_BOND_PRIMARY_RESELECT => {
+                Self::PrimaryReselect(parse_u8(payload)?)
+            }
+            IFLA_BOND_FAIL_OVER_MAC => Self::FailOverMac(parse_u8(payload)?),
+            IFLA_BOND_XMIT_HASH_POLICY => {
+                Self::XmitHashPolicy(parse_u8(payload)?)
+            }
+            IFLA_BOND_RESEND_IGMP => Self::ResendIgmp(parse_u32(payload)?),
+            IFLA_BOND_NUM_PEER_NOTIF => Self::NumPeerNotif(parse_u8(payload)?),
+            IFLA_BOND_ALL_PORTS_ACTIVE => {
+                Self::AllPortsActive(parse_u8(payload)?)
+            }
+            IFLA_BOND_MIN_LINKS => Self::MinLinks(parse_u32(payload)?),
+            IFLA_BOND_LP_INTERVAL => Self::LpInterval(parse_u32(payload)?),
+            IFLA_BOND_PACKETS_PER_PORT => {
+                Self::PacketsPerPort(parse_u32(payload)?)
+            }
+            IFLA_BOND_AD_LACP_RATE => Self::AdLacpRate(parse_u8(payload)?),
+            IFLA_BOND_AD_SELECT => Self::AdSelect(parse_u8(payload)?),
             IFLA_BOND_AD_INFO => {
                 let mut infos = Vec::new();
-                let err = "failed to parse IFLA_BOND_AD_INFO";
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(err)?;
-                    let info = BondAdInfo::parse(nla).context(err)?;
+                    let info = BondAdInfo::parse(&nla?)?;
                     infos.push(info);
                 }
                 Self::AdInfo(infos)
             }
-            IFLA_BOND_AD_ACTOR_SYS_PRIO => Self::AdActorSysPrio(
-                parse_u16(payload)
-                    .context("invalid IFLA_BOND_AD_ACTOR_SYS_PRIO value")?,
-            ),
-            IFLA_BOND_AD_USER_PORT_KEY => Self::AdUserPortKey(
-                parse_u16(payload)
-                    .context("invalid IFLA_BOND_AD_USER_PORT_KEY value")?,
-            ),
-            IFLA_BOND_AD_ACTOR_SYSTEM => Self::AdActorSystem(
-                parse_mac(payload)
-                    .context("invalid IFLA_BOND_AD_ACTOR_SYSTEM value")?,
-            ),
-            IFLA_BOND_TLB_DYNAMIC_LB => Self::TlbDynamicLb(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_TLB_DYNAMIC_LB value")?,
-            ),
-            IFLA_BOND_PEER_NOTIF_DELAY => Self::PeerNotifDelay(
-                parse_u32(payload)
-                    .context("invalid IFLA_BOND_PEER_NOTIF_DELAY value")?,
-            ),
-            IFLA_BOND_AD_LACP_ACTIVE => Self::AdLacpActive(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_AD_LACP_ACTIVE value")?,
-            ),
-            IFLA_BOND_MISSED_MAX => Self::MissedMax(
-                parse_u8(payload)
-                    .context("invalid IFLA_BOND_MISSED_MAX value")?,
-            ),
+            IFLA_BOND_AD_ACTOR_SYS_PRIO => {
+                Self::AdActorSysPrio(parse_u16(payload)?)
+            }
+            IFLA_BOND_AD_USER_PORT_KEY => {
+                Self::AdUserPortKey(parse_u16(payload)?)
+            }
+            IFLA_BOND_AD_ACTOR_SYSTEM => {
+                Self::AdActorSystem(parse_mac(payload)?)
+            }
+            IFLA_BOND_TLB_DYNAMIC_LB => Self::TlbDynamicLb(parse_u8(payload)?),
+            IFLA_BOND_PEER_NOTIF_DELAY => {
+                Self::PeerNotifDelay(parse_u32(payload)?)
+            }
+            IFLA_BOND_AD_LACP_ACTIVE => Self::AdLacpActive(parse_u8(payload)?),
+            IFLA_BOND_MISSED_MAX => Self::MissedMax(parse_u8(payload)?),
             IFLA_BOND_NS_IP6_TARGET => {
                 let mut addrs = Vec::<Ipv6Addr>::new();
                 for nla in NlasIterator::new(payload) {
-                    let nla =
-                        &nla.context("invalid IFLA_BOND_NS_IP6_TARGET value")?;
-                    if let Ok(IpAddr::V6(addr)) = parse_ip(nla.value()) {
+                    if let Ok(IpAddr::V6(addr)) = parse_ip(&nla?.value()) {
                         addrs.push(addr);
                     }
                 }
                 Self::NsIp6Target(addrs)
             }
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid NLA for {}: {payload:?}",
-                buf.kind()
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

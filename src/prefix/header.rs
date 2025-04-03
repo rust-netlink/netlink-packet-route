@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
+    nla::{NlaBuffer, NlaError, NlasIterator},
     DecodeError, Emitable,
 };
 
@@ -22,7 +22,7 @@ buffer!(PrefixMessageBuffer(PREFIX_HEADER_LEN) {
 impl<'a, T: AsRef<[u8]> + ?Sized> PrefixMessageBuffer<&'a T> {
     pub fn nlas(
         &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
+    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, NlaError>> {
         NlasIterator::new(self.payload())
     }
 }

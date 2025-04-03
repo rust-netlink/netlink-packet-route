@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
-use anyhow::Context;
 /// set tunnel key
 ///
 /// The set_tunnel action allows to set tunnel encap applied
@@ -112,7 +111,9 @@ impl Nla for TcActionTunnelKeyOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcActionTunnelKeyOption
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_TUNNEL_KEY_TM => {
@@ -121,43 +122,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             TCA_TUNNEL_KEY_PARMS => Self::Parms(TcTunnelKey::parse(
                 &TcTunnelKeyBuffer::new_checked(payload)?,
             )?),
-            TCA_TUNNEL_KEY_ENC_IPV4_SRC => Self::EncIpv4Src(
-                parse_ipv4_addr(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_IPV4_SRC")?,
-            ),
-            TCA_TUNNEL_KEY_ENC_IPV4_DST => Self::EncIpv4Dst(
-                parse_ipv4_addr(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_IPV4_DST")?,
-            ),
-            TCA_TUNNEL_KEY_ENC_IPV6_SRC => Self::EncIpv6Src(
-                parse_ipv6_addr(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_IPV6_SRC")?,
-            ),
-            TCA_TUNNEL_KEY_ENC_IPV6_DST => Self::EncIpv6Dst(
-                parse_ipv6_addr(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_IPV6_DST")?,
-            ),
-            TCA_TUNNEL_KEY_ENC_KEY_ID => Self::EncKeyId(
-                parse_u32_be(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_KEY_ID")?,
-            ),
-            TCA_TUNNEL_KEY_ENC_DST_PORT => Self::EncDstPort(
-                parse_u16_be(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_DST_PORT")?,
-            ),
-            TCA_TUNNEL_KEY_ENC_TOS => Self::EncTos(
-                parse_u8(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_TOS")?,
-            ),
-            TCA_TUNNEL_KEY_ENC_TTL => Self::EncTtl(
-                parse_u8(payload)
-                    .context("failed to parse TCA_TUNNEL_KEY_ENC_TTL")?,
-            ),
-            TCA_TUNNEL_KEY_NO_CSUM => Self::NoCsum(
-                parse_u8(payload)
-                    .context("invalid TCA_TUNNEL_KEY_NO_CSUM value")?
-                    != 0,
-            ),
+            TCA_TUNNEL_KEY_ENC_IPV4_SRC => {
+                Self::EncIpv4Src(parse_ipv4_addr(payload)?)
+            }
+            TCA_TUNNEL_KEY_ENC_IPV4_DST => {
+                Self::EncIpv4Dst(parse_ipv4_addr(payload)?)
+            }
+            TCA_TUNNEL_KEY_ENC_IPV6_SRC => {
+                Self::EncIpv6Src(parse_ipv6_addr(payload)?)
+            }
+            TCA_TUNNEL_KEY_ENC_IPV6_DST => {
+                Self::EncIpv6Dst(parse_ipv6_addr(payload)?)
+            }
+            TCA_TUNNEL_KEY_ENC_KEY_ID => Self::EncKeyId(parse_u32_be(payload)?),
+            TCA_TUNNEL_KEY_ENC_DST_PORT => {
+                Self::EncDstPort(parse_u16_be(payload)?)
+            }
+            TCA_TUNNEL_KEY_ENC_TOS => Self::EncTos(parse_u8(payload)?),
+            TCA_TUNNEL_KEY_ENC_TTL => Self::EncTtl(parse_u8(payload)?),
+            TCA_TUNNEL_KEY_NO_CSUM => Self::NoCsum(parse_u8(payload)? != 0),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
@@ -190,7 +173,9 @@ impl Emitable for TcTunnelKey {
 }
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<TcTunnelKeyBuffer<&T>> for TcTunnelKey {
-    fn parse(buf: &TcTunnelKeyBuffer<&T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &TcTunnelKeyBuffer<&T>) -> Result<Self, Self::Error> {
         Ok(Self {
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
                 buf.generic(),

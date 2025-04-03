@@ -65,10 +65,12 @@ impl Nla for TcActionMirrorOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>>
     for TcActionMirrorOption
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_MIRRED_TM => {
@@ -117,7 +119,9 @@ impl Emitable for TcMirror {
 }
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<TcMirrorBuffer<&T>> for TcMirror {
-    fn parse(buf: &TcMirrorBuffer<&T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &TcMirrorBuffer<&T>) -> Result<Self, Self::Error> {
         Ok(Self {
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
                 buf.generic(),

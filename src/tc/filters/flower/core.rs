@@ -3,7 +3,6 @@
 use super::TcFilterFlowerMplsOption;
 use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
 use crate::tc::TcAction;
-use anyhow::Context;
 use byteorder::{BigEndian, ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
@@ -126,13 +125,6 @@ fn parse_bytes_16(payload: &[u8]) -> Result<[u8; 16], DecodeError> {
         data[i] = *byte;
     }
     Ok(data)
-}
-
-macro_rules! nla_err {
-    // Match rule that takes an argument expression
-    ($message:expr) => {
-        format!("failed to parse {} value", stringify!($message))
-    };
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -574,411 +566,226 @@ impl Nla for TcFilterFlowerOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>>
     for TcFilterFlowerOption
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
             // TCA_FLOWER_CLASSID => Self::ClassId(TcHandle::from(
             //    parse_u32(payload).context("failed to parse
             // TCA_FLOWER_CLASSID")?, )),
-            TCA_FLOWER_INDEV => Self::InDev(
-                parse_u32(payload).context(nla_err!(TCA_FLOWER_INDEV))?,
-            ),
+            TCA_FLOWER_INDEV => Self::InDev(parse_u32(payload)?),
             TCA_FLOWER_ACT => {
                 let mut acts = vec![];
                 for act in NlasIterator::new(payload) {
-                    let act = act.context("invalid TCA_FLOWER_ACT")?;
-                    acts.push(
-                        TcAction::parse(&act)
-                            .context(nla_err!(TCA_FLOWER_ACT))?,
-                    );
+                    acts.push(TcAction::parse(&act?)?);
                 }
                 Self::Actions(acts)
             }
-            TCA_FLOWER_KEY_ETH_DST => Self::EthDst(
-                parse_mac(payload).context(nla_err!(TCA_FLOWER_KEY_ETH_DST))?,
-            ),
-            TCA_FLOWER_KEY_ETH_DST_MASK => Self::EthDstMask(
-                parse_mac(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ETH_DST_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ETH_SRC => Self::EthSrc(
-                parse_mac(payload).context(nla_err!(TCA_FLOWER_KEY_ETH_SRC))?,
-            ),
-            TCA_FLOWER_KEY_ETH_SRC_MASK => Self::EthSrcMask(
-                parse_mac(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ETH_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ETH_TYPE => Self::EthType(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ETH_TYPE))?,
-            ),
-            TCA_FLOWER_KEY_IP_PROTO => Self::IpProto(
-                parse_u8(payload).context(nla_err!(TCA_FLOWER_KEY_IP_PROTO))?,
-            ),
-            TCA_FLOWER_KEY_IP_TTL => Self::IpTtl(
-                parse_u8(payload).context(nla_err!(TCA_FLOWER_KEY_IP_TTL))?,
-            ),
-            TCA_FLOWER_KEY_IP_TTL_MASK => Self::IpTtlMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IP_TTL_MASK))?,
-            ),
-            TCA_FLOWER_KEY_IP_TOS => Self::IpTos(
-                parse_u8(payload).context(nla_err!(TCA_FLOWER_KEY_IP_TOS))?,
-            ),
-            TCA_FLOWER_KEY_IP_TOS_MASK => Self::IpTosMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IP_TOS_MASK))?,
-            ),
-            TCA_FLOWER_KEY_IPV4_SRC => Self::Ipv4Src(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV4_SRC))?,
-            ),
-            TCA_FLOWER_KEY_IPV4_SRC_MASK => Self::Ipv4SrcMask(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV4_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_IPV4_DST => Self::Ipv4Dst(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV4_DST))?,
-            ),
-            TCA_FLOWER_KEY_IPV4_DST_MASK => Self::Ipv4DstMask(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV4_DST_MASK))?,
-            ),
-            TCA_FLOWER_KEY_IPV6_SRC => Self::Ipv6Src(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV6_SRC))?,
-            ),
-            TCA_FLOWER_KEY_IPV6_SRC_MASK => Self::Ipv6SrcMask(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV6_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_IPV6_DST => Self::Ipv6Dst(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV6_DST))?,
-            ),
-            TCA_FLOWER_KEY_IPV6_DST_MASK => Self::Ipv6DstMask(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_IPV6_DST_MASK))?,
-            ),
-            TCA_FLOWER_KEY_TCP_SRC => Self::TcpSrc(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_TCP_SRC))?,
-            ),
-            TCA_FLOWER_KEY_TCP_DST => Self::TcpDst(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_TCP_DST))?,
-            ),
-            TCA_FLOWER_KEY_TCP_SRC_MASK => Self::TcpSrcMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_TCP_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_TCP_DST_MASK => Self::TcpDstMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_TCP_DST_MASK))?,
-            ),
-            TCA_FLOWER_KEY_UDP_SRC => Self::UdpSrc(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_UDP_SRC))?,
-            ),
-            TCA_FLOWER_KEY_UDP_DST => Self::UdpDst(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_UDP_DST))?,
-            ),
-            TCA_FLOWER_KEY_UDP_SRC_MASK => Self::UdpSrcMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_UDP_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_UDP_DST_MASK => Self::UdpDstMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_UDP_DST_MASK))?,
-            ),
-            TCA_FLOWER_KEY_SCTP_SRC => Self::SctpSrc(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_SCTP_SRC))?,
-            ),
-            TCA_FLOWER_KEY_SCTP_DST => Self::SctpDst(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_SCTP_DST))?,
-            ),
-            TCA_FLOWER_KEY_SCTP_SRC_MASK => Self::SctpSrcMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_SCTP_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_SCTP_DST_MASK => Self::SctpDstMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_SCTP_DST_MASK))?,
-            ),
+            TCA_FLOWER_KEY_ETH_DST => Self::EthDst(parse_mac(payload)?),
+            TCA_FLOWER_KEY_ETH_DST_MASK => {
+                Self::EthDstMask(parse_mac(payload)?)
+            }
+            TCA_FLOWER_KEY_ETH_SRC => Self::EthSrc(parse_mac(payload)?),
+            TCA_FLOWER_KEY_ETH_SRC_MASK => {
+                Self::EthSrcMask(parse_mac(payload)?)
+            }
+            TCA_FLOWER_KEY_ETH_TYPE => Self::EthType(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_IP_PROTO => Self::IpProto(parse_u8(payload)?),
+            TCA_FLOWER_KEY_IP_TTL => Self::IpTtl(parse_u8(payload)?),
+            TCA_FLOWER_KEY_IP_TTL_MASK => Self::IpTtlMask(parse_u8(payload)?),
+            TCA_FLOWER_KEY_IP_TOS => Self::IpTos(parse_u8(payload)?),
+            TCA_FLOWER_KEY_IP_TOS_MASK => Self::IpTosMask(parse_u8(payload)?),
+            TCA_FLOWER_KEY_IPV4_SRC => Self::Ipv4Src(parse_ipv4_addr(payload)?),
+            TCA_FLOWER_KEY_IPV4_SRC_MASK => {
+                Self::Ipv4SrcMask(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_IPV4_DST => Self::Ipv4Dst(parse_ipv4_addr(payload)?),
+            TCA_FLOWER_KEY_IPV4_DST_MASK => {
+                Self::Ipv4DstMask(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_IPV6_SRC => Self::Ipv6Src(parse_ipv6_addr(payload)?),
+            TCA_FLOWER_KEY_IPV6_SRC_MASK => {
+                Self::Ipv6SrcMask(parse_ipv6_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_IPV6_DST => Self::Ipv6Dst(parse_ipv6_addr(payload)?),
+            TCA_FLOWER_KEY_IPV6_DST_MASK => {
+                Self::Ipv6DstMask(parse_ipv6_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_TCP_SRC => Self::TcpSrc(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_TCP_DST => Self::TcpDst(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_TCP_SRC_MASK => {
+                Self::TcpSrcMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_TCP_DST_MASK => {
+                Self::TcpDstMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_UDP_SRC => Self::UdpSrc(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_UDP_DST => Self::UdpDst(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_UDP_SRC_MASK => {
+                Self::UdpSrcMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_UDP_DST_MASK => {
+                Self::UdpDstMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_SCTP_SRC => Self::SctpSrc(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_SCTP_DST => Self::SctpDst(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_SCTP_SRC_MASK => {
+                Self::SctpSrcMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_SCTP_DST_MASK => {
+                Self::SctpDstMask(parse_u16_be(payload)?)
+            }
 
-            TCA_FLOWER_FLAGS => Self::Flags(
-                parse_u32(payload).context(nla_err!(TCA_FLOWER_FLAGS))?,
-            ),
+            TCA_FLOWER_FLAGS => Self::Flags(parse_u32(payload)?),
 
-            TCA_FLOWER_KEY_VLAN_ID => Self::VlanId(
-                parse_u16(payload).context(nla_err!(TCA_FLOWER_KEY_VLAN_ID))?,
-            ),
-            TCA_FLOWER_KEY_VLAN_PRIO => Self::VlanPrio(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_VLAN_PRIO))?,
-            ),
-            TCA_FLOWER_KEY_VLAN_ETH_TYPE => Self::VlanEthType(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_VLAN_ETH_TYPE))?,
-            ),
-            TCA_FLOWER_KEY_CVLAN_ID => Self::CvlanId(
-                parse_u16(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CVLAN_ID))?,
-            ),
-            TCA_FLOWER_KEY_CVLAN_PRIO => Self::CvlanPrio(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CVLAN_PRIO))?,
-            ),
-            TCA_FLOWER_KEY_CVLAN_ETH_TYPE => Self::CvlanEthType(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CVLAN_ETH_TYPE))?,
-            ),
-            TCA_FLOWER_KEY_ENC_KEY_ID => Self::EncKeyId(
-                parse_u32_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_KEY_ID))?,
-            ),
-            TCA_FLOWER_KEY_ENC_UDP_SRC_PORT => Self::EncKeyUdpSrcPort(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_UDP_SRC_PORT))?,
-            ),
-            TCA_FLOWER_KEY_ENC_UDP_SRC_PORT_MASK => Self::EncKeyUdpSrcPortMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_UDP_SRC_PORT_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ENC_UDP_DST_PORT => Self::EncKeyUdpDstPort(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_UDP_DST_PORT))?,
-            ),
-            TCA_FLOWER_KEY_ENC_UDP_DST_PORT_MASK => Self::EncKeyUdpDstPortMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_UDP_DST_PORT_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV4_CODE => Self::Icmpv4Code(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV4_CODE))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV4_CODE_MASK => Self::Icmpv4CodeMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV4_CODE_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV4_TYPE => Self::Icmpv4Type(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV4_TYPE))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV4_TYPE_MASK => Self::Icmpv4TypeMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV4_TYPE_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV6_CODE => Self::Icmpv6Code(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV6_CODE))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV6_CODE_MASK => Self::Icmpv6CodeMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV6_CODE_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV6_TYPE => Self::Icmpv6Type(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV6_TYPE))?,
-            ),
-            TCA_FLOWER_KEY_ICMPV6_TYPE_MASK => Self::Icmpv6TypeMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ICMPV6_TYPE_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ARP_SIP => Self::ArpSip(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ARP_SIP))?,
-            ),
-            TCA_FLOWER_KEY_ARP_SIP_MASK => Self::ArpSipMask(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ARP_SIP_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ARP_TIP => Self::ArpTip(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ARP_TIP))?,
-            ),
-            TCA_FLOWER_KEY_ARP_TIP_MASK => Self::ArpTipMask(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ARP_TIP_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ARP_OP => Self::ArpOp(
-                parse_u8(payload).context(nla_err!(TCA_FLOWER_KEY_ARP_OP))?,
-            ),
-            TCA_FLOWER_KEY_ARP_OP_MASK => Self::ArpOpMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ARP_OP_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ARP_SHA => Self::ArpSha(
-                parse_mac(payload).context(nla_err!(TCA_FLOWER_KEY_ARP_SHA))?,
-            ),
-            TCA_FLOWER_KEY_ARP_SHA_MASK => Self::ArpShaMask(
-                parse_mac(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ARP_SHA_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ARP_THA => Self::ArpTha(
-                parse_mac(payload).context(nla_err!(TCA_FLOWER_KEY_ARP_THA))?,
-            ),
-            TCA_FLOWER_KEY_ARP_THA_MASK => Self::ArpThaMask(
-                parse_mac(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ARP_THA_MASK))?,
-            ),
-            TCA_FLOWER_KEY_MPLS_TTL => Self::MplsTtl(
-                parse_u8(payload).context(nla_err!(TCA_FLOWER_KEY_MPLS_TTL))?,
-            ),
-            TCA_FLOWER_KEY_MPLS_BOS => Self::MplsBos(
-                parse_u8(payload).context(nla_err!(TCA_FLOWER_KEY_MPLS_BOS))?,
-            ),
-            TCA_FLOWER_KEY_MPLS_TC => Self::MplsTc(
-                parse_u8(payload).context(nla_err!(TCA_FLOWER_KEY_MPLS_TC))?,
-            ),
-            TCA_FLOWER_KEY_MPLS_LABEL => Self::MplsLabel(
-                parse_u32(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_MPLS_LABEL))?,
-            ),
-            TCA_FLOWER_KEY_TCP_FLAGS => Self::TcpFlags(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_TCP_FLAGS))?,
-            ),
-            TCA_FLOWER_KEY_TCP_FLAGS_MASK => Self::TcpFlagsMask(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_TCP_FLAGS_MASK))?,
-            ),
-            TCA_FLOWER_KEY_FLAGS => Self::KeyFlags(
-                parse_u32_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_FLAGS))?,
-            ),
-            TCA_FLOWER_KEY_FLAGS_MASK => Self::KeyFlagsMask(
-                parse_u32_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_FLAGS_MASK))?,
-            ),
+            TCA_FLOWER_KEY_VLAN_ID => Self::VlanId(parse_u16(payload)?),
+            TCA_FLOWER_KEY_VLAN_PRIO => Self::VlanPrio(parse_u8(payload)?),
+            TCA_FLOWER_KEY_VLAN_ETH_TYPE => {
+                Self::VlanEthType(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_CVLAN_ID => Self::CvlanId(parse_u16(payload)?),
+            TCA_FLOWER_KEY_CVLAN_PRIO => Self::CvlanPrio(parse_u8(payload)?),
+            TCA_FLOWER_KEY_CVLAN_ETH_TYPE => {
+                Self::CvlanEthType(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_KEY_ID => Self::EncKeyId(parse_u32_be(payload)?),
+            TCA_FLOWER_KEY_ENC_UDP_SRC_PORT => {
+                Self::EncKeyUdpSrcPort(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_UDP_SRC_PORT_MASK => {
+                Self::EncKeyUdpSrcPortMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_UDP_DST_PORT => {
+                Self::EncKeyUdpDstPort(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_UDP_DST_PORT_MASK => {
+                Self::EncKeyUdpDstPortMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_ICMPV4_CODE => Self::Icmpv4Code(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ICMPV4_CODE_MASK => {
+                Self::Icmpv4CodeMask(parse_u8(payload)?)
+            }
+            TCA_FLOWER_KEY_ICMPV4_TYPE => Self::Icmpv4Type(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ICMPV4_TYPE_MASK => {
+                Self::Icmpv4TypeMask(parse_u8(payload)?)
+            }
+            TCA_FLOWER_KEY_ICMPV6_CODE => Self::Icmpv6Code(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ICMPV6_CODE_MASK => {
+                Self::Icmpv6CodeMask(parse_u8(payload)?)
+            }
+            TCA_FLOWER_KEY_ICMPV6_TYPE => Self::Icmpv6Type(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ICMPV6_TYPE_MASK => {
+                Self::Icmpv6TypeMask(parse_u8(payload)?)
+            }
+            TCA_FLOWER_KEY_ARP_SIP => Self::ArpSip(parse_ipv4_addr(payload)?),
+            TCA_FLOWER_KEY_ARP_SIP_MASK => {
+                Self::ArpSipMask(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ARP_TIP => Self::ArpTip(parse_ipv4_addr(payload)?),
+            TCA_FLOWER_KEY_ARP_TIP_MASK => {
+                Self::ArpTipMask(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ARP_OP => Self::ArpOp(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ARP_OP_MASK => Self::ArpOpMask(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ARP_SHA => Self::ArpSha(parse_mac(payload)?),
+            TCA_FLOWER_KEY_ARP_SHA_MASK => {
+                Self::ArpShaMask(parse_mac(payload)?)
+            }
+            TCA_FLOWER_KEY_ARP_THA => Self::ArpTha(parse_mac(payload)?),
+            TCA_FLOWER_KEY_ARP_THA_MASK => {
+                Self::ArpThaMask(parse_mac(payload)?)
+            }
+            TCA_FLOWER_KEY_MPLS_TTL => Self::MplsTtl(parse_u8(payload)?),
+            TCA_FLOWER_KEY_MPLS_BOS => Self::MplsBos(parse_u8(payload)?),
+            TCA_FLOWER_KEY_MPLS_TC => Self::MplsTc(parse_u8(payload)?),
+            TCA_FLOWER_KEY_MPLS_LABEL => Self::MplsLabel(parse_u32(payload)?),
+            TCA_FLOWER_KEY_TCP_FLAGS => Self::TcpFlags(parse_u16_be(payload)?),
+            TCA_FLOWER_KEY_TCP_FLAGS_MASK => {
+                Self::TcpFlagsMask(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_FLAGS => Self::KeyFlags(parse_u32_be(payload)?),
+            TCA_FLOWER_KEY_FLAGS_MASK => {
+                Self::KeyFlagsMask(parse_u32_be(payload)?)
+            }
 
-            TCA_FLOWER_KEY_ENC_IP_TTL => Self::EncKeyIpTtl(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IP_TTL))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IP_TTL_MASK => Self::EncKeyIpTtlMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IP_TTL_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IP_TOS => Self::EncKeyIpTos(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IP_TOS))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IP_TOS_MASK => Self::EncKeyIpTosMask(
-                parse_u8(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IP_TOS_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV4_SRC => Self::EncKeyIpv4Src(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV4_SRC))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV4_SRC_MASK => Self::EncKeyIpv4SrcMask(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV4_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV4_DST => Self::EncKeyIpv4Dst(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV4_DST))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV4_DST_MASK => Self::EncKeyIpv4DstMask(
-                parse_ipv4_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV4_DST_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV6_SRC => Self::EncKeyIpv6Src(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV6_SRC))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV6_SRC_MASK => Self::EncKeyIpv6SrcMask(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV6_SRC_MASK))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV6_DST => Self::EncKeyIpv6Dst(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV6_DST))?,
-            ),
-            TCA_FLOWER_KEY_ENC_IPV6_DST_MASK => Self::EncKeyIpv6DstMask(
-                parse_ipv6_addr(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_ENC_IPV6_DST_MASK))?,
-            ),
-            TCA_FLOWER_IN_HW_COUNT => Self::InHwCount(
-                parse_u32(payload).context(nla_err!(TCA_FLOWER_IN_HW_COUNT))?,
-            ),
-            TCA_FLOWER_KEY_PORT_SRC_MIN => Self::PortSrcMin(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_PORT_SRC_MIN))?,
-            ),
-            TCA_FLOWER_KEY_PORT_SRC_MAX => Self::PortSrcMax(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_PORT_SRC_MAX))?,
-            ),
-            TCA_FLOWER_KEY_PORT_DST_MIN => Self::PortDstMin(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_PORT_DST_MIN))?,
-            ),
-            TCA_FLOWER_KEY_PORT_DST_MAX => Self::PortDstMax(
-                parse_u16_be(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_PORT_DST_MAX))?,
-            ),
-            TCA_FLOWER_KEY_CT_STATE => Self::CtState(
-                parse_u16(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CT_STATE))?,
-            ),
-            TCA_FLOWER_KEY_CT_STATE_MASK => Self::CtStateMask(
-                parse_u16(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CT_STATE_MASK))?,
-            ),
-            TCA_FLOWER_KEY_CT_ZONE => Self::CtZone(
-                parse_u16(payload).context(nla_err!(TCA_FLOWER_KEY_CT_ZONE))?,
-            ),
-            TCA_FLOWER_KEY_CT_ZONE_MASK => Self::CtZoneMask(
-                parse_u16(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CT_ZONE_MASK))?,
-            ),
-            TCA_FLOWER_KEY_CT_MARK => Self::CtMark(
-                parse_u32(payload).context(nla_err!(TCA_FLOWER_KEY_CT_MARK))?,
-            ),
-            TCA_FLOWER_KEY_CT_MARK_MASK => Self::CtMarkMask(
-                parse_u32(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CT_MARK_MASK))?,
-            ),
-            TCA_FLOWER_KEY_CT_LABELS => Self::CtLabels(
-                parse_bytes_16(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CT_LABELS))?,
-            ),
-            TCA_FLOWER_KEY_CT_LABELS_MASK => Self::CtLabelsMask(
-                parse_bytes_16(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_CT_LABELS_MASK))?,
-            ),
+            TCA_FLOWER_KEY_ENC_IP_TTL => Self::EncKeyIpTtl(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ENC_IP_TTL_MASK => {
+                Self::EncKeyIpTtlMask(parse_u8(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IP_TOS => Self::EncKeyIpTos(parse_u8(payload)?),
+            TCA_FLOWER_KEY_ENC_IP_TOS_MASK => {
+                Self::EncKeyIpTosMask(parse_u8(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV4_SRC => {
+                Self::EncKeyIpv4Src(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV4_SRC_MASK => {
+                Self::EncKeyIpv4SrcMask(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV4_DST => {
+                Self::EncKeyIpv4Dst(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV4_DST_MASK => {
+                Self::EncKeyIpv4DstMask(parse_ipv4_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV6_SRC => {
+                Self::EncKeyIpv6Src(parse_ipv6_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV6_SRC_MASK => {
+                Self::EncKeyIpv6SrcMask(parse_ipv6_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV6_DST => {
+                Self::EncKeyIpv6Dst(parse_ipv6_addr(payload)?)
+            }
+            TCA_FLOWER_KEY_ENC_IPV6_DST_MASK => {
+                Self::EncKeyIpv6DstMask(parse_ipv6_addr(payload)?)
+            }
+            TCA_FLOWER_IN_HW_COUNT => Self::InHwCount(parse_u32(payload)?),
+            TCA_FLOWER_KEY_PORT_SRC_MIN => {
+                Self::PortSrcMin(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_PORT_SRC_MAX => {
+                Self::PortSrcMax(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_PORT_DST_MIN => {
+                Self::PortDstMin(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_PORT_DST_MAX => {
+                Self::PortDstMax(parse_u16_be(payload)?)
+            }
+            TCA_FLOWER_KEY_CT_STATE => Self::CtState(parse_u16(payload)?),
+            TCA_FLOWER_KEY_CT_STATE_MASK => {
+                Self::CtStateMask(parse_u16(payload)?)
+            }
+            TCA_FLOWER_KEY_CT_ZONE => Self::CtZone(parse_u16(payload)?),
+            TCA_FLOWER_KEY_CT_ZONE_MASK => {
+                Self::CtZoneMask(parse_u16(payload)?)
+            }
+            TCA_FLOWER_KEY_CT_MARK => Self::CtMark(parse_u32(payload)?),
+            TCA_FLOWER_KEY_CT_MARK_MASK => {
+                Self::CtMarkMask(parse_u32(payload)?)
+            }
+            TCA_FLOWER_KEY_CT_LABELS => {
+                Self::CtLabels(parse_bytes_16(payload)?)
+            }
+            TCA_FLOWER_KEY_CT_LABELS_MASK => {
+                Self::CtLabelsMask(parse_bytes_16(payload)?)
+            }
             TCA_FLOWER_KEY_MPLS_OPTS => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
-                    let nla =
-                        nla.context("invalid TCA_FLOWER_KEY_MPLS_OPTS nla")?;
-                    nlas.push(
-                        TcFilterFlowerMplsOption::parse(&nla)
-                            .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPTS))?,
-                    )
+                    nlas.push(TcFilterFlowerMplsOption::parse(&nla?)?)
                 }
                 Self::MplsOpts(nlas)
             }
-            TCA_FLOWER_KEY_HASH => Self::KeyHash(
-                parse_u32(payload).context(nla_err!(TCA_FLOWER_KEY_HASH))?,
-            ),
-            TCA_FLOWER_KEY_HASH_MASK => Self::KeyHashMask(
-                parse_u32(payload)
-                    .context(nla_err!(TCA_FLOWER_KEY_HASH_MASK))?,
-            ),
+            TCA_FLOWER_KEY_HASH => Self::KeyHash(parse_u32(payload)?),
+            TCA_FLOWER_KEY_HASH_MASK => Self::KeyHashMask(parse_u32(payload)?),
 
-            _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse flower nla")?,
-            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }

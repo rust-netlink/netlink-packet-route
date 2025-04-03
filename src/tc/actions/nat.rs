@@ -68,7 +68,9 @@ impl Nla for TcActionNatOption {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for TcActionNatOption
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, Self::Error> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_NAT_TM => {
@@ -140,7 +142,9 @@ impl Emitable for TcNat {
 }
 
 impl<T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&T>> for TcNat {
-    fn parse(buf: &TcNatBuffer<&T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &TcNatBuffer<&T>) -> Result<Self, Self::Error> {
         Ok(Self {
             generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
                 buf.generic(),

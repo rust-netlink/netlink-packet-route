@@ -15,13 +15,12 @@ description = "netlink packet types"
 rich_nlas = []
 
 [dependencies]
-anyhow = "1.0.31"
 bitflags = "2"
 byteorder = "1.3.2"
 libc = "0.2.66"
 log = { version = "0.4.20", features = ["std"] }
-netlink-packet-core = { version = "0.7.0" }
-netlink-packet-utils = { version = "0.5.2" }
+netlink-packet-core = { git = "https://github.com/rust-netlink/netlink-packet-core.git", rev = "01e8dd1" }
+netlink-packet-utils = { version = "0.6.0" }
 
 [[example]]
 name = "dump_packet_links"

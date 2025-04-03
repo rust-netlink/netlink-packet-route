@@ -39,7 +39,9 @@ buffer!(NeighbourTableStatsBuffer(STATS_LEN) {
 impl<T: AsRef<[u8]>> Parseable<NeighbourTableStatsBuffer<T>>
     for NeighbourTableStats
 {
-    fn parse(buf: &NeighbourTableStatsBuffer<T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NeighbourTableStatsBuffer<T>) -> Result<Self, Self::Error> {
         Ok(Self {
             allocs: buf.allocs(),
             destroys: buf.destroys(),

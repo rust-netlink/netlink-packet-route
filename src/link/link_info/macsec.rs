@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -212,72 +211,28 @@ impl Nla for InfoMacSec {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacSec {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoMacSec {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoMacSec::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_MACSEC_SCI => {
-                Sci(parse_u64(payload)
-                    .context("invalid IFLA_MACSEC_SCI value")?)
-            }
-            IFLA_MACSEC_PORT => Port(
-                parse_u16(payload).context("invalid IFLA_MACSEC_PORT value")?,
-            ),
-            IFLA_MACSEC_ICV_LEN => IcvLen(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_ICV_LEN value")?,
-            ),
-            IFLA_MACSEC_CIPHER_SUITE => CipherSuite(
-                parse_u64(payload)
-                    .context("invalid IFLA_MACSEC_CIPHER_SUITE value")?
-                    .into(),
-            ),
-            IFLA_MACSEC_WINDOW => Window(
-                parse_u32(payload)
-                    .context("invalid IFLA_MACSEC_WINDOW value")?,
-            ),
-            IFLA_MACSEC_ENCODING_SA => EncodingSa(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_ENCODING_SA value")?,
-            ),
-            IFLA_MACSEC_ENCRYPT => Encrypt(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_ENCRYPT value")?,
-            ),
-            IFLA_MACSEC_PROTECT => Protect(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_PROTECT value")?,
-            ),
-            IFLA_MACSEC_INC_SCI => IncSci(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_INC_SCI value")?,
-            ),
-            IFLA_MACSEC_ES => {
-                Es(parse_u8(payload).context("invalid IFLA_MACSEC_ES value")?)
-            }
-            IFLA_MACSEC_SCB => {
-                Scb(parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_SCB value")?)
-            }
-            IFLA_MACSEC_REPLAY_PROTECT => ReplayProtect(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_REPLAY_PROTECT value")?,
-            ),
-            IFLA_MACSEC_VALIDATION => Validation(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_VALIDATION value")?
-                    .into(),
-            ),
-            IFLA_MACSEC_OFFLOAD => Offload(
-                parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_OFFLOAD value")?
-                    .into(),
-            ),
-            kind => Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
-            ),
+            IFLA_MACSEC_SCI => Sci(parse_u64(payload)?),
+            IFLA_MACSEC_PORT => Port(parse_u16(payload)?),
+            IFLA_MACSEC_ICV_LEN => IcvLen(parse_u8(payload)?),
+            IFLA_MACSEC_CIPHER_SUITE => CipherSuite(parse_u64(payload)?.into()),
+            IFLA_MACSEC_WINDOW => Window(parse_u32(payload)?),
+            IFLA_MACSEC_ENCODING_SA => EncodingSa(parse_u8(payload)?),
+            IFLA_MACSEC_ENCRYPT => Encrypt(parse_u8(payload)?),
+            IFLA_MACSEC_PROTECT => Protect(parse_u8(payload)?),
+            IFLA_MACSEC_INC_SCI => IncSci(parse_u8(payload)?),
+            IFLA_MACSEC_ES => Es(parse_u8(payload)?),
+            IFLA_MACSEC_SCB => Scb(parse_u8(payload)?),
+            IFLA_MACSEC_REPLAY_PROTECT => ReplayProtect(parse_u8(payload)?),
+            IFLA_MACSEC_VALIDATION => Validation(parse_u8(payload)?.into()),
+            IFLA_MACSEC_OFFLOAD => Offload(parse_u8(payload)?.into()),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }

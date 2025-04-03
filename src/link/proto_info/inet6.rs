@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
     traits::Parseable,
@@ -15,17 +14,15 @@ pub enum LinkProtoInfoInet6 {
 
 pub(crate) struct VecLinkProtoInfoInet6(pub(crate) Vec<LinkProtoInfoInet6>);
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>>
     for VecLinkProtoInfoInet6
 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(format!(
-                "invalid inet6 IFLA_PROTINFO {:?}",
-                buf.value()
-            ))?;
-            nlas.push(LinkProtoInfoInet6::parse(&nla)?);
+            nlas.push(LinkProtoInfoInet6::parse(&nla?)?);
         }
         Ok(Self(nlas))
     }
@@ -51,13 +48,10 @@ impl Nla for LinkProtoInfoInet6 {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for LinkProtoInfoInet6
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        Ok(Self::Other(DefaultNla::parse(buf).context(format!(
-            "invalid inet6 IFLA_PROTINFO {:?}",
-            buf.value()
-        ))?))
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for LinkProtoInfoInet6 {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
+        Ok(Self::Other(DefaultNla::parse(buf)?))
     }
 }

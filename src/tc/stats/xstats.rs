@@ -31,14 +31,16 @@ impl Emitable for TcXstats {
     }
 }
 
-impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcXstats
+impl<T> ParseableParametrized<NlaBuffer<&T>, &str> for TcXstats
 where
     T: AsRef<[u8]> + ?Sized,
 {
+    type Error = DecodeError;
+
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<&T>,
         kind: &str,
-    ) -> Result<TcXstats, DecodeError> {
+    ) -> Result<TcXstats, Self::Error> {
         Ok(match kind {
             TcQdiscFqCodel::KIND => {
                 TcXstats::FqCodel(TcFqCodelXstats::parse(buf.value())?)

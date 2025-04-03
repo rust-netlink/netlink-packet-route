@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
@@ -49,20 +48,16 @@ impl Nla for InfoXfrm {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoXfrm {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&T>> for InfoXfrm {
+    type Error = DecodeError;
+
+    fn parse(buf: &NlaBuffer<&T>) -> Result<Self, Self::Error> {
         use self::InfoXfrm::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_XFRM_LINK => Link(
-                parse_u32(payload).context("invalid IFLA_XFRM_LINK value")?,
-            ),
-            IFLA_XFRM_IF_ID => IfId(
-                parse_u32(payload).context("invalid IFLA_XFRM_IF_ID value")?,
-            ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(xfrm)"
-            ))?),
+            IFLA_XFRM_LINK => Link(parse_u32(payload)?),
+            IFLA_XFRM_IF_ID => IfId(parse_u32(payload)?),
+            _ => Other(DefaultNla::parse(buf)?),
         })
     }
 }
