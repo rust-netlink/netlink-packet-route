@@ -7,7 +7,7 @@ use crate::link::{
     BondArpAllTargets, BondArpValidate, BondFailOverMac, BondMode,
     BondPortState, BondXmitHashPolicy, InfoBond, InfoBondPort, InfoData,
     InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
-    LinkLayerType, LinkMessage, LinkMessageBuffer, Map, MiiStatus, State,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, Map, MiiStatus, State, BondPrimaryReselect
 };
 use crate::{AddressFamily, RouteNetlinkMessage};
 
@@ -66,7 +66,7 @@ fn test_bond_link_info() {
                 InfoBond::ArpInterval(0),
                 InfoBond::ArpValidate(BondArpValidate::None),
                 InfoBond::ArpAllTargets(BondArpAllTargets::Any),
-                InfoBond::PrimaryReselect(0),
+                InfoBond::PrimaryReselect(BondPrimaryReselect::Always),
                 InfoBond::FailOverMac(BondFailOverMac::None),
                 InfoBond::XmitHashPolicy(BondXmitHashPolicy::Layer2),
                 InfoBond::ResendIgmp(1),
