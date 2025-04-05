@@ -71,6 +71,9 @@ const BOND_ARP_VALIDATE_ALL: u32 =
 const BOND_ARP_FILTER: u32 = BOND_ARP_VALIDATE_ALL + 1;
 const BOND_ARP_FILTER_ACTIVE: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_ACTIVE;
 const BOND_ARP_FILTER_BACKUP: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_BACKUP;
+const BOND_PRI_RESELECT_ALWAYS: u8 = 0;
+const BOND_PRI_RESELECT_BETTER: u8 = 1;
+const BOND_PRI_RESELECT_FAILURE: u8 = 2;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]
@@ -272,6 +275,51 @@ impl std::fmt::Display for BondArpValidate {
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondPrimaryReselect {
+    #[default]
+    Always,
+    Better,
+    Failure,
+    Other(u8),
+}
+
+impl From<BondPrimaryReselect> for u8 {
+    fn from(value: BondPrimaryReselect) -> Self {
+        match value {
+            BondPrimaryReselect::Always => BOND_PRI_RESELECT_ALWAYS,
+            BondPrimaryReselect::Better => BOND_PRI_RESELECT_BETTER,
+            BondPrimaryReselect::Failure => BOND_PRI_RESELECT_FAILURE,
+            BondPrimaryReselect::Other(d) => d,
+        }
+    }
+}
+
+impl From<u8> for BondPrimaryReselect {
+    fn from(value: u8) -> Self {
+        match value {
+            BOND_PRI_RESELECT_ALWAYS => BondPrimaryReselect::Always,
+            BOND_PRI_RESELECT_BETTER => BondPrimaryReselect::Better,
+            BOND_PRI_RESELECT_FAILURE => BondPrimaryReselect::Failure,
+            d => BondPrimaryReselect::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondPrimaryReselect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondPrimaryReselect::Always => "always",
+            BondPrimaryReselect::Better => "better",
+            BondPrimaryReselect::Failure => "failure",
+            BondPrimaryReselect::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
 // Some attributes (ARP_IP_TARGET, NS_IP6_TARGET) contain a nested
 // list of IP addresses, where each element uses the index as NLA kind
 // and the address as value. InfoBond exposes vectors of IP addresses,
@@ -352,7 +400,7 @@ pub enum InfoBond {
     ArpValidate(BondArpValidate),
     ArpAllTargets(u32),
     Primary(u32),
-    PrimaryReselect(u8),
+    PrimaryReselect(BondPrimaryReselect),
     FailOverMac(u8),
     XmitHashPolicy(u8),
     ResendIgmp(u32),
@@ -419,8 +467,8 @@ impl Nla for InfoBond {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Mode(value) => buffer[0] = (*value).into(),
+            Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
             Self::UseCarrier(value)
-            | Self::PrimaryReselect(value)
             | Self::FailOverMac(value)
             | Self::XmitHashPolicy(value)
             | Self::NumPeerNotif(value)
@@ -558,7 +606,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_PRIMARY_RESELECT => Self::PrimaryReselect(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?,
+                    .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?
+                    .into(),
             ),
             IFLA_BOND_FAIL_OVER_MAC => Self::FailOverMac(
                 parse_u8(payload)
