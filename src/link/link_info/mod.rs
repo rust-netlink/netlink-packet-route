@@ -30,7 +30,7 @@ mod xstats;
 
 pub use self::bond::{
     BondAdInfo, BondArpAllTargets, BondArpValidate, BondFailOverMac, BondMode,
-    BondXmitHashPolicy, InfoBond,
+    BondXmitHashPolicy, InfoBond, BondPrimaryReselect
 };
 pub use self::bond_port::{BondPortState, InfoBondPort, MiiStatus};
 pub use self::bridge::{
