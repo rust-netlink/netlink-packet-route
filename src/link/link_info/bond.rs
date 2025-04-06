@@ -71,6 +71,12 @@ const BOND_ARP_VALIDATE_ALL: u32 =
 const BOND_ARP_FILTER: u32 = BOND_ARP_VALIDATE_ALL + 1;
 const BOND_ARP_FILTER_ACTIVE: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_ACTIVE;
 const BOND_ARP_FILTER_BACKUP: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_BACKUP;
+const BOND_XMIT_POLICY_LAYER2: u8 = 0;
+const BOND_XMIT_POLICY_LAYER34: u8 = 1;
+const BOND_XMIT_POLICY_LAYER23: u8 = 2;
+const BOND_XMIT_POLICY_ENCAP23: u8 = 3;
+const BOND_XMIT_POLICY_ENCAP34: u8 = 4;
+const BOND_XMIT_POLICY_VLAN_SRCMAC: u8 = 5;
 const BOND_OPT_ARP_ALL_TARGETS_ANY: u32 = 0;
 const BOND_OPT_ARP_ALL_TARGETS_ALL: u32 = 1;
 
@@ -275,6 +281,63 @@ impl std::fmt::Display for BondArpValidate {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondXmitHashPolicy {
+    #[default]
+    Layer2,
+    Layer34,
+    Layer23,
+    Encap23,
+    Encap34,
+    VlanSrcMac,
+    Other(u8),
+}
+
+impl From<BondXmitHashPolicy> for u8 {
+    fn from(value: BondXmitHashPolicy) -> Self {
+        match value {
+            BondXmitHashPolicy::Layer2 => BOND_XMIT_POLICY_LAYER2,
+            BondXmitHashPolicy::Layer34 => BOND_XMIT_POLICY_LAYER34,
+            BondXmitHashPolicy::Layer23 => BOND_XMIT_POLICY_LAYER23,
+            BondXmitHashPolicy::Encap23 => BOND_XMIT_POLICY_ENCAP23,
+            BondXmitHashPolicy::Encap34 => BOND_XMIT_POLICY_ENCAP34,
+            BondXmitHashPolicy::VlanSrcMac => BOND_XMIT_POLICY_VLAN_SRCMAC,
+            BondXmitHashPolicy::Other(d) => d,
+        }
+    }
+}
+
+impl From<u8> for BondXmitHashPolicy {
+    fn from(value: u8) -> Self {
+        match value {
+            BOND_XMIT_POLICY_LAYER2 => BondXmitHashPolicy::Layer2,
+            BOND_XMIT_POLICY_LAYER34 => BondXmitHashPolicy::Layer34,
+            BOND_XMIT_POLICY_LAYER23 => BondXmitHashPolicy::Layer23,
+            BOND_XMIT_POLICY_ENCAP23 => BondXmitHashPolicy::Encap23,
+            BOND_XMIT_POLICY_ENCAP34 => BondXmitHashPolicy::Encap34,
+            BOND_XMIT_POLICY_VLAN_SRCMAC => BondXmitHashPolicy::VlanSrcMac,
+            d => BondXmitHashPolicy::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondXmitHashPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondXmitHashPolicy::Layer2 => "layer2",
+            BondXmitHashPolicy::Layer34 => "layer34",
+            BondXmitHashPolicy::Layer23 => "layer23",
+            BondXmitHashPolicy::Encap23 => "encap23",
+            BondXmitHashPolicy::Encap34 => "encap34",
+            BondXmitHashPolicy::VlanSrcMac => "vlan-src-mac",
+            BondXmitHashPolicy::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 pub enum BondArpAllTargets {
     #[default]
     Any,
@@ -397,7 +460,7 @@ pub enum InfoBond {
     Primary(u32),
     PrimaryReselect(u8),
     FailOverMac(u8),
-    XmitHashPolicy(u8),
+    XmitHashPolicy(BondXmitHashPolicy),
     ResendIgmp(u32),
     NumPeerNotif(u8),
     AllPortsActive(u8),
@@ -462,10 +525,10 @@ impl Nla for InfoBond {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Mode(value) => buffer[0] = (*value).into(),
+            Self::XmitHashPolicy(value) => buffer[0] = (*value).into(),
             Self::UseCarrier(value)
             | Self::PrimaryReselect(value)
             | Self::FailOverMac(value)
-            | Self::XmitHashPolicy(value)
             | Self::NumPeerNotif(value)
             | Self::AllPortsActive(value)
             | Self::AdLacpActive(value)
@@ -612,7 +675,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_XMIT_HASH_POLICY => Self::XmitHashPolicy(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_XMIT_HASH_POLICY value")?,
+                    .context("invalid IFLA_BOND_XMIT_HASH_POLICY value")?
+                    .into(),
             ),
             IFLA_BOND_RESEND_IGMP => Self::ResendIgmp(
                 parse_u32(payload)

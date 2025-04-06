@@ -4,7 +4,7 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    BondArpAllTargets, BondArpValidate, BondMode, BondPortState, InfoBond,
+    BondArpAllTargets, BondArpValidate, BondXmitHashPolicy, BondMode, BondPortState, InfoBond,
     InfoBondPort, InfoData, InfoKind, InfoPortData, InfoPortKind,
     LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
     LinkMessageBuffer, Map, MiiStatus, State,
@@ -68,7 +68,7 @@ fn test_bond_link_info() {
                 InfoBond::ArpAllTargets(BondArpAllTargets::Any),
                 InfoBond::PrimaryReselect(0),
                 InfoBond::FailOverMac(0),
-                InfoBond::XmitHashPolicy(0),
+                InfoBond::XmitHashPolicy(BondXmitHashPolicy::Layer2),
                 InfoBond::ResendIgmp(1),
                 InfoBond::NumPeerNotif(1),
                 InfoBond::AllPortsActive(0),
