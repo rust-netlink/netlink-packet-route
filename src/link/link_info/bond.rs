@@ -71,6 +71,8 @@ const BOND_ARP_VALIDATE_ALL: u32 =
 const BOND_ARP_FILTER: u32 = BOND_ARP_VALIDATE_ALL + 1;
 const BOND_ARP_FILTER_ACTIVE: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_ACTIVE;
 const BOND_ARP_FILTER_BACKUP: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_BACKUP;
+const BOND_OPT_ARP_ALL_TARGETS_ANY: u32 = 0;
+const BOND_OPT_ARP_ALL_TARGETS_ALL: u32 = 1;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]
@@ -272,6 +274,47 @@ impl std::fmt::Display for BondArpValidate {
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondArpAllTargets {
+    #[default]
+    Any,
+    All,
+    Other(u32),
+}
+
+impl From<BondArpAllTargets> for u32 {
+    fn from(value: BondArpAllTargets) -> Self {
+        match value {
+            BondArpAllTargets::All => BOND_OPT_ARP_ALL_TARGETS_ALL,
+            BondArpAllTargets::Any => BOND_OPT_ARP_ALL_TARGETS_ANY,
+            BondArpAllTargets::Other(d) => d,
+        }
+    }
+}
+
+impl From<u32> for BondArpAllTargets {
+    fn from(value: u32) -> Self {
+        match value {
+            BOND_OPT_ARP_ALL_TARGETS_ANY => BondArpAllTargets::Any,
+            BOND_OPT_ARP_ALL_TARGETS_ALL => BondArpAllTargets::All,
+            d => BondArpAllTargets::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondArpAllTargets {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondArpAllTargets::Any => "any",
+            BondArpAllTargets::All => "all",
+            BondArpAllTargets::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
 // Some attributes (ARP_IP_TARGET, NS_IP6_TARGET) contain a nested
 // list of IP addresses, where each element uses the index as NLA kind
 // and the address as value. InfoBond exposes vectors of IP addresses,
@@ -350,7 +393,7 @@ pub enum InfoBond {
     ArpInterval(u32),
     ArpIpTarget(Vec<Ipv4Addr>),
     ArpValidate(BondArpValidate),
-    ArpAllTargets(u32),
+    ArpAllTargets(BondArpAllTargets),
     Primary(u32),
     PrimaryReselect(u8),
     FailOverMac(u8),
@@ -436,12 +479,14 @@ impl Nla for InfoBond {
             Self::ArpValidate(value) => {
                 NativeEndian::write_u32(buffer, (*value).into())
             }
+            Self::ArpAllTargets(value) => {
+                NativeEndian::write_u32(buffer, (*value).into())
+            }
             Self::ActivePort(value)
             | Self::MiiMon(value)
             | Self::UpDelay(value)
             | Self::DownDelay(value)
             | Self::ArpInterval(value)
-            | Self::ArpAllTargets(value)
             | Self::Primary(value)
             | Self::ResendIgmp(value)
             | Self::MinLinks(value)
@@ -550,7 +595,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_ARP_ALL_TARGETS => Self::ArpAllTargets(
                 parse_u32(payload)
-                    .context("invalid IFLA_BOND_ARP_ALL_TARGETS value")?,
+                    .context("invalid IFLA_BOND_ARP_ALL_TARGETS value")?
+                    .into(),
             ),
             IFLA_BOND_PRIMARY => Self::Primary(
                 parse_u32(payload)
