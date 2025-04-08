@@ -4,10 +4,10 @@ use netlink_packet_utils::{Emitable, Parseable};
 
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
-    BondArpAllTargets, BondArpValidate, BondXmitHashPolicy, BondMode, BondPortState, InfoBond,
-    InfoBondPort, InfoData, InfoKind, InfoPortData, InfoPortKind,
-    LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, Map, MiiStatus, State,
+    BondArpAllTargets, BondArpValidate, BondMode, BondPortState,
+    BondXmitHashPolicy, InfoBond, InfoBondPort, InfoData, InfoKind,
+    InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, Map, MiiStatus, State,
 };
 use crate::{AddressFamily, RouteNetlinkMessage};
 
