@@ -29,7 +29,8 @@ mod xfrm;
 mod xstats;
 
 pub use self::bond::{
-    BondAdInfo, BondArpAllTargets, BondArpValidate, BondMode, InfoBond,BondXmitHashPolicy
+    BondAdInfo, BondArpAllTargets, BondArpValidate, BondMode,
+    BondXmitHashPolicy, InfoBond,
 };
 pub use self::bond_port::{BondPortState, InfoBondPort, MiiStatus};
 pub use self::bridge::{
