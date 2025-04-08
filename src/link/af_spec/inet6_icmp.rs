@@ -5,7 +5,7 @@ use netlink_packet_utils::{
     DecodeError,
 };
 
-pub(crate) const ICMP6_STATS_LEN: usize = 48;
+pub(crate) const ICMP6_STATS_LEN: usize = 56;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
 #[non_exhaustive]
@@ -16,6 +16,7 @@ pub struct Icmp6Stats {
     pub out_msgs: i64,
     pub out_errors: i64,
     pub csum_errors: i64,
+    pub rate_limit_host: i64,
 }
 
 buffer!(Icmp6StatsBuffer(ICMP6_STATS_LEN) {
@@ -25,6 +26,7 @@ buffer!(Icmp6StatsBuffer(ICMP6_STATS_LEN) {
     out_msgs: (i64, 24..32),
     out_errors: (i64, 32..40),
     csum_errors: (i64, 40..48),
+    rate_limit_host: (i64, 48..56),
 });
 
 impl<T: AsRef<[u8]>> Parseable<Icmp6StatsBuffer<T>> for Icmp6Stats {
@@ -36,6 +38,7 @@ impl<T: AsRef<[u8]>> Parseable<Icmp6StatsBuffer<T>> for Icmp6Stats {
             out_msgs: buf.out_msgs(),
             out_errors: buf.out_errors(),
             csum_errors: buf.csum_errors(),
+            rate_limit_host: buf.rate_limit_host(),
         })
     }
 }
@@ -53,5 +56,6 @@ impl Emitable for Icmp6Stats {
         buffer.set_out_msgs(self.out_msgs);
         buffer.set_out_errors(self.out_errors);
         buffer.set_csum_errors(self.csum_errors);
+        buffer.set_rate_limit_host(self.rate_limit_host);
     }
 }
