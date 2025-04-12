@@ -79,6 +79,12 @@ const BOND_XMIT_POLICY_ENCAP34: u8 = 4;
 const BOND_XMIT_POLICY_VLAN_SRCMAC: u8 = 5;
 const BOND_OPT_ARP_ALL_TARGETS_ANY: u32 = 0;
 const BOND_OPT_ARP_ALL_TARGETS_ALL: u32 = 1;
+const BOND_PRI_RESELECT_ALWAYS: u8 = 0;
+const BOND_PRI_RESELECT_BETTER: u8 = 1;
+const BOND_PRI_RESELECT_FAILURE: u8 = 2;
+const BOND_FOM_NONE: u8 = 0;
+const BOND_FOM_ACTIVE: u8 = 1;
+const BOND_FOM_FOLLOW: u8 = 2;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]
@@ -281,6 +287,51 @@ impl std::fmt::Display for BondArpValidate {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondPrimaryReselect {
+    #[default]
+    Always,
+    Better,
+    Failure,
+    Other(u8),
+}
+
+impl From<BondPrimaryReselect> for u8 {
+    fn from(value: BondPrimaryReselect) -> Self {
+        match value {
+            BondPrimaryReselect::Always => BOND_PRI_RESELECT_ALWAYS,
+            BondPrimaryReselect::Better => BOND_PRI_RESELECT_BETTER,
+            BondPrimaryReselect::Failure => BOND_PRI_RESELECT_FAILURE,
+            BondPrimaryReselect::Other(d) => d,
+        }
+    }
+}
+
+impl From<u8> for BondPrimaryReselect {
+    fn from(value: u8) -> Self {
+        match value {
+            BOND_PRI_RESELECT_ALWAYS => BondPrimaryReselect::Always,
+            BOND_PRI_RESELECT_BETTER => BondPrimaryReselect::Better,
+            BOND_PRI_RESELECT_FAILURE => BondPrimaryReselect::Failure,
+            d => BondPrimaryReselect::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondPrimaryReselect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondPrimaryReselect::Always => "always",
+            BondPrimaryReselect::Better => "better",
+            BondPrimaryReselect::Failure => "failure",
+            BondPrimaryReselect::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 pub enum BondXmitHashPolicy {
     #[default]
     Layer2,
@@ -378,6 +429,51 @@ impl std::fmt::Display for BondArpAllTargets {
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondFailOverMac {
+    #[default]
+    None,
+    Active,
+    Follow,
+    Other(u8),
+}
+
+impl From<BondFailOverMac> for u8 {
+    fn from(value: BondFailOverMac) -> Self {
+        match value {
+            BondFailOverMac::None => BOND_FOM_NONE,
+            BondFailOverMac::Active => BOND_FOM_ACTIVE,
+            BondFailOverMac::Follow => BOND_FOM_FOLLOW,
+            BondFailOverMac::Other(d) => d,
+        }
+    }
+}
+
+impl From<u8> for BondFailOverMac {
+    fn from(value: u8) -> Self {
+        match value {
+            BOND_FOM_NONE => BondFailOverMac::None,
+            BOND_FOM_ACTIVE => BondFailOverMac::Active,
+            BOND_FOM_FOLLOW => BondFailOverMac::Follow,
+            d => BondFailOverMac::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondFailOverMac {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondFailOverMac::None => "none",
+            BondFailOverMac::Active => "active",
+            BondFailOverMac::Follow => "follow",
+            BondFailOverMac::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
 // Some attributes (ARP_IP_TARGET, NS_IP6_TARGET) contain a nested
 // list of IP addresses, where each element uses the index as NLA kind
 // and the address as value. InfoBond exposes vectors of IP addresses,
@@ -458,7 +554,7 @@ pub enum InfoBond {
     ArpValidate(BondArpValidate),
     ArpAllTargets(BondArpAllTargets),
     Primary(u32),
-    PrimaryReselect(u8),
+    PrimaryReselect(BondPrimaryReselect),
     FailOverMac(BondFailOverMac),
     XmitHashPolicy(BondXmitHashPolicy),
     ResendIgmp(u32),
@@ -526,8 +622,8 @@ impl Nla for InfoBond {
         match self {
             Self::Mode(value) => buffer[0] = (*value).into(),
             Self::XmitHashPolicy(value) => buffer[0] = (*value).into(),
+            Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
             Self::UseCarrier(value)
-            | Self::PrimaryReselect(value)
             | Self::NumPeerNotif(value)
             | Self::AllPortsActive(value)
             | Self::AdLacpActive(value)
@@ -667,7 +763,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_PRIMARY_RESELECT => Self::PrimaryReselect(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?,
+                    .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?
+                    .into(),
             ),
             IFLA_BOND_FAIL_OVER_MAC => Self::FailOverMac(
                 parse_u8(payload)
@@ -765,54 +862,5 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                 buf.kind()
             ))?),
         })
-    }
-}
-
-const BOND_FOM_NONE: u8 = 0;
-const BOND_FOM_ACTIVE: u8 = 1;
-const BOND_FOM_FOLLOW: u8 = 2;
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
-pub enum BondFailOverMac {
-    #[default]
-    None,
-    Active,
-    Follow,
-    Other(u8),
-}
-
-impl From<BondFailOverMac> for u8 {
-    fn from(value: BondFailOverMac) -> Self {
-        match value {
-            BondFailOverMac::None => BOND_FOM_NONE,
-            BondFailOverMac::Active => BOND_FOM_ACTIVE,
-            BondFailOverMac::Follow => BOND_FOM_FOLLOW,
-            BondFailOverMac::Other(d) => d,
-        }
-    }
-}
-
-impl From<u8> for BondFailOverMac {
-    fn from(value: u8) -> Self {
-        match value {
-            BOND_FOM_NONE => BondFailOverMac::None,
-            BOND_FOM_ACTIVE => BondFailOverMac::Active,
-            BOND_FOM_FOLLOW => BondFailOverMac::Follow,
-            d => BondFailOverMac::Other(d),
-        }
-    }
-}
-
-impl std::fmt::Display for BondFailOverMac {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let kernel_name = match self {
-            BondFailOverMac::None => "none",
-            BondFailOverMac::Active => "active",
-            BondFailOverMac::Follow => "follow",
-            BondFailOverMac::Other(d) => {
-                return write!(f, "unknown-variant ({d})")
-            }
-        };
-        f.write_str(kernel_name)
     }
 }
