@@ -158,6 +158,21 @@ pub enum LinkAttribute {
     GsoMaxSegs(u32),
     GsoMaxSize(u32),
     /// The minimum MTU for the device.
+    ///```
+    ///   # use netlink_packet_route::link::LinkAttribute;
+    ///   let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(0);
+    ///   let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(0xffff_ffff);
+    ///```
+    /// ```compile_fail
+    ///    # use netlink_packet_route::link::LinkAttribute;
+    ///    # fn test_min_mtu() {}
+    ///    let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(-1);
+    /// ```
+    /// ```compile_fail
+    ///    # use netlink_packet_route::link::LinkAttribute;
+    ///    # fn test_min_mtu() {}
+    ///    let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(0x1_0000_0000);
+    /// ```
     MinMtu(i32),
     /// The maximum MTU for the device.
     MaxMtu(u32),
