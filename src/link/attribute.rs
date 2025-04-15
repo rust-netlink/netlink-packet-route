@@ -158,7 +158,22 @@ pub enum LinkAttribute {
     GsoMaxSegs(u32),
     GsoMaxSize(u32),
     /// The minimum MTU for the device.
-    MinMtu(u32),
+    ///```
+    ///   # use netlink_packet_route::link::LinkAttribute;
+    ///   let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(0);
+    ///   let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(0xffff_ffff);
+    ///```
+    /// ```compile_fail
+    ///    # use netlink_packet_route::link::LinkAttribute;
+    ///    # fn test_min_mtu() {}
+    ///    let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(-1);
+    /// ```
+    /// ```compile_fail
+    ///    # use netlink_packet_route::link::LinkAttribute;
+    ///    # fn test_min_mtu() {}
+    ///    let _link_attribute: LinkAttribute = LinkAttribute::MinMtu(0x1_0000_0000);
+    /// ```
+    MinMtu(i32),
     /// The maximum MTU for the device.
     MaxMtu(u32),
     LinkNetNsId(i32),
@@ -284,8 +299,11 @@ impl Nla for LinkAttribute {
             | Self::CarrierDownCount(value)
             | Self::GsoMaxSegs(value)
             | Self::GsoMaxSize(value)
-            | Self::MinMtu(value)
-            | Self::MaxMtu(value) => NativeEndian::write_u32(buffer, *value),
+            => NativeEndian::write_u32(buffer, *value),
+
+            Self::MinMtu(value) => NativeEndian::write_i32(buffer, *value),
+
+            Self::MaxMtu(value) => NativeEndian::write_u32(buffer, *value),
 
             Self::ExtMask(value) => NativeEndian::write_u32(
                 buffer,
@@ -598,7 +616,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context("invalid IFLA_GSO_MAX_SIZE value")?,
             ),
             IFLA_MIN_MTU => Self::MinMtu(
-                parse_u32(payload).context("invalid IFLA_MIN_MTU value")?,
+                parse_i32(payload).context("invalid IFLA_MIN_MTU value")?,
             ),
             IFLA_MAX_MTU => Self::MaxMtu(
                 parse_u32(payload).context("invalid IFLA_MAX_MTU value")?,
