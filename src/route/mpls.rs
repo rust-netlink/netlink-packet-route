@@ -56,8 +56,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             MPLS_IPTUNNEL_DST => Self::Destination(
                 VecMplsLabel::parse(payload)
                     .context(format!(
-                        "invalid MPLS_IPTUNNEL_DST value {:?}",
-                        payload
+                        "invalid MPLS_IPTUNNEL_DST value {payload:?}"
                     ))?
                     .0,
             ),
@@ -102,8 +101,8 @@ impl MplsLabel {
             ])))
         } else {
             Err(DecodeError::from(format!(
-                "Invalid u8 array length {}, expecting \
-                4 bytes for MPLS label, got {:?}",
+                "Invalid u8 array length {}, expecting 4 bytes for MPLS \
+                 label, got {:?}",
                 payload.len(),
                 payload,
             )))

@@ -201,7 +201,8 @@ impl<T: AsRef<[u8]>> TcU32SelectorBuffer<T> {
         let len = self.buffer.as_ref().len();
         if len < TC_U32_SEL_BUF_LEN {
             return Err(format!(
-                "invalid TcU32SelectorBuffer: length {len} < {TC_U32_SEL_BUF_LEN}"
+                "invalid TcU32SelectorBuffer: length {len} < \
+                 {TC_U32_SEL_BUF_LEN}"
             )
             .into());
         }
@@ -210,8 +211,7 @@ impl<T: AsRef<[u8]>> TcU32SelectorBuffer<T> {
             ((self.nkeys() as usize) * TC_U32_KEY_BUF_LEN) + TC_U32_SEL_BUF_LEN;
         if len < expected_len {
             return Err(format!(
-                "invalid RouteNextHopBuffer: length {} < {}",
-                len, expected_len,
+                "invalid RouteNextHopBuffer: length {len} < {expected_len}",
             )
             .into());
         }

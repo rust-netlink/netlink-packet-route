@@ -122,8 +122,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
             IFLA_INET6_CACHEINFO => CacheInfo(
                 Inet6CacheInfo::parse(&Inet6CacheInfoBuffer::new(payload))
                     .context(format!(
-                        "invalid IFLA_INET6_CACHEINFO value {:?}",
-                        payload
+                        "invalid IFLA_INET6_CACHEINFO value {payload:?}"
                     ))?,
             ),
             IFLA_INET6_CONF => DevConf(
@@ -136,8 +135,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                     .as_slice(),
                 ))
                 .context(format!(
-                    "invalid IFLA_INET6_CONF value {:?}",
-                    payload
+                    "invalid IFLA_INET6_CONF value {payload:?}"
                 ))?,
             ),
             IFLA_INET6_STATS => Stats(
@@ -150,8 +148,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                     .as_slice(),
                 ))
                 .context(format!(
-                    "invalid IFLA_INET6_STATS value {:?}",
-                    payload
+                    "invalid IFLA_INET6_STATS value {payload:?}"
                 ))?,
             ),
             IFLA_INET6_ICMP6STATS => Icmp6Stats(
@@ -164,8 +161,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                     .as_slice(),
                 ))
                 .context(format!(
-                    "invalid IFLA_INET6_ICMP6STATS value {:?}",
-                    payload
+                    "invalid IFLA_INET6_ICMP6STATS value {payload:?}"
                 ))?,
             ),
             IFLA_INET6_TOKEN => Token(

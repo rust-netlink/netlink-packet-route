@@ -36,8 +36,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 )?)?);
             } else {
                 log::warn!(
-                    "BUG: Expecting IFLA_VF_INFO in IFLA_VFINFO_LIST, \
-                    but got {}",
+                    "BUG: Expecting IFLA_VF_INFO in IFLA_VFINFO_LIST, but got \
+                     {}",
                     nla.kind()
                 );
             }

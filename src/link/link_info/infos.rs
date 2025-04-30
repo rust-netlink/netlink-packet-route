@@ -117,8 +117,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                             LinkXstats::parse_with_param(&nla, link_info_kind)?,
                         ));
                     } else {
-                        return Err("IFLA_INFO_XSTATS is not \
-                            preceded by an IFLA_INFO_KIND"
+                        return Err("IFLA_INFO_XSTATS is not preceded by an \
+                                    IFLA_INFO_KIND"
                             .into());
                     }
                 }
@@ -137,7 +137,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                         ));
                     } else {
                         return Err("IFLA_INFO_PORT_DATA is not preceded by \
-                            an IFLA_INFO_PORT_KIND"
+                                    an IFLA_INFO_PORT_KIND"
                             .into());
                     }
                     link_info_port_kind = None;
@@ -155,14 +155,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                         )?));
                     } else {
                         return Err("IFLA_INFO_DATA is not preceded by an \
-                            IFLA_INFO_KIND"
+                                    IFLA_INFO_KIND"
                             .into());
                     }
                 }
                 _kind => nlas.push(LinkInfo::Other(
                     DefaultNla::parse(&nla).context(format!(
-                        "Unknown NLA type for IFLA_INFO_DATA {:?}",
-                        nla
+                        "Unknown NLA type for IFLA_INFO_DATA {nla:?}"
                     ))?,
                 )),
             }

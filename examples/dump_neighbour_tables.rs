@@ -50,7 +50,7 @@ fn main() {
                 NetlinkPayload::InnerMessage(
                     RouteNetlinkMessage::NewNeighbourTable(entry),
                 ) => {
-                    println!("HAHA {:?}", entry);
+                    println!("HAHA {entry:?}");
                 }
                 NetlinkPayload::Error(err) => {
                     eprintln!("Received a netlink error message: {err:?}");

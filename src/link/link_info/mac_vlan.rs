@@ -292,7 +292,7 @@ impl From<u32> for MacVlanMode {
             MACVLAN_MODE_PASSTHRU => Self::Passthrough,
             MACVLAN_MODE_SOURCE => Self::Source,
             _ => {
-                log::warn!("Unknown MAC VLAN mode {}", d);
+                log::warn!("Unknown MAC VLAN mode {d}");
                 Self::Other(d)
             }
         }
