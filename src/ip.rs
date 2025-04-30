@@ -12,8 +12,8 @@ pub(crate) fn parse_ipv4_addr(raw: &[u8]) -> Result<Ipv4Addr, DecodeError> {
         Ok(Ipv4Addr::new(raw[0], raw[1], raw[2], raw[3]))
     } else {
         Err(DecodeError::from(format!(
-            "Invalid u8 array length {}, expecting \
-            {IPV4_ADDR_LEN} for IPv4 address, got {:?}",
+            "Invalid u8 array length {}, expecting {IPV4_ADDR_LEN} for IPv4 \
+             address, got {:?}",
             raw.len(),
             raw,
         )))
@@ -27,8 +27,8 @@ pub(crate) fn parse_ipv6_addr(raw: &[u8]) -> Result<Ipv6Addr, DecodeError> {
         Ok(Ipv6Addr::from(data))
     } else {
         Err(DecodeError::from(format!(
-            "Invalid u8 array length {}, expecting {IPV6_ADDR_LEN} \
-            for IPv6 address, got {:?}",
+            "Invalid u8 array length {}, expecting {IPV6_ADDR_LEN} for IPv6 \
+             address, got {:?}",
             raw.len(),
             raw,
         )))
@@ -49,8 +49,8 @@ pub(crate) fn parse_ip_addr(raw: &[u8]) -> Result<IpAddr, DecodeError> {
         parse_ipv4_addr(raw).map(IpAddr::from)
     } else {
         Err(DecodeError::from(format!(
-            "Invalid u8 array length {}, expecting {IPV6_ADDR_LEN} \
-            for IPv6 address or {IPV4_ADDR_LEN} for IPv4 address, got {:?}",
+            "Invalid u8 array length {}, expecting {IPV6_ADDR_LEN} for IPv6 \
+             address or {IPV4_ADDR_LEN} for IPv4 address, got {:?}",
             raw.len(),
             raw,
         )))

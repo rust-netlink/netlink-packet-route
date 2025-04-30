@@ -148,7 +148,7 @@ impl From<u16> for IpVlanMode {
             IPVLAN_MODE_L3 => Self::L3,
             IPVLAN_MODE_L3S => Self::L3S,
             _ => {
-                log::warn!("Unknown IP VLAN mode {}", d);
+                log::warn!("Unknown IP VLAN mode {d}");
                 Self::Other(d)
             }
         }

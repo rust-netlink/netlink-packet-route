@@ -217,7 +217,7 @@ impl From<u16> for LinkLayerType {
             _ => {
                 log::warn!(
                     "BUG: Got unknown ARPHRD_XXX {d} for LinkLayerType, \
-                    treating it as LinkLayerType::Void"
+                     treating it as LinkLayerType::Void"
                 );
                 Self::Void
             }

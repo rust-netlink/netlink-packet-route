@@ -189,8 +189,8 @@ impl TryFrom<&[u8]> for BridgeVlanInfo {
             })
         } else {
             Err(DecodeError::from(format!(
-                "Invalid IFLA_BRIDGE_VLAN_INFO value, expecting [u8;4], \
-                but got {raw:?}"
+                "Invalid IFLA_BRIDGE_VLAN_INFO value, expecting [u8;4], but \
+                 got {raw:?}"
             )))
         }
     }

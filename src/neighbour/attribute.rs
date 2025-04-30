@@ -114,26 +114,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
         Ok(match buf.kind() {
             NDA_DST => Self::Destination(
                 NeighbourAddress::parse_with_param(address_family, payload)
-                    .context(format!("invalid NDA_DST value {:?}", payload))?,
+                    .context(format!("invalid NDA_DST value {payload:?}"))?,
             ),
             NDA_LLADDR => Self::LinkLocalAddress(payload.to_vec()),
             NDA_CACHEINFO => Self::CacheInfo(
                 NeighbourCacheInfo::parse(
                     &NeighbourCacheInfoBuffer::new_checked(payload).context(
-                        format!("invalid NDA_CACHEINFO value {:?}", payload),
+                        format!("invalid NDA_CACHEINFO value {payload:?}"),
                     )?,
                 )
-                .context(format!(
-                    "invalid NDA_CACHEINFO value {:?}",
-                    payload
-                ))?,
+                .context(format!("invalid NDA_CACHEINFO value {payload:?}"))?,
             ),
-            NDA_PROBES => {
-                Self::Probes(parse_u32(payload).context(format!(
-                    "invalid NDA_PROBES value {:?}",
-                    payload
-                ))?)
-            }
+            NDA_PROBES => Self::Probes(
+                parse_u32(payload)
+                    .context(format!("invalid NDA_PROBES value {payload:?}"))?,
+            ),
             NDA_VLAN => Self::Vlan(parse_u16(payload)?),
             NDA_PORT => Self::Port(
                 parse_u16_be(payload)
@@ -150,7 +145,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             NDA_SRC_VNI => Self::SourceVni(parse_u32(payload)?),
             NDA_PROTOCOL => {
                 Self::Protocol(RouteProtocol::parse(payload).context(
-                    format!("invalid NDA_PROTOCOL value {:?}", payload),
+                    format!("invalid NDA_PROTOCOL value {payload:?}"),
                 )?)
             }
             _ => Self::Other(

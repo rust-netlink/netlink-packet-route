@@ -465,8 +465,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     ),
                     _ => Self::ProtoInfoUnknown(
                         DefaultNla::parse(buf).context(format!(
-                            "invalid IFLA_PROTINFO for \
-                        {interface_family:?}: {payload:?}"
+                            "invalid IFLA_PROTINFO for {interface_family:?}: \
+                             {payload:?}"
                         ))?,
                     ),
                 }
@@ -614,7 +614,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             ),
             IFLA_MAP => {
                 let err =
-                    |payload| format!("Invalid IFLA_MAP value {:?}", payload);
+                    |payload| format!("Invalid IFLA_MAP value {payload:?}");
                 Self::Map(
                     super::Map::parse(
                         &MapBuffer::new_checked(payload)
@@ -632,7 +632,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     )
                     .as_slice(),
                 ))
-                .context(format!("Invalid IFLA_STATS value {:?}", payload))?,
+                .context(format!("Invalid IFLA_STATS value {payload:?}"))?,
             ),
             IFLA_STATS64 => {
                 let payload = expand_buffer_if_small(
@@ -645,8 +645,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         payload.as_slice(),
                     ))
                     .context(format!(
-                        "Invalid IFLA_STATS64 value {:?}",
-                        payload
+                        "Invalid IFLA_STATS64 value {payload:?}"
                     ))?,
                 )
             }

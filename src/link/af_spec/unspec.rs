@@ -76,7 +76,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 }
                 kind => AfSpecUnspec::Other(DefaultNla::parse(&nla).context(
                     format!(
-                        "Unknown AF_XXX type {kind} for IFLA_AF_SPEC(AF_UNSPEC)"
+                        "Unknown AF_XXX type {kind} for \
+                         IFLA_AF_SPEC(AF_UNSPEC)"
                     ),
                 )?),
             })
