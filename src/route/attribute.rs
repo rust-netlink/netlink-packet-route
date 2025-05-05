@@ -43,11 +43,11 @@ const RTA_ENCAP: u16 = 22;
 const RTA_EXPIRES: u16 = 23;
 const RTA_UID: u16 = 25;
 const RTA_TTL_PROPAGATE: u16 = 26;
+const RTA_NH_ID: u16 = 30;
 // TODO
 // const RTA_IP_PROTO:u16 = 27;
 // const RTA_SPORT:u16 = 28;
 // const RTA_DPORT:u16 = 29;
-// const RTA_NH_ID:u16 = 30;
 
 /// Netlink attributes for `RTM_NEWROUTE`, `RTM_DELROUTE`,
 /// `RTM_GETROUTE` netlink messages.
@@ -84,6 +84,7 @@ pub enum RouteAttribute {
     Realm(RouteRealm),
     Table(u32),
     Mark(u32),
+    Nhid(u32),
     Other(DefaultNla),
 }
 
@@ -113,7 +114,8 @@ impl Nla for RouteAttribute {
             | Self::Oif(_)
             | Self::Priority(_)
             | Self::Table(_)
-            | Self::Mark(_) => 4,
+            | Self::Mark(_)
+            | Self::Nhid(_) => 4,
             Self::MulticastExpires(_) => 8,
             Self::Other(attr) => attr.value_len(),
         }
@@ -149,7 +151,8 @@ impl Nla for RouteAttribute {
             | Self::Oif(value)
             | Self::Priority(value)
             | Self::Table(value)
-            | Self::Mark(value) => NativeEndian::write_u32(buffer, *value),
+            | Self::Mark(value)
+            | Self::Nhid(value) => NativeEndian::write_u32(buffer, *value),
             Self::Realm(v) => v.emit(buffer),
             Self::MulticastExpires(value) => {
                 NativeEndian::write_u64(buffer, *value)
@@ -183,6 +186,7 @@ impl Nla for RouteAttribute {
             Self::MulticastExpires(_) => RTA_EXPIRES,
             Self::Uid(_) => RTA_UID,
             Self::TtlPropagate(_) => RTA_TTL_PROPAGATE,
+            Self::Nhid(_) => RTA_NH_ID,
             Self::Other(ref attr) => attr.kind(),
         }
     }
