@@ -20,7 +20,7 @@ use super::{
     inet6_devconf::LINK_INET6_DEV_CONF_LEN, inet6_icmp::ICMP6_STATS_LEN,
     inet6_stats::INET6_STATS_LEN,
 };
-use crate::ip::parse_ipv6_addr;
+use crate::{ip::parse_ipv6_addr, link::af_spec::In6AddrGenMode};
 
 const IFLA_INET6_FLAGS: u16 = 1;
 const IFLA_INET6_CONF: u16 = 2;
@@ -43,7 +43,7 @@ pub enum AfSpecInet6 {
     Stats(Inet6Stats),
     Icmp6Stats(Icmp6Stats),
     Token(Ipv6Addr),
-    AddrGenMode(u8),
+    AddrGenMode(In6AddrGenMode),
     RaMtu(u32),
     Other(DefaultNla),
 }
@@ -89,7 +89,7 @@ impl Nla for AfSpecInet6 {
             Stats(ref v) => v.emit(buffer),
             Icmp6Stats(ref v) => v.emit(buffer),
             Token(v) => buffer.copy_from_slice(&v.octets()),
-            AddrGenMode(value) => buffer[0] = value,
+            AddrGenMode(ref v) => buffer[0] = v.into(),
             Other(ref nla) => nla.emit_value(buffer),
         }
     }
@@ -168,10 +168,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                 parse_ipv6_addr(payload)
                     .context("invalid IFLA_INET6_TOKEN value")?,
             ),
-            IFLA_INET6_ADDR_GEN_MODE => AddrGenMode(
-                parse_u8(payload)
-                    .context("invalid IFLA_INET6_ADDR_GEN_MODE value")?,
-            ),
+            IFLA_INET6_ADDR_GEN_MODE => {
+                let mode = parse_u8(payload)
+                    .context("invalid IFLA_INET6_ADDR_GEN_MODE")?;
+                AddrGenMode(In6AddrGenMode::from(mode))
+            }
             IFLA_INET6_RA_MTU => RaMtu(
                 parse_u32(payload)
                     .context("invalid IFLA_INET6_RA_MTU value")?,
