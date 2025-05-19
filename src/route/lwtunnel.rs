@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv6Addr;
+use std::{fmt::Debug, net::Ipv6Addr};
 
 use anyhow::Context;
 use byteorder::{BigEndian, ByteOrder, NetworkEndian};
@@ -126,7 +126,8 @@ impl std::fmt::Display for RouteLwEnCapType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub enum RouteIp6Tunnel {
     #[default]
     Unspecified,
@@ -136,6 +137,7 @@ pub enum RouteIp6Tunnel {
     Hoplimit(u8),
     Tc(u8),
     Flags(RouteIp6TunnelFlags),
+    Other(DefaultNla),
 }
 
 bitflags! {
@@ -172,6 +174,7 @@ impl std::fmt::Display for RouteIp6Tunnel {
 
                 Ok(())
             }
+            Self::Other(other) => other.fmt(f),
         }
     }
 }
@@ -186,6 +189,7 @@ impl Nla for RouteIp6Tunnel {
             Self::Hoplimit(_) => const { size_of::<u8>() },
             Self::Tc(_) => const { size_of::<u8>() },
             Self::Flags(_) => const { size_of::<u16>() },
+            Self::Other(_) => const { size_of::<DefaultNla>() },
         }
     }
 
@@ -198,6 +202,7 @@ impl Nla for RouteIp6Tunnel {
             Self::Hoplimit(_) => LWTUNNEL_IP6_HOPLIMIT,
             Self::Tc(_) => LWTUNNEL_IP6_TC,
             Self::Flags(_) => LWTUNNEL_IP6_FLAGS,
+            Self::Other(other) => other.kind(),
         }
     }
 
@@ -210,6 +215,7 @@ impl Nla for RouteIp6Tunnel {
             }
             Self::Hoplimit(value) | Self::Tc(value) => buffer[0] = *value,
             Self::Flags(flags) => BigEndian::write_u16(buffer, flags.bits()),
+            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }
@@ -255,11 +261,7 @@ where
                         .context("invalid LWTUNNEL_IP6_FLAGS value")?,
                 ))
             }
-            _ => {
-                return Err(DecodeError::from(
-                    "invalid NLA value (unknown type) value",
-                ))
-            }
+            _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
