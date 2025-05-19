@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use netlink_packet_utils::{Emitable, Parseable};
 
+use crate::route::lwtunnel::RouteIp6TunnelFlags;
 use crate::route::{
     RouteAttribute, RouteFlags, RouteHeader, RouteIp6Tunnel, RouteLwEnCapType,
     RouteLwTunnelEncap, RouteMessage, RouteMessageBuffer, RouteProtocol,
@@ -62,7 +63,9 @@ fn test_ip6_tunnel() {
                 )),
                 RouteLwTunnelEncap::Ip6(RouteIp6Tunnel::Tc(7)),
                 RouteLwTunnelEncap::Ip6(RouteIp6Tunnel::Hoplimit(253)),
-                RouteLwTunnelEncap::Ip6(RouteIp6Tunnel::Flags(1u16)),
+                RouteLwTunnelEncap::Ip6(RouteIp6Tunnel::Flags(
+                    RouteIp6TunnelFlags::Checksum,
+                )),
             ]),
             RouteAttribute::EncapType(RouteLwEnCapType::Ip6),
         ],

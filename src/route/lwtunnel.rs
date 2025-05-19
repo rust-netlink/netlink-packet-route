@@ -37,9 +37,9 @@ const LWTUNNEL_IP6_FLAGS: u16 = 6;
 //const LWTUNNEL_IP6_PAD: u16 = 7;
 //const LWTUNNEL_IP6_OPTS: u16 = 8;
 
-const TUNNEL_CSUM: u16 = 1;
-const TUNNEL_KEY: u16 = 4;
-const TUNNEL_SEQ: u16 = 8;
+const IP_TUNNEL_CSUM_BIT: u16 = 1;
+const IP_TUNNEL_KEY_BIT: u16 = 4;
+const IP_TUNNEL_SEQ_BIT: u16 = 8;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 #[non_exhaustive]
@@ -135,7 +135,18 @@ pub enum RouteIp6Tunnel {
     Source(Ipv6Addr),
     Hoplimit(u8),
     Tc(u8),
-    Flags(u16),
+    Flags(RouteIp6TunnelFlags),
+}
+
+bitflags! {
+    #[non_exhaustive]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct RouteIp6TunnelFlags : u16 {
+        const Key = IP_TUNNEL_KEY_BIT;
+        const Checksum = IP_TUNNEL_CSUM_BIT;
+        const Sequence = IP_TUNNEL_SEQ_BIT;
+        const _ = !0;
+    }
 }
 
 impl std::fmt::Display for RouteIp6Tunnel {
@@ -148,14 +159,14 @@ impl std::fmt::Display for RouteIp6Tunnel {
             Self::Hoplimit(hoplimit) => write!(f, "hoplimit {hoplimit}"),
             Self::Tc(tc) => write!(f, "tc {tc}"),
             Self::Flags(flags) => {
-                if flags & TUNNEL_KEY != 0 {
+                if flags.contains(RouteIp6TunnelFlags::Key) {
                     write!(f, "key ")?;
                 }
-                if flags & TUNNEL_CSUM != 0 {
+                if flags.contains(RouteIp6TunnelFlags::Checksum) {
                     write!(f, "csum ")?;
                 }
 
-                if flags & TUNNEL_SEQ != 0 {
+                if flags.contains(RouteIp6TunnelFlags::Sequence) {
                     write!(f, "seq ")?;
                 }
 
@@ -198,7 +209,7 @@ impl Nla for RouteIp6Tunnel {
                 buffer.copy_from_slice(&ip.octets());
             }
             Self::Hoplimit(value) | Self::Tc(value) => buffer[0] = *value,
-            Self::Flags(flags) => BigEndian::write_u16(buffer, *flags),
+            Self::Flags(flags) => BigEndian::write_u16(buffer, flags.bits()),
         }
     }
 }
@@ -238,10 +249,12 @@ where
             LWTUNNEL_IP6_TC => Self::Tc(
                 parse_u8(payload).context("invalid LWTUNNEL_IP6_TC value")?,
             ),
-            LWTUNNEL_IP6_FLAGS => Self::Flags(
-                parse_u16_be(payload)
-                    .context("invalid LWTUNNEL_IP6_FLAGS value")?,
-            ),
+            LWTUNNEL_IP6_FLAGS => {
+                Self::Flags(RouteIp6TunnelFlags::from_bits_retain(
+                    parse_u16_be(payload)
+                        .context("invalid LWTUNNEL_IP6_FLAGS value")?,
+                ))
+            }
             _ => {
                 return Err(DecodeError::from(
                     "invalid NLA value (unknown type) value",
