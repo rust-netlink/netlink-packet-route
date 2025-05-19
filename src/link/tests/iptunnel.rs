@@ -3,12 +3,12 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
 
 use crate::link::{
-    InfoData, InfoIpTunnel, InfoKind, LinkAttribute, LinkFlags, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, TunnelEncapFlags,
-    TunnelEncapType, TunnelFlags,
+    InfoData, InfoIpTunnel, InfoKind, InfoSitTun, LinkAttribute, LinkFlags,
+    LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+    TunnelEncapFlags, TunnelEncapType,
 };
 
 use crate::{AddressFamily, IpProtocol};
@@ -124,7 +124,7 @@ fn test_iptunnel_ipip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Flags(TunnelFlags::from_bits_retain(0x30000)),
+                InfoIpTunnel::Ipv6Flags(0x30000),
                 InfoIpTunnel::Protocol(IpProtocol::Ipip),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
@@ -193,7 +193,7 @@ fn test_iptunnel_ip6ip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Flags(TunnelFlags::from_bits_retain(0x30000)),
+                InfoIpTunnel::Ipv6Flags(0x30000),
                 InfoIpTunnel::Protocol(IpProtocol::Ipv6),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
@@ -211,6 +211,76 @@ fn test_iptunnel_ip6ip6_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_iptunnel_sit_link_info() {
+    let raw: Vec<u8> = vec![
+        0x00, 0x00, // AF_UNSPEC and reserved
+        0x00, 0x03, // Link Layer Type IPTUNNEL (768)
+        0x07, 0x00, 0x00, 0x00, // iface ifindex 7
+        0x90, 0x00, 0x00, 0x00, // flags
+        0x00, 0x00, 0x00, 0x00, // changed flags
+        0xa4, 0x00, // length = 164
+        0x12, 0x00, // IFLA_LINK_INFO (18)
+        0x08, 0x00, 0x01, 0x00, b's', b'i', b't', 0x00, // "sit\0"
+        0x98, 0x00, 0x02, 0x00, // IFLA_INFO_DATA nested
+        0x08, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x02, 0x00,
+        0xc0, 0xa8, 0x7a, 0xb7, 0x08, 0x00, 0x03, 0x00, 0x0a, 0xff, 0xfe, 0x02,
+        0x05, 0x00, 0x04, 0x00, 0x40, 0x00, 0x00, 0x00, 0x05, 0x00, 0x05, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x0a, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x05, 0x00, 0x09, 0x00, 0x29, 0x00, 0x00, 0x00, 0x06, 0x00, 0x08, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x14, 0x00, 0x0b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x0c, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x06, 0x00, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x0f, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x06, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x10, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 7,
+            link_layer_type: LinkLayerType::Tunnel,
+            flags: LinkFlags::Noarp | LinkFlags::Pointopoint,
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![LinkAttribute::LinkInfo(vec![
+            LinkInfo::Kind(InfoKind::SitTun),
+            LinkInfo::Data(InfoData::SitTun(vec![
+                InfoSitTun::Other(DefaultNla::new(1, vec![0, 0, 0, 0])),
+                InfoSitTun::Other(DefaultNla::new(2, vec![192, 168, 122, 183])),
+                InfoSitTun::Other(DefaultNla::new(3, vec![10, 255, 254, 2])),
+                InfoSitTun::Other(DefaultNla::new(4, vec![64])),
+                InfoSitTun::Other(DefaultNla::new(5, vec![0])),
+                InfoSitTun::Other(DefaultNla::new(10, vec![1])),
+                InfoSitTun::Other(DefaultNla::new(9, vec![41])),
+                InfoSitTun::Other(DefaultNla::new(8, vec![0, 0])),
+                InfoSitTun::Other(DefaultNla::new(20, vec![0, 0, 0, 0])),
+                InfoSitTun::Other(DefaultNla::new(11, vec![0; 16])),
+                InfoSitTun::Other(DefaultNla::new(12, vec![0, 0, 0, 0])),
+                InfoSitTun::Other(DefaultNla::new(13, vec![0, 0])),
+                InfoSitTun::Other(DefaultNla::new(14, vec![0, 0])),
+                InfoSitTun::Other(DefaultNla::new(15, vec![0, 0])),
+                InfoSitTun::Other(DefaultNla::new(17, vec![0, 0])),
+                InfoSitTun::Other(DefaultNla::new(18, vec![0, 0])),
+                InfoSitTun::Other(DefaultNla::new(16, vec![0, 0])),
+            ])),
+        ])],
+    };
+
+    assert_eq!(
+        expected,
+        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
+    );
+
+    let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);

@@ -4,7 +4,7 @@ use anyhow::Context;
 
 use netlink_packet_utils::{
     nla::{Nla, NlaBuffer, NlasIterator},
-    DecodeError, Emitable, Parseable,
+    DecodeError, Emitable, Parseable, ParseableParametrized,
 };
 
 use super::super::{
@@ -362,7 +362,8 @@ impl InfoData {
                     let nla = &nla.context(format!(
                         "invalid IFLA_INFO_DATA for {kind} {payload:?}"
                     ))?;
-                    let parsed = InfoIpTunnel::parse(nla)?;
+                    let parsed =
+                        InfoIpTunnel::parse_with_param(nla, kind.clone())?;
                     v.push(parsed);
                 }
                 InfoData::IpTunnel(v)
