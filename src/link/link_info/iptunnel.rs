@@ -1,18 +1,18 @@
 // B
 // SPDX-License-Identifier: MIT
 
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv6Addr};
 
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
     nla::{DefaultNla, Nla, NlaBuffer},
     parsers::{parse_u16, parse_u32, parse_u8},
-    traits::Parseable,
+    traits::{Parseable, ParseableParametrized},
     DecodeError,
 };
 
-use crate::ip::IpProtocol;
+use crate::ip::{parse_ip_addr, IpProtocol};
 
 const IFLA_IPTUN_LINK: u16 = 1;
 const IFLA_IPTUN_LOCAL: u16 = 2;
@@ -45,7 +45,9 @@ pub enum InfoIpTunnel {
     Tos(u8),
     EncapLimit(u8),
     FlowInfo(u32),
-    Flags(TunnelFlags),
+    Ipv6SitFlags(u16),
+    Ipv4Flags(u16),
+    Ipv6Flags(u32),
     Protocol(IpProtocol),
     PMtuDisc(bool),
     Ipv6RdPrefix(Ipv6Addr),
@@ -70,8 +72,10 @@ impl Nla for InfoIpTunnel {
                 IpAddr::V4(_) => 4,
                 IpAddr::V6(_) => 16,
             },
-            Link(_) | FwMark(_) | FlowInfo(_) | Flags(_) => 4,
-            EncapType(_)
+            Link(_) | FwMark(_) | FlowInfo(_) | Ipv6Flags(_) => 4,
+            Ipv6SitFlags(_)
+            | Ipv4Flags(_)
+            | EncapType(_)
             | EncapFlags(_)
             | EncapSPort(_)
             | EncapDPort(_)
@@ -92,8 +96,11 @@ impl Nla for InfoIpTunnel {
             Link(value) | FwMark(value) | FlowInfo(value) => {
                 NativeEndian::write_u32(buffer, *value)
             }
-            Flags(f) => {
-                NativeEndian::write_u32(buffer, f.bits());
+            Ipv6Flags(val) => {
+                NativeEndian::write_u32(buffer, *val);
+            }
+            Ipv6SitFlags(val) | Ipv4Flags(val) => {
+                NativeEndian::write_u16(buffer, *val);
             }
             Local(value) | Remote(value) => match value {
                 IpAddr::V4(ipv4) => buffer.copy_from_slice(&ipv4.octets()),
@@ -109,7 +116,7 @@ impl Nla for InfoIpTunnel {
             | Ipv6RdRelayPrefixLen(value) => {
                 NativeEndian::write_u16(buffer, *value)
             }
-            Protocol(value) => buffer[0] = i32::from(*value) as u8,
+            Protocol(value) => buffer[0] = u8::from(*value),
             Ttl(value) | Tos(value) | EncapLimit(value) => buffer[0] = *value,
             PMtuDisc(value) | CollectMetada(value) => {
                 buffer[0] = if *value { 1 } else { 0 }
@@ -128,7 +135,7 @@ impl Nla for InfoIpTunnel {
             Tos(_) => IFLA_IPTUN_TOS,
             EncapLimit(_) => IFLA_IPTUN_ENCAP_LIMIT,
             FlowInfo(_) => IFLA_IPTUN_FLOWINFO,
-            Flags(_) => IFLA_IPTUN_FLAGS,
+            Ipv6SitFlags(_) | Ipv4Flags(_) | Ipv6Flags(_) => IFLA_IPTUN_FLAGS,
             Protocol(_) => IFLA_IPTUN_PROTO,
             PMtuDisc(_) => IFLA_IPTUN_PMTUDISC,
             Ipv6RdPrefix(_) => IFLA_IPTUN_6RD_PREFIX,
@@ -146,8 +153,13 @@ impl Nla for InfoIpTunnel {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpTunnel {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a, T: AsRef<[u8]> + ?Sized>
+    ParseableParametrized<NlaBuffer<&'a T>, super::InfoKind> for InfoIpTunnel
+{
+    fn parse_with_param(
+        buf: &NlaBuffer<&'a T>,
+        kind: super::InfoKind,
+    ) -> Result<Self, DecodeError> {
         use self::InfoIpTunnel::*;
         let payload = buf.value();
         Ok(match buf.kind() {
@@ -155,36 +167,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpTunnel {
                 parse_u32(payload).context("invalid IFLA_IPTUN_LINK value")?,
             ),
             IFLA_IPTUN_LOCAL => {
-                if payload.len() == 4 {
-                    let mut data = [0u8; 4];
-                    data.copy_from_slice(&payload[0..4]);
-                    Self::Local(IpAddr::V4(Ipv4Addr::from(data)))
-                } else if payload.len() == 16 {
-                    let mut data = [0u8; 16];
-                    data.copy_from_slice(&payload[0..16]);
-                    Self::Local(IpAddr::V6(Ipv6Addr::from(data)))
-                } else {
-                    return Err(DecodeError::from(format!(
-                        "Invalid IFLA_IPTUN_LOCAL, got unexpected length of \
-                         IP address payload {payload:?}"
-                    )));
-                }
+                let ip = parse_ip_addr(payload)
+                    .context("invalid IFLA_IPTUN_LOCAL")?;
+                Self::Local(ip)
             }
             IFLA_IPTUN_REMOTE => {
-                if payload.len() == 4 {
-                    let mut data = [0u8; 4];
-                    data.copy_from_slice(&payload[0..4]);
-                    Self::Remote(IpAddr::V4(Ipv4Addr::from(data)))
-                } else if payload.len() == 16 {
-                    let mut data = [0u8; 16];
-                    data.copy_from_slice(&payload[0..16]);
-                    Self::Remote(IpAddr::V6(Ipv6Addr::from(data)))
-                } else {
-                    return Err(DecodeError::from(format!(
-                        "Invalid IFLA_IPTUN_REMOTE, got unexpected length of \
-                         IP address payload {payload:?}"
-                    )));
-                }
+                let ip = parse_ip_addr(payload)
+                    .context("invalid IFLA_IPTUN_REMOTE")?;
+                Self::Remote(ip)
             }
             IFLA_IPTUN_TTL => {
                 Ttl(parse_u8(payload)
@@ -202,12 +192,27 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpTunnel {
                 parse_u32(payload)
                     .context("invalid IFLA_IPTUN_FLOWINFO value")?,
             ),
-            IFLA_IPTUN_FLAGS => Flags(TunnelFlags::from_bits_retain(
-                parse_u32(payload).context("invalid IFLA_IPTUN_FLAGS value")?,
-            )),
+            IFLA_IPTUN_FLAGS => match kind {
+                super::InfoKind::IpIp => InfoIpTunnel::Ipv4Flags(
+                    parse_u16(payload)
+                        .context("invalid IFLA_IPTUN_FLAGS for IPIP")?,
+                ),
+                super::InfoKind::SitTun => InfoIpTunnel::Ipv6SitFlags(
+                    parse_u16(payload)
+                        .context("invalid IFLA_IPTUN_FLAGS for SIT")?,
+                ),
+                super::InfoKind::Ip6Tnl => InfoIpTunnel::Ipv6Flags(
+                    parse_u32(payload)
+                        .context("invalid IFLA_IPTUN_FLAGS for IP6")?,
+                ),
+                _ => {
+                    return Err(DecodeError::from(format!(
+                        "unsupported InfoKind for IFLA_IPTUN_FLAGS: {kind:?}"
+                    )));
+                }
+            },
             IFLA_IPTUN_PROTO => Protocol(IpProtocol::from(
-                parse_u8(payload).context("invalid IFLA_IPTUN_PROTO value")?
-                    as i32,
+                parse_u8(payload).context("invalid IFLA_IPTUN_PROTO value")?,
             )),
             IFLA_IPTUN_PMTUDISC => PMtuDisc(
                 parse_u8(payload)
