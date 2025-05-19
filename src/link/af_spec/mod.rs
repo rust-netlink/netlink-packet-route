@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 mod bridge;
+mod in6_addr_gen_mode;
 mod inet;
 mod inet6;
 mod inet6_cache;
@@ -14,6 +15,7 @@ pub use self::bridge::{
     AfSpecBridge, BridgeFlag, BridgeMode, BridgeVlanInfo, BridgeVlanInfoFlags,
     BridgeVlanTunnelInfo,
 };
+pub use self::in6_addr_gen_mode::In6AddrGenMode;
 pub use self::inet::{AfSpecInet, InetDevConf};
 pub use self::inet6::AfSpecInet6;
 pub use self::inet6_cache::{Inet6CacheInfo, Inet6CacheInfoBuffer};
