@@ -4,14 +4,14 @@ use anyhow::Context;
 
 use netlink_packet_utils::{
     nla::{Nla, NlaBuffer, NlasIterator},
-    DecodeError, Emitable, Parseable,
+    DecodeError, Emitable, Parseable, ParseableParametrized,
 };
 
 use super::super::{
     InfoBond, InfoBridge, InfoGeneve, InfoGreTap, InfoGreTap6, InfoGreTun,
     InfoGreTun6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan, InfoIpVtap,
-    InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoSitTun,
-    InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm,
+    InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoTun,
+    InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -31,7 +31,7 @@ pub enum InfoData {
     MacVtap(Vec<InfoMacVtap>),
     GreTap(Vec<InfoGreTap>),
     GreTap6(Vec<InfoGreTap6>),
-    SitTun(Vec<InfoSitTun>),
+    SitTun(Vec<InfoIpTunnel>),
     GreTun(Vec<InfoGreTun>),
     GreTun6(Vec<InfoGreTun6>),
     Vti(Vec<InfoVti>),
@@ -252,7 +252,8 @@ impl InfoData {
                     let nla = &nla.context(format!(
                         "invalid IFLA_INFO_DATA for {kind} {payload:?}"
                     ))?;
-                    let parsed = InfoSitTun::parse(nla)?;
+                    let parsed =
+                        InfoIpTunnel::parse_with_param(nla, kind.clone())?;
                     v.push(parsed);
                 }
                 InfoData::SitTun(v)
@@ -362,7 +363,8 @@ impl InfoData {
                     let nla = &nla.context(format!(
                         "invalid IFLA_INFO_DATA for {kind} {payload:?}"
                     ))?;
-                    let parsed = InfoIpTunnel::parse(nla)?;
+                    let parsed =
+                        InfoIpTunnel::parse_with_param(nla, kind.clone())?;
                     v.push(parsed);
                 }
                 InfoData::IpTunnel(v)
