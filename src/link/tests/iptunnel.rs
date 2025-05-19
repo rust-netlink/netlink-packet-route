@@ -8,7 +8,7 @@ use netlink_packet_utils::{Emitable, Parseable};
 use crate::link::{
     InfoData, InfoIpTunnel, InfoKind, LinkAttribute, LinkFlags, LinkHeader,
     LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, TunnelEncapFlags,
-    TunnelEncapType, TunnelFlags,
+    TunnelEncapType,
 };
 
 use crate::{AddressFamily, IpProtocol};
@@ -124,7 +124,7 @@ fn test_iptunnel_ipip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Flags(TunnelFlags::from_bits_retain(0x30000)),
+                InfoIpTunnel::Ipv6Flags(0x30000),
                 InfoIpTunnel::Protocol(IpProtocol::Ipip),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
@@ -193,7 +193,7 @@ fn test_iptunnel_ip6ip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Flags(TunnelFlags::from_bits_retain(0x30000)),
+                InfoIpTunnel::Ipv6Flags(0x30000),
                 InfoIpTunnel::Protocol(IpProtocol::Ipv6),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
