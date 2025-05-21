@@ -139,7 +139,7 @@ impl Nla for RuleAttribute {
             | Self::SuppressPrefixLen(value)
             | Self::Table(value) => emit_u32(buffer, *value).unwrap(),
             Self::L3MDev(value) => buffer[0] = (*value).into(),
-            Self::IpProtocol(value) => buffer[0] = i32::from(*value) as u8,
+            Self::IpProtocol(value) => buffer[0] = u8::from(*value),
             Self::Protocol(value) => buffer[0] = u8::from(*value),
             Self::Other(attr) => attr.emit_value(buffer),
         }
@@ -209,7 +209,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .into(),
             ),
             FRA_IP_PROTO => Self::IpProtocol(IpProtocol::from(
-                parse_u8(payload).context("invalid FRA_IP_PROTO value")? as i32,
+                parse_u8(payload).context("invalid FRA_IP_PROTO value")?,
             )),
             FRA_SPORT_RANGE => Self::SourcePortRange(
                 RulePortRange::parse(payload)
