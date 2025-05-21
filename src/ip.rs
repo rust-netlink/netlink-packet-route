@@ -209,3 +209,16 @@ impl From<IpProtocol> for i32 {
         }
     }
 }
+
+impl From<u8> for IpProtocol {
+    fn from(d: u8) -> Self {
+        IpProtocol::from(d as i32)
+    }
+}
+
+impl From<IpProtocol> for u8 {
+    fn from(p: IpProtocol) -> u8 {
+        let v: i32 = p.into();
+        v as u8
+    }
+}
