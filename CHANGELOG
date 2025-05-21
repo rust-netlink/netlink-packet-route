@@ -1,4 +1,17 @@
 # Changelog
+## [0.24.0] - 2025-05-21
+### Breaking changes
+ - Changed `InfoBond::PrimaryReselect` from u8 to enum. (7be1634)
+
+### New features
+ - ICMP6: Add support of ICMP6_MIB_RATELIMITHOST. (3497a69)
+ - Support Seg6 encapsulation type. (1a33cd3)
+ - impl `From<IpAddr>` for `RouteVia`. (7ef6bf6)
+
+### Bug fixes
+ - Fix parsing error on empty IFLA_AF_SPEC. (5e54549)
+ - Fix panic of integer underflow in `RouteNextHopBuffer`. (a285aba)
+
 ## [0.23.0] - 2025-04-30
 ### Breaking changes
  - `InfoBond::ArpAllTargets` changed to enum. (507ea73)
