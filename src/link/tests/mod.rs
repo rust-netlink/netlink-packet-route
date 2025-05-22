@@ -11,6 +11,8 @@ mod geneve;
 #[cfg(test)]
 mod hsr;
 #[cfg(test)]
+mod iptunnel;
+#[cfg(test)]
 mod ipvlan;
 #[cfg(test)]
 mod ipvtap;
