@@ -3,7 +3,7 @@
 use anyhow::Context;
 use byteorder::{ByteOrder, NativeEndian};
 use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
+    nla::{DefaultNla, Nla, NlaBuffer, NLA_F_NESTED},
     parsers::{parse_u16, parse_u32},
     DecodeError, Emitable, Parseable, ParseableParametrized,
 };
@@ -93,7 +93,7 @@ impl Nla for NexthopAttribute {
             Self::Oif(_) => NHA_OIF,
             Self::Gateway(_) => NHA_GATEWAY,
             Self::EncapType(_) => NHA_ENCAP_TYPE,
-            Self::Encap(_) => NHA_ENCAP,
+            Self::Encap(_) => NHA_ENCAP | NLA_F_NESTED,
             Self::Groups => NHA_GROUPS,
             Self::Master(_) => NHA_MASTER,
             Self::Fdb => NHA_FDB,
