@@ -2,6 +2,7 @@
 
 use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
 
+use crate::link::af_spec::In6AddrGenMode;
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Icmp6Stats, Inet6CacheInfo,
@@ -383,7 +384,7 @@ fn test_parsing_link_statistics_on_kernel_4_18() {
                         rate_limit_host: 0,
                     }),
                     AfSpecInet6::Token(std::net::Ipv6Addr::UNSPECIFIED),
-                    AfSpecInet6::AddrGenMode(1),
+                    AfSpecInet6::AddrGenMode(In6AddrGenMode::None),
                 ]),
             ]),
             LinkAttribute::PropList(vec![Prop::AltIfName("enp0s3".into())]),
