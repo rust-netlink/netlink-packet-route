@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_utils::{
     traits::{Emitable, Parseable},
@@ -84,5 +84,14 @@ impl From<Ipv4Addr> for RouteVia {
 impl From<Ipv6Addr> for RouteVia {
     fn from(v: Ipv6Addr) -> Self {
         Self::Inet6(v)
+    }
+}
+
+impl From<IpAddr> for RouteVia {
+    fn from(ip: IpAddr) -> Self {
+        match ip {
+            IpAddr::V4(ipv4) => Self::Inet(ipv4),
+            IpAddr::V6(ipv6) => Self::Inet6(ipv6),
+        }
     }
 }

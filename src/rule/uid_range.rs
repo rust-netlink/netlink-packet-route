@@ -19,9 +19,8 @@ impl RuleUidRange {
             })
         } else {
             Err(DecodeError::from(format!(
-                "Invalid rule port range data, expecting \
-                {RULE_UID_RANGE_LEN} u8 array, but got {:?}",
-                buf
+                "Invalid rule port range data, expecting {RULE_UID_RANGE_LEN} \
+                 u8 array, but got {buf:?}"
             )))
         }
     }

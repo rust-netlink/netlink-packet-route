@@ -67,6 +67,14 @@ impl<T: AsRef<[u8]>> RouteNextHopBuffer<T> {
             )
             .into());
         }
+        if (self.length() as usize) < PAYLOAD_OFFSET {
+            return Err(format!(
+                "invalid RouteNextHopBuffer: length {} < {}",
+                self.length(),
+                PAYLOAD_OFFSET
+            )
+            .into());
+        }
         Ok(())
     }
 }

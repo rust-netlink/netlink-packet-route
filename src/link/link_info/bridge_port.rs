@@ -312,9 +312,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             ),
             IFLA_BRPORT_FAST_LEAVE => InfoBridgePort::FastLeave(
                 parse_u8(payload).with_context(|| {
-                    format!(
-                        "invalid IFLA_BRPORT_FAST_LEAVE {payload:?}"
-                    )
+                    format!("invalid IFLA_BRPORT_FAST_LEAVE {payload:?}")
                 })? > 0,
             ),
             IFLA_BRPORT_LEARNING => InfoBridgePort::Learning(
@@ -338,14 +336,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 })? > 0,
             ),
             IFLA_BRPORT_ROOT_ID => Self::RootId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(|| {
-                    format!("invalid IFLA_BRPORT_ROOT_ID {payload:?}")
-                })?,
+                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(
+                    || format!("invalid IFLA_BRPORT_ROOT_ID {payload:?}"),
+                )?,
             ),
             IFLA_BRPORT_BRIDGE_ID => Self::BridgeId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(|| {
-                    format!("invalid IFLA_BRPORT_BRIDGE_ID {payload:?}")
-                })?,
+                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(
+                    || format!("invalid IFLA_BRPORT_BRIDGE_ID {payload:?}"),
+                )?,
             ),
             IFLA_BRPORT_DESIGNATED_PORT => InfoBridgePort::DesignatedPort(
                 parse_u16(payload).with_context(|| {
@@ -358,20 +356,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 })?,
             ),
             IFLA_BRPORT_ID => {
-                InfoBridgePort::PortId(parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_ID {payload:?}")
-                })?)
+                InfoBridgePort::PortId(parse_u16(payload).with_context(
+                    || format!("invalid IFLA_BRPORT_ID {payload:?}"),
+                )?)
             }
             IFLA_BRPORT_NO => {
-                InfoBridgePort::PortNumber(parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_NO {payload:?}")
-                })?)
+                InfoBridgePort::PortNumber(parse_u16(payload).with_context(
+                    || format!("invalid IFLA_BRPORT_NO {payload:?}"),
+                )?)
             }
             IFLA_BRPORT_TOPOLOGY_CHANGE_ACK => {
                 InfoBridgePort::TopologyChangeAck(
                     parse_u8(payload).with_context(|| {
                         format!(
-                            "invalid IFLA_BRPORT_TOPOLOGY_CHANGE_ACK {payload:?}"
+                            "invalid IFLA_BRPORT_TOPOLOGY_CHANGE_ACK \
+                             {payload:?}"
                         )
                     })? > 0,
                 )
@@ -390,7 +389,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 InfoBridgePort::ForwardDelayTimer(
                     parse_u64(payload).with_context(|| {
                         format!(
-                            "invalid IFLA_BRPORT_FORWARD_DELAY_TIMER {payload:?}"
+                            "invalid IFLA_BRPORT_FORWARD_DELAY_TIMER \
+                             {payload:?}"
                         )
                     })?,
                 )
@@ -464,7 +464,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 InfoBridgePort::MulticastEhtHostsLimit(
                     parse_u32(payload).with_context(|| {
                         format!(
-                            "invalid IFLA_BRPORT_MCAST_EHT_HOSTS_LIMIT {payload:?}"
+                            "invalid IFLA_BRPORT_MCAST_EHT_HOSTS_LIMIT \
+                             {payload:?}"
                         )
                     })?,
                 )
@@ -473,9 +474,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 InfoBridgePort::MulticastEhtHostsCnt(
                     parse_u32(payload).with_context(|| {
                         format!(
-                            "invalid IFLA_BRPORT_MCAST_EHT_HOSTS_CNT {payload:?}"
+                            "invalid IFLA_BRPORT_MCAST_EHT_HOSTS_CNT \
+                             {payload:?}"
                         )
-                    })?
+                    })?,
                 )
             }
             IFLA_BRPORT_LOCKED => InfoBridgePort::Locked(
@@ -498,13 +500,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     format!("invalid IFLA_BRPORT_MCAST_MAX_GROUPS {payload:?}")
                 })?,
             ),
-            IFLA_BRPORT_NEIGH_VLAN_SUPPRESS => InfoBridgePort::NeighVlanSupress(
-                parse_u8(payload).with_context(|| {
-                    format!(
-                        "invalid IFLA_BRPORT_NEIGH_VLAN_SUPPRESS {payload:?}"
-                    )
-                })? > 0,
-            ),
+            IFLA_BRPORT_NEIGH_VLAN_SUPPRESS => {
+                InfoBridgePort::NeighVlanSupress(
+                    parse_u8(payload).with_context(|| {
+                        format!(
+                            "invalid IFLA_BRPORT_NEIGH_VLAN_SUPPRESS \
+                             {payload:?}"
+                        )
+                    })? > 0,
+                )
+            }
             IFLA_BRPORT_BACKUP_NHID => InfoBridgePort::BackupNextHopId(
                 parse_u32(payload).with_context(|| {
                     format!("invalid IFLA_BRPORT_BACKUP_NHID {payload:?}")
@@ -513,7 +518,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             kind => InfoBridgePort::Other(
                 DefaultNla::parse(buf).with_context(|| {
                     format!(
-                        "failed to parse bridge port NLA of type '{kind}' into DefaultNla"
+                        "failed to parse bridge port NLA of type '{kind}' \
+                         into DefaultNla"
                     )
                 })?,
             ),

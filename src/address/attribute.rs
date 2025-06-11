@@ -124,9 +124,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     Self::Address(IpAddr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFA_LOCAL, got unexpected length \
-                            of payload {:?}",
-                        payload
+                        "Invalid IFA_LOCAL, got unexpected length of payload \
+                         {payload:?}"
                     )));
                 }
             }
@@ -141,9 +140,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     Self::Local(IpAddr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFA_LOCAL, got unexpected length \
-                        of payload {:?}",
-                        payload
+                        "Invalid IFA_LOCAL, got unexpected length of payload \
+                         {payload:?}"
                     )));
                 }
             }
@@ -157,9 +155,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     Self::Broadcast(Ipv4Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFA_BROADCAST, got unexpected length \
-                        of IPv4 address payload {:?}",
-                        payload
+                        "Invalid IFA_BROADCAST, got unexpected length of IPv4 \
+                         address payload {payload:?}"
                     )));
                 }
             }
@@ -170,15 +167,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     Self::Anycast(Ipv6Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFA_ANYCAST, got unexpected length \
-                        of IPv6 address payload {:?}",
-                        payload
+                        "Invalid IFA_ANYCAST, got unexpected length of IPv6 \
+                         address payload {payload:?}"
                     )));
                 }
             }
             IFA_CACHEINFO => Self::CacheInfo(
                 CacheInfo::parse(&CacheInfoBuffer::new(payload))
-                    .context(format!("Invalid IFA_CACHEINFO {:?}", payload))?,
+                    .context(format!("Invalid IFA_CACHEINFO {payload:?}"))?,
             ),
             IFA_MULTICAST => {
                 if payload.len() == IPV6_ADDR_LEN {
@@ -187,9 +183,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     Self::Multicast(Ipv6Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFA_MULTICAST, got unexpected length \
-                        of IPv6 address payload {:?}",
-                        payload
+                        "Invalid IFA_MULTICAST, got unexpected length of IPv6 \
+                         address payload {payload:?}"
                     )));
                 }
             }

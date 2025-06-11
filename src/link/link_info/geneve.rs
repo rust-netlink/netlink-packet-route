@@ -152,9 +152,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
                     Remote(Ipv4Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFLA_GENEVE_REMOTE, got unexpected length \
-                        of IPv4 address payload {:?}",
-                        payload
+                        "Invalid IFLA_GENEVE_REMOTE, got unexpected length of \
+                         IPv4 address payload {payload:?}"
                     )));
                 }
             }
@@ -166,8 +165,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
                 } else {
                     return Err(DecodeError::from(format!(
                         "Invalid IFLA_GENEVE_REMOTE6, got unexpected length \
-                        of IPv6 address payload {:?}",
-                        payload
+                         of IPv6 address payload {payload:?}"
                     )));
                 }
             }

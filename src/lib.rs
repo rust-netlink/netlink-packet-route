@@ -38,9 +38,13 @@ mod tests;
 
 pub(crate) mod ip;
 
-#[cfg(any(target_os = "linux", target_os = "fuchsia"))]
+#[cfg(any(target_os = "linux", target_os = "fuchsia", target_os = "android"))]
 mod address_family_linux;
-#[cfg(any(target_os = "linux", target_os = "fuchsia"))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "fuchsia",
+    target_os = "android"
+))]
 pub use self::address_family_linux::AddressFamily;
 
 #[cfg(target_os = "freebsd")]
@@ -52,12 +56,14 @@ pub use self::address_family_freebsd::AddressFamily;
     target_os = "linux",
     target_os = "fuchsia",
     target_os = "freebsd",
+    target_os = "android",
 )))]
 mod address_family_fallback;
 #[cfg(not(any(
     target_os = "linux",
     target_os = "fuchsia",
     target_os = "freebsd",
+    target_os = "android",
 )))]
 pub use self::address_family_fallback::AddressFamily;
 

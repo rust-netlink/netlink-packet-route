@@ -199,9 +199,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VXLAN_ID => {
-                Self::Id(parse_u32(payload).context("invalid IFLA_VXLAN_ID value")?)
-            }
+            IFLA_VXLAN_ID => Self::Id(
+                parse_u32(payload).context("invalid IFLA_VXLAN_ID value")?,
+            ),
             IFLA_VXLAN_GROUP => {
                 if payload.len() == 4 {
                     let mut data = [0u8; 4];
@@ -209,9 +209,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                     Self::Group(Ipv4Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFLA_VXLAN_GROUP, got unexpected length \
-                        of IPv4 address payload {:?}",
-                        payload
+                        "Invalid IFLA_VXLAN_GROUP, got unexpected length of \
+                         IPv4 address payload {payload:?}"
                     )));
                 }
             }
@@ -222,9 +221,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                     Self::Local(Ipv4Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFLA_VXLAN_LOCAL, got unexpected length \
-                        of IPv4 address payload {:?}",
-                        payload
+                        "Invalid IFLA_VXLAN_LOCAL, got unexpected length of \
+                         IPv4 address payload {payload:?}"
                     )));
                 }
             }
@@ -235,12 +233,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                     Self::Group6(Ipv6Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFLA_VXLAN_GROUP6, got unexpected length \
-                        of IPv6 address payload {:?}",
-                        payload
+                        "Invalid IFLA_VXLAN_GROUP6, got unexpected length of \
+                         IPv6 address payload {payload:?}"
                     )));
                 }
-            },
+            }
             IFLA_VXLAN_LOCAL6 => {
                 if payload.len() == 16 {
                     let mut data = [0u8; 16];
@@ -248,29 +245,27 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                     Self::Local6(Ipv6Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFLA_VXLAN_LOCAL6, got unexpected length \
-                        of IPv6 address payload {:?}",
-                        payload
+                        "Invalid IFLA_VXLAN_LOCAL6, got unexpected length of \
+                         IPv6 address payload {payload:?}"
                     )));
                 }
-            },
+            }
             IFLA_VXLAN_LINK => Self::Link(
                 parse_u32(payload).context("invalid IFLA_VXLAN_LINK value")?,
             ),
-            IFLA_VXLAN_TOS => {
-                Self::Tos(parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_TOS value")?)
-            }
-            IFLA_VXLAN_TTL => {
-                Self::Ttl(parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_TTL value")?)
-            }
+            IFLA_VXLAN_TOS => Self::Tos(
+                parse_u8(payload).context("invalid IFLA_VXLAN_TOS value")?,
+            ),
+            IFLA_VXLAN_TTL => Self::Ttl(
+                parse_u8(payload).context("invalid IFLA_VXLAN_TTL value")?,
+            ),
             IFLA_VXLAN_LABEL => Self::Label(
                 parse_u32(payload).context("invalid IFLA_VXLAN_LABEL value")?,
             ),
             IFLA_VXLAN_LEARNING => Self::Learning(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_LEARNING value")? > 0,
+                    .context("invalid IFLA_VXLAN_LEARNING value")?
+                    > 0,
             ),
             IFLA_VXLAN_AGEING => Self::Ageing(
                 parse_u32(payload)
@@ -280,21 +275,24 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                 parse_u32(payload).context("invalid IFLA_VXLAN_LIMIT value")?,
             ),
             IFLA_VXLAN_PROXY => Self::Proxy(
-                parse_u8(payload).context("invalid IFLA_VXLAN_PROXY value")? > 0,
+                parse_u8(payload).context("invalid IFLA_VXLAN_PROXY value")?
+                    > 0,
             ),
-            IFLA_VXLAN_RSC => {
-                Self::Rsc(parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_RSC value")?> 0)
-            }
+            IFLA_VXLAN_RSC => Self::Rsc(
+                parse_u8(payload).context("invalid IFLA_VXLAN_RSC value")? > 0,
+            ),
             IFLA_VXLAN_L2MISS => Self::L2Miss(
-                parse_u8(payload).context("invalid IFLA_VXLAN_L2MISS value")? > 0,
+                parse_u8(payload).context("invalid IFLA_VXLAN_L2MISS value")?
+                    > 0,
             ),
             IFLA_VXLAN_L3MISS => Self::L3Miss(
-                parse_u8(payload).context("invalid IFLA_VXLAN_L3MISS value")? > 0,
+                parse_u8(payload).context("invalid IFLA_VXLAN_L3MISS value")?
+                    > 0,
             ),
             IFLA_VXLAN_COLLECT_METADATA => Self::CollectMetadata(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_COLLECT_METADATA value")? >0,
+                    .context("invalid IFLA_VXLAN_COLLECT_METADATA value")?
+                    > 0,
             ),
             IFLA_VXLAN_PORT_RANGE => {
                 let err = "invalid IFLA_VXLAN_PORT value";
@@ -311,49 +309,56 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
             ),
             IFLA_VXLAN_UDP_CSUM => Self::UDPCsum(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_UDP_CSUM value")? > 0,
+                    .context("invalid IFLA_VXLAN_UDP_CSUM value")?
+                    > 0,
             ),
             IFLA_VXLAN_UDP_ZERO_CSUM6_TX => Self::UDPZeroCsumTX(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_TX value")? > 0,
+                    .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_TX value")?
+                    > 0,
             ),
             IFLA_VXLAN_UDP_ZERO_CSUM6_RX => Self::UDPZeroCsumRX(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_RX value")? > 0,
+                    .context("invalid IFLA_VXLAN_UDP_ZERO_CSUM6_RX value")?
+                    > 0,
             ),
             IFLA_VXLAN_REMCSUM_TX => Self::RemCsumTX(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_REMCSUM_TX value")? > 0,
+                    .context("invalid IFLA_VXLAN_REMCSUM_TX value")?
+                    > 0,
             ),
             IFLA_VXLAN_REMCSUM_RX => Self::RemCsumRX(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_REMCSUM_RX value")? > 0,
+                    .context("invalid IFLA_VXLAN_REMCSUM_RX value")?
+                    > 0,
             ),
-            IFLA_VXLAN_DF => {
-                Self::Df(parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?)
-            }
-            IFLA_VXLAN_GBP => {
-                Self::Gbp(true)
-            }
-            IFLA_VXLAN_GPE => {
-                Self::Gpe(true)
-            }
+            IFLA_VXLAN_DF => Self::Df(
+                parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?,
+            ),
+            IFLA_VXLAN_GBP => Self::Gbp(true),
+            IFLA_VXLAN_GPE => Self::Gpe(true),
             IFLA_VXLAN_REMCSUM_NOPARTIAL => Self::RemCsumNoPartial(true),
             IFLA_VXLAN_TTL_INHERIT => Self::TtlInherit(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_TTL_INHERIT value")? > 0,
+                    .context("invalid IFLA_VXLAN_TTL_INHERIT value")?
+                    > 0,
             ),
             IFLA_VXLAN_VNIFILTER => Self::Vnifilter(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_VNIFILTER value")? > 0,
+                    .context("invalid IFLA_VXLAN_VNIFILTER value")?
+                    > 0,
             ),
             IFLA_VXLAN_LOCALBYPASS => Self::Localbypass(
                 parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_LOCALBYPASS value")? > 0,
+                    .context("invalid IFLA_VXLAN_LOCALBYPASS value")?
+                    > 0,
             ),
-            unknown_kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "Failed to parse IFLA_INFO_DATA(vxlan) NLA type: {unknown_kind} as DefaultNla"
-            ))?),
+            unknown_kind => {
+                Self::Other(DefaultNla::parse(buf).context(format!(
+                    "Failed to parse IFLA_INFO_DATA(vxlan) NLA type: \
+                     {unknown_kind} as DefaultNla"
+                ))?)
+            }
         })
     }
 }

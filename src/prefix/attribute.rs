@@ -57,12 +57,15 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 if let Ok(payload) = TryInto::<[u8; 16]>::try_into(payload) {
                     Ok(Self::Address(Ipv6Addr::from(payload)))
                 } else {
-                    Err(DecodeError::from(format!("Invalid PREFIX_ADDRESS, unexpected payload length: {:?}", payload)))
+                    Err(DecodeError::from(format!(
+                        "Invalid PREFIX_ADDRESS, unexpected payload length: \
+                         {payload:?}"
+                    )))
                 }
             }
             PREFIX_CACHEINFO => Ok(Self::CacheInfo(
                 CacheInfo::parse(&CacheInfoBuffer::new(payload)).context(
-                    format!("Invalid PREFIX_CACHEINFO: {:?}", payload),
+                    format!("Invalid PREFIX_CACHEINFO: {payload:?}"),
                 )?,
             )),
             _ => Ok(Self::Other(DefaultNla::parse(buf)?)),

@@ -71,6 +71,20 @@ const BOND_ARP_VALIDATE_ALL: u32 =
 const BOND_ARP_FILTER: u32 = BOND_ARP_VALIDATE_ALL + 1;
 const BOND_ARP_FILTER_ACTIVE: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_ACTIVE;
 const BOND_ARP_FILTER_BACKUP: u32 = BOND_ARP_FILTER | BOND_ARP_VALIDATE_BACKUP;
+const BOND_XMIT_POLICY_LAYER2: u8 = 0;
+const BOND_XMIT_POLICY_LAYER34: u8 = 1;
+const BOND_XMIT_POLICY_LAYER23: u8 = 2;
+const BOND_XMIT_POLICY_ENCAP23: u8 = 3;
+const BOND_XMIT_POLICY_ENCAP34: u8 = 4;
+const BOND_XMIT_POLICY_VLAN_SRCMAC: u8 = 5;
+const BOND_OPT_ARP_ALL_TARGETS_ANY: u32 = 0;
+const BOND_OPT_ARP_ALL_TARGETS_ALL: u32 = 1;
+const BOND_PRI_RESELECT_ALWAYS: u8 = 0;
+const BOND_PRI_RESELECT_BETTER: u8 = 1;
+const BOND_PRI_RESELECT_FAILURE: u8 = 2;
+const BOND_FOM_NONE: u8 = 0;
+const BOND_FOM_ACTIVE: u8 = 1;
+const BOND_FOM_FOLLOW: u8 = 2;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[non_exhaustive]
@@ -272,6 +286,194 @@ impl std::fmt::Display for BondArpValidate {
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondPrimaryReselect {
+    #[default]
+    Always,
+    Better,
+    Failure,
+    Other(u8),
+}
+
+impl From<BondPrimaryReselect> for u8 {
+    fn from(value: BondPrimaryReselect) -> Self {
+        match value {
+            BondPrimaryReselect::Always => BOND_PRI_RESELECT_ALWAYS,
+            BondPrimaryReselect::Better => BOND_PRI_RESELECT_BETTER,
+            BondPrimaryReselect::Failure => BOND_PRI_RESELECT_FAILURE,
+            BondPrimaryReselect::Other(d) => d,
+        }
+    }
+}
+
+impl From<u8> for BondPrimaryReselect {
+    fn from(value: u8) -> Self {
+        match value {
+            BOND_PRI_RESELECT_ALWAYS => BondPrimaryReselect::Always,
+            BOND_PRI_RESELECT_BETTER => BondPrimaryReselect::Better,
+            BOND_PRI_RESELECT_FAILURE => BondPrimaryReselect::Failure,
+            d => BondPrimaryReselect::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondPrimaryReselect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondPrimaryReselect::Always => "always",
+            BondPrimaryReselect::Better => "better",
+            BondPrimaryReselect::Failure => "failure",
+            BondPrimaryReselect::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondXmitHashPolicy {
+    #[default]
+    Layer2,
+    Layer34,
+    Layer23,
+    Encap23,
+    Encap34,
+    VlanSrcMac,
+    Other(u8),
+}
+
+impl From<BondXmitHashPolicy> for u8 {
+    fn from(value: BondXmitHashPolicy) -> Self {
+        match value {
+            BondXmitHashPolicy::Layer2 => BOND_XMIT_POLICY_LAYER2,
+            BondXmitHashPolicy::Layer34 => BOND_XMIT_POLICY_LAYER34,
+            BondXmitHashPolicy::Layer23 => BOND_XMIT_POLICY_LAYER23,
+            BondXmitHashPolicy::Encap23 => BOND_XMIT_POLICY_ENCAP23,
+            BondXmitHashPolicy::Encap34 => BOND_XMIT_POLICY_ENCAP34,
+            BondXmitHashPolicy::VlanSrcMac => BOND_XMIT_POLICY_VLAN_SRCMAC,
+            BondXmitHashPolicy::Other(d) => d,
+        }
+    }
+}
+
+impl From<u8> for BondXmitHashPolicy {
+    fn from(value: u8) -> Self {
+        match value {
+            BOND_XMIT_POLICY_LAYER2 => BondXmitHashPolicy::Layer2,
+            BOND_XMIT_POLICY_LAYER34 => BondXmitHashPolicy::Layer34,
+            BOND_XMIT_POLICY_LAYER23 => BondXmitHashPolicy::Layer23,
+            BOND_XMIT_POLICY_ENCAP23 => BondXmitHashPolicy::Encap23,
+            BOND_XMIT_POLICY_ENCAP34 => BondXmitHashPolicy::Encap34,
+            BOND_XMIT_POLICY_VLAN_SRCMAC => BondXmitHashPolicy::VlanSrcMac,
+            d => BondXmitHashPolicy::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondXmitHashPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondXmitHashPolicy::Layer2 => "layer2",
+            BondXmitHashPolicy::Layer34 => "layer34",
+            BondXmitHashPolicy::Layer23 => "layer23",
+            BondXmitHashPolicy::Encap23 => "encap23",
+            BondXmitHashPolicy::Encap34 => "encap34",
+            BondXmitHashPolicy::VlanSrcMac => "vlan-src-mac",
+            BondXmitHashPolicy::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondArpAllTargets {
+    #[default]
+    Any,
+    All,
+    Other(u32),
+}
+
+impl From<BondArpAllTargets> for u32 {
+    fn from(value: BondArpAllTargets) -> Self {
+        match value {
+            BondArpAllTargets::All => BOND_OPT_ARP_ALL_TARGETS_ALL,
+            BondArpAllTargets::Any => BOND_OPT_ARP_ALL_TARGETS_ANY,
+            BondArpAllTargets::Other(d) => d,
+        }
+    }
+}
+
+impl From<u32> for BondArpAllTargets {
+    fn from(value: u32) -> Self {
+        match value {
+            BOND_OPT_ARP_ALL_TARGETS_ANY => BondArpAllTargets::Any,
+            BOND_OPT_ARP_ALL_TARGETS_ALL => BondArpAllTargets::All,
+            d => BondArpAllTargets::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondArpAllTargets {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondArpAllTargets::Any => "any",
+            BondArpAllTargets::All => "all",
+            BondArpAllTargets::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum BondFailOverMac {
+    #[default]
+    None,
+    Active,
+    Follow,
+    Other(u8),
+}
+
+impl From<BondFailOverMac> for u8 {
+    fn from(value: BondFailOverMac) -> Self {
+        match value {
+            BondFailOverMac::None => BOND_FOM_NONE,
+            BondFailOverMac::Active => BOND_FOM_ACTIVE,
+            BondFailOverMac::Follow => BOND_FOM_FOLLOW,
+            BondFailOverMac::Other(d) => d,
+        }
+    }
+}
+
+impl From<u8> for BondFailOverMac {
+    fn from(value: u8) -> Self {
+        match value {
+            BOND_FOM_NONE => BondFailOverMac::None,
+            BOND_FOM_ACTIVE => BondFailOverMac::Active,
+            BOND_FOM_FOLLOW => BondFailOverMac::Follow,
+            d => BondFailOverMac::Other(d),
+        }
+    }
+}
+
+impl std::fmt::Display for BondFailOverMac {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondFailOverMac::None => "none",
+            BondFailOverMac::Active => "active",
+            BondFailOverMac::Follow => "follow",
+            BondFailOverMac::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
 // Some attributes (ARP_IP_TARGET, NS_IP6_TARGET) contain a nested
 // list of IP addresses, where each element uses the index as NLA kind
 // and the address as value. InfoBond exposes vectors of IP addresses,
@@ -350,11 +552,11 @@ pub enum InfoBond {
     ArpInterval(u32),
     ArpIpTarget(Vec<Ipv4Addr>),
     ArpValidate(BondArpValidate),
-    ArpAllTargets(u32),
+    ArpAllTargets(BondArpAllTargets),
     Primary(u32),
-    PrimaryReselect(u8),
-    FailOverMac(u8),
-    XmitHashPolicy(u8),
+    PrimaryReselect(BondPrimaryReselect),
+    FailOverMac(BondFailOverMac),
+    XmitHashPolicy(BondXmitHashPolicy),
     ResendIgmp(u32),
     NumPeerNotif(u8),
     AllPortsActive(u8),
@@ -419,10 +621,9 @@ impl Nla for InfoBond {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Mode(value) => buffer[0] = (*value).into(),
+            Self::XmitHashPolicy(value) => buffer[0] = (*value).into(),
+            Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
             Self::UseCarrier(value)
-            | Self::PrimaryReselect(value)
-            | Self::FailOverMac(value)
-            | Self::XmitHashPolicy(value)
             | Self::NumPeerNotif(value)
             | Self::AllPortsActive(value)
             | Self::AdLacpActive(value)
@@ -430,10 +631,14 @@ impl Nla for InfoBond {
             | Self::AdSelect(value)
             | Self::TlbDynamicLb(value)
             | Self::MissedMax(value) => buffer[0] = *value,
+            Self::FailOverMac(value) => buffer[0] = (*value).into(),
             Self::AdActorSysPrio(value) | Self::AdUserPortKey(value) => {
                 NativeEndian::write_u16(buffer, *value)
             }
             Self::ArpValidate(value) => {
+                NativeEndian::write_u32(buffer, (*value).into())
+            }
+            Self::ArpAllTargets(value) => {
                 NativeEndian::write_u32(buffer, (*value).into())
             }
             Self::ActivePort(value)
@@ -441,7 +646,6 @@ impl Nla for InfoBond {
             | Self::UpDelay(value)
             | Self::DownDelay(value)
             | Self::ArpInterval(value)
-            | Self::ArpAllTargets(value)
             | Self::Primary(value)
             | Self::ResendIgmp(value)
             | Self::MinLinks(value)
@@ -550,7 +754,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_ARP_ALL_TARGETS => Self::ArpAllTargets(
                 parse_u32(payload)
-                    .context("invalid IFLA_BOND_ARP_ALL_TARGETS value")?,
+                    .context("invalid IFLA_BOND_ARP_ALL_TARGETS value")?
+                    .into(),
             ),
             IFLA_BOND_PRIMARY => Self::Primary(
                 parse_u32(payload)
@@ -558,15 +763,18 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_PRIMARY_RESELECT => Self::PrimaryReselect(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?,
+                    .context("invalid IFLA_BOND_PRIMARY_RESELECT value")?
+                    .into(),
             ),
             IFLA_BOND_FAIL_OVER_MAC => Self::FailOverMac(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_FAIL_OVER_MAC value")?,
+                    .context("invalid IFLA_BOND_FAIL_OVER_MAC value")?
+                    .into(),
             ),
             IFLA_BOND_XMIT_HASH_POLICY => Self::XmitHashPolicy(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_XMIT_HASH_POLICY value")?,
+                    .context("invalid IFLA_BOND_XMIT_HASH_POLICY value")?
+                    .into(),
             ),
             IFLA_BOND_RESEND_IGMP => Self::ResendIgmp(
                 parse_u32(payload)

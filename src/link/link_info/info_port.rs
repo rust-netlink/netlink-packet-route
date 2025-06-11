@@ -147,7 +147,8 @@ impl InfoPortData {
         };
 
         Ok(port_data.context(format!(
-            "failed to parse IFLA_INFO_PORT_DATA (IFLA_INFO_PORT_KIND is '{kind}')"
+            "failed to parse IFLA_INFO_PORT_DATA (IFLA_INFO_PORT_KIND is \
+             '{kind}')"
         ))?)
     }
 }

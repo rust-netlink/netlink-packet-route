@@ -102,10 +102,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "fuchsia"))]
+#[cfg(any(target_os = "linux", target_os = "fuchsia", target_os = "android"))]
 pub(crate) struct VecAfSpecBridge(pub(crate) Vec<AfSpecBridge>);
 
-#[cfg(any(target_os = "linux", target_os = "fuchsia"))]
+#[cfg(any(target_os = "linux", target_os = "fuchsia", target_os = "android"))]
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VecAfSpecBridge
 {
@@ -189,8 +189,8 @@ impl TryFrom<&[u8]> for BridgeVlanInfo {
             })
         } else {
             Err(DecodeError::from(format!(
-                "Invalid IFLA_BRIDGE_VLAN_INFO value, expecting [u8;4], \
-                but got {raw:?}"
+                "Invalid IFLA_BRIDGE_VLAN_INFO value, expecting [u8;4], but \
+                 got {raw:?}"
             )))
         }
     }

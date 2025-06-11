@@ -28,7 +28,10 @@ mod vxlan;
 mod xfrm;
 mod xstats;
 
-pub use self::bond::{BondAdInfo, BondArpValidate, BondMode, InfoBond};
+pub use self::bond::{
+    BondAdInfo, BondArpAllTargets, BondArpValidate, BondFailOverMac, BondMode,
+    BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
+};
 pub use self::bond_port::{BondPortState, InfoBondPort, MiiStatus};
 pub use self::bridge::{
     BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge,

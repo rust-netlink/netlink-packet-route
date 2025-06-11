@@ -56,7 +56,7 @@ git reset --hard upstream/$MAIN_BRANCH_NAME
 
 echo "Checking 'cargo publish --dry-run'"
 cargo set-version $NEXT_VERSION
-cargo publish --dry-run
+cargo publish --dry-run --allow-dirty
 
 echo "# Changelog" > $TMP_CHANGELOG_FILE
 echo "## [$NEXT_VERSION] - $(date +%F)" >> $TMP_CHANGELOG_FILE

@@ -148,7 +148,7 @@ impl std::fmt::Display for HsrProtocol {
         match self {
             Self::Hsr => write!(f, "hsr"),
             Self::Prp => write!(f, "prp"),
-            Self::Other(d) => write!(f, "{}", d),
+            Self::Other(d) => write!(f, "{d}"),
         }
     }
 }

@@ -20,9 +20,8 @@ impl RouteRealm {
             })
         } else {
             Err(DecodeError::from(format!(
-                "Invalid rule port range data, expecting \
-                {RULE_REALM_LEN} u8 array, but got {:?}",
-                buf
+                "Invalid rule port range data, expecting {RULE_REALM_LEN} u8 \
+                 array, but got {buf:?}"
             )))
         }
     }

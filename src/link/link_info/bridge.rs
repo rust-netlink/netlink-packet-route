@@ -624,8 +624,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 Ok(IpAddr::V4(addr)) => Ipv4Address(addr),
                 Ok(v) => {
                     return Err(DecodeError::from(format!(
-                        "Invalid BRIDGE_QUERIER_IP_ADDRESS, \
-                        expecting IPv4 address, but got {v}"
+                        "Invalid BRIDGE_QUERIER_IP_ADDRESS, expecting IPv4 \
+                         address, but got {v}"
                     )))
                 }
                 Err(e) => {
@@ -638,8 +638,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 Ok(IpAddr::V6(addr)) => Ipv6Address(addr),
                 Ok(v) => {
                     return Err(DecodeError::from(format!(
-                        "Invalid BRIDGE_QUERIER_IPV6_ADDRESS, \
-                        expecting IPv6 address, but got {v}"
+                        "Invalid BRIDGE_QUERIER_IPV6_ADDRESS, expecting IPv6 \
+                         address, but got {v}"
                     )));
                 }
                 Err(e) => {

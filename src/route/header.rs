@@ -251,8 +251,7 @@ impl Parseable<[u8]> for RouteProtocol {
             Ok(Self::from(buf[0]))
         } else {
             Err(DecodeError::from(format!(
-                "Expecting single u8 for route protocol, but got {:?}",
-                buf
+                "Expecting single u8 for route protocol, but got {buf:?}"
             )))
         }
     }

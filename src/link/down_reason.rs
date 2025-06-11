@@ -37,7 +37,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             }
             kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_PROTO_DOWN_REASON: \
-                {payload:?}"
+                 {payload:?}"
             ))?),
         })
     }
