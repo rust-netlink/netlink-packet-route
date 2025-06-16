@@ -25,7 +25,9 @@ pub use self::cache_info::{RouteCacheInfo, RouteCacheInfoBuffer};
 pub use self::header::{
     RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
 };
-pub use self::lwtunnel::{RouteLwEnCapType, RouteLwTunnelEncap};
+pub use self::lwtunnel::{
+    RouteIp6Tunnel, RouteLwEnCapType, RouteLwTunnelEncap,
+};
 pub use self::message::RouteMessage;
 pub use self::metrics::RouteMetric;
 pub use self::mfc_stats::{RouteMfcStats, RouteMfcStatsBuffer};
