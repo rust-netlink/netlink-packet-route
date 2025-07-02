@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{IpAddr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use anyhow::Context;
 use byteorder::{BigEndian, ByteOrder, NativeEndian};
@@ -50,14 +50,14 @@ pub enum InfoIpTunnel {
     Protocol(IpProtocol),
     PMtuDisc(bool),
     Ipv6RdPrefix(Ipv6Addr),
-    Ipv6RdRelayPrefix(Ipv6Addr),
+    Ipv6RdRelayPrefix(Ipv4Addr),
     Ipv6RdPrefixLen(u16),
     Ipv6RdRelayPrefixLen(u16),
     EncapType(TunnelEncapType),
     EncapFlags(TunnelEncapFlags),
     EncapSPort(u16),
     EncapDPort(u16),
-    CollectMetada(bool),
+    CollectMetadata(bool),
     FwMark(u32),
     Other(DefaultNla),
 }
@@ -66,7 +66,8 @@ impl Nla for InfoIpTunnel {
     fn value_len(&self) -> usize {
         use self::InfoIpTunnel::*;
         match self {
-            Ipv6RdPrefix(_) | Ipv6RdRelayPrefix(_) => 16,
+            Ipv6RdPrefix(_) => 16,
+            Ipv6RdRelayPrefix(_) => 4,
             Local(value) | Remote(value) => match value {
                 IpAddr::V4(_) => 4,
                 IpAddr::V6(_) => 16,
@@ -80,8 +81,8 @@ impl Nla for InfoIpTunnel {
             | EncapDPort(_)
             | Ipv6RdPrefixLen(_)
             | Ipv6RdRelayPrefixLen(_) => 2,
-            Ttl(_) | Tos(_) | Protocol(_) | PMtuDisc(_) | CollectMetada(_)
-            | EncapLimit(_) => 1,
+            Ttl(_) | Tos(_) | Protocol(_) | PMtuDisc(_)
+            | CollectMetadata(_) | EncapLimit(_) => 1,
             Other(nla) => nla.value_len(),
         }
     }
@@ -89,9 +90,8 @@ impl Nla for InfoIpTunnel {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoIpTunnel::*;
         match self {
-            Ipv6RdPrefix(value) | Ipv6RdRelayPrefix(value) => {
-                buffer.copy_from_slice(&value.octets())
-            }
+            Ipv6RdPrefix(value) => buffer.copy_from_slice(&value.octets()),
+            Ipv6RdRelayPrefix(value) => buffer.copy_from_slice(&value.octets()),
             Link(value) | FwMark(value) | FlowInfo(value) => {
                 NativeEndian::write_u32(buffer, *value)
             }
@@ -117,7 +117,7 @@ impl Nla for InfoIpTunnel {
             }
             Protocol(value) => buffer[0] = u8::from(*value),
             Ttl(value) | Tos(value) | EncapLimit(value) => buffer[0] = *value,
-            PMtuDisc(value) | CollectMetada(value) => {
+            PMtuDisc(value) | CollectMetadata(value) => {
                 buffer[0] = if *value { 1 } else { 0 }
             }
             Other(nla) => nla.emit_value(buffer),
@@ -145,7 +145,7 @@ impl Nla for InfoIpTunnel {
             EncapFlags(_) => IFLA_IPTUN_ENCAP_FLAGS,
             EncapSPort(_) => IFLA_IPTUN_ENCAP_SPORT,
             EncapDPort(_) => IFLA_IPTUN_ENCAP_DPORT,
-            CollectMetada(_) => IFLA_IPTUN_COLLECT_METADATA,
+            CollectMetadata(_) => IFLA_IPTUN_COLLECT_METADATA,
             FwMark(_) => IFLA_IPTUN_FWMARK,
             Other(nla) => nla.kind(),
         }
@@ -231,14 +231,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
             IFLA_IPTUN_6RD_RELAY_PREFIX => {
-                if payload.len() == 16 {
-                    let mut data = [0u8; 16];
-                    data.copy_from_slice(&payload[0..16]);
-                    Self::Ipv6RdRelayPrefix(Ipv6Addr::from(data))
+                if payload.len() == 4 {
+                    let mut data = [0u8; 4];
+                    data.copy_from_slice(&payload[0..4]);
+                    Self::Ipv6RdRelayPrefix(Ipv4Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
                         "Invalid IFLA_IPTUN_6RD_RELAY_PREFIX, got unexpected \
-                         length of IPv6 address payload {payload:?}"
+                         length of IPv4 address payload {payload:?}"
                     )));
                 }
             }
@@ -269,7 +269,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 parse_u16_be(payload)
                     .context("invalid IFLA_IPTUN_ENCAP_DPORT value")?,
             ),
-            IFLA_IPTUN_COLLECT_METADATA => CollectMetada(
+            IFLA_IPTUN_COLLECT_METADATA => CollectMetadata(
                 parse_u8(payload)
                     .context("invalid IFLA_IPTUN_COLLECT_METADATA value")?
                     > 0,
