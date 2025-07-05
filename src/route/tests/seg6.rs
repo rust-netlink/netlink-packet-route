@@ -56,8 +56,8 @@ fn test_encap() {
                 RouteSeg6IpTunnel::Seg6(Seg6Header {
                     mode: Seg6Mode::Encap,
                     segments: vec![
-                        Ipv6Addr::from_str("fe80::1").unwrap().into(),
-                        Ipv6Addr::from_str("fe80::2").unwrap().into(),
+                        Ipv6Addr::from_str("fe80::1").unwrap(),
+                        Ipv6Addr::from_str("fe80::2").unwrap(),
                     ],
                 }),
             )]),
@@ -120,8 +120,8 @@ fn test_inline() {
                 RouteSeg6IpTunnel::Seg6(Seg6Header {
                     mode: Seg6Mode::Inline,
                     segments: vec![
-                        Ipv6Addr::from_str("fe80::1").unwrap().into(),
-                        Ipv6Addr::from_str("fe80::2").unwrap().into(),
+                        Ipv6Addr::from_str("fe80::1").unwrap(),
+                        Ipv6Addr::from_str("fe80::2").unwrap(),
                     ],
                 }),
             )]),
