@@ -8,7 +8,7 @@ use crate::link::{
     BondPortState, BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
     InfoBondPort, InfoData, InfoKind, InfoPortData, InfoPortKind,
     LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, Map, MiiStatus, State,
+    LinkMessageBuffer, LinkMode, Map, MiiStatus, State,
 };
 use crate::{AddressFamily, RouteNetlinkMessage};
 
@@ -190,7 +190,7 @@ fn test_bond_arp_validate() {
             LinkAttribute::IfName("bond0".into()),
             LinkAttribute::TxQueueLen(1000),
             LinkAttribute::OperState(State::Down),
-            LinkAttribute::Mode(0),
+            LinkAttribute::Mode(LinkMode::Default),
             LinkAttribute::Mtu(1500),
             LinkAttribute::MinMtu(68),
             LinkAttribute::MaxMtu(65535),

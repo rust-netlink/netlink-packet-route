@@ -33,7 +33,7 @@ use super::{
     stats::LINK_STATS_LEN,
     stats64::LINK_STATS64_LEN,
     xdp::VecLinkXdp,
-    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkExtentMask, LinkInfo,
+    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkExtentMask, LinkInfo, LinkMode,
     LinkPhysId, LinkProtoInfoBridge, LinkProtoInfoInet6,
     LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkWirelessEvent, LinkXdp,
     Map, MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
@@ -139,7 +139,7 @@ pub enum LinkAttribute {
     Qdisc(String),
     IfAlias(String),
     PhysPortName(String),
-    Mode(u8),
+    Mode(LinkMode),
     Carrier(u8),
     ProtoDown(u8),
     Mtu(u32),
@@ -198,7 +198,8 @@ impl Nla for LinkAttribute {
             | Self::IfAlias(string)
             | Self::PhysPortName(string) => string.len() + 1,
 
-            Self::Mode(_) | Self::Carrier(_) | Self::ProtoDown(_) => 1,
+            Self::Mode(_) => 1,
+            Self::Carrier(_) | Self::ProtoDown(_) => 1,
 
             Self::Mtu(_)
             | Self::NewNetnsId(_)
@@ -264,10 +265,9 @@ impl Nla for LinkAttribute {
                 buffer[..string.len()].copy_from_slice(string.as_bytes());
                 buffer[string.len()] = 0;
             }
+            Self::Mode(v) => buffer[0] = (*v).into(),
 
-            Self::Mode(val) | Self::Carrier(val) | Self::ProtoDown(val) => {
-                buffer[0] = *val
-            }
+            Self::Carrier(val) | Self::ProtoDown(val) => buffer[0] = *val,
 
             Self::Mtu(value)
             | Self::Link(value)
@@ -533,9 +533,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 parse_string(payload)
                     .context("invalid IFLA_PHYS_PORT_NAME value")?,
             ),
-            IFLA_LINKMODE => Self::Mode(
+            IFLA_LINKMODE => Self::Mode(LinkMode::from(
                 parse_u8(payload).context("invalid IFLA_LINKMODE value")?,
-            ),
+            )),
             IFLA_CARRIER => Self::Carrier(
                 parse_u8(payload).context("invalid IFLA_CARRIER value")?,
             ),

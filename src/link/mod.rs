@@ -10,6 +10,7 @@ mod header;
 mod link_flag;
 mod link_info;
 mod link_layer_type;
+mod link_mode;
 mod link_state;
 mod map;
 mod message;
@@ -53,6 +54,7 @@ pub use self::link_info::{
     VlanQosMapping,
 };
 pub use self::link_layer_type::LinkLayerType;
+pub use self::link_mode::LinkMode;
 pub use self::link_state::State;
 pub use self::map::{Map, MapBuffer};
 pub use self::message::LinkMessage;

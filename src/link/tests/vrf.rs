@@ -11,8 +11,8 @@ use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Icmp6Stats, Inet6CacheInfo,
     Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, InfoData, InfoKind,
     InfoPortData, InfoPortKind, InfoVrf, LinkAttribute, LinkHeader, LinkInfo,
-    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map, State, Stats,
-    Stats64, XdpAttached,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map,
+    State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -248,7 +248,7 @@ fn test_link_info_with_ifla_vrf_port_table() {
             LinkAttribute::IfName("veth20".to_string()),
             LinkAttribute::TxQueueLen(1000),
             LinkAttribute::OperState(State::Down),
-            LinkAttribute::Mode(0),
+            LinkAttribute::Mode(LinkMode::Default),
             LinkAttribute::Mtu(1500),
             LinkAttribute::MinMtu(68),
             LinkAttribute::MaxMtu(65535),

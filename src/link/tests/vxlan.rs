@@ -10,7 +10,7 @@ use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Inet6CacheInfo, Inet6DevConf,
     Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoVxlan, LinkAttribute,
     LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
-    LinkXdp, Map, State, Stats, Stats64, XdpAttached,
+    LinkMode, LinkXdp, Map, State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -139,7 +139,7 @@ fn test_parsing_link_vxlan() {
             LinkAttribute::IfName("vxlan0".into()),
             LinkAttribute::TxQueueLen(1000),
             LinkAttribute::OperState(State::Unknown),
-            LinkAttribute::Mode(0),
+            LinkAttribute::Mode(LinkMode::Default),
             LinkAttribute::Mtu(1450),
             LinkAttribute::MinMtu(68),
             LinkAttribute::MaxMtu(65535),
@@ -436,7 +436,7 @@ fn test_parsing_link_vxlan_ipv6() {
             LinkAttribute::IfName("vxlan1".into()),
             LinkAttribute::TxQueueLen(1000),
             LinkAttribute::OperState(State::Down),
-            LinkAttribute::Mode(0),
+            LinkAttribute::Mode(LinkMode::Default),
             LinkAttribute::Mtu(1430),
             LinkAttribute::MinMtu(68),
             LinkAttribute::MaxMtu(65535),

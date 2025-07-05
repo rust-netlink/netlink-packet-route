@@ -5,8 +5,8 @@ use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
 use crate::{
     link::{
         link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
-        LinkMessage, LinkMessageBuffer, LinkXdp, Map, State, Stats, Stats64,
-        XdpAttached,
+        LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map, State, Stats,
+        Stats64, XdpAttached,
     },
     AddressFamily,
 };
@@ -95,7 +95,7 @@ fn test_empty_af_spec() {
         attributes: vec![
             LinkAttribute::TxQueueLen(1000),
             LinkAttribute::OperState(State::Down),
-            LinkAttribute::Mode(0),
+            LinkAttribute::Mode(LinkMode::Default),
             LinkAttribute::Mtu(1500),
             LinkAttribute::MinMtu(68),
             LinkAttribute::MaxMtu(1500),

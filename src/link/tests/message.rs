@@ -5,7 +5,7 @@ use netlink_packet_utils::traits::{Emitable, ParseableParametrized};
 use crate::link::link_flag::LinkFlags;
 use crate::link::{
     LinkAttribute, LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer,
-    State,
+    LinkMode, State,
 };
 use crate::AddressFamily;
 
@@ -120,7 +120,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(nla.value(), &[0x00]);
     let parsed =
         LinkAttribute::parse_with_param(&nla, AddressFamily::Inet).unwrap();
-    assert_eq!(parsed, LinkAttribute::Mode(0));
+    assert_eq!(parsed, LinkAttribute::Mode(LinkMode::Default));
 
     // MTU L=8,T=4,V=65536
     let nla = attributes.next().unwrap().unwrap();
@@ -182,7 +182,7 @@ fn link_message_emit() {
         LinkAttribute::IfName("lo".into()),
         LinkAttribute::TxQueueLen(1000),
         LinkAttribute::OperState(State::Unknown),
-        LinkAttribute::Mode(0),
+        LinkAttribute::Mode(LinkMode::Default),
         LinkAttribute::Mtu(0x1_0000),
         LinkAttribute::Group(0),
         LinkAttribute::Promiscuity(0),
