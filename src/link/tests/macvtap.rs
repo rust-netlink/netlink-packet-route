@@ -7,8 +7,8 @@ use crate::link::{
     AfSpecInet, AfSpecInet6, AfSpecUnspec, Inet6CacheInfo, Inet6DevConf,
     Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoMacVtap,
     LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, LinkXdp, MacVtapMode, Map, State, Stats, Stats64,
-    XdpAttached,
+    LinkMessageBuffer, LinkMode, LinkXdp, MacVtapMode, Map, State, Stats,
+    Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -120,7 +120,7 @@ fn test_macvtap_link_info() {
             LinkAttribute::IfName("mtap0".to_string()),
             LinkAttribute::TxQueueLen(500),
             LinkAttribute::OperState(State::Down),
-            LinkAttribute::Mode(0),
+            LinkAttribute::Mode(LinkMode::Default),
             LinkAttribute::Mtu(1500),
             LinkAttribute::MinMtu(68),
             LinkAttribute::MaxMtu(2304),

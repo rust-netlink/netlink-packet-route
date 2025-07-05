@@ -12,8 +12,8 @@ use crate::link::{
     BridgeVlanInfoFlags, BridgeVlanTunnelInfo, Inet6CacheInfo, Inet6DevConf,
     Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
     InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
-    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkXdp, Map, State, Stats,
-    Stats64, XdpAttached,
+    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map,
+    State, Stats, Stats64, XdpAttached,
 };
 use crate::AddressFamily;
 
@@ -159,7 +159,7 @@ fn test_parse_link_bridge_no_extention_mask() {
             LinkAttribute::IfName("br0".into()),
             LinkAttribute::TxQueueLen(1000),
             LinkAttribute::OperState(State::Up),
-            LinkAttribute::Mode(0),
+            LinkAttribute::Mode(LinkMode::Default),
             LinkAttribute::Mtu(1500),
             LinkAttribute::MinMtu(68),
             LinkAttribute::MaxMtu(65535),
