@@ -9,6 +9,8 @@ mod bridge;
 #[cfg(test)]
 mod geneve;
 #[cfg(test)]
+mod gre;
+#[cfg(test)]
 mod hsr;
 #[cfg(test)]
 mod iptunnel;
