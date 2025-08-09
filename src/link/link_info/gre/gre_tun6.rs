@@ -20,6 +20,8 @@ use super::{
     IFLA_GRE_TTL, IFLA_GRE_UNSPEC,
 };
 
+pub use InfoGreTun6 as InfoGreTap6;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoGreTun6 {

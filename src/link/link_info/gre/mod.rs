@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-pub mod gre_tap;
-pub mod gre_tap6;
 pub mod gre_tun;
 pub mod gre_tun6;
 
 use std::fmt::Display;
 
-pub use self::gre_tap::InfoGreTap;
-pub use self::gre_tap6::InfoGreTap6;
-pub use self::gre_tun::InfoGreTun;
-pub use self::gre_tun6::InfoGreTun6;
+pub use self::gre_tun::{InfoGreTap, InfoGreTun};
+pub use self::gre_tun6::{InfoGreTap6, InfoGreTun6};
 
 const GRE_CSUM: u16 = 0x8000;
 const GRE_ROUTING: u16 = 0x4000;
