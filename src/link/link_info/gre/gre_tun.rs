@@ -19,6 +19,8 @@ use super::{
     IFLA_GRE_REMOTE, IFLA_GRE_TOS, IFLA_GRE_TTL, IFLA_GRE_UNSPEC,
 };
 
+pub use InfoGreTun as InfoGreTap;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoGreTun {
