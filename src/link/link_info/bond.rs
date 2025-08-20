@@ -226,6 +226,7 @@ impl std::fmt::Display for BondMode {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[non_exhaustive]
 pub enum BondArpValidate {
     #[default]
     None,
@@ -287,6 +288,7 @@ impl std::fmt::Display for BondArpValidate {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[non_exhaustive]
 pub enum BondPrimaryReselect {
     #[default]
     Always,
@@ -332,6 +334,7 @@ impl std::fmt::Display for BondPrimaryReselect {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[non_exhaustive]
 pub enum BondXmitHashPolicy {
     #[default]
     Layer2,
@@ -389,6 +392,7 @@ impl std::fmt::Display for BondXmitHashPolicy {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[non_exhaustive]
 pub enum BondArpAllTargets {
     #[default]
     Any,
@@ -430,6 +434,7 @@ impl std::fmt::Display for BondArpAllTargets {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[non_exhaustive]
 pub enum BondFailOverMac {
     #[default]
     None,
