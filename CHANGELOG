@@ -1,4 +1,22 @@
 # Changelog
+## [0.25.0] - 2025-08-27
+### Breaking changes
+ - Drop the dependency on `netlink-packet-utils`. (e09acbd)
+ - Add `non_exhaustive` to these bond options: (eacf67f)
+    * `BondArpValidate`
+    * `BondPrimaryReselect`
+    * `BondXmitHashPolicy`
+    * `BondArpAllTargets`
+    * `BondFailOverMac`
+ - Changed `AfSpecInet6::AddrGenMode` to enum. (7daf895)
+ - Changed `LinkAttribute::Mode` to enum. (be2796c)
+
+### New features
+ - Support `LWTUNNEL_ENCAP_IP6`. (0e49453)
+
+### Bug fixes
+ - Expose In6AddrGenMode. (faf9d39)
+
 ## [0.24.0] - 2025-05-21
 ### Breaking changes
  - Changed `InfoBond::PrimaryReselect` from u8 to enum. (7be1634)
