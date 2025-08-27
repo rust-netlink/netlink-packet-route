@@ -2,13 +2,15 @@
 
 use std::net::{IpAddr, Ipv6Addr};
 
-use netlink_packet_utils::{nla::NlaBuffer, Emitable, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
-use crate::address::{
-    AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
-    AddressMessage, AddressMessageBuffer, AddressScope, CacheInfo,
+use crate::{
+    address::{
+        AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
+        AddressMessage, AddressMessageBuffer, AddressScope, CacheInfo,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 // TODO(Gris Ge): Need test for `AddressAttribute::Anycast` and `Multicast`.
 

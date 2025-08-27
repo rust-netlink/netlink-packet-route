@@ -2,13 +2,15 @@
 
 use std::net::{IpAddr, Ipv4Addr};
 
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::address::{
-    AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
-    AddressMessage, AddressMessageBuffer, AddressScope, CacheInfo,
+use crate::{
+    address::{
+        AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
+        AddressMessage, AddressMessageBuffer, AddressScope, CacheInfo,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 // TODO(Gris Ge): Need test for `AddressAttribute::Broadcast`
 

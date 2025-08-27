@@ -5,13 +5,10 @@ use std::{
     ops::Deref,
 };
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_ip, parse_mac, parse_u16, parse_u32, parse_u8},
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16, emit_u32, parse_ip, parse_mac, parse_u16, parse_u32, parse_u8,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 const IFLA_BOND_AD_INFO_AGGREGATOR: u16 = 1;
@@ -125,7 +122,7 @@ impl Nla for BondAdInfo {
             Self::Aggregator(d)
             | Self::NumPorts(d)
             | Self::ActorKey(d)
-            | Self::PartnerKey(d) => NativeEndian::write_u16(buffer, *d),
+            | Self::PartnerKey(d) => emit_u16(buffer, *d).unwrap(),
             Self::PartnerMac(mac) => buffer.copy_from_slice(mac),
             Self::Other(v) => v.emit_value(buffer),
         }
@@ -638,13 +635,13 @@ impl Nla for InfoBond {
             | Self::MissedMax(value) => buffer[0] = *value,
             Self::FailOverMac(value) => buffer[0] = (*value).into(),
             Self::AdActorSysPrio(value) | Self::AdUserPortKey(value) => {
-                NativeEndian::write_u16(buffer, *value)
+                emit_u16(buffer, *value).unwrap()
             }
             Self::ArpValidate(value) => {
-                NativeEndian::write_u32(buffer, (*value).into())
+                emit_u32(buffer, (*value).into()).unwrap()
             }
             Self::ArpAllTargets(value) => {
-                NativeEndian::write_u32(buffer, (*value).into())
+                emit_u32(buffer, (*value).into()).unwrap()
             }
             Self::ActivePort(value)
             | Self::MiiMon(value)
@@ -656,9 +653,7 @@ impl Nla for InfoBond {
             | Self::MinLinks(value)
             | Self::LpInterval(value)
             | Self::PacketsPerPort(value)
-            | Self::PeerNotifDelay(value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
+            | Self::PeerNotifDelay(value) => emit_u32(buffer, *value).unwrap(),
             Self::AdActorSystem(bytes) => buffer.copy_from_slice(bytes),
             Self::ArpIpTarget(addrs) => {
                 BondIpAddrNlaList::from(addrs).as_slice().emit(buffer)

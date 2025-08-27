@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable, Parseable};
 
 const MAX_ADDR_LEN: usize = 32;
 

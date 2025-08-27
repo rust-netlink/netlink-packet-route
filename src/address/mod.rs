@@ -9,8 +9,10 @@ mod message;
 #[cfg(test)]
 mod tests;
 
-pub use self::addr_flags::{AddressFlags, AddressHeaderFlags};
-pub use self::addr_scope::AddressScope;
-pub use self::attribute::AddressAttribute;
-pub use self::cache_info::{CacheInfo, CacheInfoBuffer};
-pub use self::message::{AddressHeader, AddressMessage, AddressMessageBuffer};
+pub use self::{
+    addr_flags::{AddressFlags, AddressHeaderFlags},
+    addr_scope::AddressScope,
+    attribute::AddressAttribute,
+    cache_info::{CacheInfo, CacheInfoBuffer},
+    message::{AddressHeader, AddressMessage, AddressMessageBuffer},
+};

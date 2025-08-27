@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
-use std::str::FromStr;
-
-use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
-
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    AfSpecInet, AfSpecInet6, AfSpecUnspec, Inet6CacheInfo, Inet6DevConf,
-    Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoVxlan, LinkAttribute,
-    LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
-    LinkMode, LinkXdp, Map, State, Stats, Stats64, XdpAttached,
+use std::{
+    net::{Ipv4Addr, Ipv6Addr},
+    str::FromStr,
 };
-use crate::AddressFamily;
+
+use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+
+use crate::{
+    link::{
+        link_flag::LinkFlags, AfSpecInet, AfSpecInet6, AfSpecUnspec,
+        Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoData,
+        InfoKind, InfoVxlan, LinkAttribute, LinkHeader, LinkInfo,
+        LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map,
+        State, Stats, Stats64, XdpAttached,
+    },
+    AddressFamily,
+};
 
 #[test]
 fn test_parsing_link_vxlan() {

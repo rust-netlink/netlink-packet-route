@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u32,
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_XFRM_LINK: u16 = 1;
@@ -33,8 +29,8 @@ impl Nla for InfoXfrm {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoXfrm::*;
         match self {
-            Link(value) => NativeEndian::write_u32(buffer, *value),
-            IfId(value) => NativeEndian::write_u32(buffer, *value),
+            Link(value) => emit_u32(buffer, *value).unwrap(),
+            IfId(value) => emit_u32(buffer, *value).unwrap(),
             Other(nla) => nla.emit_value(buffer),
         }
     }

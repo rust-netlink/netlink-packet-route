@@ -2,7 +2,7 @@
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_utils::{DecodeError, Emitable};
+use netlink_packet_core::{DecodeError, Emitable};
 
 use crate::{
     ip::{

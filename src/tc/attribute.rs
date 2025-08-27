@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_string, parse_u32, parse_u8},
-    DecodeError, Emitable, Parseable, ParseableParametrized,
+use netlink_packet_core::{
+    emit_u32, parse_string, parse_u32, parse_u8, DecodeError, DefaultNla,
+    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ParseableParametrized,
 };
 
 use super::{
@@ -72,7 +70,7 @@ impl Nla for TcAttribute {
             Self::Rate(ref bytes)
             | Self::Fcnt(ref bytes)
             | Self::Stab(ref bytes) => buffer.copy_from_slice(bytes.as_slice()),
-            Self::Chain(v) => NativeEndian::write_u32(buffer, v),
+            Self::Chain(v) => emit_u32(buffer, v).unwrap(),
             Self::Xstats(ref v) => v.emit(buffer),
             Self::HwOffload(ref val) => buffer[0] = *val,
             Self::Stats2(ref stats) => stats.as_slice().emit(buffer),

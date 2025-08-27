@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_u32, parse_u64},
-    DecodeError, Parseable,
+use netlink_packet_core::{
+    emit_u32, emit_u64, parse_u32, parse_u64, DecodeError, DefaultNla,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const NDTPA_IFINDEX: u16 = 1;
@@ -89,7 +86,7 @@ impl Nla for NeighbourTableParameter {
             | Self::McastProbes(v)
             | Self::ProxyQlen(v)
             | Self::QueueLenbytes(v)
-            | Self::McastReprobes(v) => NativeEndian::write_u32(buffer, *v),
+            | Self::McastReprobes(v) => emit_u32(buffer, *v).unwrap(),
 
             Self::ReachableTime(v)
             | Self::BaseReachableTime(v)
@@ -99,9 +96,7 @@ impl Nla for NeighbourTableParameter {
             | Self::AnycastDelay(v)
             | Self::ProxyDelay(v)
             | Self::Locktime(v)
-            | Self::IntervalProbeTimeMs(v) => {
-                NativeEndian::write_u64(buffer, *v)
-            }
+            | Self::IntervalProbeTimeMs(v) => emit_u64(buffer, *v).unwrap(),
 
             Self::Other(nla) => nla.emit_value(buffer),
         }

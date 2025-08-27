@@ -2,18 +2,14 @@
 
 use std::{fmt::Debug, net::Ipv6Addr};
 
-use anyhow::Context;
-use byteorder::{BigEndian, ByteOrder, NetworkEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_u16_be, parse_u8},
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16_be, emit_u64_be, parse_u16_be, parse_u64_be, parse_u8,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable, ParseableParametrized,
 };
 
-use crate::ip::parse_ipv6_addr;
-
 use super::{RouteMplsIpTunnel, RouteSeg6IpTunnel};
+use crate::ip::parse_ipv6_addr;
 
 const LWTUNNEL_ENCAP_NONE: u16 = 0;
 const LWTUNNEL_ENCAP_MPLS: u16 = 1;
@@ -209,23 +205,15 @@ impl Nla for RouteIp6Tunnel {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Unspecified => {}
-            Self::Id(id) => NetworkEndian::write_u64(buffer, *id),
+            Self::Id(id) => emit_u64_be(buffer, *id).unwrap(),
             Self::Destination(ip) | Self::Source(ip) => {
                 buffer.copy_from_slice(&ip.octets());
             }
             Self::Hoplimit(value) | Self::Tc(value) => buffer[0] = *value,
-            Self::Flags(flags) => BigEndian::write_u16(buffer, flags.bits()),
+            Self::Flags(flags) => emit_u16_be(buffer, flags.bits()).unwrap(),
             Self::Other(other) => other.emit_value(buffer),
         }
     }
-}
-
-// should probably be in utils
-fn parse_u64_be(payload: &[u8]) -> Result<u64, DecodeError> {
-    if payload.len() != size_of::<u64>() {
-        return Err(format!("invalid u64: {payload:?}").into());
-    }
-    Ok(BigEndian::read_u64(payload))
 }
 
 impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteIp6Tunnel

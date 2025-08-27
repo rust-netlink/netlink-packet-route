@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    LinkAttribute, LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer,
-    Prop,
+use crate::{
+    link::{
+        link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
+        LinkMessage, LinkMessageBuffer, Prop,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 #[test]
 fn test_wlan0_with_prop_altname() {

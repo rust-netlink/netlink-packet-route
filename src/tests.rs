@@ -3,8 +3,9 @@
 // This file only contains testing parsing RouteNetlinkMessage, not focusing on
 // detailed sub-component parsing. Each component has their own tests moduel.
 
-use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
-use netlink_packet_utils::Emitable;
+use netlink_packet_core::{
+    Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload,
+};
 
 use crate::{
     link::{LinkAttribute, LinkExtentMask, LinkMessage},

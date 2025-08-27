@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u8,
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    parse_u8, DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const MPLS_IPTUNNEL_DST: u16 = 1;

@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    nla::{DefaultNla, NlaBuffer},
-    Emitable, Parseable,
-};
+use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
 
 use crate::link::{xdp::VecLinkXdp, LinkXdp, XdpAttached};
 

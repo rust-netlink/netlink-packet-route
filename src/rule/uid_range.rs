@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{DecodeError, Emitable};
+use netlink_packet_core::{DecodeError, Emitable};
 
 const RULE_UID_RANGE_LEN: usize = 8;
 

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-use super::TcFilterFlowerMplsOption;
-use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
-use crate::tc::TcAction;
-use anyhow::Context;
-use byteorder::{BigEndian, ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
-    parsers::{
-        parse_mac, parse_u16, parse_u16_be, parse_u32, parse_u32_be, parse_u8,
-    },
-    traits::Emitable,
-    DecodeError, Parseable,
-};
 use std::net::{Ipv4Addr, Ipv6Addr};
+
+use netlink_packet_core::{
+    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_mac, parse_u16,
+    parse_u16_be, parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla,
+    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    NLA_F_NESTED,
+};
+
+use super::TcFilterFlowerMplsOption;
+use crate::{
+    ip::{parse_ipv4_addr, parse_ipv6_addr},
+    tc::TcAction,
+};
 
 const TCA_FLOWER_CLASSID: u16 = 1;
 const TCA_FLOWER_INDEV: u16 = 2;
@@ -353,14 +353,14 @@ impl Nla for TcFilterFlowerOption {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::ClassId(i) => NativeEndian::write_u32(buffer, *i),
-            Self::InDev(i) => NativeEndian::write_u32(buffer, *i),
+            Self::ClassId(i) => emit_u32(buffer, *i).unwrap(),
+            Self::InDev(i) => emit_u32(buffer, *i).unwrap(),
             Self::Actions(acts) => acts.as_slice().emit(buffer),
             Self::EthDst(b)
             | Self::EthDstMask(b)
             | Self::EthSrc(b)
             | Self::EthSrcMask(b) => buffer.copy_from_slice(b.as_slice()),
-            Self::EthType(i) => BigEndian::write_u16(buffer, *i),
+            Self::EthType(i) => emit_u16_be(buffer, *i).unwrap(),
             Self::IpProto(i) => buffer[0] = *i,
             Self::IpTtl(i)
             | Self::IpTtlMask(i)
@@ -385,7 +385,7 @@ impl Nla for TcFilterFlowerOption {
             | Self::UdpSrcMask(i)
             | Self::UdpDstMask(i)
             | Self::SctpSrcMask(i)
-            | Self::SctpDstMask(i) => BigEndian::write_u16(buffer, *i),
+            | Self::SctpDstMask(i) => emit_u16_be(buffer, *i).unwrap(),
             Self::Icmpv4Code(i)
             | Self::Icmpv4CodeMask(i)
             | Self::Icmpv4Type(i)
@@ -406,21 +406,21 @@ impl Nla for TcFilterFlowerOption {
             Self::MplsTtl(i) => buffer[0] = *i,
             Self::MplsBos(i) => buffer[0] = *i & 0x01,
             Self::MplsTc(i) => buffer[0] = *i & 0x07,
-            Self::MplsLabel(i) => NativeEndian::write_u32(buffer, *i & 0xFFFFF),
+            Self::MplsLabel(i) => emit_u32(buffer, *i & 0xFFFFF).unwrap(),
             Self::TcpFlags(i) | Self::TcpFlagsMask(i) => {
-                BigEndian::write_u16(buffer, *i)
+                emit_u16_be(buffer, *i).unwrap()
             }
             Self::KeyFlags(i) | Self::KeyFlagsMask(i) => {
-                BigEndian::write_u32(buffer, *i)
+                emit_u32_be(buffer, *i).unwrap()
             }
-            Self::Flags(i) => NativeEndian::write_u32(buffer, *i),
-            Self::VlanId(i) => NativeEndian::write_u16(buffer, *i),
+            Self::Flags(i) => emit_u32(buffer, *i).unwrap(),
+            Self::VlanId(i) => emit_u16(buffer, *i).unwrap(),
             Self::VlanPrio(i) => buffer[0] = *i,
-            Self::VlanEthType(i) => BigEndian::write_u16(buffer, *i),
-            Self::CvlanId(i) => NativeEndian::write_u16(buffer, *i),
+            Self::VlanEthType(i) => emit_u16_be(buffer, *i).unwrap(),
+            Self::CvlanId(i) => emit_u16(buffer, *i).unwrap(),
             Self::CvlanPrio(i) => buffer[0] = *i,
-            Self::CvlanEthType(i) => BigEndian::write_u16(buffer, *i),
-            Self::EncKeyId(i) => BigEndian::write_u32(buffer, *i),
+            Self::CvlanEthType(i) => emit_u16_be(buffer, *i).unwrap(),
+            Self::EncKeyId(i) => emit_u32_be(buffer, *i).unwrap(),
             Self::EncKeyIpTtl(i)
             | Self::EncKeyIpTtlMask(i)
             | Self::EncKeyIpTos(i)
@@ -428,7 +428,7 @@ impl Nla for TcFilterFlowerOption {
             Self::EncKeyUdpSrcPort(i)
             | Self::EncKeyUdpSrcPortMask(i)
             | Self::EncKeyUdpDstPort(i)
-            | Self::EncKeyUdpDstPortMask(i) => BigEndian::write_u16(buffer, *i),
+            | Self::EncKeyUdpDstPortMask(i) => emit_u16_be(buffer, *i).unwrap(),
             Self::EncKeyIpv4Src(ip)
             | Self::EncKeyIpv4SrcMask(ip)
             | Self::EncKeyIpv4Dst(ip)
@@ -441,24 +441,24 @@ impl Nla for TcFilterFlowerOption {
             | Self::EncKeyIpv6DstMask(ip) => {
                 buffer.copy_from_slice(&ip.octets())
             }
-            Self::InHwCount(i) => NativeEndian::write_u32(buffer, *i),
+            Self::InHwCount(i) => emit_u32(buffer, *i).unwrap(),
             Self::PortSrcMin(i)
             | Self::PortSrcMax(i)
             | Self::PortDstMin(i)
-            | Self::PortDstMax(i) => BigEndian::write_u16(buffer, *i),
+            | Self::PortDstMax(i) => emit_u16_be(buffer, *i).unwrap(),
             Self::CtState(i)
             | Self::CtStateMask(i)
             | Self::CtZone(i)
-            | Self::CtZoneMask(i) => NativeEndian::write_u16(buffer, *i),
+            | Self::CtZoneMask(i) => emit_u16(buffer, *i).unwrap(),
             Self::CtMark(i) | Self::CtMarkMask(i) => {
-                NativeEndian::write_u32(buffer, *i)
+                emit_u32(buffer, *i).unwrap()
             }
             Self::CtLabels(b) | Self::CtLabelsMask(b) => {
                 buffer.copy_from_slice(b.as_slice())
             }
             Self::MplsOpts(attr) => attr.as_slice().emit(buffer),
             Self::KeyHash(i) | Self::KeyHashMask(i) => {
-                NativeEndian::write_u32(buffer, *i)
+                emit_u32(buffer, *i).unwrap()
             }
             Self::Other(attr) => attr.emit_value(buffer),
         }

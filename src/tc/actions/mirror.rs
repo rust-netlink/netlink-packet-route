@@ -6,10 +6,8 @@
 /// redirecting (stealing) the packet it receives. Mirroring is what
 /// is sometimes referred to as Switch Port Analyzer (SPAN) and is
 /// commonly used to analyze and/or debug flows.
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    DecodeError, DefaultNla, Emitable, Nla, NlaBuffer, Parseable,
 };
 
 use super::{

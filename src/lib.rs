@@ -66,12 +66,13 @@ mod address_family_fallback;
     target_os = "android",
 )))]
 pub use self::address_family_fallback::AddressFamily;
-
-pub use self::ip::IpProtocol;
-pub use self::message::{RouteNetlinkMessage, RouteNetlinkMessageBuffer};
+pub use self::{
+    ip::IpProtocol,
+    message::{RouteNetlinkMessage, RouteNetlinkMessageBuffer},
+};
 
 #[macro_use]
-extern crate netlink_packet_utils;
+extern crate netlink_packet_core;
 
 #[cfg(test)]
 #[macro_use]

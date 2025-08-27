@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable, Parseable};
 
 const VF_INFO_SPOOFCHK_LEN: usize = 8;
 

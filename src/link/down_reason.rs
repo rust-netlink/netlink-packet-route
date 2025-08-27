@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u32,
-    DecodeError, Parseable,
+use netlink_packet_core::{
+    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_PROTO_DOWN_REASON_MASK: u16 = 1;
@@ -61,9 +58,7 @@ impl Nla for LinkProtocolDownReason {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Value(v) | Self::Mask(v) => {
-                NativeEndian::write_u32(buffer, *v)
-            }
+            Self::Value(v) | Self::Mask(v) => emit_u32(buffer, *v).unwrap(),
             Self::Other(v) => v.emit_value(buffer),
         }
     }

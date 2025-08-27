@@ -2,13 +2,10 @@
 
 use std::os::unix::io::RawFd;
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
-    parsers::{parse_i32, parse_string, parse_u32, parse_u8},
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use netlink_packet_core::{
+    emit_i32, emit_u32, parse_i32, parse_string, parse_u32, parse_u8,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable, ParseableParametrized, NLA_F_NESTED,
 };
 
 #[cfg(any(
@@ -285,18 +282,18 @@ impl Nla for LinkAttribute {
             | Self::GsoMaxSegs(value)
             | Self::GsoMaxSize(value)
             | Self::MinMtu(value)
-            | Self::MaxMtu(value) => NativeEndian::write_u32(buffer, *value),
+            | Self::MaxMtu(value) => emit_u32(buffer, *value).unwrap(),
 
-            Self::ExtMask(value) => NativeEndian::write_u32(
-                buffer,
-                u32::from(&VecLinkExtentMask(value.to_vec())),
-            ),
+            Self::ExtMask(value) => {
+                emit_u32(buffer, u32::from(&VecLinkExtentMask(value.to_vec())))
+                    .unwrap()
+            }
 
             Self::LinkNetNsId(v)
             | Self::NetNsFd(v)
             | Self::NewNetnsId(v)
             | Self::NewIfIndex(v)
-            | Self::IfNetnsId(v) => NativeEndian::write_i32(buffer, *v),
+            | Self::IfNetnsId(v) => emit_i32(buffer, *v).unwrap(),
             Self::Stats(nla) => nla.emit(buffer),
             Self::Map(nla) => nla.emit(buffer),
             Self::Stats64(nla) => nla.emit(buffer),

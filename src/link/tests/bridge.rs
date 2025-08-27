@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    nla::{DefaultNla, NlaBuffer},
-    Emitable, Parseable,
-};
+use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
 
-use crate::link::{
-    af_spec::VecAfSpecBridge, link_flag::LinkFlags, AfSpecBridge, AfSpecInet,
-    AfSpecInet6, AfSpecUnspec, BridgeFlag, BridgeId, BridgeMode,
-    BridgePortMulticastRouter, BridgePortState, BridgeVlanInfo,
-    BridgeVlanInfoFlags, BridgeVlanTunnelInfo, Inet6CacheInfo, Inet6DevConf,
-    Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
-    InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
-    LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map,
-    State, Stats, Stats64, XdpAttached,
+use crate::{
+    link::{
+        af_spec::VecAfSpecBridge, link_flag::LinkFlags, AfSpecBridge,
+        AfSpecInet, AfSpecInet6, AfSpecUnspec, BridgeFlag, BridgeId,
+        BridgeMode, BridgePortMulticastRouter, BridgePortState, BridgeVlanInfo,
+        BridgeVlanInfoFlags, BridgeVlanTunnelInfo, Inet6CacheInfo,
+        Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort,
+        InfoData, InfoKind, InfoPortData, InfoPortKind, LinkAttribute,
+        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+        LinkMode, LinkXdp, Map, State, Stats, Stats64, XdpAttached,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 #[test]
 fn test_parse_link_bridge_no_extention_mask() {

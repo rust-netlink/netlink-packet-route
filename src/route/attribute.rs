@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u16, parse_u32, parse_u64, parse_u8},
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, emit_u64, parse_u16, parse_u32, parse_u64, parse_u8, DecodeError,
+    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    ParseableParametrized,
 };
 
 use super::{
@@ -149,11 +146,9 @@ impl Nla for RouteAttribute {
             | Self::Oif(value)
             | Self::Priority(value)
             | Self::Table(value)
-            | Self::Mark(value) => NativeEndian::write_u32(buffer, *value),
+            | Self::Mark(value) => emit_u32(buffer, *value).unwrap(),
             Self::Realm(v) => v.emit(buffer),
-            Self::MulticastExpires(value) => {
-                NativeEndian::write_u64(buffer, *value)
-            }
+            Self::MulticastExpires(value) => emit_u64(buffer, *value).unwrap(),
             Self::Other(attr) => attr.emit_value(buffer),
         }
     }

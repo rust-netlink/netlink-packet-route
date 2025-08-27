@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_u16, parse_u32},
-    traits::Parseable,
-    DecodeError, Emitable,
+use netlink_packet_core::{
+    emit_u16, emit_u32, parse_u16, parse_u32, DecodeError, DefaultNla,
+    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFLA_BRIDGE_FLAGS: u16 = 0;
@@ -40,12 +36,8 @@ impl Nla for AfSpecBridge {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Flags(value) => {
-                NativeEndian::write_u16(buffer, u16::from(*value))
-            }
-            Self::Mode(value) => {
-                NativeEndian::write_u16(buffer, u16::from(*value))
-            }
+            Self::Flags(value) => emit_u16(buffer, u16::from(*value)).unwrap(),
+            Self::Mode(value) => emit_u16(buffer, u16::from(*value)).unwrap(),
             Self::VlanInfo(info) => {
                 buffer[..4].copy_from_slice(<[u8; 4]>::from(info).as_slice())
             }
@@ -167,8 +159,8 @@ impl BridgeVlanInfo {
 impl From<&BridgeVlanInfo> for [u8; 4] {
     fn from(d: &BridgeVlanInfo) -> Self {
         let mut ret = [0u8; 4];
-        NativeEndian::write_u16(&mut ret[0..2], d.flags.bits());
-        NativeEndian::write_u16(&mut ret[2..4], d.vid);
+        emit_u16(&mut ret[0..2], d.flags.bits()).unwrap();
+        emit_u16(&mut ret[2..4], d.vid).unwrap();
         ret
     }
 }
@@ -296,9 +288,9 @@ impl Nla for BridgeVlanTunnelInfo {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Id(v) => NativeEndian::write_u32(buffer, *v),
-            Self::Vid(v) => NativeEndian::write_u16(buffer, *v),
-            Self::Flags(value) => NativeEndian::write_u16(buffer, value.bits()),
+            Self::Id(v) => emit_u32(buffer, *v).unwrap(),
+            Self::Vid(v) => emit_u16(buffer, *v).unwrap(),
+            Self::Flags(value) => emit_u16(buffer, value.bits()).unwrap(),
             Self::Other(nla) => nla.emit_value(buffer),
         }
     }

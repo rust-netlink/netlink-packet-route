@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_i32, parse_u32},
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_i32, emit_u32, parse_i32, parse_u32, DecodeError, DefaultNla,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const NETNSA_NSID: u16 = 1;
@@ -42,9 +37,9 @@ impl Nla for NsidAttribute {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Fd(v) | Self::Pid(v) => NativeEndian::write_u32(buffer, *v),
+            Self::Fd(v) | Self::Pid(v) => emit_u32(buffer, *v).unwrap(),
             Self::Id(v) | Self::TargetNsid(v) | Self::CurrentNsid(v) => {
-                NativeEndian::write_i32(buffer, *v)
+                emit_i32(buffer, *v).unwrap()
             }
             Self::Other(attr) => attr.emit_value(buffer),
         }

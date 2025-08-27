@@ -6,6 +6,8 @@ mod message;
 #[cfg(test)]
 mod tests;
 
-pub use self::attribute::NsidAttribute;
-pub use self::header::{NsidHeader, NsidMessageBuffer};
-pub use self::message::NsidMessage;
+pub use self::{
+    attribute::NsidAttribute,
+    header::{NsidHeader, NsidMessageBuffer},
+    message::NsidMessage,
+};

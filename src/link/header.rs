@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
 };
 
-use crate::{link::LinkLayerType, AddressFamily};
-
 use super::link_flag::LinkFlags;
+use crate::{link::LinkLayerType, AddressFamily};
 
 const LINK_HEADER_LEN: usize = 16;
 

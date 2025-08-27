@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use std::mem::size_of;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::{
+    mem::size_of,
+    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+};
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_string, parse_u32},
-    DecodeError, Emitable, Parseable,
+use netlink_packet_core::{
+    emit_u32, parse_string, parse_u32, DecodeError, DefaultNla, Emitable,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::address::{AddressFlags, CacheInfo, CacheInfoBuffer};
@@ -84,9 +83,7 @@ impl Nla for AddressAttribute {
                 buffer[..string.len()].copy_from_slice(string.as_bytes());
                 buffer[string.len()] = 0;
             }
-            Self::Flags(ref value) => {
-                NativeEndian::write_u32(buffer, value.bits())
-            }
+            Self::Flags(ref value) => emit_u32(buffer, value.bits()).unwrap(),
             Self::CacheInfo(ref attr) => attr.emit(buffer),
             Self::Other(ref attr) => attr.emit_value(buffer),
         }

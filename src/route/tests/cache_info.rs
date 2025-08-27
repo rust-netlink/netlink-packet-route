@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv6Addr;
-use std::str::FromStr;
+use std::{net::Ipv6Addr, str::FromStr};
 
-use netlink_packet_utils::traits::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::route::flags::RouteFlags;
-use crate::route::{
-    RouteAttribute, RouteCacheInfo, RouteHeader, RouteMessage,
-    RouteMessageBuffer, RouteMetric, RoutePreference, RouteProtocol,
-    RouteScope, RouteType,
+use crate::{
+    route::{
+        flags::RouteFlags, RouteAttribute, RouteCacheInfo, RouteHeader,
+        RouteMessage, RouteMessageBuffer, RouteMetric, RoutePreference,
+        RouteProtocol, RouteScope, RouteType,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 #[test]
 // wireshark capture(netlink message header removed) of nlmon against command:

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv4Addr;
-use std::str::FromStr;
+use std::{net::Ipv4Addr, str::FromStr};
 
-use netlink_packet_utils::traits::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::route::flags::RouteFlags;
-use crate::route::{
-    RouteAttribute, RouteCacheInfo, RouteHeader, RouteMessage,
-    RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
+use crate::{
+    route::{
+        flags::RouteFlags, RouteAttribute, RouteCacheInfo, RouteHeader,
+        RouteMessage, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip route get 127.0.0.1

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    parsers::parse_u32, DecodeError, Emitable, Parseable,
+use netlink_packet_core::{
+    emit_u32, parse_u32, DecodeError, Emitable, ErrorContext, Parseable,
 };
 
 const IFLA_EVENT_NONE: u32 = 0;
@@ -72,6 +70,6 @@ impl Emitable for LinkEvent {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        NativeEndian::write_u32(buffer, u32::from(*self));
+        emit_u32(buffer, u32::from(*self)).unwrap();
     }
 }

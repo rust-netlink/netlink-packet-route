@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{nla::NlaBuffer, Emitable, ParseableParametrized};
+use netlink_packet_core::{Emitable, NlaBuffer, ParseableParametrized};
 
-use crate::link::{
-    LinkAttribute, LinkVfInfo, VfInfo, VfInfoBroadcast, VfInfoLinkState,
-    VfInfoMac, VfInfoRate, VfInfoRssQueryEn, VfInfoSpoofCheck, VfInfoTrust,
-    VfInfoTxRate, VfInfoVlan, VfLinkState, VfStats, VfVlan, VfVlanInfo,
-    VlanProtocol,
+use crate::{
+    link::{
+        LinkAttribute, LinkVfInfo, VfInfo, VfInfoBroadcast, VfInfoLinkState,
+        VfInfoMac, VfInfoRate, VfInfoRssQueryEn, VfInfoSpoofCheck, VfInfoTrust,
+        VfInfoTxRate, VfInfoVlan, VfLinkState, VfStats, VfVlan, VfVlanInfo,
+        VlanProtocol,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 // Wireshark capture of nlmon on a PF NIC with 2 SR-IOV VF enabled.
 // Only the IFLA_VFINFO_LIST included.

@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u16,
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16, parse_u16, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_IPOIB_PKEY: u16 = 1;
@@ -34,9 +30,9 @@ impl Nla for InfoIpoib {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoIpoib::*;
         match self {
-            Pkey(value) => NativeEndian::write_u16(buffer, *value),
-            Mode(value) => NativeEndian::write_u16(buffer, *value),
-            UmCast(value) => NativeEndian::write_u16(buffer, *value),
+            Pkey(value) => emit_u16(buffer, *value).unwrap(),
+            Mode(value) => emit_u16(buffer, *value).unwrap(),
+            UmCast(value) => emit_u16(buffer, *value).unwrap(),
             Other(nla) => nla.emit_value(buffer),
         }
     }

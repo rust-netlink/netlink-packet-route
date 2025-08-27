@@ -2,13 +2,9 @@
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use anyhow::Context;
-use byteorder::{BigEndian, ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u16_be, parse_u32, parse_u32_be, parse_u8},
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16_be, emit_u32, emit_u32_be, parse_u16_be, parse_u32, parse_u32_be,
+    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_GENEVE_ID: u16 = 1;
@@ -98,17 +94,17 @@ impl Nla for InfoGeneve {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoGeneve::*;
         match self {
-            Id(value) => NativeEndian::write_u32(buffer, *value),
+            Id(value) => emit_u32(buffer, *value).unwrap(),
             Remote(value) => buffer.copy_from_slice(&value.octets()),
             Remote6(value) => buffer.copy_from_slice(&value.octets()),
             Ttl(value) | Tos(value) => buffer[0] = *value,
-            Port(value) => BigEndian::write_u16(buffer, *value),
+            Port(value) => emit_u16_be(buffer, *value).unwrap(),
             CollectMetadata | InnerProtoInherit => (),
             UdpCsum(value)
             | UdpZeroCsum6Tx(value)
             | UdpZeroCsum6Rx(value)
             | TtlInherit(value) => buffer[0] = *value as u8,
-            Label(value) => BigEndian::write_u32(buffer, *value),
+            Label(value) => emit_u32_be(buffer, *value).unwrap(),
             Df(value) => buffer[0] = (*value).into(),
             Other(nla) => nla.emit_value(buffer),
         }

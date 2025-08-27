@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_core::ErrorContext;
 /// Matchall filter
 ///
 /// Matches all packets and performs an action on them.
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::parse_u32,
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, parse_u32, DecodeError, DefaultNla, Emitable, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 use crate::tc::{TcAction, TcHandle};
@@ -50,8 +47,8 @@ impl Nla for TcFilterMatchAllOption {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Pnct(b) => buffer.copy_from_slice(b.as_slice()),
-            Self::ClassId(i) => NativeEndian::write_u32(buffer, (*i).into()),
-            Self::Flags(i) => NativeEndian::write_u32(buffer, *i),
+            Self::ClassId(i) => emit_u32(buffer, (*i).into()).unwrap(),
+            Self::Flags(i) => emit_u32(buffer, *i).unwrap(),
             Self::Action(acts) => acts.as_slice().emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }

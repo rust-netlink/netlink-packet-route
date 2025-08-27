@@ -2,12 +2,9 @@
 
 use std::{mem::size_of, os::fd::RawFd};
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_i32, parse_u32, parse_u8},
-    DecodeError, Parseable,
+use netlink_packet_core::{
+    emit_i32, emit_u32, parse_i32, parse_u32, parse_u8, DecodeError,
+    DefaultNla, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFLA_XDP_FD: u32 = 1;
@@ -56,22 +53,14 @@ impl Nla for LinkXdp {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Fd(ref value) => NativeEndian::write_i32(buffer, *value),
+            Self::Fd(ref value) => emit_i32(buffer, *value).unwrap(),
             Self::Attached(ref value) => buffer[0] = value.as_u8(),
-            Self::Flags(ref value) => NativeEndian::write_u32(buffer, *value),
-            Self::ProgId(ref value) => NativeEndian::write_u32(buffer, *value),
-            Self::DrvProgId(ref value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
-            Self::SkbProgId(ref value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
-            Self::HwProgId(ref value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
-            Self::ExpectedFd(ref value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
+            Self::Flags(ref value) => emit_u32(buffer, *value).unwrap(),
+            Self::ProgId(ref value) => emit_u32(buffer, *value).unwrap(),
+            Self::DrvProgId(ref value) => emit_u32(buffer, *value).unwrap(),
+            Self::SkbProgId(ref value) => emit_u32(buffer, *value).unwrap(),
+            Self::HwProgId(ref value) => emit_u32(buffer, *value).unwrap(),
+            Self::ExpectedFd(ref value) => emit_u32(buffer, *value).unwrap(),
             Self::Other(ref nla) => nla.emit_value(buffer),
         }
     }

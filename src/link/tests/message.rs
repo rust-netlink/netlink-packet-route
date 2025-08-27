@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::traits::{Emitable, ParseableParametrized};
+use netlink_packet_core::{Emitable, ParseableParametrized};
 
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    LinkAttribute, LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer,
-    LinkMode, State,
+use crate::{
+    link::{
+        link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
+        LinkMessage, LinkMessageBuffer, LinkMode, State,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 static LINK_MSG: [u8; 96] = [
     0x00, // interface family AF_UNSPEC

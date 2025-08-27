@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    nla::{NlaBuffer, NlasIterator},
-    DecodeError, Emitable,
-};
+use netlink_packet_core::{DecodeError, Emitable, NlaBuffer, NlasIterator};
 
 const PREFIX_HEADER_LEN: usize = 12;
 

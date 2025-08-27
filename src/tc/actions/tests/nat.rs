@@ -2,21 +2,25 @@
 
 use std::net::Ipv4Addr;
 
-use netlink_packet_utils::nla::NlaBuffer;
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
-use crate::tc::actions::message::TcActionMessage;
-use crate::tc::actions::message::TcActionMessageAttribute::Actions;
-use crate::tc::actions::{TcActionMessageBuffer, TcActionMessageHeader};
-use crate::tc::TcActionAttribute::{InHwCount, Kind, Options, Stats};
-use crate::tc::TcActionNatOption::{Parms, Tm};
-use crate::tc::TcActionOption::Nat;
-use crate::tc::TcStats2::{Basic, BasicHw, Queue};
-use crate::tc::{
-    TcAction, TcActionGeneric, TcActionNatOption, TcActionType, TcNat,
-    TcNatFlags, TcStatsBasic, TcStatsQueue, Tcf,
+use crate::{
+    tc::{
+        actions::{
+            message::{TcActionMessage, TcActionMessageAttribute::Actions},
+            TcActionMessageBuffer, TcActionMessageHeader,
+        },
+        TcAction,
+        TcActionAttribute::{InHwCount, Kind, Options, Stats},
+        TcActionGeneric, TcActionNatOption,
+        TcActionNatOption::{Parms, Tm},
+        TcActionOption::Nat,
+        TcActionType, TcNat, TcNatFlags,
+        TcStats2::{Basic, BasicHw, Queue},
+        TcStatsBasic, TcStatsQueue, Tcf,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 /// Capture of request for
 ///
