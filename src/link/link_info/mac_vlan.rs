@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_i32, parse_mac, parse_u16, parse_u32},
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    emit_i32, emit_u16, emit_u32, parse_i32, parse_mac, parse_u16, parse_u32,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 const IFLA_MACVLAN_MODE: u16 = 1;
@@ -53,21 +50,15 @@ impl Nla for InfoMacVlan {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Mode(value) => {
-                NativeEndian::write_u32(buffer, (*value).into())
-            }
-            Self::Flags(value) => NativeEndian::write_u16(buffer, *value),
-            Self::MacAddrMode(value) => NativeEndian::write_u32(buffer, *value),
+            Self::Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
+            Self::Flags(value) => emit_u16(buffer, *value).unwrap(),
+            Self::MacAddrMode(value) => emit_u32(buffer, *value).unwrap(),
             Self::MacAddr(bytes) => buffer.copy_from_slice(bytes),
             Self::MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
-            Self::MacAddrCount(value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
-            Self::BcQueueLen(value) => NativeEndian::write_u32(buffer, *value),
-            Self::BcQueueLenUsed(value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
-            Self::BcCutoff(value) => NativeEndian::write_i32(buffer, *value),
+            Self::MacAddrCount(value) => emit_u32(buffer, *value).unwrap(),
+            Self::BcQueueLen(value) => emit_u32(buffer, *value).unwrap(),
+            Self::BcQueueLenUsed(value) => emit_u32(buffer, *value).unwrap(),
+            Self::BcCutoff(value) => emit_i32(buffer, *value).unwrap(),
             Self::Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -179,15 +170,15 @@ impl Nla for InfoMacVtap {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoMacVtap::*;
         match self {
-            Mode(value) => NativeEndian::write_u32(buffer, (*value).into()),
-            Flags(value) => NativeEndian::write_u16(buffer, *value),
-            MacAddrMode(value) => NativeEndian::write_u32(buffer, *value),
+            Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
+            Flags(value) => emit_u16(buffer, *value).unwrap(),
+            MacAddrMode(value) => emit_u32(buffer, *value).unwrap(),
             MacAddr(bytes) => buffer.copy_from_slice(bytes),
             MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
-            MacAddrCount(value) => NativeEndian::write_u32(buffer, *value),
-            BcQueueLen(value) => NativeEndian::write_u32(buffer, *value),
-            BcQueueLenUsed(value) => NativeEndian::write_u32(buffer, *value),
-            BcCutoff(value) => NativeEndian::write_i32(buffer, *value),
+            MacAddrCount(value) => emit_u32(buffer, *value).unwrap(),
+            BcQueueLen(value) => emit_u32(buffer, *value).unwrap(),
+            BcQueueLenUsed(value) => emit_u32(buffer, *value).unwrap(),
+            BcCutoff(value) => emit_i32(buffer, *value).unwrap(),
             Other(nla) => nla.emit_value(buffer),
         }
     }

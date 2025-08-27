@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable},
-    DecodeError,
-};
+use netlink_packet_core::{DecodeError, Emitable, Parseable};
 
 const LINK_MAP_LEN: usize = 32;
 

@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable},
-    DecodeError,
-};
+use netlink_packet_core::{DecodeError, Emitable, Parseable};
 
 // The DEVCONF_MAX will increase when kernel add more DEVCONF
 const DEVCONF_MAX: usize = 59;

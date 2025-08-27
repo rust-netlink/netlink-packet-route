@@ -2,16 +2,11 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use anyhow::Context;
-use byteorder::{BigEndian, ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
-    parsers::{
-        parse_ip, parse_mac, parse_u16, parse_u16_be, parse_u32, parse_u64,
-        parse_u8,
-    },
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16, emit_u16_be, emit_u32, emit_u64, parse_ip, parse_mac, parse_u16,
+    parse_u16_be, parse_u32, parse_u64, parse_u8, DecodeError, DefaultNla,
+    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    NLA_F_NESTED,
 };
 
 const IFLA_BR_FORWARD_DELAY: u16 = 1;
@@ -185,9 +180,7 @@ impl Nla for InfoBridge {
             | Self::MulticastQueryResponseInterval(value)
             | Self::MulticastLastMemberInterval(value)
             | Self::MulticastStartupQueryInterval(value)
-            | Self::MultiBoolOpt(value) => {
-                NativeEndian::write_u64(buffer, *value)
-            }
+            | Self::MultiBoolOpt(value) => emit_u64(buffer, *value).unwrap(),
 
             Self::ForwardDelay(value)
             | Self::HelloTime(value)
@@ -198,18 +191,14 @@ impl Nla for InfoBridge {
             | Self::MulticastHashMax(value)
             | Self::MulticastLastMemberCount(value)
             | Self::MulticastStartupQueryCount(value)
-            | Self::RootPathCost(value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
+            | Self::RootPathCost(value) => emit_u32(buffer, *value).unwrap(),
 
             Self::Priority(value)
             | Self::GroupFwdMask(value)
             | Self::RootPort(value)
-            | Self::VlanDefaultPvid(value) => {
-                NativeEndian::write_u16(buffer, *value)
-            }
+            | Self::VlanDefaultPvid(value) => emit_u16(buffer, *value).unwrap(),
 
-            Self::VlanProtocol(value) => BigEndian::write_u16(buffer, *value),
+            Self::VlanProtocol(value) => emit_u16_be(buffer, *value).unwrap(),
 
             Self::RootId(bridge_id) | Self::BridgeId(bridge_id) => {
                 bridge_id.emit(buffer)
@@ -602,9 +591,9 @@ impl Nla for BridgeQuerierState {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::BridgeQuerierState::*;
         match self {
-            Ipv4Port(d) | Ipv6Port(d) => NativeEndian::write_u32(buffer, *d),
+            Ipv4Port(d) | Ipv6Port(d) => emit_u32(buffer, *d).unwrap(),
             Ipv4OtherTimer(d) | Ipv6OtherTimer(d) => {
-                NativeEndian::write_u64(buffer, *d)
+                emit_u64(buffer, *d).unwrap()
             }
             Ipv4Address(addr) => buffer.copy_from_slice(&addr.octets()),
             Ipv6Address(addr) => buffer.copy_from_slice(&addr.octets()),

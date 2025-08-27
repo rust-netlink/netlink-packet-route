@@ -2,15 +2,12 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable},
-    DecodeError,
-};
+use netlink_packet_core::{DecodeError, Emitable, Parseable};
 
-use crate::ip::{
-    parse_ipv4_addr, parse_ipv6_addr, IPV4_ADDR_LEN, IPV6_ADDR_LEN,
+use crate::{
+    ip::{parse_ipv4_addr, parse_ipv6_addr, IPV4_ADDR_LEN, IPV6_ADDR_LEN},
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]

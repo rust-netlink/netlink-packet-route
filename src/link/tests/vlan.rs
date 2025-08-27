@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    InfoData, InfoKind, InfoVlan, LinkAttribute, LinkHeader, LinkInfo,
-    LinkLayerType, LinkMessage, LinkMessageBuffer, VlanProtocol,
-    VlanQosMapping,
+use crate::{
+    link::{
+        link_flag::LinkFlags, InfoData, InfoKind, InfoVlan, LinkAttribute,
+        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+        VlanProtocol, VlanQosMapping,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 #[test]
 fn test_parsing_link_vlan() {

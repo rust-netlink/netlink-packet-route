@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    BondArpAllTargets, BondArpValidate, BondFailOverMac, BondMode,
-    BondPortState, BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
-    InfoBondPort, InfoData, InfoKind, InfoPortData, InfoPortKind,
-    LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, LinkMode, Map, MiiStatus, State,
+use crate::{
+    link::{
+        link_flag::LinkFlags, BondArpAllTargets, BondArpValidate,
+        BondFailOverMac, BondMode, BondPortState, BondPrimaryReselect,
+        BondXmitHashPolicy, InfoBond, InfoBondPort, InfoData, InfoKind,
+        InfoPortData, InfoPortKind, LinkAttribute, LinkHeader, LinkInfo,
+        LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, Map,
+        MiiStatus, State,
+    },
+    AddressFamily, RouteNetlinkMessage,
 };
-use crate::{AddressFamily, RouteNetlinkMessage};
 
 #[test]
 fn test_bond_link_info() {

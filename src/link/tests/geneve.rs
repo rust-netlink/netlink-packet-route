@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv6Addr;
-use std::str::FromStr;
+use std::{net::Ipv6Addr, str::FromStr};
 
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    GeneveDf, InfoData, InfoGeneve, InfoKind, LinkAttribute, LinkHeader,
-    LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+use crate::{
+    link::{
+        link_flag::LinkFlags, GeneveDf, InfoData, InfoGeneve, InfoKind,
+        LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
+        LinkMessageBuffer,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 #[test]
 fn test_geneve_link_info() {

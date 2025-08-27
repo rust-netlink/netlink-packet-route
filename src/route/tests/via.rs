@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
-use std::str::FromStr;
-
-use netlink_packet_utils::traits::{Emitable, Parseable};
-
-use crate::route::flags::RouteFlags;
-use crate::route::{
-    RouteAttribute, RouteHeader, RouteMessage, RouteMessageBuffer,
-    RouteProtocol, RouteScope, RouteType, RouteVia,
+use std::{
+    net::{Ipv4Addr, Ipv6Addr},
+    str::FromStr,
 };
-use crate::AddressFamily;
+
+use netlink_packet_core::{Emitable, Parseable};
+
+use crate::{
+    route::{
+        flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
+        RouteMessageBuffer, RouteProtocol, RouteScope, RouteType, RouteVia,
+    },
+    AddressFamily,
+};
 
 // Setup:
 //      ip route add 192.0.2.1 via inet6 2001:db8:1:: dev lo

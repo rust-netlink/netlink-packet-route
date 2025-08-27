@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_string, parse_u32, parse_u64},
-    DecodeError, Emitable, Parseable,
+use netlink_packet_core::{
+    emit_u32, emit_u64, parse_string, parse_u32, parse_u64, DecodeError,
+    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use super::{
@@ -62,12 +59,10 @@ impl Nla for NeighbourTableAttribute {
                 buffer[..string.len()].copy_from_slice(string.as_bytes());
                 buffer[string.len()] = 0;
             }
-            Self::GcInterval(value) => NativeEndian::write_u64(buffer, *value),
+            Self::GcInterval(value) => emit_u64(buffer, *value).unwrap(),
             Self::Threshold1(value)
             | Self::Threshold2(value)
-            | Self::Threshold3(value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
+            | Self::Threshold3(value) => emit_u32(buffer, *value).unwrap(),
             Self::Other(attr) => attr.emit_value(buffer),
         }
     }

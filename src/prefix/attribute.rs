@@ -2,11 +2,8 @@
 
 use std::net::Ipv6Addr;
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    nla::{self, DefaultNla, NlaBuffer},
-    traits::Parseable,
-    DecodeError, Emitable,
+use netlink_packet_core::{
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use super::cache_info::{CacheInfo, CacheInfoBuffer};
@@ -21,7 +18,7 @@ pub enum PrefixAttribute {
     Other(DefaultNla),
 }
 
-impl nla::Nla for PrefixAttribute {
+impl Nla for PrefixAttribute {
     fn value_len(&self) -> usize {
         match *self {
             Self::Address(_) => 16,

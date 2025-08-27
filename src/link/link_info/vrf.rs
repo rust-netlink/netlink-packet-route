@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u32,
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_VRF_TABLE: u16 = 1;
@@ -30,7 +26,7 @@ impl Nla for InfoVrf {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoVrf::*;
         match self {
-            TableId(value) => NativeEndian::write_u32(buffer, *value),
+            TableId(value) => emit_u32(buffer, *value).unwrap(),
             Other(nla) => nla.emit_value(buffer),
         }
     }

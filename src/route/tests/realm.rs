@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv4Addr;
-use std::str::FromStr;
+use std::{net::Ipv4Addr, str::FromStr};
 
-use netlink_packet_utils::traits::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::route::flags::RouteFlags;
-use crate::route::{
-    RouteAttribute, RouteCacheInfo, RouteHeader, RouteMessage,
-    RouteMessageBuffer, RouteProtocol, RouteRealm, RouteScope, RouteType,
+use crate::{
+    route::{
+        flags::RouteFlags, RouteAttribute, RouteCacheInfo, RouteHeader,
+        RouteMessage, RouteMessageBuffer, RouteProtocol, RouteRealm,
+        RouteScope, RouteType,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 // Setup
 //   ip route add 192.0.2.1 dev lo realm 250/254

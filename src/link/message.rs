@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use netlink_packet_core::{
+    DecodeError, Emitable, ErrorContext, Parseable, ParseableParametrized,
 };
 
-use crate::link::{LinkAttribute, LinkHeader, LinkMessageBuffer};
-use crate::AddressFamily;
+use crate::{
+    link::{LinkAttribute, LinkHeader, LinkMessageBuffer},
+    AddressFamily,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::nla::NlaBuffer;
-use netlink_packet_utils::{Emitable, Parseable};
+use std::net::{Ipv4Addr, Ipv6Addr};
+
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::tc::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionOption,
     TcActionTunnelKeyOption, TcActionType, TcStats2, TcStatsBasic,
     TcStatsQueue, TcTunnelKey, Tcf,
 };
-use std::net::{Ipv4Addr, Ipv6Addr};
 
 //      > tc actions add action tunnel_key set id 33 src_ip 1.2.3.4 dst_ip
 //      > 2.3.4.5 dst_port 4789 tos 1 ttl 2

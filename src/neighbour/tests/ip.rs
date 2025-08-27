@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
-use std::str::FromStr;
+use std::{
+    net::{Ipv4Addr, Ipv6Addr},
+    str::FromStr,
+};
 
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
-use crate::neighbour::flags::NeighbourFlags;
 use crate::{
     neighbour::{
-        NeighbourAttribute, NeighbourCacheInfo, NeighbourHeader,
-        NeighbourMessage, NeighbourMessageBuffer, NeighbourState,
+        flags::NeighbourFlags, NeighbourAttribute, NeighbourCacheInfo,
+        NeighbourHeader, NeighbourMessage, NeighbourMessageBuffer,
+        NeighbourState,
     },
     route::{RouteProtocol, RouteType},
     AddressFamily,

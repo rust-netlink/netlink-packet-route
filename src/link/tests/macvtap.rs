@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Emitable, Parseable};
 
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    AfSpecInet, AfSpecInet6, AfSpecUnspec, Inet6CacheInfo, Inet6DevConf,
-    Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoMacVtap,
-    LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkMessageBuffer, LinkMode, LinkXdp, MacVtapMode, Map, State, Stats,
-    Stats64, XdpAttached,
+use crate::{
+    link::{
+        link_flag::LinkFlags, AfSpecInet, AfSpecInet6, AfSpecUnspec,
+        Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoData,
+        InfoKind, InfoMacVtap, LinkAttribute, LinkHeader, LinkInfo,
+        LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp,
+        MacVtapMode, Map, State, Stats, Stats64, XdpAttached,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 #[test]
 fn test_macvtap_link_info() {

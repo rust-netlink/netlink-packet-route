@@ -2,7 +2,7 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_utils::DecodeError;
+use netlink_packet_core::DecodeError;
 
 pub(crate) const IPV4_ADDR_LEN: usize = 4;
 pub(crate) const IPV6_ADDR_LEN: usize = 16;

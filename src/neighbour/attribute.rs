@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{BigEndian, ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u16, parse_u16_be, parse_u32},
-    DecodeError, Emitable, Parseable, ParseableParametrized,
+use netlink_packet_core::{
+    emit_u16, emit_u16_be, emit_u32, parse_u16, parse_u16_be, parse_u32,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    ParseableParametrized,
 };
 
 use super::{NeighbourAddress, NeighbourCacheInfo, NeighbourCacheInfoBuffer};
@@ -70,14 +68,14 @@ impl Nla for NeighbourAttribute {
                 buffer.copy_from_slice(bytes.as_slice())
             }
             Self::CacheInfo(v) => v.emit(buffer),
-            Self::Vlan(value) => NativeEndian::write_u16(buffer, *value),
-            Self::Port(value) => BigEndian::write_u16(buffer, *value),
+            Self::Vlan(value) => emit_u16(buffer, *value).unwrap(),
+            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
             Self::Probes(value)
             | Self::LinkNetNsId(value)
             | Self::Controller(value)
             | Self::Vni(value)
             | Self::IfIndex(value)
-            | Self::SourceVni(value) => NativeEndian::write_u32(buffer, *value),
+            | Self::SourceVni(value) => emit_u32(buffer, *value).unwrap(),
             Self::Protocol(v) => v.emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }

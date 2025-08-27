@@ -1,21 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::nla::NLA_F_NESTED;
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_string, parse_u32},
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, parse_string, parse_u32, DecodeError, DefaultNla, Emitable,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ParseableParametrized, NLA_F_NESTED,
 };
-
-use crate::tc::TcStats2;
 
 use super::{
     TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
     TcActionTunnelKey, TcActionTunnelKeyOption,
 };
+use crate::tc::TcStats2;
 
 /// TODO: determine when and why to use this as opposed to the buffer's `kind`.
 const TCA_ACT_TAB: u16 = 1;
@@ -197,7 +192,7 @@ impl Nla for TcActionAttribute {
             }
             Self::Options(opt) => opt.as_slice().emit(buffer),
             Self::Index(value) | Self::InHwCount(value) => {
-                NativeEndian::write_u32(buffer, *value);
+                emit_u32(buffer, *value).unwrap();
             }
             Self::Stats(s) => s.as_slice().emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),

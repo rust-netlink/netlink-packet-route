@@ -1,23 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
-use anyhow::Context;
-/// set tunnel key
-///
-/// The set_tunnel action allows to set tunnel encap applied
-/// at the last stage of action processing
-use byteorder::{BigEndian, ByteOrder};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u16_be, parse_u32_be, parse_u8},
-    traits::{Emitable, Parseable},
-    DecodeError,
-};
 use std::net::{Ipv4Addr, Ipv6Addr};
+
+use netlink_packet_core::{
+    emit_u16_be, emit_u32_be, parse_u16_be, parse_u32_be, parse_u8,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+};
 
 use super::{
     TcActionGeneric, TcActionGenericBuffer, Tcf, TcfBuffer, TC_TCF_BUF_LEN,
 };
+/// set tunnel key
+///
+/// The set_tunnel action allows to set tunnel encap applied
+/// at the last stage of action processing
+use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -83,8 +80,8 @@ impl Nla for TcActionTunnelKeyOption {
             Self::EncIpv6Src(ip) | Self::EncIpv6Dst(ip) => {
                 buffer.copy_from_slice(&ip.octets())
             }
-            Self::EncKeyId(i) => BigEndian::write_u32(buffer, *i),
-            Self::EncDstPort(i) => BigEndian::write_u16(buffer, *i),
+            Self::EncKeyId(i) => emit_u32_be(buffer, *i).unwrap(),
+            Self::EncDstPort(i) => emit_u16_be(buffer, *i).unwrap(),
             Self::EncTos(i) => buffer[0] = *i,
             Self::EncTtl(i) => buffer[0] = *i,
             Self::NoCsum(i) => buffer[0] = *i as u8,

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::nla::NlaBuffer;
-use netlink_packet_utils::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::tc::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,

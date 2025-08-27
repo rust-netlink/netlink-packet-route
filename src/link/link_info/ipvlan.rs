@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u16,
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16, parse_u16, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_IPVLAN_MODE: u16 = 1;
@@ -32,8 +28,8 @@ impl Nla for InfoIpVlan {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoIpVlan::*;
         match self {
-            Mode(value) => NativeEndian::write_u16(buffer, (*value).into()),
-            Flags(f) => NativeEndian::write_u16(buffer, f.bits()),
+            Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
+            Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
             Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -89,8 +85,8 @@ impl Nla for InfoIpVtap {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoIpVtap::*;
         match self {
-            Mode(value) => NativeEndian::write_u16(buffer, (*value).into()),
-            Flags(f) => NativeEndian::write_u16(buffer, f.bits()),
+            Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
+            Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
             Other(nla) => nla.emit_value(buffer),
         }
     }

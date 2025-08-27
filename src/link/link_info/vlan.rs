@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{BigEndian, ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::{parse_u16, parse_u16_be, parse_u32},
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16, emit_u16_be, emit_u32, parse_u16, parse_u16_be, parse_u32,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 use crate::link::VlanProtocol;
@@ -47,13 +44,13 @@ impl Nla for InfoVlan {
             Self::EgressQos(ref mappings) | Self::IngressQos(ref mappings) => {
                 mappings.as_slice().emit(buffer)
             }
-            Self::Id(value) => NativeEndian::write_u16(buffer, *value),
+            Self::Id(value) => emit_u16(buffer, *value).unwrap(),
             Self::Protocol(value) => {
-                BigEndian::write_u16(buffer, (*value).into())
+                emit_u16_be(buffer, (*value).into()).unwrap()
             }
             Self::Flags(flags) => {
-                NativeEndian::write_u32(&mut buffer[0..4], flags.0);
-                NativeEndian::write_u32(&mut buffer[4..8], flags.1)
+                emit_u32(&mut buffer[0..4], flags.0).unwrap();
+                emit_u32(&mut buffer[4..8], flags.1).unwrap()
             }
             Self::Other(v) => v.emit_value(buffer),
         }
@@ -98,8 +95,8 @@ impl Nla for VlanQosMapping {
         use VlanQosMapping::*;
         match self {
             Mapping(from, to) => {
-                NativeEndian::write_u32(buffer, *from);
-                NativeEndian::write_u32(&mut buffer[4..], *to);
+                emit_u32(buffer, *from).unwrap();
+                emit_u32(&mut buffer[4..], *to).unwrap();
             }
             Other(nla) => nla.emit_value(buffer),
         }

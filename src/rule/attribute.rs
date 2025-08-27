@@ -2,12 +2,9 @@
 
 use std::net::IpAddr;
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    byteorder::{ByteOrder, NativeEndian},
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_string, parse_u32, parse_u8},
-    DecodeError, Emitable, Parseable,
+use netlink_packet_core::{
+    emit_u32, parse_string, parse_u32, parse_u8, DecodeError, DefaultNla,
+    Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::{
@@ -140,7 +137,7 @@ impl Nla for RuleAttribute {
             | Self::Goto(value)
             | Self::SuppressIfGroup(value)
             | Self::SuppressPrefixLen(value)
-            | Self::Table(value) => NativeEndian::write_u32(buffer, *value),
+            | Self::Table(value) => emit_u32(buffer, *value).unwrap(),
             Self::L3MDev(value) => buffer[0] = (*value).into(),
             Self::IpProtocol(value) => buffer[0] = i32::from(*value) as u8,
             Self::Protocol(value) => buffer[0] = u8::from(*value),

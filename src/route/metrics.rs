@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
 use std::mem::size_of;
 
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::parse_u32,
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 const RTAX_LOCK: u16 = 1;
@@ -96,7 +92,7 @@ impl Nla for RouteMetric {
                  | Self:: QuickAck(value)
                  | Self:: CcAlgo(value)
                  | Self:: FastopenNoCookie(value)
-                => NativeEndian::write_u32(buffer, *value),
+                => emit_u32(buffer, *value).unwrap(),
 
             Self::Other(attr) => attr.emit_value(buffer),
         }

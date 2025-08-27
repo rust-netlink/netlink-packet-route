@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u32, parse_u8},
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -256,7 +252,7 @@ impl Nla for TcQdiscFqCodelOption {
             | Self::Quantum(d)
             | Self::CeThreshold(d)
             | Self::DropBatchSize(d)
-            | Self::MemoryLimit(d) => NativeEndian::write_u32(buffer, *d),
+            | Self::MemoryLimit(d) => emit_u32(buffer, *d).unwrap(),
             Self::CeThresholdSelector(d) | Self::CeThresholdMask(d) => {
                 buffer[0] = *d
             }

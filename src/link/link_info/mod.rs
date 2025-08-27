@@ -28,43 +28,39 @@ mod vxlan;
 mod xfrm;
 mod xstats;
 
-pub use self::bond::{
-    BondAdInfo, BondArpAllTargets, BondArpValidate, BondFailOverMac, BondMode,
-    BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
-};
-pub use self::bond_port::{BondPortState, InfoBondPort, MiiStatus};
-pub use self::bridge::{
-    BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge,
-};
-pub use self::bridge_port::{
-    BridgePortMulticastRouter, BridgePortState, InfoBridgePort,
-};
-pub use self::geneve::{GeneveDf, InfoGeneve};
-pub use self::gre::InfoGreTun;
-pub use self::gre6::InfoGreTun6;
-pub use self::gre_tap::InfoGreTap;
-pub use self::gre_tap6::InfoGreTap6;
-pub use self::gtp::InfoGtp;
-pub use self::hsr::{HsrProtocol, InfoHsr};
-pub use self::info_data::InfoData;
-pub use self::info_port::{InfoPortData, InfoPortKind, InfoVrfPort};
-pub use self::infos::{InfoKind, LinkInfo};
-pub use self::ipoib::InfoIpoib;
-pub use self::ipvlan::{
-    InfoIpVlan, InfoIpVtap, IpVlanFlags, IpVlanMode, IpVtapFlags, IpVtapMode,
-};
-pub use self::mac_vlan::{InfoMacVlan, InfoMacVtap, MacVlanMode, MacVtapMode};
-pub use self::macsec::{
-    InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate,
-};
-pub use self::sit::InfoSitTun;
-pub use self::tun::InfoTun;
-pub use self::veth::InfoVeth;
-pub use self::vlan::{InfoVlan, VlanQosMapping};
-pub use self::vrf::InfoVrf;
-pub use self::vti::InfoVti;
-pub use self::vxlan::InfoVxlan;
-pub use self::xfrm::InfoXfrm;
-pub use self::xstats::LinkXstats;
-
 pub(crate) use self::infos::VecLinkInfo;
+pub use self::{
+    bond::{
+        BondAdInfo, BondArpAllTargets, BondArpValidate, BondFailOverMac,
+        BondMode, BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
+    },
+    bond_port::{BondPortState, InfoBondPort, MiiStatus},
+    bridge::{BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge},
+    bridge_port::{BridgePortMulticastRouter, BridgePortState, InfoBridgePort},
+    geneve::{GeneveDf, InfoGeneve},
+    gre::InfoGreTun,
+    gre6::InfoGreTun6,
+    gre_tap::InfoGreTap,
+    gre_tap6::InfoGreTap6,
+    gtp::InfoGtp,
+    hsr::{HsrProtocol, InfoHsr},
+    info_data::InfoData,
+    info_port::{InfoPortData, InfoPortKind, InfoVrfPort},
+    infos::{InfoKind, LinkInfo},
+    ipoib::InfoIpoib,
+    ipvlan::{
+        InfoIpVlan, InfoIpVtap, IpVlanFlags, IpVlanMode, IpVtapFlags,
+        IpVtapMode,
+    },
+    mac_vlan::{InfoMacVlan, InfoMacVtap, MacVlanMode, MacVtapMode},
+    macsec::{InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate},
+    sit::InfoSitTun,
+    tun::InfoTun,
+    veth::InfoVeth,
+    vlan::{InfoVlan, VlanQosMapping},
+    vrf::InfoVrf,
+    vti::InfoVti,
+    vxlan::InfoVxlan,
+    xfrm::InfoXfrm,
+    xstats::LinkXstats,
+};

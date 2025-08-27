@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
-use std::str::FromStr;
-
-use netlink_packet_utils::{Emitable, Parseable};
-
-use crate::route::lwtunnel::RouteIp6TunnelFlags;
-use crate::route::{
-    RouteAttribute, RouteFlags, RouteHeader, RouteIp6Tunnel, RouteLwEnCapType,
-    RouteLwTunnelEncap, RouteMessage, RouteMessageBuffer, RouteProtocol,
-    RouteScope, RouteType,
+use std::{
+    net::{Ipv4Addr, Ipv6Addr},
+    str::FromStr,
 };
-use crate::AddressFamily;
+
+use netlink_packet_core::{Emitable, Parseable};
+
+use crate::{
+    route::{
+        lwtunnel::RouteIp6TunnelFlags, RouteAttribute, RouteFlags, RouteHeader,
+        RouteIp6Tunnel, RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage,
+        RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
+    },
+    AddressFamily,
+};
 
 // Setup:
 //      ip link add dummy1 type dummy

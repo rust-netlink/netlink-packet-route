@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_mac, parse_u16, parse_u32, parse_u8},
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16, emit_u32, parse_mac, parse_u16, parse_u32, parse_u8, DecodeError,
+    DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 // Kernel constant name is IFLA_HSR_SLAVE1
@@ -47,11 +43,9 @@ impl Nla for InfoHsr {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoHsr::*;
         match self {
-            Port1(value) | Port2(value) => {
-                NativeEndian::write_u32(buffer, *value)
-            }
+            Port1(value) | Port2(value) => emit_u32(buffer, *value).unwrap(),
             MulticastSpec(value) | Version(value) => buffer[0] = *value,
-            SeqNr(value) => NativeEndian::write_u16(buffer, *value),
+            SeqNr(value) => emit_u16(buffer, *value).unwrap(),
             Protocol(value) => buffer[0] = (*value).into(),
             SupervisionAddr(ref value) => buffer.copy_from_slice(&value[..]),
             Other(nla) => nla.emit_value(buffer),

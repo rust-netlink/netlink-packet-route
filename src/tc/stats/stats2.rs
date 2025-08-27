@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use netlink_packet_core::{
+    DecodeError, DefaultNla, Emitable, Nla, NlaBuffer, Parseable,
+    ParseableParametrized,
 };
 
 use super::{

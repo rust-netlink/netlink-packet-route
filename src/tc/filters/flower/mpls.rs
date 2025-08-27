@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator, NLA_F_NESTED},
-    parsers::{parse_u32, parse_u8},
-    traits::Emitable,
-    DecodeError, Parseable,
+use netlink_packet_core::{
+    emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
 };
 
 macro_rules! nla_err {
     // Match rule that takes an argument expression
     ($message:expr) => {
-        format!("failed to parse {} value", stringify!($message))
+        &format!("failed to parse {} value", stringify!($message))
     };
 }
 
@@ -122,7 +118,7 @@ impl Nla for TcFilterFlowerMplsLseOption {
             Self::LseTtl(i) => buffer[0] = *i,
             Self::LseBos(i) => buffer[0] = *i,
             Self::LseTc(i) => buffer[0] = *i,
-            Self::LseLabel(i) => NativeEndian::write_u32(buffer, *i & 0xFFFFF),
+            Self::LseLabel(i) => emit_u32(buffer, *i & 0xFFFFF).unwrap(),
 
             Self::Other(attr) => attr.emit_value(buffer),
         }

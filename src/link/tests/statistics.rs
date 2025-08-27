@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{nla::DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Emitable, Parseable};
 
-use crate::link::af_spec::In6AddrGenMode;
-use crate::link::link_flag::LinkFlags;
-use crate::link::{
-    AfSpecInet, AfSpecInet6, AfSpecUnspec, Icmp6Stats, Inet6CacheInfo,
-    Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, LinkAttribute,
-    LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode,
-    LinkXdp, Map, Prop, State, Stats, Stats64, XdpAttached,
+use crate::{
+    link::{
+        af_spec::In6AddrGenMode, link_flag::LinkFlags, AfSpecInet, AfSpecInet6,
+        AfSpecUnspec, Icmp6Stats, Inet6CacheInfo, Inet6DevConf,
+        Inet6IfaceFlags, Inet6Stats, InetDevConf, LinkAttribute, LinkHeader,
+        LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map,
+        Prop, State, Stats, Stats64, XdpAttached,
+    },
+    AddressFamily,
 };
-use crate::AddressFamily;
 
 // tshark capture of command `ip -s link show ens3`
 #[test]

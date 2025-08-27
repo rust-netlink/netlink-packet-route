@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{traits::Parseable, DecodeError, Emitable};
+use netlink_packet_core::{DecodeError, Emitable, Parseable};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]

@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::parse_u64,
-    DecodeError, Parseable,
+use netlink_packet_core::{
+    emit_u64, parse_u64, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_VF_STATS_RX_PACKETS: u16 = 0;
@@ -49,7 +46,7 @@ impl Nla for VfStats {
             | Self::Broadcast(v)
             | Self::Multicast(v)
             | Self::RxDropped(v)
-            | Self::TxDropped(v) => NativeEndian::write_u64(buffer, *v),
+            | Self::TxDropped(v) => emit_u64(buffer, *v).unwrap(),
             Self::Other(attr) => attr.emit_value(buffer),
         }
     }

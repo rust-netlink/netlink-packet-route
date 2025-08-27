@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_utils::{
-    nla::NlaBuffer,
-    traits::{Emitable, Parseable, ParseableParametrized},
-    DecodeError,
+use netlink_packet_core::{
+    DecodeError, Emitable, NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use crate::tc::{TcFqCodelXstats, TcQdiscFqCodel};

@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_i32, parse_u16, parse_u32, parse_u8},
-    traits::Parseable,
-    DecodeError,
+
+use netlink_packet_core::{
+    emit_i32, emit_u16, emit_u32, parse_i32, parse_u16, parse_u32, parse_u8,
+    DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_BOND_PORT_STATE_ACTIVE: u8 = 0;
@@ -128,13 +125,13 @@ impl Nla for InfoBondPort {
         use self::InfoBondPort::*;
         match self {
             QueueId(ref value)
-             => NativeEndian::write_u16(buffer, *value),
+             => emit_u16(buffer, *value).unwrap(),
             PermHwaddr(ref bytes)
              => buffer.copy_from_slice(bytes.as_slice()),
             Prio(ref value)
-             => NativeEndian::write_i32(buffer, *value),
+             => emit_i32(buffer, *value).unwrap(),
             LinkFailureCount(value)
-             => NativeEndian::write_u32(buffer, *value),
+             => emit_u32(buffer, *value).unwrap(),
             MiiStatus(state) => buffer[0] = (*state).into(),
             BondPortState(state) => buffer[0] = (*state).into(),
             Other(nla)

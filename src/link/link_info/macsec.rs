@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u16, parse_u32, parse_u64, parse_u8},
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16, emit_u32, emit_u64, parse_u16, parse_u32, parse_u64, parse_u8,
+    DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_MACSEC_SCI: u16 = 1;
@@ -175,12 +171,10 @@ impl Nla for InfoMacSec {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoMacSec::*;
         match self {
-            Sci(value) => NativeEndian::write_u64(buffer, *value),
-            CipherSuite(value) => {
-                NativeEndian::write_u64(buffer, (*value).into())
-            }
-            Window(value) => NativeEndian::write_u32(buffer, *value),
-            Port(value) => NativeEndian::write_u16(buffer, *value),
+            Sci(value) => emit_u64(buffer, *value).unwrap(),
+            CipherSuite(value) => emit_u64(buffer, (*value).into()).unwrap(),
+            Window(value) => emit_u32(buffer, *value).unwrap(),
+            Port(value) => emit_u16(buffer, *value).unwrap(),
             IcvLen(value) | EncodingSa(value) | Encrypt(value)
             | Protect(value) | IncSci(value) | Es(value) | Scb(value)
             | ReplayProtect(value) => buffer[0] = *value,

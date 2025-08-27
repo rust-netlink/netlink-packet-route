@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_core::ErrorContext;
 /// U32 filter
 ///
 /// In its simplest form the U32 filter is a list of records, each
@@ -7,13 +8,9 @@
 /// described below, are compared with the currently processed IP packet
 /// until the first match occurs, and then the associated action is
 /// performed.
-use anyhow::Context;
-use byteorder::{ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer, NlasIterator},
-    parsers::parse_u32,
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    emit_u32, parse_u32, DecodeError, Emitable, Parseable,
+    {DefaultNla, Nla, NlaBuffer, NlasIterator},
 };
 
 use super::u32_flags::{TcU32OptionFlags, TcU32SelectorFlags};
@@ -84,10 +81,10 @@ impl Nla for TcFilterU32Option {
             | Self::Pnct(b)
             | Self::Mark(b) => buffer.copy_from_slice(b.as_slice()),
             Self::Hash(i) | Self::Link(i) | Self::Divisor(i) => {
-                NativeEndian::write_u32(buffer, *i)
+                emit_u32(buffer, *i).unwrap()
             }
-            Self::Flags(f) => NativeEndian::write_u32(buffer, f.bits()),
-            Self::ClassId(i) => NativeEndian::write_u32(buffer, (*i).into()),
+            Self::Flags(f) => emit_u32(buffer, f.bits()).unwrap(),
+            Self::ClassId(i) => emit_u32(buffer, (*i).into()).unwrap(),
             Self::Selector(s) => s.emit(buffer),
             Self::Action(acts) => acts.as_slice().emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),

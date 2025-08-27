@@ -2,13 +2,9 @@
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use anyhow::Context;
-use byteorder::{BigEndian, ByteOrder, NativeEndian};
-use netlink_packet_utils::{
-    nla::{DefaultNla, Nla, NlaBuffer},
-    parsers::{parse_u16_be, parse_u32, parse_u8},
-    traits::Parseable,
-    DecodeError,
+use netlink_packet_core::{
+    emit_u16_be, emit_u32, parse_u16_be, parse_u32, parse_u8, DecodeError,
+    DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_VXLAN_ID: u16 = 1;
@@ -121,7 +117,7 @@ impl Nla for InfoVxlan {
             | Self::Label(value)
             | Self::Link(value)
             | Self::Ageing(value)
-            | Self::Limit(value) => NativeEndian::write_u32(buffer, *value),
+            | Self::Limit(value) => emit_u32(buffer, *value).unwrap(),
             Self::Gbp(_value)
             | Self::Gpe(_value)
             | Self::RemCsumNoPartial(_value) => (),
@@ -148,10 +144,10 @@ impl Nla for InfoVxlan {
             Self::Group6(value) | Self::Local6(value) => {
                 buffer.copy_from_slice(&value.octets())
             }
-            Self::Port(value) => BigEndian::write_u16(buffer, *value),
+            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
             Self::PortRange(range) => {
-                BigEndian::write_u16(buffer, range.0);
-                BigEndian::write_u16(&mut buffer[2..], range.1)
+                emit_u16_be(buffer, range.0).unwrap();
+                emit_u16_be(&mut buffer[2..], range.1).unwrap()
             }
             Self::Other(nla) => nla.emit_value(buffer),
         }

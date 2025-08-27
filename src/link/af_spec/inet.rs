@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Context;
-use netlink_packet_utils::{
-    nla::{self, DefaultNla, NlaBuffer, NlasIterator},
-    traits::{Emitable, Parseable},
-    DecodeError,
+use netlink_packet_core::{
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 use super::super::buffer_tool::expand_buffer_if_small;
@@ -38,7 +36,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     }
 }
 
-impl nla::Nla for AfSpecInet {
+impl Nla for AfSpecInet {
     fn value_len(&self) -> usize {
         use self::AfSpecInet::*;
         match *self {
