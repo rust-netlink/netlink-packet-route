@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::{fmt::Debug, net::Ipv6Addr};
+use std::{fmt::Debug, mem::size_of, net::Ipv6Addr};
 
 use netlink_packet_core::{
     emit_u16_be, emit_u64_be, parse_u16_be, parse_u64_be, parse_u8,
@@ -179,13 +179,13 @@ impl Nla for RouteIp6Tunnel {
     fn value_len(&self) -> usize {
         match self {
             Self::Unspecified => 0,
-            Self::Id(_) => const { size_of::<u64>() },
-            Self::Destination(_) => const { size_of::<Ipv6Addr>() },
-            Self::Source(_) => const { size_of::<Ipv6Addr>() },
-            Self::Hoplimit(_) => const { size_of::<u8>() },
-            Self::Tc(_) => const { size_of::<u8>() },
-            Self::Flags(_) => const { size_of::<u16>() },
-            Self::Other(_) => const { size_of::<DefaultNla>() },
+            Self::Id(_) => size_of::<u64>(),
+            Self::Destination(_) => size_of::<Ipv6Addr>(),
+            Self::Source(_) => size_of::<Ipv6Addr>(),
+            Self::Hoplimit(_) => size_of::<u8>(),
+            Self::Tc(_) => size_of::<u8>(),
+            Self::Flags(_) => size_of::<u16>(),
+            Self::Other(_) => size_of::<DefaultNla>(),
         }
     }
 
