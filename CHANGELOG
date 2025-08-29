@@ -1,4 +1,14 @@
 # Changelog
+## [0.25.1] - 2025-08-29
+### Breaking changes
+ - Set minimum supported rust version to 1.77. (6bd5418)
+
+### New features
+ - N/A
+
+### Bug fixes
+ - Fix compiling error on rust 1.77. (6bd5418)
+
 ## [0.25.0] - 2025-08-27
 ### Breaking changes
  - Drop the dependency on `netlink-packet-utils`. (e09acbd)
