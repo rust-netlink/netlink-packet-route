@@ -7,10 +7,12 @@ const ICMPV6_ROUTER_PREF_INVALID: u8 = 0x2;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
+#[derive(Default)]
 pub enum RoutePreference {
     Low,
     Medium,
     High,
+    #[default]
     Invalid,
     Other(u8),
 }
@@ -36,11 +38,5 @@ impl From<u8> for RoutePreference {
             ICMPV6_ROUTER_PREF_INVALID => Self::Invalid,
             _ => Self::Other(d),
         }
-    }
-}
-
-impl Default for RoutePreference {
-    fn default() -> Self {
-        Self::Invalid
     }
 }
