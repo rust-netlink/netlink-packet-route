@@ -98,7 +98,9 @@ impl Emitable for RouteHeader {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
+#[derive(Default)]
 pub enum RouteProtocol {
+    #[default]
     Unspec,
     IcmpRedirect,
     Kernel,
@@ -237,12 +239,6 @@ impl std::fmt::Display for RouteProtocol {
     }
 }
 
-impl Default for RouteProtocol {
-    fn default() -> Self {
-        Self::Unspec
-    }
-}
-
 impl Parseable<[u8]> for RouteProtocol {
     fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         if buf.len() == 1 {
@@ -273,7 +269,9 @@ const RT_SCOPE_NOWHERE: u8 = 255;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
+#[derive(Default)]
 pub enum RouteScope {
+    #[default]
     Universe,
     Site,
     Link,
@@ -308,12 +306,6 @@ impl From<u8> for RouteScope {
     }
 }
 
-impl Default for RouteScope {
-    fn default() -> Self {
-        Self::Universe
-    }
-}
-
 impl std::fmt::Display for RouteScope {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -329,8 +321,10 @@ impl std::fmt::Display for RouteScope {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
+#[derive(Default)]
 pub enum RouteType {
     /// Unknown
+    #[default]
     Unspec,
     /// Gateway or direct route
     Unicast,
@@ -387,12 +381,6 @@ impl From<u8> for RouteType {
             RTN_XRESOLVE => Self::ExternalResolve,
             _ => Self::Other(d),
         }
-    }
-}
-
-impl Default for RouteType {
-    fn default() -> Self {
-        Self::Unspec
     }
 }
 
