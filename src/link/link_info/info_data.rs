@@ -29,7 +29,6 @@ pub enum InfoData {
     MacVtap(Vec<InfoMacVtap>),
     GreTap(Vec<InfoGreTap>),
     GreTap6(Vec<InfoGreTap6>),
-    SitTun(Vec<InfoIpTunnel>),
     GreTun(Vec<InfoGreTun>),
     GreTun6(Vec<InfoGreTun6>),
     Vti(Vec<InfoVti>),
@@ -64,7 +63,6 @@ impl Nla for InfoData {
             Self::Tun(nlas) => nlas.as_slice().buffer_len(),
             Self::GreTap(nlas) => nlas.as_slice().buffer_len(),
             Self::GreTap6(nlas) => nlas.as_slice().buffer_len(),
-            Self::SitTun(nlas) => nlas.as_slice().buffer_len(),
             Self::GreTun(nlas) => nlas.as_slice().buffer_len(),
             Self::GreTun6(nlas) => nlas.as_slice().buffer_len(),
             Self::Vti(nlas) => nlas.as_slice().buffer_len(),
@@ -94,7 +92,6 @@ impl Nla for InfoData {
             Self::Tun(nlas) => nlas.as_slice().emit(buffer),
             Self::GreTap(nlas) => nlas.as_slice().emit(buffer),
             Self::GreTap6(nlas) => nlas.as_slice().emit(buffer),
-            Self::SitTun(nlas) => nlas.as_slice().emit(buffer),
             Self::GreTun(nlas) => nlas.as_slice().emit(buffer),
             Self::GreTun6(nlas) => nlas.as_slice().emit(buffer),
             Self::Vti(nlas) => nlas.as_slice().emit(buffer),
@@ -244,18 +241,6 @@ impl InfoData {
                 }
                 InfoData::GreTap6(v)
             }
-            InfoKind::SitTun => {
-                let mut v = Vec::new();
-                for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(format!(
-                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
-                    ))?;
-                    let parsed =
-                        InfoIpTunnel::parse_with_param(nla, kind.clone())?;
-                    v.push(parsed);
-                }
-                InfoData::SitTun(v)
-            }
             InfoKind::GreTun => {
                 let mut v = Vec::new();
                 for nla in NlasIterator::new(payload) {
@@ -355,7 +340,7 @@ impl InfoData {
                 }
                 InfoData::Hsr(v)
             }
-            InfoKind::IpIp | InfoKind::Ip6Tnl => {
+            InfoKind::IpIp | InfoKind::Ip6Tnl | InfoKind::SitTun => {
                 let mut v = Vec::new();
                 for nla in NlasIterator::new(payload) {
                     let nla = &nla.context(format!(
