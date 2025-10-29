@@ -256,7 +256,7 @@ fn test_iptunnel_sit_link_info() {
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::SitTun),
-            LinkInfo::Data(InfoData::SitTun(vec![
+            LinkInfo::Data(InfoData::IpTunnel(vec![
                 InfoIpTunnel::Link(0),
                 InfoIpTunnel::Local(std::net::IpAddr::V4(
                     Ipv4Addr::from_str("192.168.122.183").unwrap(),
