@@ -43,7 +43,7 @@ pub enum InfoIpTunnel {
     FlowInfo(u32),
     Ipv6SitFlags(u16),
     Ipv4Flags(u16),
-    Ipv6Flags(u32),
+    Ipv6Flags(Ip6TunnelFlags),
     Protocol(IpProtocol),
     PMtuDisc(bool),
     Ipv6RdPrefix(Ipv6Addr),
@@ -92,7 +92,7 @@ impl Nla for InfoIpTunnel {
             Link(value) | FwMark(value) | FlowInfo(value) => {
                 emit_u32(buffer, *value).unwrap()
             }
-            Ipv6Flags(val) => emit_u32(buffer, *val).unwrap(),
+            Ipv6Flags(f) => emit_u32(buffer, f.bits()).unwrap(),
             Ipv6SitFlags(val) | Ipv4Flags(val) => {
                 emit_u16_be(buffer, *val).unwrap()
             }
@@ -193,10 +193,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     parse_u16_be(payload)
                         .context("invalid IFLA_IPTUN_FLAGS for SIT")?,
                 ),
-                super::InfoKind::Ip6Tnl => InfoIpTunnel::Ipv6Flags(
-                    parse_u32(payload)
-                        .context("invalid IFLA_IPTUN_FLAGS for IP6")?,
-                ),
+                super::InfoKind::Ip6Tnl => {
+                    InfoIpTunnel::Ipv6Flags(Ip6TunnelFlags::from_bits_retain(
+                        parse_u32(payload)
+                            .context("invalid IFLA_IPTUN_FLAGS for IP6")?,
+                    ))
+                }
                 _ => {
                     return Err(DecodeError::from(format!(
                         "unsupported InfoKind for IFLA_IPTUN_FLAGS: {kind:?}"
@@ -357,7 +359,7 @@ const IP6_TNL_F_ALLOW_LOCAL_REMOTE: u32 = 0x40;
 bitflags! {
     #[non_exhaustive]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub struct TunnelFlags: u32 {
+    pub struct Ip6TunnelFlags: u32 {
         const IgnEncapLimit = IP6_TNL_F_IGN_ENCAP_LIMIT;
         const UseOrigTclass = IP6_TNL_F_USE_ORIG_TCLASS;
         const UseOrigFlowlabel = IP6_TNL_F_USE_ORIG_FLOWLABEL;
