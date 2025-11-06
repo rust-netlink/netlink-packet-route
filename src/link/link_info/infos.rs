@@ -42,6 +42,7 @@ const XFRM: &str = "xfrm";
 const MACSEC: &str = "macsec";
 const HSR: &str = "hsr";
 const GENEVE: &str = "geneve";
+const NETKIT: &str = "netkit";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -201,6 +202,7 @@ pub enum InfoKind {
     MacSec,
     Hsr,
     Geneve,
+    Netkit,
     Other(String),
 }
 
@@ -239,6 +241,7 @@ impl std::fmt::Display for InfoKind {
                 Self::MacSec => MACSEC,
                 Self::Hsr => HSR,
                 Self::Geneve => GENEVE,
+                Self::Netkit => NETKIT,
                 Self::Other(s) => s.as_str(),
             }
         )
@@ -277,6 +280,7 @@ impl Nla for InfoKind {
             Self::MacSec => MACSEC.len(),
             Self::Hsr => HSR.len(),
             Self::Geneve => GENEVE.len(),
+            Self::Netkit => NETKIT.len(),
             Self::Other(s) => s.len(),
         };
         len + 1
@@ -335,6 +339,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
             XFRM => Self::Xfrm,
             HSR => Self::Hsr,
             GENEVE => Self::Geneve,
+            NETKIT => Self::Netkit,
             _ => Self::Other(s),
         })
     }

@@ -8,8 +8,8 @@ use netlink_packet_core::{
 use super::super::{
     InfoBond, InfoBridge, InfoGeneve, InfoGreTap, InfoGreTap6, InfoGreTun,
     InfoGreTun6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan, InfoIpVtap,
-    InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoTun,
-    InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm,
+    InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoNetkit,
+    InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -40,6 +40,7 @@ pub enum InfoData {
     Hsr(Vec<InfoHsr>),
     Geneve(Vec<InfoGeneve>),
     IpTunnel(Vec<InfoIpTunnel>),
+    Netkit(Vec<InfoNetkit>),
     Other(Vec<u8>),
 }
 
@@ -69,6 +70,7 @@ impl Nla for InfoData {
             Self::Gtp(nlas) => nlas.as_slice().buffer_len(),
             Self::Geneve(nlas) => nlas.as_slice().buffer_len(),
             Self::IpTunnel(nlas) => nlas.as_slice().buffer_len(),
+            Self::Netkit(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(v) => v.len(),
         }
     }
@@ -98,6 +100,7 @@ impl Nla for InfoData {
             Self::Gtp(nlas) => nlas.as_slice().emit(buffer),
             Self::Geneve(nlas) => nlas.as_slice().emit(buffer),
             Self::IpTunnel(nlas) => nlas.as_slice().emit(buffer),
+            Self::Netkit(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
         }
     }
@@ -362,6 +365,17 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::Geneve(v)
+            }
+            InfoKind::Netkit => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoNetkit::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Netkit(v)
             }
             _ => InfoData::Other(payload.to_vec()),
         })
