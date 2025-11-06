@@ -19,6 +19,7 @@ mod iptunnel;
 mod ipvlan;
 mod mac_vlan;
 mod macsec;
+mod netkit;
 mod tun;
 mod veth;
 mod vlan;
@@ -57,6 +58,7 @@ pub use self::{
     },
     mac_vlan::{InfoMacVlan, InfoMacVtap, MacVlanMode, MacVtapMode},
     macsec::{InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate},
+    netkit::{InfoNetkit, NetkitMode, NetkitPolicy},
     tun::InfoTun,
     veth::InfoVeth,
     vlan::{InfoVlan, VlanQosMapping},
