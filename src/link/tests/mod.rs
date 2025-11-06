@@ -27,6 +27,8 @@ mod macvtap;
 #[cfg(test)]
 mod message;
 #[cfg(test)]
+mod netkit;
+#[cfg(test)]
 mod prop_list;
 #[cfg(test)]
 mod sriov;
