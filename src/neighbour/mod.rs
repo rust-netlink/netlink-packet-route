@@ -15,7 +15,7 @@ pub use self::{
     address::NeighbourAddress,
     attribute::NeighbourAttribute,
     cache_info::{NeighbourCacheInfo, NeighbourCacheInfoBuffer},
-    flags::NeighbourFlags,
+    flags::{NeighbourExtFlags, NeighbourFlags},
     header::{NeighbourHeader, NeighbourMessageBuffer},
     message::NeighbourMessage,
     state::NeighbourState,

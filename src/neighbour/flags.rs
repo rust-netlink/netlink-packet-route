@@ -25,3 +25,18 @@ bitflags! {
         const _ = !0;
     }
 }
+
+const NTF_EXT_MANAGED: u32 = 1 << 0;
+const NTF_EXT_LOCKED: u32 = 1 << 1;
+const NTF_EXT_EXT_VALIDATED: u32 = 1 << 2;
+
+bitflags! {
+    #[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
+    #[non_exhaustive]
+    pub struct NeighbourExtFlags: u32 {
+        const Managed = NTF_EXT_MANAGED;
+        const Locked = NTF_EXT_LOCKED;
+        const ExtValidated = NTF_EXT_EXT_VALIDATED;
+        const _ = !0;
+    }
+}

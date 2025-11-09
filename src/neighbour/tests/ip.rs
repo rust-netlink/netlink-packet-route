@@ -10,8 +10,8 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     neighbour::{
         flags::NeighbourFlags, NeighbourAttribute, NeighbourCacheInfo,
-        NeighbourHeader, NeighbourMessage, NeighbourMessageBuffer,
-        NeighbourState,
+        NeighbourExtFlags, NeighbourHeader, NeighbourMessage,
+        NeighbourMessageBuffer, NeighbourState,
     },
     route::{RouteProtocol, RouteType},
     AddressFamily,
@@ -157,6 +157,89 @@ fn test_ipv4_neighbour_protocol_show() {
                 refcnt: 0,
             }),
             NeighbourAttribute::Protocol(RouteProtocol::Dhcp),
+        ],
+    };
+
+    assert_eq!(
+        expected,
+        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
+    );
+
+    let mut buf = vec![0; expected.buffer_len()];
+
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_ipv4_neighbour_add_ext_flags() {
+    let raw = vec![
+        0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x08, 0x00, 0x01, 0x00, 0xac, 0x11, 0x02, 0x01, 0x08, 0x00, 0x0f, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = NeighbourMessage {
+        header: NeighbourHeader {
+            family: AddressFamily::Inet,
+            ifindex: 3,
+            state: NeighbourState::None,
+            flags: NeighbourFlags::empty(),
+            kind: RouteType::Unspec,
+        },
+        attributes: vec![
+            NeighbourAttribute::Destination(
+                Ipv4Addr::from_str("172.17.2.1").unwrap().into(),
+            ),
+            NeighbourAttribute::ExtFlags(NeighbourExtFlags::Managed),
+        ],
+    };
+
+    assert_eq!(
+        expected,
+        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
+    );
+
+    let mut buf = vec![0; expected.buffer_len()];
+
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_ipv4_neighbour_show_ext_flags() {
+    let raw = vec![
+        0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01,
+        0x08, 0x00, 0x01, 0x00, 0xac, 0x11, 0x02, 0x01, 0x0a, 0x00, 0x02, 0x00,
+        0x48, 0x21, 0x0b, 0x3c, 0x1f, 0x01, 0x00, 0x00, 0x08, 0x00, 0x04, 0x00,
+        0x04, 0x00, 0x00, 0x00, 0x14, 0x00, 0x03, 0x00, 0x59, 0x02, 0x00, 0x00,
+        0x33, 0x00, 0x00, 0x00, 0xf3, 0x17, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x08, 0x00, 0x0f, 0x00, 0x01, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = NeighbourMessage {
+        header: NeighbourHeader {
+            family: AddressFamily::Inet,
+            ifindex: 3,
+            state: NeighbourState::Reachable,
+            flags: NeighbourFlags::empty(),
+            kind: RouteType::Unicast,
+        },
+        attributes: vec![
+            NeighbourAttribute::Destination(
+                Ipv4Addr::from_str("172.17.2.1").unwrap().into(),
+            ),
+            NeighbourAttribute::LinkLocalAddress(vec![72, 33, 11, 60, 31, 1]),
+            NeighbourAttribute::Probes(4),
+            NeighbourAttribute::CacheInfo(NeighbourCacheInfo {
+                confirmed: 601,
+                used: 51,
+                updated: 71667,
+                refcnt: 1,
+            }),
+            NeighbourAttribute::ExtFlags(NeighbourExtFlags::Managed),
         ],
     };
 
