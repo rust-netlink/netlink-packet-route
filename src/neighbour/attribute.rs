@@ -6,7 +6,10 @@ use netlink_packet_core::{
     ParseableParametrized,
 };
 
-use super::{NeighbourAddress, NeighbourCacheInfo, NeighbourCacheInfoBuffer};
+use super::{
+    NeighbourAddress, NeighbourCacheInfo, NeighbourCacheInfoBuffer,
+    NeighbourExtFlags,
+};
 use crate::{route::RouteProtocol, AddressFamily};
 
 const NDA_DST: u16 = 1;
@@ -24,6 +27,7 @@ const NDA_SRC_VNI: u16 = 11;
 const NDA_PROTOCOL: u16 = 12;
 // const NDA_NH_ID: u16 = 13;
 // const NDA_FDB_EXT_ATTRS: u16 = 14;
+const NDA_FLAGS_EXT: u16 = 15;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -40,6 +44,7 @@ pub enum NeighbourAttribute {
     LinkNetNsId(u32),
     SourceVni(u32),
     Protocol(RouteProtocol),
+    ExtFlags(NeighbourExtFlags),
     Other(DefaultNla),
 }
 
@@ -56,7 +61,8 @@ impl Nla for NeighbourAttribute {
             | Self::Controller(_)
             | Self::Vni(_)
             | Self::IfIndex(_)
-            | Self::SourceVni(_) => 4,
+            | Self::SourceVni(_)
+            | Self::ExtFlags(_) => 4,
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -76,6 +82,7 @@ impl Nla for NeighbourAttribute {
             | Self::Vni(value)
             | Self::IfIndex(value)
             | Self::SourceVni(value) => emit_u32(buffer, *value).unwrap(),
+            Self::ExtFlags(v) => emit_u32(buffer, v.bits()).unwrap(),
             Self::Protocol(v) => v.emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }
@@ -95,6 +102,7 @@ impl Nla for NeighbourAttribute {
             Self::LinkNetNsId(_) => NDA_LINK_NETNSID,
             Self::SourceVni(_) => NDA_SRC_VNI,
             Self::Protocol(_) => NDA_PROTOCOL,
+            Self::ExtFlags(_) => NDA_FLAGS_EXT,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -145,6 +153,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 Self::Protocol(RouteProtocol::parse(payload).context(
                     format!("invalid NDA_PROTOCOL value {payload:?}"),
                 )?)
+            }
+            NDA_FLAGS_EXT => {
+                Self::ExtFlags(NeighbourExtFlags::from_bits_retain(
+                    parse_u32(payload).context(format!(
+                        "invalid NDA_FLAGS_EXT value {payload:?}"
+                    ))?,
+                ))
             }
             _ => Self::Other(
                 DefaultNla::parse(buf)
