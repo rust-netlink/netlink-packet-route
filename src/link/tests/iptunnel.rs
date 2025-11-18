@@ -127,9 +127,9 @@ fn test_iptunnel_ipip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Ipv6Flags(Ip6TunnelFlags::from_bits_retain(
-                    0x30000,
-                )),
+                InfoIpTunnel::Ipv6Flags(
+                    Ip6TunnelFlags::CapXmit | Ip6TunnelFlags::CapRcv,
+                ),
                 InfoIpTunnel::Protocol(IpProtocol::Ipip),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
@@ -198,9 +198,9 @@ fn test_iptunnel_ip6ip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Ipv6Flags(Ip6TunnelFlags::from_bits_retain(
-                    0x30000,
-                )),
+                InfoIpTunnel::Ipv6Flags(
+                    Ip6TunnelFlags::CapXmit | Ip6TunnelFlags::CapRcv,
+                ),
                 InfoIpTunnel::Protocol(IpProtocol::Ipv6),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
