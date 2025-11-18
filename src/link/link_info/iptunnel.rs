@@ -356,6 +356,10 @@ const IP6_TNL_F_RCV_DSCP_COPY: u32 = 0x10;
 const IP6_TNL_F_USE_ORIG_FWMARK: u32 = 0x20;
 const IP6_TNL_F_ALLOW_LOCAL_REMOTE: u32 = 0x40;
 
+const IP6_TNL_F_CAP_XMIT: u32 = 0x10000;
+const IP6_TNL_F_CAP_RCV: u32 = 0x20000;
+const IP6_TNL_F_CAP_PER_PACKET: u32 = 0x40000;
+
 bitflags! {
     #[non_exhaustive]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -367,5 +371,8 @@ bitflags! {
         const RcvDscpCopy = IP6_TNL_F_RCV_DSCP_COPY;
         const UseOrigFwMark = IP6_TNL_F_USE_ORIG_FWMARK;
         const AllowLocalRemote = IP6_TNL_F_ALLOW_LOCAL_REMOTE;
+        const CapXmit = IP6_TNL_F_CAP_XMIT;
+        const CapRcv = IP6_TNL_F_CAP_RCV;
+        const CapPerPacket = IP6_TNL_F_CAP_PER_PACKET;
     }
 }
