@@ -23,6 +23,7 @@
 //! [rtnetlink_url]: https://docs.rs/rtnetlink
 
 pub mod address;
+mod address_family;
 pub mod link;
 pub mod neighbour;
 pub mod neighbour_table;

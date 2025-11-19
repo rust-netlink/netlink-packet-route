@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{DecodeError, Emitable};
 
@@ -47,6 +47,15 @@ impl Emitable for NeighbourAddress {
             Self::Inet(v) => emit_ip_to_buffer(&((*v).into()), buffer),
             Self::Inet6(v) => emit_ip_to_buffer(&((*v).into()), buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
+        }
+    }
+}
+
+impl From<IpAddr> for NeighbourAddress {
+    fn from(v: IpAddr) -> Self {
+        match v {
+            IpAddr::V4(a) => a.into(),
+            IpAddr::V6(a) => a.into(),
         }
     }
 }
