@@ -7,5 +7,7 @@ mod message;
 #[cfg(test)]
 mod tests;
 
+pub use attribute::PrefixAttribute;
+pub use cache_info::CacheInfo;
 pub use header::PrefixMessageBuffer;
 pub use message::PrefixMessage;
