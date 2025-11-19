@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    emit_u16, emit_u32, parse_u16, parse_u32, parse_u8, DecodeError,
+    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use super::super::{LinkMessage, LinkMessageBuffer};
@@ -78,11 +78,43 @@ impl From<u32> for NetkitPolicy {
     }
 }
 
+const NETKIT_SCRUB_NONE: u32 = 0;
+const NETKIT_SCRUB_DEFAULT: u32 = 1;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum NetkitScrub {
+    None,
+    Default,
+}
+
+impl From<NetkitScrub> for u32 {
+    fn from(scrub: NetkitScrub) -> Self {
+        match scrub {
+            NetkitScrub::None => NETKIT_SCRUB_NONE,
+            _ => NETKIT_SCRUB_DEFAULT,
+        }
+    }
+}
+
+impl From<u32> for NetkitScrub {
+    fn from(value: u32) -> Self {
+        match value {
+            NETKIT_SCRUB_NONE => NetkitScrub::None,
+            _ => NetkitScrub::Default,
+        }
+    }
+}
+
 const IFLA_NETKIT_PEER_INFO: u16 = 1;
 const IFLA_NETKIT_PRIMARY: u16 = 2;
 const IFLA_NETKIT_POLICY: u16 = 3;
 const IFLA_NETKIT_PEER_POLICY: u16 = 4;
 const IFLA_NETKIT_MODE: u16 = 5;
+const IFLA_NETKIT_SCRUB: u16 = 6;
+const IFLA_NETKIT_PEER_SCRUB: u16 = 7;
+const IFLA_NETKIT_HEADROOM: u16 = 8;
+const IFLA_NETKIT_TAILROOM: u16 = 9;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -92,6 +124,10 @@ pub enum InfoNetkit {
     Policy(NetkitPolicy),
     PeerPolicy(NetkitPolicy),
     Mode(NetkitMode),
+    Scrub(NetkitScrub),
+    PeerScrub(NetkitScrub),
+    Headroom(u16),
+    Tailroom(u16),
     Other(DefaultNla),
 }
 
@@ -101,6 +137,8 @@ impl Nla for InfoNetkit {
             Self::Peer(ref message) => message.buffer_len(),
             Self::Primary(_) => 1,
             Self::Policy(_) | Self::PeerPolicy(_) | Self::Mode(_) => 4,
+            Self::Scrub(_) | Self::PeerScrub(_) => 4,
+            Self::Headroom(_) | Self::Tailroom(_) => 4,
             Self::Other(ref attr) => attr.value_len(),
         }
     }
@@ -117,6 +155,12 @@ impl Nla for InfoNetkit {
             Self::Mode(value) => {
                 emit_u32(buffer, value.into()).unwrap();
             }
+            Self::Scrub(value) | Self::PeerScrub(value) => {
+                emit_u32(buffer, value.into()).unwrap();
+            }
+            Self::Headroom(value) | Self::Tailroom(value) => {
+                emit_u16(buffer, value).unwrap();
+            }
             Self::Other(ref attr) => attr.emit_value(buffer),
         }
     }
@@ -128,6 +172,10 @@ impl Nla for InfoNetkit {
             Self::Policy(_) => IFLA_NETKIT_POLICY,
             Self::PeerPolicy(_) => IFLA_NETKIT_PEER_POLICY,
             Self::Mode(_) => IFLA_NETKIT_MODE,
+            Self::Scrub(_) => IFLA_NETKIT_SCRUB,
+            Self::PeerScrub(_) => IFLA_NETKIT_PEER_SCRUB,
+            Self::Headroom(_) => IFLA_NETKIT_HEADROOM,
+            Self::Tailroom(_) => IFLA_NETKIT_TAILROOM,
             Self::Other(ref attr) => attr.kind(),
         }
     }
@@ -152,6 +200,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoNetkit {
                 Self::PeerPolicy(parse_u32(payload)?.into())
             }
             IFLA_NETKIT_MODE => Self::Mode(parse_u32(payload)?.into()),
+            IFLA_NETKIT_SCRUB => Self::Scrub(parse_u32(payload)?.into()),
+            IFLA_NETKIT_PEER_SCRUB => {
+                Self::PeerScrub(parse_u32(payload)?.into())
+            }
+            IFLA_NETKIT_HEADROOM => Self::Headroom(parse_u16(payload)?),
+            IFLA_NETKIT_TAILROOM => Self::Tailroom(parse_u16(payload)?),
             kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind} for netkit"))?,
