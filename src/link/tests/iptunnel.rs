@@ -9,9 +9,9 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     link::{
-        InfoData, InfoIpTunnel, InfoKind, LinkAttribute, LinkFlags, LinkHeader,
-        LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
-        TunnelEncapFlags, TunnelEncapType,
+        InfoData, InfoIpTunnel, InfoKind, Ip6TunnelFlags, LinkAttribute,
+        LinkFlags, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
+        LinkMessageBuffer, TunnelEncapFlags, TunnelEncapType,
     },
     AddressFamily, IpProtocol,
 };
@@ -127,7 +127,9 @@ fn test_iptunnel_ipip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Ipv6Flags(0x30000),
+                InfoIpTunnel::Ipv6Flags(
+                    Ip6TunnelFlags::CapXmit | Ip6TunnelFlags::CapRcv,
+                ),
                 InfoIpTunnel::Protocol(IpProtocol::Ipip),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
@@ -196,7 +198,9 @@ fn test_iptunnel_ip6ip6_link_info() {
                 InfoIpTunnel::Ttl(64),
                 InfoIpTunnel::EncapLimit(4),
                 InfoIpTunnel::FlowInfo(0),
-                InfoIpTunnel::Ipv6Flags(0x30000),
+                InfoIpTunnel::Ipv6Flags(
+                    Ip6TunnelFlags::CapXmit | Ip6TunnelFlags::CapRcv,
+                ),
                 InfoIpTunnel::Protocol(IpProtocol::Ipv6),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
@@ -252,7 +256,7 @@ fn test_iptunnel_sit_link_info() {
         },
         attributes: vec![LinkAttribute::LinkInfo(vec![
             LinkInfo::Kind(InfoKind::SitTun),
-            LinkInfo::Data(InfoData::SitTun(vec![
+            LinkInfo::Data(InfoData::IpTunnel(vec![
                 InfoIpTunnel::Link(0),
                 InfoIpTunnel::Local(std::net::IpAddr::V4(
                     Ipv4Addr::from_str("192.168.122.183").unwrap(),

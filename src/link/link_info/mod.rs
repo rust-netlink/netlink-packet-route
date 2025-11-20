@@ -48,7 +48,9 @@ pub use self::{
     info_port::{InfoPortData, InfoPortKind, InfoVrfPort},
     infos::{InfoKind, LinkInfo},
     ipoib::InfoIpoib,
-    iptunnel::{InfoIpTunnel, TunnelEncapFlags, TunnelEncapType},
+    iptunnel::{
+        InfoIpTunnel, Ip6TunnelFlags, TunnelEncapFlags, TunnelEncapType,
+    },
     ipvlan::{
         InfoIpVlan, InfoIpVtap, IpVlanFlags, IpVlanMode, IpVtapFlags,
         IpVtapMode,
