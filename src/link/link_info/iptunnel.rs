@@ -374,5 +374,6 @@ bitflags! {
         const CapXmit = IP6_TNL_F_CAP_XMIT;
         const CapRcv = IP6_TNL_F_CAP_RCV;
         const CapPerPacket = IP6_TNL_F_CAP_PER_PACKET;
+        const _ = !0;
     }
 }
