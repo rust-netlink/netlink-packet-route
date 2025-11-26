@@ -14,12 +14,14 @@ const IFLA_HSR_SUPERVISION_ADDR: u16 = 4;
 const IFLA_HSR_SEQ_NR: u16 = 5;
 const IFLA_HSR_VERSION: u16 = 6;
 const IFLA_HSR_PROTOCOL: u16 = 7;
+const IFLA_HSR_INTERLINK: u16 = 8;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoHsr {
     Port1(u32),
     Port2(u32),
+    Interlink(u32),
     MulticastSpec(u8),
     SupervisionAddr([u8; 6]),
     Version(u8),
@@ -33,7 +35,7 @@ impl Nla for InfoHsr {
         use self::InfoHsr::*;
         match self {
             SupervisionAddr(_) => 6,
-            Port1(_) | Port2(_) => 4,
+            Port1(_) | Port2(_) | Interlink(_) => 4,
             SeqNr(_) => 2,
             MulticastSpec(_) | Version(_) | Protocol(_) => 1,
             Other(nla) => nla.value_len(),
@@ -43,7 +45,9 @@ impl Nla for InfoHsr {
     fn emit_value(&self, buffer: &mut [u8]) {
         use self::InfoHsr::*;
         match self {
-            Port1(value) | Port2(value) => emit_u32(buffer, *value).unwrap(),
+            Port1(value) | Port2(value) | Interlink(value) => {
+                emit_u32(buffer, *value).unwrap()
+            }
             MulticastSpec(value) | Version(value) => buffer[0] = *value,
             SeqNr(value) => emit_u16(buffer, *value).unwrap(),
             Protocol(value) => buffer[0] = (*value).into(),
@@ -57,6 +61,7 @@ impl Nla for InfoHsr {
         match self {
             Port1(_) => IFLA_HSR_PORT1,
             Port2(_) => IFLA_HSR_PORT2,
+            Interlink(_) => IFLA_HSR_INTERLINK,
             MulticastSpec(_) => IFLA_HSR_MULTICAST_SPEC,
             SupervisionAddr(_) => IFLA_HSR_SUPERVISION_ADDR,
             SeqNr(_) => IFLA_HSR_SEQ_NR,
@@ -77,6 +82,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoHsr {
             ),
             IFLA_HSR_PORT2 => Port2(
                 parse_u32(payload).context("invalid IFLA_HSR_PORT2 value")?,
+            ),
+            IFLA_HSR_INTERLINK => Interlink(
+                parse_u32(payload)
+                    .context("invalid IFLA_HSR_INTERLINK value")?,
             ),
             IFLA_HSR_MULTICAST_SPEC => MulticastSpec(
                 parse_u8(payload)
