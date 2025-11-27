@@ -12,7 +12,7 @@ mod tests;
 pub use self::{
     addr_flags::{AddressFlags, AddressHeaderFlags},
     addr_scope::AddressScope,
-    attribute::AddressAttribute,
+    attribute::{AddressAttribute, AddressProtocol},
     cache_info::{CacheInfo, CacheInfoBuffer},
     message::{AddressHeader, AddressMessage, AddressMessageBuffer},
 };
