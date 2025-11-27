@@ -6,10 +6,10 @@ use netlink_packet_core::{
 };
 
 use super::super::{
-    InfoBond, InfoBridge, InfoGeneve, InfoGreTap, InfoGreTap6, InfoGreTun,
-    InfoGreTun6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan, InfoIpVtap,
-    InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoNetkit,
-    InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxlan, InfoXfrm,
+    InfoBond, InfoBridge, InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr,
+    InfoIpTunnel, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec,
+    InfoMacVlan, InfoMacVtap, InfoNetkit, InfoTun, InfoVeth, InfoVlan, InfoVrf,
+    InfoVti, InfoVxlan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -27,10 +27,10 @@ pub enum InfoData {
     IpVtap(Vec<InfoIpVtap>),
     MacVlan(Vec<InfoMacVlan>),
     MacVtap(Vec<InfoMacVtap>),
-    GreTap(Vec<InfoGreTap>),
-    GreTap6(Vec<InfoGreTap6>),
-    GreTun(Vec<InfoGreTun>),
-    GreTun6(Vec<InfoGreTun6>),
+    GreTap(Vec<InfoGre>),
+    GreTap6(Vec<InfoGre6>),
+    GreTun(Vec<InfoGre>),
+    GreTun6(Vec<InfoGre6>),
     Vti(Vec<InfoVti>),
     Vrf(Vec<InfoVrf>),
     Gtp(Vec<InfoGtp>),
@@ -228,7 +228,7 @@ impl InfoData {
                     let nla = &nla.context(format!(
                         "invalid IFLA_INFO_DATA for {kind} {payload:?}"
                     ))?;
-                    let parsed = InfoGreTap::parse(nla)?;
+                    let parsed = InfoGre::parse(nla)?;
                     v.push(parsed);
                 }
                 InfoData::GreTap(v)
@@ -239,7 +239,7 @@ impl InfoData {
                     let nla = &nla.context(format!(
                         "invalid IFLA_INFO_DATA for {kind} {payload:?}"
                     ))?;
-                    let parsed = InfoGreTap6::parse(nla)?;
+                    let parsed = InfoGre6::parse(nla)?;
                     v.push(parsed);
                 }
                 InfoData::GreTap6(v)
@@ -250,7 +250,7 @@ impl InfoData {
                     let nla = &nla.context(format!(
                         "invalid IFLA_INFO_DATA for {kind} {payload:?}"
                     ))?;
-                    let parsed = InfoGreTun::parse(nla)?;
+                    let parsed = InfoGre::parse(nla)?;
                     v.push(parsed);
                 }
                 InfoData::GreTun(v)
@@ -261,7 +261,7 @@ impl InfoData {
                     let nla = &nla.context(format!(
                         "invalid IFLA_INFO_DATA for {kind} {payload:?}"
                     ))?;
-                    let parsed = InfoGreTun6::parse(nla)?;
+                    let parsed = InfoGre6::parse(nla)?;
                     v.push(parsed);
                 }
                 InfoData::GreTun6(v)
