@@ -6,9 +6,6 @@ mod bridge;
 mod bridge_port;
 mod geneve;
 mod gre;
-mod gre6;
-mod gre_tap;
-mod gre_tap6;
 mod gtp;
 mod hsr;
 mod info_data;
@@ -39,10 +36,7 @@ pub use self::{
     bridge::{BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge},
     bridge_port::{BridgePortMulticastRouter, BridgePortState, InfoBridgePort},
     geneve::{GeneveDf, InfoGeneve},
-    gre::InfoGreTun,
-    gre6::InfoGreTun6,
-    gre_tap::InfoGreTap,
-    gre_tap6::InfoGreTap6,
+    gre::{GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6},
     gtp::InfoGtp,
     hsr::{HsrProtocol, InfoHsr},
     info_data::InfoData,
