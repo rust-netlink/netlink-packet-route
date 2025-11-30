@@ -52,7 +52,7 @@ pub use self::{
     },
     mac_vlan::{InfoMacVlan, InfoMacVtap, MacVlanMode, MacVtapMode},
     macsec::{InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate},
-    netkit::{InfoNetkit, NetkitMode, NetkitPolicy},
+    netkit::{InfoNetkit, NetkitMode, NetkitPolicy, NetkitScrub},
     tun::InfoTun,
     veth::InfoVeth,
     vlan::{InfoVlan, VlanQosMapping},
