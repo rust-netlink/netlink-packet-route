@@ -55,7 +55,7 @@ pub use self::{
     netkit::{InfoNetkit, NetkitMode, NetkitPolicy},
     tun::InfoTun,
     veth::InfoVeth,
-    vlan::{InfoVlan, VlanQosMapping},
+    vlan::{InfoVlan, VlanFlags, VlanQosMapping},
     vrf::InfoVrf,
     vti::InfoVti,
     vxlan::InfoVxlan,
