@@ -8,6 +8,31 @@ use netlink_packet_core::{
 
 use crate::link::VlanProtocol;
 
+const VLAN_FLAG_REORDER_HDR: u32 = 0x1;
+const VLAN_FLAG_GVRP: u32 = 0x2;
+const VLAN_FLAG_LOOSE_BINDING: u32 = 0x4;
+const VLAN_FLAG_MVRP: u32 = 0x8;
+const VLAN_FLAG_BRIDGE_BINDING: u32 = 0x10;
+
+bitflags! {
+    #[non_exhaustive]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct VlanFlags: u32 {
+        /// Ethernet headers are reordered
+        const ReorderHdr = VLAN_FLAG_REORDER_HDR;
+        /// VLAN is registered using GARP VLAN Registration Protocol
+        const Gvrp = VLAN_FLAG_GVRP;
+        /// VLAN device state is bound to the physical device state
+        const LooseBinding = VLAN_FLAG_LOOSE_BINDING;
+        /// VLAN is be registered using Multiple VLAN Registration Protocol
+        const Mvrp = VLAN_FLAG_MVRP;
+        /// VLAN device link state tracks the state of bridge ports that are
+        /// members of the VLAN
+        const BridgeBinding = VLAN_FLAG_BRIDGE_BINDING;
+        const _ = !0;
+    }
+}
+
 const IFLA_VLAN_ID: u16 = 1;
 const IFLA_VLAN_FLAGS: u16 = 2;
 const IFLA_VLAN_EGRESS_QOS: u16 = 3;
@@ -20,7 +45,8 @@ const IFLA_VLAN_QOS_MAPPING: u16 = 1;
 #[non_exhaustive]
 pub enum InfoVlan {
     Id(u16),
-    Flags((u32, u32)),
+    /// Active flags and flags mask
+    Flags((VlanFlags, VlanFlags)),
     EgressQos(Vec<VlanQosMapping>),
     IngressQos(Vec<VlanQosMapping>),
     Protocol(VlanProtocol),
@@ -48,9 +74,9 @@ impl Nla for InfoVlan {
             Self::Protocol(value) => {
                 emit_u16_be(buffer, (*value).into()).unwrap()
             }
-            Self::Flags(flags) => {
-                emit_u32(&mut buffer[0..4], flags.0).unwrap();
-                emit_u32(&mut buffer[4..8], flags.1).unwrap()
+            Self::Flags((active, mask)) => {
+                emit_u32(&mut buffer[0..4], active.bits()).unwrap();
+                emit_u32(&mut buffer[4..8], mask.bits()).unwrap()
             }
             Self::Other(v) => v.emit_value(buffer),
         }
@@ -153,7 +179,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
                 }
                 let flags = parse_u32(&payload[0..4]).context(err)?;
                 let mask = parse_u32(&payload[4..]).context(err)?;
-                Flags((flags, mask))
+                Flags((
+                    VlanFlags::from_bits_retain(flags),
+                    VlanFlags::from_bits_retain(mask),
+                ))
             }
             IFLA_VLAN_EGRESS_QOS => EgressQos(
                 parse_mappings(payload)

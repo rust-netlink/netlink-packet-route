@@ -6,7 +6,7 @@ use crate::{
     link::{
         link_flag::LinkFlags, InfoData, InfoKind, InfoVlan, LinkAttribute,
         LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
-        VlanProtocol, VlanQosMapping,
+        VlanFlags, VlanProtocol, VlanQosMapping,
     },
     AddressFamily,
 };
@@ -67,7 +67,7 @@ fn test_parsing_link_vlan() {
             LinkInfo::Data(InfoData::Vlan(vec![
                 InfoVlan::Protocol(VlanProtocol::Ieee8021Q),
                 InfoVlan::Id(101),
-                InfoVlan::Flags((1, 4294967295)),
+                InfoVlan::Flags((VlanFlags::ReorderHdr, VlanFlags::all())),
                 InfoVlan::IngressQos(vec![VlanQosMapping::Mapping(6, 7)]),
                 InfoVlan::EgressQos(vec![VlanQosMapping::Mapping(4, 5)]),
             ])),
