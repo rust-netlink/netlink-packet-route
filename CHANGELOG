@@ -1,4 +1,25 @@
 # Changelog
+## [0.26.0] - 2025-12-09
+### Breaking changes
+ - link: Change `InfoVlan::Flags` from u32 to VlanFlags. (4e8e1c5)
+ - link: Add support of iptunnel.(a83f6ae, 1775849, 9771024, 0048dd7, cee37d1)
+ - ip: Replace `as u8` casts with explicit From conversions for IpProtocol. (582454c)
+
+### New features
+ - address: Handle `IFA_RT_PRIORITY` `IFA_TARGET_NETNSID` and `IFA_PROTO`. (a804545)
+ - link: Add netkit support. (bcd7a1f, 8523980)
+ - hsr: Add support for interlink attribute. (e088bff)
+ - link: Add support of iptunnel.(a83f6ae, 1775849, 9771024, 0048dd7, cee37d1,
+   84989e2)
+ - neighbour: impl From<IpAddr> for NeighbourAddress. (a25d26f)
+ - address_family: impl From<IpAddr> for AddressFamily. (2812ba1)
+ - neighbour: Support `NDA_FLAGS_EXT`. (0bd7abd)
+ - prefix: export PrefixAttribute and CacheInfo. (37674f5)
+
+### Bug fixes
+ - Fix MIT license file. (7a51870)
+ - Remove execution bit of `src/tc/actions/tunnel_key.rs`. (1d4709a)
+
 ## [0.25.1] - 2025-08-29
 ### Breaking changes
  - Set minimum supported rust version to 1.77. (6bd5418)
