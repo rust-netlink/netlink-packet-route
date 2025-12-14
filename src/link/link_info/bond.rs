@@ -639,7 +639,9 @@ pub enum InfoBond {
     AdActorSysPrio(u16),
     AdUserPortKey(u16),
     AdActorSystem([u8; 6]),
-    TlbDynamicLb(u8),
+    /// Specifies if dynamic shuffling of flows is enabled in
+    /// [BondMode::BalanceTlb] mode.
+    TlbDynamicLb(bool),
     PeerNotifDelay(u32),
     AdLacpActive(u8),
     MissedMax(u8),
@@ -697,8 +699,8 @@ impl Nla for InfoBond {
             | Self::NumPeerNotif(value)
             | Self::AdLacpActive(value)
             | Self::AdSelect(value)
-            | Self::TlbDynamicLb(value)
             | Self::MissedMax(value) => buffer[0] = *value,
+            Self::TlbDynamicLb(value) => buffer[0] = (*value).into(),
             Self::AdLacpRate(value) => buffer[0] = (*value).into(),
             Self::AllPortsActive(value) => buffer[0] = (*value).into(),
             Self::FailOverMac(value) => buffer[0] = (*value).into(),
@@ -902,7 +904,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_TLB_DYNAMIC_LB => Self::TlbDynamicLb(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_TLB_DYNAMIC_LB value")?,
+                    .context("invalid IFLA_BOND_TLB_DYNAMIC_LB value")?
+                    > 0,
             ),
             IFLA_BOND_PEER_NOTIF_DELAY => Self::PeerNotifDelay(
                 parse_u32(payload)
