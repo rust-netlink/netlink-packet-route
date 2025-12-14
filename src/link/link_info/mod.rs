@@ -29,8 +29,9 @@ mod xstats;
 pub(crate) use self::infos::VecLinkInfo;
 pub use self::{
     bond::{
-        BondAdInfo, BondArpAllTargets, BondArpValidate, BondFailOverMac,
-        BondMode, BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
+        BondAdInfo, BondAllPortActive, BondArpAllTargets, BondArpValidate,
+        BondFailOverMac, BondMode, BondPrimaryReselect, BondXmitHashPolicy,
+        InfoBond,
     },
     bond_port::{BondPortState, InfoBondPort, MiiStatus},
     bridge::{BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge},

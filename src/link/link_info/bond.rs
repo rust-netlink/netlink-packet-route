@@ -542,6 +542,38 @@ impl Nla for BondIpAddrNla {
     }
 }
 
+const BOND_ALL_PORT_ACTIVE_DROPPED: u8 = 0;
+const BOND_ALL_PORT_ACTIVE_DELIEVERD: u8 = 1;
+
+/// Specifies that duplicate frames (received on inactive ports) should be
+/// dropped (0) or delivered (1).
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum BondAllPortActive {
+    Dropped,
+    Delivered,
+    Other(u8),
+}
+
+impl From<u8> for BondAllPortActive {
+    fn from(d: u8) -> Self {
+        match d {
+            BOND_ALL_PORT_ACTIVE_DROPPED => Self::Dropped,
+            BOND_ALL_PORT_ACTIVE_DELIEVERD => Self::Delivered,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BondAllPortActive> for u8 {
+    fn from(v: BondAllPortActive) -> u8 {
+        match v {
+            BondAllPortActive::Dropped => BOND_ALL_PORT_ACTIVE_DROPPED,
+            BondAllPortActive::Delivered => BOND_ALL_PORT_ACTIVE_DELIEVERD,
+            BondAllPortActive::Other(d) => d,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoBond {
@@ -561,7 +593,9 @@ pub enum InfoBond {
     XmitHashPolicy(BondXmitHashPolicy),
     ResendIgmp(u32),
     NumPeerNotif(u8),
-    AllPortsActive(u8),
+    /// Specifies that duplicate frames (received on inactive ports) should be
+    /// dropped or delivered.
+    AllPortsActive(BondAllPortActive),
     MinLinks(u32),
     LpInterval(u32),
     PacketsPerPort(u32),
@@ -627,12 +661,12 @@ impl Nla for InfoBond {
             Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
             Self::UseCarrier(value)
             | Self::NumPeerNotif(value)
-            | Self::AllPortsActive(value)
             | Self::AdLacpActive(value)
             | Self::AdLacpRate(value)
             | Self::AdSelect(value)
             | Self::TlbDynamicLb(value)
             | Self::MissedMax(value) => buffer[0] = *value,
+            Self::AllPortsActive(value) => buffer[0] = (*value).into(),
             Self::FailOverMac(value) => buffer[0] = (*value).into(),
             Self::AdActorSysPrio(value) | Self::AdUserPortKey(value) => {
                 emit_u16(buffer, *value).unwrap()
@@ -786,7 +820,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_ALL_PORTS_ACTIVE => Self::AllPortsActive(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_ALL_PORTS_ACTIVE value")?,
+                    .context("invalid IFLA_BOND_ALL_PORTS_ACTIVE value")?
+                    .into(),
             ),
             IFLA_BOND_MIN_LINKS => Self::MinLinks(
                 parse_u32(payload)
