@@ -643,7 +643,8 @@ pub enum InfoBond {
     /// [BondMode::BalanceTlb] mode.
     TlbDynamicLb(bool),
     PeerNotifDelay(u32),
-    AdLacpActive(u8),
+    /// Whether to send LACPDU frames periodically
+    AdLacpActive(bool),
     MissedMax(u8),
     NsIp6Target(Vec<Ipv6Addr>),
     Other(DefaultNla),
@@ -697,10 +698,11 @@ impl Nla for InfoBond {
             Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
             Self::UseCarrier(value)
             | Self::NumPeerNotif(value)
-            | Self::AdLacpActive(value)
             | Self::AdSelect(value)
             | Self::MissedMax(value) => buffer[0] = *value,
-            Self::TlbDynamicLb(value) => buffer[0] = (*value).into(),
+            Self::AdLacpActive(value) | Self::TlbDynamicLb(value) => {
+                buffer[0] = (*value).into()
+            }
             Self::AdLacpRate(value) => buffer[0] = (*value).into(),
             Self::AllPortsActive(value) => buffer[0] = (*value).into(),
             Self::FailOverMac(value) => buffer[0] = (*value).into(),
@@ -913,7 +915,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_AD_LACP_ACTIVE => Self::AdLacpActive(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_AD_LACP_ACTIVE value")?,
+                    .context("invalid IFLA_BOND_AD_LACP_ACTIVE value")?
+                    > 0,
             ),
             IFLA_BOND_MISSED_MAX => Self::MissedMax(
                 parse_u8(payload)

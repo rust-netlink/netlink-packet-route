@@ -78,7 +78,7 @@ fn test_bond_link_info() {
                 InfoBond::MinLinks(0),
                 InfoBond::LpInterval(1),
                 InfoBond::PacketsPerPort(1),
-                InfoBond::AdLacpActive(1),
+                InfoBond::AdLacpActive(true),
                 InfoBond::AdLacpRate(BondLacpRate::Slow),
                 InfoBond::AdSelect(0),
                 InfoBond::TlbDynamicLb(true),
