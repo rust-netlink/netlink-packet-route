@@ -65,7 +65,7 @@ fn test_bond_link_info() {
                 InfoBond::UpDelay(0),
                 InfoBond::DownDelay(0),
                 InfoBond::PeerNotifDelay(0),
-                InfoBond::UseCarrier(1),
+                InfoBond::UseCarrier(true),
                 InfoBond::ArpInterval(0),
                 InfoBond::ArpValidate(BondArpValidate::None),
                 InfoBond::ArpAllTargets(BondArpAllTargets::Any),
