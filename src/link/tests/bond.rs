@@ -81,7 +81,7 @@ fn test_bond_link_info() {
                 InfoBond::AdLacpActive(1),
                 InfoBond::AdLacpRate(BondLacpRate::Slow),
                 InfoBond::AdSelect(0),
-                InfoBond::TlbDynamicLb(1),
+                InfoBond::TlbDynamicLb(true),
                 InfoBond::MissedMax(2),
             ])),
         ])],
