@@ -30,8 +30,8 @@ pub(crate) use self::infos::VecLinkInfo;
 pub use self::{
     bond::{
         BondAdInfo, BondAllPortActive, BondArpAllTargets, BondArpValidate,
-        BondFailOverMac, BondMode, BondPrimaryReselect, BondXmitHashPolicy,
-        InfoBond,
+        BondFailOverMac, BondLacpRate, BondMode, BondPrimaryReselect,
+        BondXmitHashPolicy, InfoBond,
     },
     bond_port::{BondPortState, InfoBondPort, MiiStatus},
     bridge::{BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge},
