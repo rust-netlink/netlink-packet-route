@@ -614,7 +614,9 @@ pub enum InfoBond {
     MiiMon(u32),
     UpDelay(u32),
     DownDelay(u32),
-    UseCarrier(u8),
+    /// Specifies whether or not miimon should use MII or ETHTOOL ioctls vs.
+    /// `netif_carrier_ok()` to determine the link status.
+    UseCarrier(bool),
     ArpInterval(u32),
     ArpIpTarget(Vec<Ipv4Addr>),
     ArpValidate(BondArpValidate),
@@ -696,13 +698,12 @@ impl Nla for InfoBond {
             Self::Mode(value) => buffer[0] = (*value).into(),
             Self::XmitHashPolicy(value) => buffer[0] = (*value).into(),
             Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
-            Self::UseCarrier(value)
-            | Self::NumPeerNotif(value)
+            Self::NumPeerNotif(value)
             | Self::AdSelect(value)
             | Self::MissedMax(value) => buffer[0] = *value,
-            Self::AdLacpActive(value) | Self::TlbDynamicLb(value) => {
-                buffer[0] = (*value).into()
-            }
+            Self::UseCarrier(value)
+            | Self::AdLacpActive(value)
+            | Self::TlbDynamicLb(value) => buffer[0] = (*value).into(),
             Self::AdLacpRate(value) => buffer[0] = (*value).into(),
             Self::AllPortsActive(value) => buffer[0] = (*value).into(),
             Self::FailOverMac(value) => buffer[0] = (*value).into(),
@@ -802,7 +803,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_USE_CARRIER => Self::UseCarrier(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_USE_CARRIER value")?,
+                    .context("invalid IFLA_BOND_USE_CARRIER value")?
+                    > 0,
             ),
             IFLA_BOND_ARP_INTERVAL => Self::ArpInterval(
                 parse_u32(payload)
