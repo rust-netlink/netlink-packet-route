@@ -574,6 +574,38 @@ impl From<BondAllPortActive> for u8 {
     }
 }
 
+const AD_LACP_SLOW: u8 = 0;
+const AD_LACP_FAST: u8 = 1;
+
+/// Specifies that duplicate frames (received on inactive ports) should be
+/// dropped (0) or delivered (1).
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum BondLacpRate {
+    Slow,
+    Fast,
+    Other(u8),
+}
+
+impl From<u8> for BondLacpRate {
+    fn from(d: u8) -> Self {
+        match d {
+            AD_LACP_SLOW => Self::Slow,
+            AD_LACP_FAST => Self::Fast,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BondLacpRate> for u8 {
+    fn from(v: BondLacpRate) -> u8 {
+        match v {
+            BondLacpRate::Slow => AD_LACP_SLOW,
+            BondLacpRate::Fast => AD_LACP_FAST,
+            BondLacpRate::Other(d) => d,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoBond {
@@ -599,7 +631,9 @@ pub enum InfoBond {
     MinLinks(u32),
     LpInterval(u32),
     PacketsPerPort(u32),
-    AdLacpRate(u8),
+    /// The rate in which we'll ask our link partner to transmit LACPDU packets
+    /// in 802.3ad mode.
+    AdLacpRate(BondLacpRate),
     AdSelect(u8),
     AdInfo(Vec<BondAdInfo>),
     AdActorSysPrio(u16),
@@ -662,10 +696,10 @@ impl Nla for InfoBond {
             Self::UseCarrier(value)
             | Self::NumPeerNotif(value)
             | Self::AdLacpActive(value)
-            | Self::AdLacpRate(value)
             | Self::AdSelect(value)
             | Self::TlbDynamicLb(value)
             | Self::MissedMax(value) => buffer[0] = *value,
+            Self::AdLacpRate(value) => buffer[0] = (*value).into(),
             Self::AllPortsActive(value) => buffer[0] = (*value).into(),
             Self::FailOverMac(value) => buffer[0] = (*value).into(),
             Self::AdActorSysPrio(value) | Self::AdUserPortKey(value) => {
@@ -837,7 +871,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_AD_LACP_RATE => Self::AdLacpRate(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_AD_LACP_RATE value")?,
+                    .context("invalid IFLA_BOND_AD_LACP_RATE value")?
+                    .into(),
             ),
             IFLA_BOND_AD_SELECT => Self::AdSelect(
                 parse_u8(payload)
