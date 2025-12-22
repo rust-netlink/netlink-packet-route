@@ -32,8 +32,8 @@ use super::{
     xdp::VecLinkXdp,
     AfSpecBridge, AfSpecUnspec, LinkEvent, LinkExtentMask, LinkInfo, LinkMode,
     LinkPhysId, LinkProtoInfoBridge, LinkProtoInfoInet6,
-    LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkWirelessEvent, LinkXdp,
-    Map, MapBuffer, Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
+    LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkXdp, Map, MapBuffer,
+    Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
 };
 use crate::AddressFamily;
 
@@ -49,7 +49,9 @@ const IFLA_STATS: u16 = 7;
 // No kernel code is using IFLA_PRIORITY
 // const IFLA_PRIORITY: u16 = 9;
 const IFLA_MASTER: u16 = 10;
-const IFLA_WIRELESS: u16 = 11;
+// Not able to trigger this and kernel code is not clear when it will be
+// emitted.
+// const IFLA_WIRELESS: u16 = 11;
 const IFLA_PROTINFO: u16 = 12;
 const IFLA_TXQLEN: u16 = 13;
 const IFLA_MAP: u16 = 14;
@@ -121,7 +123,6 @@ pub enum LinkAttribute {
     CarrierDownCount(u32),
     NewIfIndex(i32),
     LinkInfo(Vec<LinkInfo>),
-    Wireless(LinkWirelessEvent),
     ProtoInfoBridge(Vec<LinkProtoInfoBridge>),
     ProtoInfoInet6(Vec<LinkProtoInfoInet6>),
     ProtoInfoUnknown(DefaultNla),
@@ -180,7 +181,6 @@ impl Nla for LinkAttribute {
             Self::PhysPortId(v) => v.buffer_len(),
             Self::PhysSwitchId(v) => v.buffer_len(),
             Self::Event(v) => v.buffer_len(),
-            Self::Wireless(v) => v.buffer_len(),
             Self::ProtoInfoBridge(v) => v.as_slice().buffer_len(),
             Self::ProtoInfoInet6(v) => v.as_slice().buffer_len(),
             Self::ProtoDownReason(v) => v.as_slice().buffer_len(),
@@ -244,7 +244,6 @@ impl Nla for LinkAttribute {
             Self::PhysPortId(v) => v.emit(buffer),
             Self::PhysSwitchId(v) => v.emit(buffer),
             Self::Event(v) => v.emit(buffer),
-            Self::Wireless(v) => v.emit(buffer),
             Self::ProtoInfoBridge(v) => v.as_slice().emit(buffer),
             Self::ProtoInfoInet6(v) => v.as_slice().emit(buffer),
             Self::ProtoDownReason(v) => v.as_slice().emit(buffer),
@@ -317,7 +316,6 @@ impl Nla for LinkAttribute {
             Self::PhysPortId(_) => IFLA_PHYS_PORT_ID,
             Self::PhysSwitchId(_) => IFLA_PHYS_SWITCH_ID,
             Self::LinkInfo(_) => IFLA_LINKINFO,
-            Self::Wireless(_) => IFLA_WIRELESS,
             Self::ProtoInfoBridge(_) | Self::ProtoInfoInet6(_) => IFLA_PROTINFO,
             Self::ProtoInfoUnknown(attr) => attr.kind(),
             Self::Xdp(_) => IFLA_XDP,
@@ -429,10 +427,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     format!("invalid IFLA_PHYS_SWITCH_ID value {payload:?}"),
                 )?)
             }
-            IFLA_WIRELESS => Self::Wireless(
-                LinkWirelessEvent::parse(payload)
-                    .context(format!("invalid IFLA_WIRELESS {payload:?}"))?,
-            ),
             IFLA_PROTINFO => {
                 let err = |payload| {
                     format!("invalid IFLA_PROTINFO for AF_INET6 {payload:?}")
