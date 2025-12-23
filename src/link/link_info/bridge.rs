@@ -58,6 +58,8 @@ const IFLA_BR_MCAST_MLD_VERSION: u16 = 44;
 const IFLA_BR_VLAN_STATS_PER_PORT: u16 = 45;
 const IFLA_BR_MULTI_BOOLOPT: u16 = 46;
 const IFLA_BR_MCAST_QUERIER_STATE: u16 = 47;
+const IFLA_BR_FDB_N_LEARNED: u16 = 48;
+const IFLA_BR_FDB_MAX_LEARNED: u16 = 49;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -108,6 +110,8 @@ pub enum InfoBridge {
     VlanStatsPerHost(u8),
     MultiBoolOpt(BridgeBooleanOptions),
     MulticastQuerierState(Vec<BridgeQuerierState>),
+    FdbNLearned(u32),
+    FdbMaxLearned(u32),
     Other(DefaultNla),
 }
 
@@ -134,7 +138,9 @@ impl Nla for InfoBridge {
             | Self::MulticastHashMax(_)
             | Self::MulticastLastMemberCount(_)
             | Self::MulticastStartupQueryCount(_)
-            | Self::RootPathCost(_) => 4,
+            | Self::RootPathCost(_)
+            | Self::FdbNLearned(_)
+            | Self::FdbMaxLearned(_) => 4,
             Self::Priority(_)
             | Self::VlanProtocol(_)
             | Self::GroupFwdMask(_)
@@ -198,6 +204,8 @@ impl Nla for InfoBridge {
             | Self::MulticastHashMax(value)
             | Self::MulticastLastMemberCount(value)
             | Self::MulticastStartupQueryCount(value)
+            | Self::FdbNLearned(value)
+            | Self::FdbMaxLearned(value)
             | Self::RootPathCost(value) => emit_u32(buffer, *value).unwrap(),
 
             Self::StpState(value) => {
@@ -299,6 +307,8 @@ impl Nla for InfoBridge {
             Self::MulticastQuerierState(_) => {
                 IFLA_BR_MCAST_QUERIER_STATE | NLA_F_NESTED
             }
+            Self::FdbNLearned(_) => IFLA_BR_FDB_N_LEARNED,
+            Self::FdbMaxLearned(_) => IFLA_BR_FDB_MAX_LEARNED,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -509,6 +519,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                 }
                 Self::MulticastQuerierState(v)
             }
+            IFLA_BR_FDB_N_LEARNED => Self::FdbNLearned(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_FDB_N_LEARNED value")?,
+            ),
+            IFLA_BR_FDB_MAX_LEARNED => Self::FdbMaxLearned(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_FDB_MAX_LEARNED value")?,
+            ),
             _ => Self::Other(DefaultNla::parse(buf).context(
                 "invalid link info bridge NLA value (unknown type)",
             )?),
