@@ -107,7 +107,7 @@ pub enum InfoBridge {
     MulticastStatsEnabled(u8),
     MulticastIgmpVersion(u8),
     MulticastMldVersion(u8),
-    VlanStatsPerHost(u8),
+    VlanStatsPerPort(bool),
     MultiBoolOpt(BridgeBooleanOptions),
     MulticastQuerierState(Vec<BridgeQuerierState>),
     FdbNLearned(u32),
@@ -168,10 +168,9 @@ impl Nla for InfoBridge {
             | Self::NfCallArpTables(_)
             | Self::MulticastStatsEnabled(_)
             | Self::MulticastIgmpVersion(_)
-            | Self::MulticastMldVersion(_)
-            | Self::VlanStatsPerHost(_) => 1,
+            | Self::MulticastMldVersion(_) => 1,
 
-            Self::VlanStatsEnabled(_) => 1,
+            Self::VlanStatsPerPort(_) | Self::VlanStatsEnabled(_) => 1,
 
             Self::MulticastQuerierState(nlas) => nlas.as_slice().buffer_len(),
 
@@ -241,10 +240,11 @@ impl Nla for InfoBridge {
             | Self::NfCallArpTables(value)
             | Self::MulticastStatsEnabled(value)
             | Self::MulticastIgmpVersion(value)
-            | Self::MulticastMldVersion(value)
-            | Self::VlanStatsPerHost(value) => buffer[0] = *value,
+            | Self::MulticastMldVersion(value) => buffer[0] = *value,
 
-            Self::VlanStatsEnabled(value) => buffer[0] = *value as u8,
+            Self::VlanStatsPerPort(value) | Self::VlanStatsEnabled(value) => {
+                buffer[0] = (*value).into()
+            }
 
             Self::MulticastQuerierState(nlas) => nlas.as_slice().emit(buffer),
 
@@ -307,7 +307,7 @@ impl Nla for InfoBridge {
             Self::MulticastStatsEnabled(_) => IFLA_BR_MCAST_STATS_ENABLED,
             Self::MulticastIgmpVersion(_) => IFLA_BR_MCAST_IGMP_VERSION,
             Self::MulticastMldVersion(_) => IFLA_BR_MCAST_MLD_VERSION,
-            Self::VlanStatsPerHost(_) => IFLA_BR_VLAN_STATS_PER_PORT,
+            Self::VlanStatsPerPort(_) => IFLA_BR_VLAN_STATS_PER_PORT,
             Self::MultiBoolOpt(_) => IFLA_BR_MULTI_BOOLOPT,
             Self::MulticastQuerierState(_) => {
                 IFLA_BR_MCAST_QUERIER_STATE | NLA_F_NESTED
@@ -509,9 +509,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                 parse_u8(payload)
                     .context("invalid IFLA_BR_MCAST_MLD_VERSION value")?,
             ),
-            IFLA_BR_VLAN_STATS_PER_PORT => Self::VlanStatsPerHost(
+            IFLA_BR_VLAN_STATS_PER_PORT => Self::VlanStatsPerPort(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_VLAN_STATS_PER_PORT value")?,
+                    .context("invalid IFLA_BR_VLAN_STATS_PER_PORT value")?
+                    > 0,
             ),
             IFLA_BR_MULTI_BOOLOPT => {
                 Self::MultiBoolOpt(BridgeBooleanOptions::parse(payload)?)
