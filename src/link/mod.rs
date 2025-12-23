@@ -44,7 +44,7 @@ pub use self::{
         BondFailOverMac, BondLacpRate, BondMode, BondPortState,
         BondPrimaryReselect, BondXmitHashPolicy, BridgeBooleanOptionFlags,
         BridgeBooleanOptions, BridgeId, BridgeIdBuffer,
-        BridgePortMulticastRouter, BridgePortState, BridgeQuerierState,
+        BridgeMulticastRouterType, BridgePortState, BridgeQuerierState,
         BridgeStpState, GeneveDf, GreEncapFlags, GreEncapType, GreIOFlags,
         HsrProtocol, InfoBond, InfoBondPort, InfoBridge, InfoBridgePort,
         InfoData, InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr,

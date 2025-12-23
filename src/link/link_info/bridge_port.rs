@@ -5,7 +5,7 @@ use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
-use crate::link::{BridgeId, BridgeIdBuffer};
+use crate::link::{BridgeId, BridgeIdBuffer, BridgeMulticastRouterType};
 
 const IFLA_BRPORT_STATE: u16 = 1;
 const IFLA_BRPORT_PRIORITY: u16 = 2;
@@ -79,7 +79,7 @@ pub enum InfoBridgePort {
     ForwardDelayTimer(u64),
     HoldTimer(u64),
     Flush,
-    MulticastRouter(BridgePortMulticastRouter),
+    MulticastRouter(BridgeMulticastRouterType),
     MulticastFlood(bool),
     MulticastToUnicast(bool),
     VlanTunnel(bool),
@@ -561,45 +561,6 @@ impl From<BridgePortState> for u8 {
             BridgePortState::Forwarding => BR_STATE_FORWARDING,
             BridgePortState::Blocking => BR_STATE_BLOCKING,
             BridgePortState::Other(v) => v,
-        }
-    }
-}
-
-const MDB_RTR_TYPE_DISABLED: u8 = 0;
-const MDB_RTR_TYPE_TEMP_QUERY: u8 = 1;
-const MDB_RTR_TYPE_PERM: u8 = 2;
-const MDB_RTR_TYPE_TEMP: u8 = 3;
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum BridgePortMulticastRouter {
-    Disabled,
-    TempQuery,
-    Perm,
-    Temp,
-    Other(u8),
-}
-
-impl From<u8> for BridgePortMulticastRouter {
-    fn from(value: u8) -> Self {
-        match value {
-            MDB_RTR_TYPE_DISABLED => BridgePortMulticastRouter::Disabled,
-            MDB_RTR_TYPE_TEMP_QUERY => BridgePortMulticastRouter::TempQuery,
-            MDB_RTR_TYPE_PERM => BridgePortMulticastRouter::Perm,
-            MDB_RTR_TYPE_TEMP => BridgePortMulticastRouter::Temp,
-            _ => BridgePortMulticastRouter::Other(value),
-        }
-    }
-}
-
-impl From<BridgePortMulticastRouter> for u8 {
-    fn from(value: BridgePortMulticastRouter) -> Self {
-        match value {
-            BridgePortMulticastRouter::Disabled => MDB_RTR_TYPE_DISABLED,
-            BridgePortMulticastRouter::TempQuery => MDB_RTR_TYPE_TEMP_QUERY,
-            BridgePortMulticastRouter::Perm => MDB_RTR_TYPE_PERM,
-            BridgePortMulticastRouter::Temp => MDB_RTR_TYPE_TEMP,
-            BridgePortMulticastRouter::Other(v) => v,
         }
     }
 }
