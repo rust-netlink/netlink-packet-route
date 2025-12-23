@@ -52,6 +52,7 @@ const BR_BOOLOPT_NO_LL_LEARN: u32 = 1 << 0;
 const BR_BOOLOPT_MCAST_VLAN_SNOOPING: u32 = 1 << 1;
 const BR_BOOLOPT_MST_ENABLE: u32 = 1 << 2;
 const BR_BOOLOPT_MDB_OFFLOAD_FAIL_NOTIFICATION: u32 = 1 << 3;
+const BR_BOOLOPT_FDB_LOCAL_VLAN_0: u32 = 1 << 4;
 
 bitflags! {
     #[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
@@ -61,6 +62,7 @@ bitflags! {
         const VlanMulticastSnooping = BR_BOOLOPT_MCAST_VLAN_SNOOPING;
         const MstEnable = BR_BOOLOPT_MST_ENABLE;
         const MdbOffloadFailNotif = BR_BOOLOPT_MDB_OFFLOAD_FAIL_NOTIFICATION;
+        const FdbLocalVlan0 = BR_BOOLOPT_FDB_LOCAL_VLAN_0;
         const _ = !0;
     }
 }
