@@ -9,6 +9,8 @@ use netlink_packet_core::{
     NLA_F_NESTED,
 };
 
+use crate::link::BridgeBooleanOptions;
+
 const IFLA_BR_FORWARD_DELAY: u16 = 1;
 const IFLA_BR_HELLO_TIME: u16 = 2;
 const IFLA_BR_MAX_AGE: u16 = 3;
@@ -104,7 +106,7 @@ pub enum InfoBridge {
     MulticastIgmpVersion(u8),
     MulticastMldVersion(u8),
     VlanStatsPerHost(u8),
-    MultiBoolOpt(u64),
+    MultiBoolOpt(BridgeBooleanOptions),
     MulticastQuerierState(Vec<BridgeQuerierState>),
     Other(DefaultNla),
 }
@@ -141,7 +143,9 @@ impl Nla for InfoBridge {
 
             Self::StpState(_) => 4,
 
-            Self::RootId(_) | Self::BridgeId(_) | Self::MultiBoolOpt(_) => 8,
+            Self::RootId(_) | Self::BridgeId(_) => 8,
+
+            Self::MultiBoolOpt(v) => v.buffer_len(),
 
             Self::GroupAddr(_) => 6,
 
@@ -180,8 +184,11 @@ impl Nla for InfoBridge {
             | Self::MulticastQueryInterval(value)
             | Self::MulticastQueryResponseInterval(value)
             | Self::MulticastLastMemberInterval(value)
-            | Self::MulticastStartupQueryInterval(value)
-            | Self::MultiBoolOpt(value) => emit_u64(buffer, *value).unwrap(),
+            | Self::MulticastStartupQueryInterval(value) => {
+                emit_u64(buffer, *value).unwrap()
+            }
+
+            Self::MultiBoolOpt(value) => value.emit(buffer),
 
             Self::ForwardDelay(value)
             | Self::HelloTime(value)
@@ -489,10 +496,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                 parse_u8(payload)
                     .context("invalid IFLA_BR_VLAN_STATS_PER_PORT value")?,
             ),
-            IFLA_BR_MULTI_BOOLOPT => Self::MultiBoolOpt(
-                parse_u64(payload)
-                    .context("invalid IFLA_BR_MULTI_BOOLOPT value")?,
-            ),
+            IFLA_BR_MULTI_BOOLOPT => {
+                Self::MultiBoolOpt(BridgeBooleanOptions::parse(payload)?)
+            }
             IFLA_BR_MCAST_QUERIER_STATE => {
                 let mut v = Vec::new();
                 let err = "failed to parse IFLA_BR_MCAST_QUERIER_STATE";

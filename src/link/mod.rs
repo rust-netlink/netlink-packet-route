@@ -42,7 +42,8 @@ pub use self::{
     link_info::{
         BondAdInfo, BondAllPortActive, BondArpAllTargets, BondArpValidate,
         BondFailOverMac, BondLacpRate, BondMode, BondPortState,
-        BondPrimaryReselect, BondXmitHashPolicy, BridgeId, BridgeIdBuffer,
+        BondPrimaryReselect, BondXmitHashPolicy, BridgeBooleanOptionFlags,
+        BridgeBooleanOptions, BridgeId, BridgeIdBuffer,
         BridgePortMulticastRouter, BridgePortState, BridgeQuerierState,
         BridgeStpState, GeneveDf, GreEncapFlags, GreEncapType, GreIOFlags,
         HsrProtocol, InfoBond, InfoBondPort, InfoBridge, InfoBridgePort,

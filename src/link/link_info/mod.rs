@@ -3,6 +3,7 @@
 mod bond;
 mod bond_port;
 mod bridge;
+mod bridge_boolopt;
 mod bridge_port;
 mod geneve;
 mod gre;
@@ -38,6 +39,7 @@ pub use self::{
         BridgeId, BridgeIdBuffer, BridgeQuerierState, BridgeStpState,
         InfoBridge,
     },
+    bridge_boolopt::{BridgeBooleanOptionFlags, BridgeBooleanOptions},
     bridge_port::{BridgePortMulticastRouter, BridgePortState, InfoBridgePort},
     geneve::{GeneveDf, InfoGeneve},
     gre::{GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6},
