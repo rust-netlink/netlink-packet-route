@@ -9,7 +9,7 @@ use netlink_packet_core::{
     NLA_F_NESTED,
 };
 
-use crate::link::BridgeBooleanOptions;
+use crate::link::{BridgeBooleanOptions, VlanProtocol};
 
 const IFLA_BR_FORWARD_DELAY: u16 = 1;
 const IFLA_BR_HELLO_TIME: u16 = 2;
@@ -87,7 +87,7 @@ pub enum InfoBridge {
     MulticastStartupQueryCount(u32),
     RootPathCost(u32),
     Priority(u16),
-    VlanProtocol(u16),
+    VlanProtocol(VlanProtocol),
     GroupFwdMask(u16),
     RootId(BridgeId),
     BridgeId(BridgeId),
@@ -142,10 +142,11 @@ impl Nla for InfoBridge {
             | Self::FdbNLearned(_)
             | Self::FdbMaxLearned(_) => 4,
             Self::Priority(_)
-            | Self::VlanProtocol(_)
             | Self::GroupFwdMask(_)
             | Self::RootPort(_)
             | Self::VlanDefaultPvid(_) => 2,
+
+            Self::VlanProtocol(_) => 2,
 
             Self::StpState(_) => 4,
 
@@ -217,7 +218,9 @@ impl Nla for InfoBridge {
             | Self::RootPort(value)
             | Self::VlanDefaultPvid(value) => emit_u16(buffer, *value).unwrap(),
 
-            Self::VlanProtocol(value) => emit_u16_be(buffer, *value).unwrap(),
+            Self::VlanProtocol(value) => {
+                emit_u16_be(buffer, (*value).into()).unwrap()
+            }
 
             Self::RootId(bridge_id) | Self::BridgeId(bridge_id) => {
                 bridge_id.emit(buffer)
@@ -418,7 +421,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             ),
             IFLA_BR_VLAN_PROTOCOL => Self::VlanProtocol(
                 parse_u16_be(payload)
-                    .context("invalid IFLA_BR_VLAN_PROTOCOL value")?,
+                    .context("invalid IFLA_BR_VLAN_PROTOCOL value")?
+                    .into(),
             ),
             IFLA_BR_GROUP_FWD_MASK => Self::GroupFwdMask(
                 parse_u16(payload)

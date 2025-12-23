@@ -15,7 +15,7 @@ use crate::{
         InfoBridgePort, InfoData, InfoKind, InfoPortData, InfoPortKind,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
         LinkMessageBuffer, LinkMode, LinkXdp, Map, State, Stats, Stats64,
-        XdpAttached,
+        VlanProtocol, XdpAttached,
     },
     AddressFamily,
 };
@@ -282,7 +282,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                             | BridgeBooleanOptionFlags::VlanMulticastSnooping
                             | BridgeBooleanOptionFlags::MstEnable,
                     }),
-                    InfoBridge::VlanProtocol(33024),
+                    InfoBridge::VlanProtocol(VlanProtocol::Ieee8021Q),
                     InfoBridge::VlanDefaultPvid(1),
                     InfoBridge::VlanStatsEnabled(0),
                     InfoBridge::VlanStatsPerHost(0),
@@ -834,7 +834,7 @@ fn test_bridge_fdb_max_learned() {
             }),
             InfoBridge::FdbNLearned(0),
             InfoBridge::FdbMaxLearned(1025),
-            InfoBridge::VlanProtocol(33024),
+            InfoBridge::VlanProtocol(VlanProtocol::Ieee8021Q),
             InfoBridge::VlanDefaultPvid(1),
             InfoBridge::VlanStatsEnabled(0),
             InfoBridge::VlanStatsPerHost(0),
