@@ -97,7 +97,7 @@ pub enum InfoBridge {
     TopologyChange(u8),
     TopologyChangeDetected(u8),
     MulticastRouter(u8),
-    MulticastSnooping(u8),
+    MulticastSnooping(bool),
     MulticastQueryUseIfaddr(u8),
     MulticastQuerier(u8),
     NfCallIpTables(u8),
@@ -160,7 +160,6 @@ impl Nla for InfoBridge {
             Self::TopologyChange(_)
             | Self::TopologyChangeDetected(_)
             | Self::MulticastRouter(_)
-            | Self::MulticastSnooping(_)
             | Self::MulticastQueryUseIfaddr(_)
             | Self::MulticastQuerier(_)
             | Self::NfCallIpTables(_)
@@ -170,7 +169,9 @@ impl Nla for InfoBridge {
             | Self::MulticastIgmpVersion(_)
             | Self::MulticastMldVersion(_) => 1,
 
-            Self::VlanStatsPerPort(_) | Self::VlanStatsEnabled(_) => 1,
+            Self::MulticastSnooping(_)
+            | Self::VlanStatsPerPort(_)
+            | Self::VlanStatsEnabled(_) => 1,
 
             Self::MulticastQuerierState(nlas) => nlas.as_slice().buffer_len(),
 
@@ -232,7 +233,6 @@ impl Nla for InfoBridge {
             Self::TopologyChange(value)
             | Self::TopologyChangeDetected(value)
             | Self::MulticastRouter(value)
-            | Self::MulticastSnooping(value)
             | Self::MulticastQueryUseIfaddr(value)
             | Self::MulticastQuerier(value)
             | Self::NfCallIpTables(value)
@@ -242,9 +242,9 @@ impl Nla for InfoBridge {
             | Self::MulticastIgmpVersion(value)
             | Self::MulticastMldVersion(value) => buffer[0] = *value,
 
-            Self::VlanStatsPerPort(value) | Self::VlanStatsEnabled(value) => {
-                buffer[0] = (*value).into()
-            }
+            Self::MulticastSnooping(value)
+            | Self::VlanStatsPerPort(value)
+            | Self::VlanStatsEnabled(value) => buffer[0] = (*value).into(),
 
             Self::MulticastQuerierState(nlas) => nlas.as_slice().emit(buffer),
 
@@ -470,7 +470,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             ),
             IFLA_BR_MCAST_SNOOPING => Self::MulticastSnooping(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_MCAST_SNOOPING value")?,
+                    .context("invalid IFLA_BR_MCAST_SNOOPING value")?
+                    > 0,
             ),
             IFLA_BR_MCAST_QUERY_USE_IFADDR => Self::MulticastQueryUseIfaddr(
                 parse_u8(payload)
