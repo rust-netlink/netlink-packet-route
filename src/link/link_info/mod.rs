@@ -34,7 +34,10 @@ pub use self::{
         BondXmitHashPolicy, InfoBond,
     },
     bond_port::{BondPortState, InfoBondPort, MiiStatus},
-    bridge::{BridgeId, BridgeIdBuffer, BridgeQuerierState, InfoBridge},
+    bridge::{
+        BridgeId, BridgeIdBuffer, BridgeQuerierState, BridgeStpState,
+        InfoBridge,
+    },
     bridge_port::{BridgePortMulticastRouter, BridgePortState, InfoBridgePort},
     geneve::{GeneveDf, InfoGeneve},
     gre::{GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6},

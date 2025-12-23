@@ -76,7 +76,7 @@ pub enum InfoBridge {
     HelloTime(u32),
     MaxAge(u32),
     AgeingTime(u32),
-    StpState(u32),
+    StpState(BridgeStpState),
     MulticastHashElasticity(u32),
     MulticastHashMax(u32),
     MulticastLastMemberCount(u32),
@@ -128,7 +128,6 @@ impl Nla for InfoBridge {
             | Self::HelloTime(_)
             | Self::MaxAge(_)
             | Self::AgeingTime(_)
-            | Self::StpState(_)
             | Self::MulticastHashElasticity(_)
             | Self::MulticastHashMax(_)
             | Self::MulticastLastMemberCount(_)
@@ -139,6 +138,8 @@ impl Nla for InfoBridge {
             | Self::GroupFwdMask(_)
             | Self::RootPort(_)
             | Self::VlanDefaultPvid(_) => 2,
+
+            Self::StpState(_) => 4,
 
             Self::RootId(_) | Self::BridgeId(_) | Self::MultiBoolOpt(_) => 8,
 
@@ -186,12 +187,15 @@ impl Nla for InfoBridge {
             | Self::HelloTime(value)
             | Self::MaxAge(value)
             | Self::AgeingTime(value)
-            | Self::StpState(value)
             | Self::MulticastHashElasticity(value)
             | Self::MulticastHashMax(value)
             | Self::MulticastLastMemberCount(value)
             | Self::MulticastStartupQueryCount(value)
             | Self::RootPathCost(value) => emit_u32(buffer, *value).unwrap(),
+
+            Self::StpState(value) => {
+                emit_u32(buffer, u32::from(*value)).unwrap()
+            }
 
             Self::Priority(value)
             | Self::GroupFwdMask(value)
@@ -366,7 +370,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             ),
             IFLA_BR_STP_STATE => Self::StpState(
                 parse_u32(payload)
-                    .context("invalid IFLA_BR_STP_STATE value")?,
+                    .context("invalid IFLA_BR_STP_STATE value")?
+                    .into(),
             ),
             IFLA_BR_MCAST_HASH_ELASTICITY => Self::MulticastHashElasticity(
                 parse_u32(payload)
@@ -659,5 +664,40 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context(format!("unknown NLA type {kind}"))?,
             ),
         })
+    }
+}
+
+const BR_NO_STP: u32 = 0;
+const BR_KERNEL_STP: u32 = 1;
+const BR_USER_STP: u32 = 2;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum BridgeStpState {
+    Disabled,
+    KernelStp,
+    UserStp,
+    Other(u32),
+}
+
+impl From<u32> for BridgeStpState {
+    fn from(d: u32) -> Self {
+        match d {
+            BR_NO_STP => Self::Disabled,
+            BR_KERNEL_STP => Self::KernelStp,
+            BR_USER_STP => Self::UserStp,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BridgeStpState> for u32 {
+    fn from(v: BridgeStpState) -> u32 {
+        match v {
+            BridgeStpState::Disabled => BR_NO_STP,
+            BridgeStpState::KernelStp => BR_KERNEL_STP,
+            BridgeStpState::UserStp => BR_USER_STP,
+            BridgeStpState::Other(d) => d,
+        }
     }
 }
