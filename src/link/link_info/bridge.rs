@@ -96,7 +96,7 @@ pub enum InfoBridge {
     VlanFiltering(bool),
     TopologyChange(u8),
     TopologyChangeDetected(u8),
-    MulticastRouter(u8),
+    MulticastRouter(BridgeMulticastRouterType),
     MulticastSnooping(bool),
     MulticastQueryUseIfaddr(u8),
     MulticastQuerier(u8),
@@ -157,9 +157,9 @@ impl Nla for InfoBridge {
             Self::GroupAddr(_) => 6,
 
             Self::VlanFiltering(_) => 1,
+            Self::MulticastRouter(_) => 1,
             Self::TopologyChange(_)
             | Self::TopologyChangeDetected(_)
-            | Self::MulticastRouter(_)
             | Self::MulticastQueryUseIfaddr(_)
             | Self::MulticastQuerier(_)
             | Self::NfCallIpTables(_)
@@ -232,7 +232,6 @@ impl Nla for InfoBridge {
             Self::VlanFiltering(value) => buffer[0] = (*value).into(),
             Self::TopologyChange(value)
             | Self::TopologyChangeDetected(value)
-            | Self::MulticastRouter(value)
             | Self::MulticastQueryUseIfaddr(value)
             | Self::MulticastQuerier(value)
             | Self::NfCallIpTables(value)
@@ -241,6 +240,8 @@ impl Nla for InfoBridge {
             | Self::MulticastStatsEnabled(value)
             | Self::MulticastIgmpVersion(value)
             | Self::MulticastMldVersion(value) => buffer[0] = *value,
+
+            Self::MulticastRouter(value) => buffer[0] = (*value).into(),
 
             Self::MulticastSnooping(value)
             | Self::VlanStatsPerPort(value)
@@ -466,7 +467,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             }
             IFLA_BR_MCAST_ROUTER => Self::MulticastRouter(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_MCAST_ROUTER value")?,
+                    .context("invalid IFLA_BR_MCAST_ROUTER value")?
+                    .into(),
             ),
             IFLA_BR_MCAST_SNOOPING => Self::MulticastSnooping(
                 parse_u8(payload)
@@ -731,6 +733,51 @@ impl From<BridgeStpState> for u32 {
             BridgeStpState::KernelStp => BR_KERNEL_STP,
             BridgeStpState::UserStp => BR_USER_STP,
             BridgeStpState::Other(d) => d,
+        }
+    }
+}
+
+const MDB_RTR_TYPE_DISABLED: u8 = 0;
+const MDB_RTR_TYPE_TEMP_QUERY: u8 = 1;
+const MDB_RTR_TYPE_PERM: u8 = 2;
+const MDB_RTR_TYPE_TEMP: u8 = 3;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum BridgeMulticastRouterType {
+    Disabled,
+    TempQuery,
+    Permanent,
+    Temp,
+    Other(u8),
+}
+
+impl BridgeMulticastRouterType {
+    // iproute is treating Self::TempQuery as auto.
+    #[allow(non_upper_case_globals)]
+    pub const Auto: Self = Self::TempQuery;
+}
+
+impl From<u8> for BridgeMulticastRouterType {
+    fn from(d: u8) -> Self {
+        match d {
+            MDB_RTR_TYPE_DISABLED => Self::Disabled,
+            MDB_RTR_TYPE_TEMP_QUERY => Self::TempQuery,
+            MDB_RTR_TYPE_PERM => Self::Permanent,
+            MDB_RTR_TYPE_TEMP => Self::Temp,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BridgeMulticastRouterType> for u8 {
+    fn from(v: BridgeMulticastRouterType) -> u8 {
+        match v {
+            BridgeMulticastRouterType::Disabled => MDB_RTR_TYPE_DISABLED,
+            BridgeMulticastRouterType::TempQuery => MDB_RTR_TYPE_TEMP_QUERY,
+            BridgeMulticastRouterType::Permanent => MDB_RTR_TYPE_PERM,
+            BridgeMulticastRouterType::Temp => MDB_RTR_TYPE_TEMP,
+            BridgeMulticastRouterType::Other(d) => d,
         }
     }
 }
