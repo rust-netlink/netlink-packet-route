@@ -103,7 +103,7 @@ pub enum InfoBridge {
     NfCallIpTables(u8),
     NfCallIp6Tables(u8),
     NfCallArpTables(u8),
-    VlanStatsEnabled(u8),
+    VlanStatsEnabled(bool),
     MulticastStatsEnabled(u8),
     MulticastIgmpVersion(u8),
     MulticastMldVersion(u8),
@@ -166,11 +166,12 @@ impl Nla for InfoBridge {
             | Self::NfCallIpTables(_)
             | Self::NfCallIp6Tables(_)
             | Self::NfCallArpTables(_)
-            | Self::VlanStatsEnabled(_)
             | Self::MulticastStatsEnabled(_)
             | Self::MulticastIgmpVersion(_)
             | Self::MulticastMldVersion(_)
             | Self::VlanStatsPerHost(_) => 1,
+
+            Self::VlanStatsEnabled(_) => 1,
 
             Self::MulticastQuerierState(nlas) => nlas.as_slice().buffer_len(),
 
@@ -238,11 +239,12 @@ impl Nla for InfoBridge {
             | Self::NfCallIpTables(value)
             | Self::NfCallIp6Tables(value)
             | Self::NfCallArpTables(value)
-            | Self::VlanStatsEnabled(value)
             | Self::MulticastStatsEnabled(value)
             | Self::MulticastIgmpVersion(value)
             | Self::MulticastMldVersion(value)
             | Self::VlanStatsPerHost(value) => buffer[0] = *value,
+
+            Self::VlanStatsEnabled(value) => buffer[0] = *value as u8,
 
             Self::MulticastQuerierState(nlas) => nlas.as_slice().emit(buffer),
 
@@ -492,7 +494,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             ),
             IFLA_BR_VLAN_STATS_ENABLED => Self::VlanStatsEnabled(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_VLAN_STATS_ENABLED value")?,
+                    .context("invalid IFLA_BR_VLAN_STATS_ENABLED value")?
+                    > 0,
             ),
             IFLA_BR_MCAST_STATS_ENABLED => Self::MulticastStatsEnabled(
                 parse_u8(payload)
