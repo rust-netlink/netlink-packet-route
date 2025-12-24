@@ -1,4 +1,42 @@
 # Changelog
+## [0.27.0] - 2025-12-24
+### Breaking changes
+ - link: Remove support of IFLA_WIRELESS. (3283c84)
+ - link bridge: Changed `InfoBridge::NfCallArpTables` from u8 to bool.
+   (55bc622)
+ - link bridge: Changed `InfoBridge::NfCallIp6Tables` from u8 to bool.
+   (17f3650)
+ - link bridge: Changed `InfoBridge::NfCallIpTables` from u8 to bool. (3b37a0e)
+ - link bridge: Changed `InfoBridge::MulticastStatsEnabled` from u8 to bool.
+   (fc1e02d)
+ - link bridge: Changed `InfoBridge::MulticastQuerier` from u8 to bool.
+   (6758931)
+ - link bridge: Changed `InfoBridge::MulticastQueryUseIfaddr` from u8 to bool.
+   (4418dd9)
+ - link bridge: Unify `InfoBridge::MulticastRouter` and
+   `InfoBridgePort::MulticastRouter`. (86dfb5e)
+ - link bridge: Changed `InfoBridge::MulticastSnooping` from u8 to bool.
+   (635019b)
+ - link bridge: Changed `InfoBridge::VlanStatsPerHost(u8)` to
+   `VlanStatsPerPort(bool)`. (883daf6)
+ - link bridge: Changed `InfoBridge::VlanStatsEnabled` from u8 to bool.
+   (58e65af)
+ - link bridge: Changed `InfoBridge::VlanProtocol` from u16 to enum. (759073b)
+ - link: Changed `InfoBridge::MultiBoolOpt` from u64 to struct. (2c53f22)
+ - link: Changed `InfoBridge::StpState` from u32 to enum. (ed4c981)
+ - bond: Changed `InfoBond::UseCarrier` from u8 to bool. (fc1ba75)
+ - bond: Changed `InfoBond::AdLacpActive` from u8 to bool. (0bedb4c)
+ - bond: Changed `InfoBond::TlbDynamicLb` from u8 to bool. (ab4a6ac)
+ - bond: Changed `InfoBond::AdLacpRate` from u8 to enum. (5d943ad)
+ - bond: Changed `InfoBond::AllPortsActive` from u8 to `enum`. (d73b2a1)
+
+### New features
+ - link bridge: Support `IFLA_BR_FDB_N_LEARNED` and `IFLA_BR_FDB_MAX_LEARNED`.
+   (7cdb880)
+ - link bridge: Support `BR_BOOLOPT_FDB_LOCAL_VLAN_0`. (61ff86b)
+
+### Bug fixes
+ - N/A
 ## [0.26.0] - 2025-12-09
 ### Breaking changes
  - link: Change `InfoVlan::Flags` from u32 to VlanFlags. (4e8e1c5)
