@@ -307,7 +307,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                     InfoBridge::MulticastStartupQueryInterval(3124),
                     InfoBridge::NfCallIpTables(false),
                     InfoBridge::NfCallIp6Tables(false),
-                    InfoBridge::NfCallArpTables(0),
+                    InfoBridge::NfCallArpTables(false),
                 ])),
             ]),
             LinkAttribute::AfSpecUnspec(vec![
@@ -859,7 +859,7 @@ fn test_bridge_fdb_max_learned() {
             InfoBridge::MulticastStartupQueryInterval(3124),
             InfoBridge::NfCallIpTables(false),
             InfoBridge::NfCallIp6Tables(false),
-            InfoBridge::NfCallArpTables(0),
+            InfoBridge::NfCallArpTables(false),
         ])),
     ]);
 
