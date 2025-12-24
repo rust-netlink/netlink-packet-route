@@ -306,7 +306,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                     InfoBridge::MulticastQueryResponseInterval(999),
                     InfoBridge::MulticastStartupQueryInterval(3124),
                     InfoBridge::NfCallIpTables(false),
-                    InfoBridge::NfCallIp6Tables(0),
+                    InfoBridge::NfCallIp6Tables(false),
                     InfoBridge::NfCallArpTables(0),
                 ])),
             ]),
@@ -858,7 +858,7 @@ fn test_bridge_fdb_max_learned() {
             InfoBridge::MulticastQueryResponseInterval(999),
             InfoBridge::MulticastStartupQueryInterval(3124),
             InfoBridge::NfCallIpTables(false),
-            InfoBridge::NfCallIp6Tables(0),
+            InfoBridge::NfCallIp6Tables(false),
             InfoBridge::NfCallArpTables(0),
         ])),
     ]);
