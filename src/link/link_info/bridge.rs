@@ -99,7 +99,7 @@ pub enum InfoBridge {
     MulticastRouter(BridgeMulticastRouterType),
     MulticastSnooping(bool),
     MulticastQueryUseIfaddr(bool),
-    MulticastQuerier(u8),
+    MulticastQuerier(bool),
     NfCallIpTables(u8),
     NfCallIp6Tables(u8),
     NfCallArpTables(u8),
@@ -160,7 +160,6 @@ impl Nla for InfoBridge {
             Self::MulticastRouter(_) => 1,
             Self::TopologyChange(_)
             | Self::TopologyChangeDetected(_)
-            | Self::MulticastQuerier(_)
             | Self::NfCallIpTables(_)
             | Self::NfCallIp6Tables(_)
             | Self::NfCallArpTables(_)
@@ -169,6 +168,7 @@ impl Nla for InfoBridge {
             | Self::MulticastMldVersion(_) => 1,
 
             Self::MulticastSnooping(_)
+            | Self::MulticastQuerier(_)
             | Self::MulticastQueryUseIfaddr(_)
             | Self::VlanStatsPerPort(_)
             | Self::VlanStatsEnabled(_) => 1,
@@ -232,7 +232,6 @@ impl Nla for InfoBridge {
             Self::VlanFiltering(value) => buffer[0] = (*value).into(),
             Self::TopologyChange(value)
             | Self::TopologyChangeDetected(value)
-            | Self::MulticastQuerier(value)
             | Self::NfCallIpTables(value)
             | Self::NfCallIp6Tables(value)
             | Self::NfCallArpTables(value)
@@ -243,6 +242,7 @@ impl Nla for InfoBridge {
             Self::MulticastRouter(value) => buffer[0] = (*value).into(),
 
             Self::MulticastSnooping(value)
+            | Self::MulticastQuerier(value)
             | Self::MulticastQueryUseIfaddr(value)
             | Self::VlanStatsPerPort(value)
             | Self::VlanStatsEnabled(value) => buffer[0] = (*value).into(),
@@ -482,7 +482,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             ),
             IFLA_BR_MCAST_QUERIER => Self::MulticastQuerier(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_MCAST_QUERIER value")?,
+                    .context("invalid IFLA_BR_MCAST_QUERIER value")?
+                    > 0,
             ),
             IFLA_BR_NF_CALL_IPTABLES => Self::NfCallIpTables(
                 parse_u8(payload)
