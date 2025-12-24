@@ -101,7 +101,7 @@ pub enum InfoBridge {
     MulticastQueryUseIfaddr(bool),
     MulticastQuerier(bool),
     NfCallIpTables(bool),
-    NfCallIp6Tables(u8),
+    NfCallIp6Tables(bool),
     NfCallArpTables(u8),
     VlanStatsEnabled(bool),
     MulticastStatsEnabled(bool),
@@ -160,13 +160,13 @@ impl Nla for InfoBridge {
             Self::MulticastRouter(_) => 1,
             Self::TopologyChange(_)
             | Self::TopologyChangeDetected(_)
-            | Self::NfCallIp6Tables(_)
             | Self::NfCallArpTables(_)
             | Self::MulticastIgmpVersion(_)
             | Self::MulticastMldVersion(_) => 1,
 
             Self::MulticastSnooping(_)
             | Self::NfCallIpTables(_)
+            | Self::NfCallIp6Tables(_)
             | Self::MulticastStatsEnabled(_)
             | Self::MulticastQuerier(_)
             | Self::MulticastQueryUseIfaddr(_)
@@ -232,7 +232,6 @@ impl Nla for InfoBridge {
             Self::VlanFiltering(value) => buffer[0] = (*value).into(),
             Self::TopologyChange(value)
             | Self::TopologyChangeDetected(value)
-            | Self::NfCallIp6Tables(value)
             | Self::NfCallArpTables(value)
             | Self::MulticastIgmpVersion(value)
             | Self::MulticastMldVersion(value) => buffer[0] = *value,
@@ -241,6 +240,7 @@ impl Nla for InfoBridge {
 
             Self::MulticastSnooping(value)
             | Self::NfCallIpTables(value)
+            | Self::NfCallIp6Tables(value)
             | Self::MulticastStatsEnabled(value)
             | Self::MulticastQuerier(value)
             | Self::MulticastQueryUseIfaddr(value)
@@ -492,7 +492,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             ),
             IFLA_BR_NF_CALL_IP6TABLES => Self::NfCallIp6Tables(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_NF_CALL_IP6TABLES value")?,
+                    .context("invalid IFLA_BR_NF_CALL_IP6TABLES value")?
+                    > 0,
             ),
             IFLA_BR_NF_CALL_ARPTABLES => Self::NfCallArpTables(
                 parse_u8(payload)
