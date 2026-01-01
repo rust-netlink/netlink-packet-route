@@ -6,7 +6,7 @@ use crate::{
     link::{
         link_flag::LinkFlags, InfoData, InfoKind, InfoMacVlan, LinkAttribute,
         LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
-        MacVlanMode,
+        MacVlanFlags, MacVlanMode,
     },
     AddressFamily,
 };
@@ -41,7 +41,7 @@ fn test_macvlan_link_info() {
             LinkInfo::Kind(InfoKind::MacVlan),
             LinkInfo::Data(InfoData::MacVlan(vec![
                 InfoMacVlan::Mode(MacVlanMode::Source),
-                InfoMacVlan::Flags(0),
+                InfoMacVlan::Flags(MacVlanFlags::empty()),
                 InfoMacVlan::MacAddrCount(2),
                 InfoMacVlan::MacAddrData(vec![
                     InfoMacVlan::MacAddr([0, 35, 69, 103, 137, 29]),
