@@ -56,7 +56,10 @@ pub use self::{
         InfoIpVlan, InfoIpVtap, IpVlanFlags, IpVlanMode, IpVtapFlags,
         IpVtapMode,
     },
-    mac_vlan::{InfoMacVlan, InfoMacVtap, MacVlanMode, MacVtapMode},
+    mac_vlan::{
+        InfoMacVlan, InfoMacVtap, MacVlanFlags, MacVlanMode, MacVtapFlags,
+        MacVtapMode,
+    },
     macsec::{InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate},
     netkit::{InfoNetkit, NetkitMode, NetkitPolicy, NetkitScrub},
     tun::InfoTun,

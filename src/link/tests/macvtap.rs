@@ -8,7 +8,7 @@ use crate::{
         Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoData,
         InfoKind, InfoMacVtap, LinkAttribute, LinkHeader, LinkInfo,
         LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp,
-        MacVtapMode, Map, State, Stats, Stats64, XdpAttached,
+        MacVtapFlags, MacVtapMode, Map, State, Stats, Stats64, XdpAttached,
     },
     AddressFamily,
 };
@@ -211,7 +211,7 @@ fn test_macvtap_link_info() {
                 LinkInfo::Kind(InfoKind::MacVtap),
                 LinkInfo::Data(InfoData::MacVtap(vec![
                     InfoMacVtap::Mode(MacVtapMode::Private),
-                    InfoMacVtap::Flags(0),
+                    InfoMacVtap::Flags(MacVtapFlags::empty()),
                     InfoMacVtap::MacAddrCount(0),
                     InfoMacVtap::BcQueueLen(1000),
                     InfoMacVtap::BcQueueLenUsed(1000),
