@@ -96,7 +96,7 @@ pub enum InfoBridgePort {
     Mab(bool),
     MulticastNGroups(u32),
     MulticastMaxGroups(u32),
-    NeighVlanSupress(bool),
+    NeighVlanSuppress(bool),
     BackupNextHopId(u32),
     Other(DefaultNla),
 }
@@ -127,7 +127,7 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::MrpInOpen(_)
             | InfoBridgePort::Locked(_)
             | InfoBridgePort::Mab(_)
-            | InfoBridgePort::NeighVlanSupress(_) => 1,
+            | InfoBridgePort::NeighVlanSuppress(_) => 1,
             InfoBridgePort::Priority(_)
             | InfoBridgePort::DesignatedPort(_)
             | InfoBridgePort::DesignatedCost(_)
@@ -173,7 +173,7 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::MrpInOpen(value)
             | InfoBridgePort::Locked(value)
             | InfoBridgePort::Mab(value)
-            | InfoBridgePort::NeighVlanSupress(value) => {
+            | InfoBridgePort::NeighVlanSuppress(value) => {
                 buffer[0] = if *value { 1 } else { 0 }
             }
             InfoBridgePort::Priority(value)
@@ -260,7 +260,7 @@ impl Nla for InfoBridgePort {
             InfoBridgePort::MulticastMaxGroups(_) => {
                 IFLA_BRPORT_MCAST_MAX_GROUPS
             }
-            InfoBridgePort::NeighVlanSupress(_) => {
+            InfoBridgePort::NeighVlanSuppress(_) => {
                 IFLA_BRPORT_NEIGH_VLAN_SUPPRESS
             }
             InfoBridgePort::BackupNextHopId(_) => IFLA_BRPORT_BACKUP_NHID,
@@ -498,7 +498,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 })?,
             ),
             IFLA_BRPORT_NEIGH_VLAN_SUPPRESS => {
-                InfoBridgePort::NeighVlanSupress(
+                InfoBridgePort::NeighVlanSuppress(
                     parse_u8(payload).context({
                         format!(
                             "invalid IFLA_BRPORT_NEIGH_VLAN_SUPPRESS \
