@@ -1,4 +1,16 @@
 # Changelog
+## [0.28.0] - 2026-01-01
+### Breaking changes
+ - link: Changed `InfoIpoib::Mode` from u16 to enum. (b1b8ef4)
+ - macvlan, macvtap: Changed `MacAddrMode` from u32 to enum. (3badfa0)
+ - macvlan, macvtap: Change `Flags` from u16 to bitflags. (12da3db)
+
+### New features
+ - N/A
+
+### Bug fixes
+ - N/A
+
 ## [0.27.0] - 2025-12-24
 ### Breaking changes
  - link: Remove support of IFLA_WIRELESS. (3283c84)
