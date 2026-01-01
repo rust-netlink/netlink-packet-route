@@ -13,6 +13,8 @@ mod gre;
 #[cfg(test)]
 mod hsr;
 #[cfg(test)]
+mod ipoib;
+#[cfg(test)]
 mod iptunnel;
 #[cfg(test)]
 mod ipvlan;
@@ -48,5 +50,3 @@ mod vxlan;
 mod xdp;
 #[cfg(test)]
 mod xfrm;
-
-//TODO(Gris Ge): capture netlink message for ipoib
