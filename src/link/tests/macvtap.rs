@@ -8,7 +8,8 @@ use crate::{
         Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoData,
         InfoKind, InfoMacVtap, LinkAttribute, LinkHeader, LinkInfo,
         LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp,
-        MacVtapFlags, MacVtapMode, Map, State, Stats, Stats64, XdpAttached,
+        MacVtapFlags, MacVtapMacAddressMode, MacVtapMode, Map, State, Stats,
+        Stats64, XdpAttached,
     },
     AddressFamily,
 };
@@ -330,6 +331,51 @@ fn test_macvtap_link_info() {
             // TODO: Need to parse NLA_F_NESTED|IFLA_DEVLINK_PORT
             LinkAttribute::Other(DefaultNla::new(32830, Vec::new())),
         ],
+    };
+
+    assert_eq!(
+        expected,
+        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
+    );
+
+    let mut buf = vec![0; expected.buffer_len()];
+
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
+}
+
+// nlmon of command:
+//      ip link set macvtap0 type macvtap \
+//          macaddr add 00:23:45:67:89:1e
+//
+// With modification on the IFLA_INFO_KIND length because iproute has bug on
+// it.
+#[test]
+fn test_macvtap_modify_mac_addr_mode() {
+    let raw: Vec<u8> = vec![
+        0x00, 0x00, 0x00, 0x00, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x12, 0x00, 0x0c, 0x00, 0x01, 0x00,
+        0x6d, 0x61, 0x63, 0x76, 0x74, 0x61, 0x70, 0x00, 0x18, 0x00, 0x02, 0x00,
+        0x08, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x04, 0x00,
+        0x00, 0x23, 0x45, 0x67, 0x89, 0x1e, 0x00, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 224,
+            link_layer_type: LinkLayerType::Netrom,
+            flags: LinkFlags::empty(),
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![LinkAttribute::LinkInfo(vec![
+            LinkInfo::Kind(InfoKind::MacVtap),
+            LinkInfo::Data(InfoData::MacVtap(vec![
+                InfoMacVtap::MacAddrMode(MacVtapMacAddressMode::Add),
+                InfoMacVtap::MacAddr([0, 35, 69, 103, 137, 30]),
+            ])),
+        ])],
     };
 
     assert_eq!(
