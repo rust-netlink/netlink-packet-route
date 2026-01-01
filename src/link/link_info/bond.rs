@@ -606,6 +606,41 @@ impl From<BondLacpRate> for u8 {
     }
 }
 
+const BOND_AD_STABLE: u8 = 0;
+const BOND_AD_BANDWIDTH: u8 = 1;
+const BOND_AD_COUNT: u8 = 2;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum BondAdSelect {
+    Stable,
+    Bandwidth,
+    Count,
+    Other(u8),
+}
+
+impl From<u8> for BondAdSelect {
+    fn from(d: u8) -> Self {
+        match d {
+            BOND_AD_STABLE => Self::Stable,
+            BOND_AD_BANDWIDTH => Self::Bandwidth,
+            BOND_AD_COUNT => Self::Count,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BondAdSelect> for u8 {
+    fn from(v: BondAdSelect) -> u8 {
+        match v {
+            BondAdSelect::Stable => BOND_AD_STABLE,
+            BondAdSelect::Bandwidth => BOND_AD_BANDWIDTH,
+            BondAdSelect::Count => BOND_AD_COUNT,
+            BondAdSelect::Other(d) => d,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoBond {
@@ -636,7 +671,7 @@ pub enum InfoBond {
     /// The rate in which we'll ask our link partner to transmit LACPDU packets
     /// in 802.3ad mode.
     AdLacpRate(BondLacpRate),
-    AdSelect(u8),
+    AdSelect(BondAdSelect),
     AdInfo(Vec<BondAdInfo>),
     AdActorSysPrio(u16),
     AdUserPortKey(u16),
@@ -698,9 +733,10 @@ impl Nla for InfoBond {
             Self::Mode(value) => buffer[0] = (*value).into(),
             Self::XmitHashPolicy(value) => buffer[0] = (*value).into(),
             Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
-            Self::NumPeerNotif(value)
-            | Self::AdSelect(value)
-            | Self::MissedMax(value) => buffer[0] = *value,
+            Self::AdSelect(value) => buffer[0] = (*value).into(),
+            Self::NumPeerNotif(value) | Self::MissedMax(value) => {
+                buffer[0] = *value
+            }
             Self::UseCarrier(value)
             | Self::AdLacpActive(value)
             | Self::TlbDynamicLb(value) => buffer[0] = (*value).into(),
@@ -882,7 +918,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_AD_SELECT => Self::AdSelect(
                 parse_u8(payload)
-                    .context("invalid IFLA_BOND_AD_SELECT value")?,
+                    .context("invalid IFLA_BOND_AD_SELECT value")?
+                    .into(),
             ),
             IFLA_BOND_AD_INFO => {
                 let mut infos = Vec::new();
