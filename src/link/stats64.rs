@@ -2,8 +2,12 @@
 
 use netlink_packet_core::{DecodeError, Emitable, Parseable};
 
+#[cfg(not(target_os = "freebsd"))]
 pub(crate) const LINK_STATS64_LEN: usize = 200;
+#[cfg(target_os = "freebsd")]
+pub(crate) const LINK_STATS64_LEN: usize = 192;
 
+#[cfg(not(target_os = "freebsd"))]
 buffer!(Stats64Buffer(LINK_STATS64_LEN) {
     rx_packets: (u64, 0..8),
     tx_packets: (u64, 8..16),
@@ -30,6 +34,34 @@ buffer!(Stats64Buffer(LINK_STATS64_LEN) {
     tx_compressed: (u64, 176..184),
     rx_nohandler: (u64, 184..192),
     rx_otherhost_dropped: (u64, 192..200),
+});
+
+#[cfg(target_os = "freebsd")]
+buffer!(Stats64Buffer(LINK_STATS64_LEN) {
+    rx_packets: (u64, 0..8),
+    tx_packets: (u64, 8..16),
+    rx_bytes: (u64, 16..24),
+    tx_bytes: (u64, 24..32),
+    rx_errors: (u64, 32..40),
+    tx_errors: (u64, 40..48),
+    rx_dropped: (u64, 48..56),
+    tx_dropped: (u64, 56..64),
+    multicast: (u64, 64..72),
+    collisions: (u64, 72..80),
+    rx_length_errors: (u64, 80..88),
+    rx_over_errors: (u64, 88..96),
+    rx_crc_errors: (u64, 96..104),
+    rx_frame_errors: (u64, 104..112),
+    rx_fifo_errors: (u64, 112..120),
+    rx_missed_errors: (u64, 120..128),
+    tx_aborted_errors: (u64, 128..136),
+    tx_carrier_errors: (u64, 136..144),
+    tx_fifo_errors: (u64, 144..152),
+    tx_heartbeat_errors: (u64, 152..160),
+    tx_window_errors: (u64, 160..168),
+    rx_compressed: (u64, 168..176),
+    tx_compressed: (u64, 176..184),
+    rx_nohandler: (u64, 184..192),
 });
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
@@ -82,6 +114,7 @@ pub struct Stats64 {
     /// dropped, no handler found
     pub rx_nohandler: u64,
 
+    #[cfg(not(target_os = "freebsd"))]
     pub rx_otherhost_dropped: u64,
 }
 
@@ -112,6 +145,7 @@ impl<T: AsRef<[u8]>> Parseable<Stats64Buffer<T>> for Stats64 {
             rx_compressed: buf.rx_compressed(),
             tx_compressed: buf.tx_compressed(),
             rx_nohandler: buf.rx_nohandler(),
+            #[cfg(not(target_os = "freebsd"))]
             rx_otherhost_dropped: buf.rx_otherhost_dropped(),
         })
     }
@@ -148,6 +182,7 @@ impl Emitable for Stats64 {
         buffer.set_rx_compressed(self.rx_compressed);
         buffer.set_tx_compressed(self.tx_compressed);
         buffer.set_rx_nohandler(self.rx_nohandler);
+        #[cfg(not(target_os = "freebsd"))]
         buffer.set_rx_otherhost_dropped(self.rx_otherhost_dropped);
     }
 }
