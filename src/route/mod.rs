@@ -4,6 +4,8 @@ mod address;
 mod attribute;
 mod cache_info;
 mod flags;
+#[cfg(target_os = "freebsd")]
+mod freebsd;
 mod header;
 mod lwtunnel;
 mod message;
@@ -21,6 +23,8 @@ mod tests;
 
 pub use flags::RouteFlags;
 
+#[cfg(target_os = "freebsd")]
+pub use self::freebsd::RtFlags;
 pub use self::{
     address::RouteAddress,
     attribute::RouteAttribute,
