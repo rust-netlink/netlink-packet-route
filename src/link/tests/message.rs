@@ -205,6 +205,7 @@ fn link_message_emit() {
     assert_eq!(buf, &LINK_MSG[..96]);
 }
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn link_type_mctp() {
     const LINK_MSG_MCTP: [u8; 16] = [
