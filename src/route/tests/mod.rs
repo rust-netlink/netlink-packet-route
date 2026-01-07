@@ -4,6 +4,8 @@
 mod cache_info;
 #[cfg(test)]
 mod expires;
+#[cfg(all(test, target_os = "freebsd"))]
+mod freebsd;
 #[cfg(test)]
 mod ip6_tunnel;
 #[cfg(test)]
