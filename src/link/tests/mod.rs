@@ -7,6 +7,8 @@ mod bond;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod bridge;
 #[cfg(test)]
+mod freebsd;
+#[cfg(test)]
 mod geneve;
 #[cfg(test)]
 mod gre;

@@ -6,6 +6,8 @@ mod buffer_tool;
 mod down_reason;
 mod event;
 pub(crate) mod ext_mask;
+#[cfg(target_os = "freebsd")]
+mod freebsd;
 mod header;
 mod link_flag;
 mod link_info;
