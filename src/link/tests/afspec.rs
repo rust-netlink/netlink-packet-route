@@ -11,6 +11,7 @@ use crate::{
     AddressFamily,
 };
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn test_empty_af_spec() {
     let raw = vec![

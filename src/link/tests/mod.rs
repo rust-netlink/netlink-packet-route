@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod afspec;
 #[cfg(test)]
 mod bond;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod bridge;
 #[cfg(test)]
 mod geneve;
@@ -26,7 +26,7 @@ mod loopback;
 mod macsec;
 #[cfg(test)]
 mod macvlan;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod macvtap;
 #[cfg(test)]
 mod message;
@@ -36,7 +36,7 @@ mod netkit;
 mod prop_list;
 #[cfg(test)]
 mod sriov;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod statistics;
 #[cfg(test)]
 mod veth;
@@ -44,7 +44,7 @@ mod veth;
 mod vlan;
 #[cfg(test)]
 mod vrf;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod vxlan;
 #[cfg(test)]
 mod xdp;

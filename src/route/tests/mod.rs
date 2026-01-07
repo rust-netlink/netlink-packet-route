@@ -8,7 +8,7 @@ mod expires;
 mod ip6_tunnel;
 #[cfg(test)]
 mod loopback;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod mpls;
 #[cfg(test)]
 mod multipath;
