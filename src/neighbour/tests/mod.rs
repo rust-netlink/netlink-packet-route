@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod bridge;
 #[cfg(test)]
 mod ip;
