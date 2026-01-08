@@ -4,9 +4,9 @@ use netlink_packet_core::{DefaultNla, Emitable, Parseable};
 
 use crate::{
     link::{
-        link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
-        LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map, State, Stats,
-        Stats64, XdpAttached,
+        link_flag::LinkFlags, AfSpecMctp, AfSpecUnspec, LinkAttribute,
+        LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode,
+        LinkXdp, Map, State, Stats, Stats64, XdpAttached,
     },
     AddressFamily,
 };
@@ -181,6 +181,52 @@ fn test_empty_af_spec() {
                 dma: 0,
                 port: 0,
             }),
+        ],
+    };
+
+    assert_eq!(
+        expected,
+        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
+    );
+
+    let mut buf = vec![0; expected.buffer_len()];
+
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_af_spec_mctp_net() {
+    #[rustfmt::skip]
+    let raw = vec![
+        0x00, // interface family AF_UNSPEC
+        0x00, // reserved 1
+        0x22, 0x01, // link layer type ARPHDR_MCTP
+        0x01, 0x00, 0x00, 0x00, // interface index = 1
+        0x81, 0x00, 0x01, 0x00, // flags: UP|NOARP|LOWERUP
+        0x00, 0x00, 0x00, 0x00, // reserved 2
+        // attributes
+        0x08, 0x00, 0x03, 0x00, 0x6d, 0x63, 0x30, 0x00, // name: mc0
+        0x10, 0x00, 0x1a, 0x00, // IFLA_AF_SPEC
+            0x0c, 0x00, 0x2d, 0x00, // AF_MCTP
+                0x08, 0x00, 0x01, 0x00, // IFLA_MCTP_NET
+                0x01, 0x00, 0x00, 0x00, //   = 1
+
+    ];
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 1,
+            link_layer_type: LinkLayerType::Mctp,
+            flags: LinkFlags::Up | LinkFlags::Noarp | LinkFlags::LowerUp,
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![
+            LinkAttribute::IfName(String::from("mc0")),
+            LinkAttribute::AfSpecUnspec(vec![AfSpecUnspec::Mctp(vec![
+                AfSpecMctp::Net(1),
+            ])]),
         ],
     };
 
