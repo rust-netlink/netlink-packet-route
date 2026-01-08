@@ -27,6 +27,24 @@ mod xdp;
 
 mod tests;
 
+#[cfg(not(target_os = "freebsd"))]
+pub use self::link_info::{
+    BondAdInfo, BondAdSelect, BondAllPortActive, BondArpAllTargets,
+    BondArpValidate, BondFailOverMac, BondLacpRate, BondMode, BondPortState,
+    BondPrimaryReselect, BondXmitHashPolicy, BridgeBooleanOptionFlags,
+    BridgeBooleanOptions, BridgeId, BridgeIdBuffer, BridgeMulticastRouterType,
+    BridgePortState, BridgeQuerierState, BridgeStpState, GeneveDf,
+    GreEncapFlags, GreEncapType, GreIOFlags, HsrProtocol, InfoBond,
+    InfoBondPort, InfoBridge, InfoBridgePort, InfoGeneve, InfoGre, InfoGre6,
+    InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan, InfoIpVtap, InfoIpoib,
+    InfoMacSec, InfoMacVlan, InfoMacVtap, InfoNetkit, InfoPortData,
+    InfoPortKind, InfoTun, InfoVeth, InfoVrf, InfoVrfPort, InfoVti, InfoVxlan,
+    InfoXfrm, Ip6TunnelFlags, IpVlanFlags, IpVlanMode, IpVtapFlags, IpVtapMode,
+    IpoibMode, LinkXstats, MacSecCipherId, MacSecOffload, MacSecValidate,
+    MacVlanFlags, MacVlanMacAddressMode, MacVlanMode, MacVtapFlags,
+    MacVtapMacAddressMode, MacVtapMode, MiiStatus, NetkitMode, NetkitPolicy,
+    NetkitScrub, TunnelEncapFlags, TunnelEncapType,
+};
 pub use self::{
     af_spec::{
         AfSpecBridge, AfSpecInet, AfSpecInet6, AfSpecUnspec, BridgeFlag,
@@ -42,24 +60,7 @@ pub use self::{
     header::{LinkHeader, LinkMessageBuffer},
     link_flag::LinkFlags,
     link_info::{
-        BondAdInfo, BondAdSelect, BondAllPortActive, BondArpAllTargets,
-        BondArpValidate, BondFailOverMac, BondLacpRate, BondMode,
-        BondPortState, BondPrimaryReselect, BondXmitHashPolicy,
-        BridgeBooleanOptionFlags, BridgeBooleanOptions, BridgeId,
-        BridgeIdBuffer, BridgeMulticastRouterType, BridgePortState,
-        BridgeQuerierState, BridgeStpState, GeneveDf, GreEncapFlags,
-        GreEncapType, GreIOFlags, HsrProtocol, InfoBond, InfoBondPort,
-        InfoBridge, InfoBridgePort, InfoData, InfoGeneve, InfoGre, InfoGre6,
-        InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan, InfoIpVtap, InfoIpoib,
-        InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoNetkit,
-        InfoPortData, InfoPortKind, InfoTun, InfoVeth, InfoVlan, InfoVrf,
-        InfoVrfPort, InfoVti, InfoVxlan, InfoXfrm, Ip6TunnelFlags, IpVlanFlags,
-        IpVlanMode, IpVtapFlags, IpVtapMode, IpoibMode, LinkInfo, LinkXstats,
-        MacSecCipherId, MacSecOffload, MacSecValidate, MacVlanFlags,
-        MacVlanMacAddressMode, MacVlanMode, MacVtapFlags,
-        MacVtapMacAddressMode, MacVtapMode, MiiStatus, NetkitMode,
-        NetkitPolicy, NetkitScrub, TunnelEncapFlags, TunnelEncapType,
-        VlanFlags, VlanQosMapping,
+        InfoData, InfoKind, InfoVlan, LinkInfo, VlanFlags, VlanQosMapping,
     },
     link_layer_type::LinkLayerType,
     link_mode::LinkMode,

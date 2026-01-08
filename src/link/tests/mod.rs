@@ -2,37 +2,37 @@
 
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod afspec;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod bond;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod bridge;
 #[cfg(test)]
 mod freebsd;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod geneve;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod gre;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod hsr;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod ipoib;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod iptunnel;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod ipvlan;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod ipvtap;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod loopback;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod macsec;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod macvlan;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod macvtap;
 #[cfg(test)]
 mod message;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod netkit;
 #[cfg(test)]
 mod prop_list;
@@ -40,15 +40,15 @@ mod prop_list;
 mod sriov;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod statistics;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod veth;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod vlan;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod vrf;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod vxlan;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod xdp;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod xfrm;
