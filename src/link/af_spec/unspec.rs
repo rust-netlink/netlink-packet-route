@@ -7,8 +7,8 @@ use netlink_packet_core::{
 
 use crate::{
     link::{
-        af_spec::{VecAfSpecInet, VecAfSpecInet6},
-        AfSpecInet, AfSpecInet6,
+        af_spec::{VecAfSpecInet, VecAfSpecInet6, VecAfSpecMctp},
+        AfSpecInet, AfSpecInet6, AfSpecMctp,
     },
     AddressFamily,
 };
@@ -40,6 +40,7 @@ use crate::{
 pub enum AfSpecUnspec {
     Inet(Vec<AfSpecInet>),
     Inet6(Vec<AfSpecInet6>),
+    Mctp(Vec<AfSpecMctp>),
     Other(DefaultNla),
 }
 
@@ -74,6 +75,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                         .0,
                     )
                 }
+                k if k == u8::from(AddressFamily::Mctp) as u16 => {
+                    AfSpecUnspec::Mctp(
+                        VecAfSpecMctp::parse(
+                            &NlaBuffer::new_checked(&nla.value())
+                                .context(err)?,
+                        )
+                        .context(err)?
+                        .0,
+                    )
+                }
                 kind => AfSpecUnspec::Other(DefaultNla::parse(&nla).context(
                     format!(
                         "Unknown AF_XXX type {kind} for \
@@ -91,6 +102,7 @@ impl Nla for AfSpecUnspec {
         match *self {
             Self::Inet(ref nlas) => nlas.as_slice().buffer_len(),
             Self::Inet6(ref nlas) => nlas.as_slice().buffer_len(),
+            Self::Mctp(ref nlas) => nlas.as_slice().buffer_len(),
             Self::Other(ref nla) => nla.value_len(),
         }
     }
@@ -99,6 +111,7 @@ impl Nla for AfSpecUnspec {
         match *self {
             Self::Inet(ref nlas) => nlas.as_slice().emit(buffer),
             Self::Inet6(ref nlas) => nlas.as_slice().emit(buffer),
+            Self::Mctp(ref nlas) => nlas.as_slice().emit(buffer),
             Self::Other(ref nla) => nla.emit_value(buffer),
         }
     }
@@ -107,6 +120,7 @@ impl Nla for AfSpecUnspec {
         match *self {
             Self::Inet(_) => u8::from(AddressFamily::Inet) as u16,
             Self::Inet6(_) => u8::from(AddressFamily::Inet6) as u16,
+            Self::Mctp(_) => u8::from(AddressFamily::Mctp) as u16,
             Self::Other(ref nla) => nla.kind(),
         }
     }
