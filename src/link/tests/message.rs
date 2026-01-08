@@ -201,3 +201,18 @@ fn link_message_emit() {
 
     assert_eq!(buf, &LINK_MSG[..96]);
 }
+
+#[test]
+fn link_type_mctp() {
+    const LINK_MSG_MCTP: [u8; 16] = [
+        0x00, // interface family AF_UNSPEC
+        0x00, // reserved 1
+        0x22, 0x01, // link layer type 290 = ARPHDR_MCTP
+        0x01, 0x00, 0x00, 0x00, // interface index = 1
+        0x41, 0x00, 0x01, 0x00, // flags: UP|RUNNING|LOWERUP
+        0x00, 0x00, 0x00, 0x00, // reserved 2
+    ];
+    let packet = LinkMessageBuffer::new(&LINK_MSG_MCTP);
+    assert_eq!(packet.interface_family(), AddressFamily::Unspec.into());
+    assert_eq!(packet.link_layer_type(), LinkLayerType::Mctp.into());
+}
