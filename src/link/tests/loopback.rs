@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::link::{
-    af_spec::VecAfSpecUnspec, AfSpecInet, AfSpecInet6, AfSpecUnspec,
-    Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf,
+    af_spec::VecAfSpecUnspec, AfSpecInet, AfSpecInet6, AfSpecMctp,
+    AfSpecUnspec, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf,
 };
 
 #[test]
@@ -68,10 +68,7 @@ fn test_link_loopback() {
     ];
 
     let expected = vec![
-        AfSpecUnspec::Other(DefaultNla::new(
-            45,
-            vec![8u8, 0, 1, 0, 1, 0, 0, 0],
-        )),
+        AfSpecUnspec::Mctp(vec![AfSpecMctp::Net(1)]),
         AfSpecUnspec::Inet(vec![AfSpecInet::DevConf(InetDevConf {
             forwarding: 1,
             mc_forwarding: 0,
