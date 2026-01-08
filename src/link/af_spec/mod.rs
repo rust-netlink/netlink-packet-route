@@ -31,7 +31,7 @@ pub use self::{
     inet6_icmp::{Icmp6Stats, Icmp6StatsBuffer},
     inet6_iface_flag::Inet6IfaceFlags,
     inet6_stats::{Inet6Stats, Inet6StatsBuffer},
-    mctp::AfSpecMctp,
+    mctp::{AfSpecMctp, MctpPhysBinding},
     unspec::AfSpecUnspec,
 };
 pub(crate) use self::{
