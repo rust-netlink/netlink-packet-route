@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+#[cfg(target_os = "freebsd")]
+use netlink_packet_core::NlasIterator;
 use netlink_packet_core::{
     emit_u16, emit_u16_be, emit_u32, parse_u16, parse_u16_be, parse_u32,
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
@@ -9,6 +11,11 @@ use netlink_packet_core::{
 use super::{
     NeighbourAddress, NeighbourCacheInfo, NeighbourCacheInfoBuffer,
     NeighbourExtFlags,
+};
+#[cfg(target_os = "freebsd")]
+use crate::{
+    buffer_freebsd::FreeBSDBuffer,
+    neighbour::freebsd::FreeBsdNeighbourAttribute,
 };
 use crate::{route::RouteProtocol, AddressFamily};
 
@@ -28,6 +35,10 @@ const NDA_PROTOCOL: u16 = 12;
 // const NDA_NH_ID: u16 = 13;
 // const NDA_FDB_EXT_ATTRS: u16 = 14;
 const NDA_FLAGS_EXT: u16 = 15;
+// const NDA_NDM_STATE_MASK: u16 = 16;
+// const NDA_NDM_FLAGS_MASK: u16 = 17;
+#[cfg(target_os = "freebsd")]
+const NDA_FREEBSD: u16 = 18;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -45,6 +56,8 @@ pub enum NeighbourAttribute {
     SourceVni(u32),
     Protocol(RouteProtocol),
     ExtFlags(NeighbourExtFlags),
+    #[cfg(target_os = "freebsd")]
+    FreeBSD(Vec<FreeBsdNeighbourAttribute>),
     Other(DefaultNla),
 }
 
@@ -63,6 +76,8 @@ impl Nla for NeighbourAttribute {
             | Self::IfIndex(_)
             | Self::SourceVni(_)
             | Self::ExtFlags(_) => 4,
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(v) => v.as_slice().buffer_len(),
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -84,6 +99,8 @@ impl Nla for NeighbourAttribute {
             | Self::SourceVni(value) => emit_u32(buffer, *value).unwrap(),
             Self::ExtFlags(v) => emit_u32(buffer, v.bits()).unwrap(),
             Self::Protocol(v) => v.emit(buffer),
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(v) => v.as_slice().emit(buffer),
             Self::Other(attr) => attr.emit_value(buffer),
         }
     }
@@ -103,6 +120,8 @@ impl Nla for NeighbourAttribute {
             Self::SourceVni(_) => NDA_SRC_VNI,
             Self::Protocol(_) => NDA_PROTOCOL,
             Self::ExtFlags(_) => NDA_FLAGS_EXT,
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(_) => NDA_FREEBSD,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -160,6 +179,19 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         "invalid NDA_FLAGS_EXT value {payload:?}"
                     ))?,
                 ))
+            }
+            #[cfg(target_os = "freebsd")]
+            NDA_FREEBSD => {
+                let mut nlas = vec![];
+                for item in NlasIterator::new(payload) {
+                    let item = item.context("invalid IFA_FREEBSD value")?;
+                    let fb_buf = FreeBSDBuffer::new(item.into_inner());
+                    nlas.push(
+                        FreeBsdNeighbourAttribute::parse(&fb_buf)
+                            .context("invalid IFA_FREEBSD value")?,
+                    );
+                }
+                Self::FreeBSD(nlas)
             }
             _ => Self::Other(
                 DefaultNla::parse(buf)

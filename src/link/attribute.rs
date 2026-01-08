@@ -36,6 +36,10 @@ use super::{
     Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
 };
 use crate::AddressFamily;
+#[cfg(target_os = "freebsd")]
+use crate::{
+    buffer_freebsd::FreeBSDBuffer, link::freebsd::FreeBsdLinkAttribute,
+};
 
 const IFLA_ADDRESS: u16 = 1;
 const IFLA_BROADCAST: u16 = 2;
@@ -94,18 +98,20 @@ const IFLA_NEW_IFINDEX: u16 = 49;
 const IFLA_MIN_MTU: u16 = 50;
 const IFLA_MAX_MTU: u16 = 51;
 const IFLA_PROP_LIST: u16 = 52;
+// const IFLA_ALT_IFNAME: u16 = 53; // Exist in FreeBSD and Linux
 const IFLA_PERM_ADDRESS: u16 = 54;
 const IFLA_PROTO_DOWN_REASON: u16 = 55;
-
 /* TODO:(Gris Ge)
 const IFLA_PARENT_DEV_NAME: u16 = 56;
 const IFLA_PARENT_DEV_BUS_NAME: u16 = 57;
 const IFLA_GRO_MAX_SIZE: u16 = 58;
-const IFLA_TSO_MAX_SIZE: u16 = 59;
-const IFLA_TSO_MAX_SEGS: u16 = 60;
-const IFLA_ALLMULTI: u16 = 61;
-const IFLA_DEVLINK_PORT: u16 = 62;
+const IFLA_TSO_MAX_SIZE: u16 = 59; // Not exist in FreeBSD
+const IFLA_TSO_MAX_SEGS: u16 = 60; // FreeBSD: 59
+const IFLA_ALLMULTI: u16 = 61; // FreeBSD: 60
+const IFLA_DEVLINK_PORT: u16 = 62; // FreeBSD: 61
 */
+#[cfg(target_os = "freebsd")]
+const IFLA_FREEBSD: u16 = 64;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -169,6 +175,8 @@ pub enum LinkAttribute {
     AfSpecUnspec(Vec<AfSpecUnspec>),
     AfSpecBridge(Vec<AfSpecBridge>),
     AfSpecUnknown(Vec<u8>),
+    #[cfg(target_os = "freebsd")]
+    FreeBSD(Vec<FreeBsdLinkAttribute>),
     Other(DefaultNla),
 }
 
@@ -232,6 +240,8 @@ impl Nla for LinkAttribute {
             Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
             Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
             Self::ProtoInfoUnknown(attr) => attr.value_len(),
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -305,6 +315,8 @@ impl Nla for LinkAttribute {
             Self::ProtoInfoUnknown(attr) | Self::Other(attr) => {
                 attr.emit_value(buffer)
             }
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(nlas) => nlas.as_slice().emit(buffer),
         }
     }
 
@@ -362,6 +374,8 @@ impl Nla for LinkAttribute {
             Self::AfSpecUnspec(_)
             | Self::AfSpecBridge(_)
             | Self::AfSpecUnknown(_) => IFLA_AF_SPEC,
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(_) => IFLA_FREEBSD,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -681,6 +695,19 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 let err = "invalid IFLA_XDP value";
                 let buf = NlaBuffer::new_checked(payload).context(err)?;
                 Self::Xdp(VecLinkXdp::parse(&buf).context(err)?.0)
+            }
+            #[cfg(target_os = "freebsd")]
+            IFLA_FREEBSD => {
+                let err = "invalid IFLA_FREEBSD value";
+                let mut nlas = vec![];
+                for item in NlasIterator::new(payload) {
+                    let item = item.context(err)?;
+                    let fb_buf = FreeBSDBuffer::new(item.into_inner());
+                    nlas.push(
+                        FreeBsdLinkAttribute::parse(&fb_buf).context(err)?,
+                    );
+                }
+                Self::FreeBSD(nlas)
             }
             kind => Self::Other(
                 DefaultNla::parse(buf)

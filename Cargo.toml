@@ -24,5 +24,7 @@ netlink-packet-core = { version = "0.8.0" }
 name = "dump_packet_links"
 
 [dev-dependencies]
-netlink-sys = { version = "0.8.5" }
 pretty_assertions = "0.7.2"
+
+[target.'cfg(not(target_os = "freebsd"))'.dev-dependencies]
+netlink-sys = { version = "0.8.5" }

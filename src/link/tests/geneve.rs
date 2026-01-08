@@ -13,6 +13,7 @@ use crate::{
     AddressFamily,
 };
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn test_geneve_link_info() {
     let raw: Vec<u8> = vec![

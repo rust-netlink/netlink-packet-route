@@ -24,6 +24,8 @@
 
 pub mod address;
 mod address_family;
+#[cfg(target_os = "freebsd")]
+mod buffer_freebsd;
 pub mod link;
 pub mod neighbour;
 pub mod neighbour_table;
