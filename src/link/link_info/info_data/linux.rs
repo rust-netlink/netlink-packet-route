@@ -12,8 +12,6 @@ use super::super::{
     InfoVti, InfoVxcan, InfoVxlan, InfoXfrm,
 };
 
-const IFLA_INFO_DATA: u16 = 2;
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoData {
