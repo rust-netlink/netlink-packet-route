@@ -47,4 +47,10 @@ fn test_get_link() {
     let mut buffer = vec![0; expected.buffer_len()];
     expected.emit(&mut buffer);
     assert_eq!(buffer.as_slice(), raw);
+
+    // Use a non zeroed buffer as well to check the emit function zeros all the
+    // padding bytes properly.
+    let mut buffer = vec![255; expected.buffer_len()];
+    expected.emit(&mut buffer);
+    assert_eq!(buffer.as_slice(), raw);
 }
