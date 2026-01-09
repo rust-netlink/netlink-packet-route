@@ -75,6 +75,9 @@ impl Emitable for LinkHeader {
     fn emit(&self, buffer: &mut [u8]) {
         let mut packet = LinkMessageBuffer::new(buffer);
         packet.set_interface_family(u8::from(self.interface_family));
+        // The kernel expects the reserved byte to always be zero.
+        // Zero it in case the callers didn't give us a zeroed buffer.
+        packet.set_reserved_1(0);
         packet.set_link_index(self.index);
         packet.set_change_mask(self.change_mask.bits());
         packet.set_link_layer_type(u16::from(self.link_layer_type));
