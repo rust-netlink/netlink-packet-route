@@ -47,6 +47,7 @@ impl Emitable for NexthopHeader {
         buffer.set_scope(self.scope);
         buffer.set_protocol(self.protocol);
         buffer.set_flags(self.flags);
+        buffer.set_resvd(0);
     }
 }
 
