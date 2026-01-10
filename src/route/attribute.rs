@@ -44,7 +44,7 @@ const RTA_TTL_PROPAGATE: u16 = 26;
 // const RTA_IP_PROTO:u16 = 27;
 // const RTA_SPORT:u16 = 28;
 // const RTA_DPORT:u16 = 29;
-// const RTA_NH_ID:u16 = 30;
+const RTA_NH_ID: u16 = 30;
 
 /// Netlink attributes for `RTM_NEWROUTE`, `RTM_DELROUTE`,
 /// `RTM_GETROUTE` netlink messages.
@@ -81,6 +81,7 @@ pub enum RouteAttribute {
     Realm(RouteRealm),
     Table(u32),
     Mark(u32),
+    NextHopId(u32),
     Other(DefaultNla),
 }
 
@@ -110,7 +111,8 @@ impl Nla for RouteAttribute {
             | Self::Oif(_)
             | Self::Priority(_)
             | Self::Table(_)
-            | Self::Mark(_) => 4,
+            | Self::Mark(_)
+            | Self::NextHopId(_) => 4,
             Self::MulticastExpires(_) => 8,
             Self::Other(attr) => attr.value_len(),
         }
@@ -146,7 +148,8 @@ impl Nla for RouteAttribute {
             | Self::Oif(value)
             | Self::Priority(value)
             | Self::Table(value)
-            | Self::Mark(value) => emit_u32(buffer, *value).unwrap(),
+            | Self::Mark(value)
+            | Self::NextHopId(value) => emit_u32(buffer, *value).unwrap(),
             Self::Realm(v) => v.emit(buffer),
             Self::MulticastExpires(value) => emit_u64(buffer, *value).unwrap(),
             Self::Other(attr) => attr.emit_value(buffer),
@@ -178,6 +181,7 @@ impl Nla for RouteAttribute {
             Self::MulticastExpires(_) => RTA_EXPIRES,
             Self::Uid(_) => RTA_UID,
             Self::TtlPropagate(_) => RTA_TTL_PROPAGATE,
+            Self::NextHopId(_) => RTA_NH_ID,
             Self::Other(ref attr) => attr.kind(),
         }
     }
@@ -281,6 +285,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             ),
             RTA_MARK => Self::Mark(
                 parse_u32(payload).context("invalid RTA_MARK value")?,
+            ),
+            RTA_NH_ID => Self::NextHopId(
+                parse_u32(payload).context("invalid RTA_NH_ID value")?,
             ),
 
             RTA_CACHEINFO => Self::CacheInfo(
