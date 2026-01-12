@@ -13,6 +13,9 @@ use crate::{
     AddressFamily,
 };
 
+#[allow(unused)]
+use crate::link::{af_spec::VecAfSpecMctp, AfSpecMctp};
+
 // For `AF_UNSPEC`, the `IFLA_AF_SPEC` is two layer array:
 //
 // [{nla_len=408, nla_type=IFLA_AF_SPEC},
@@ -40,6 +43,7 @@ use crate::{
 pub enum AfSpecUnspec {
     Inet(Vec<AfSpecInet>),
     Inet6(Vec<AfSpecInet6>),
+    Mctp(Vec<AfSpecMctp>),
     Other(DefaultNla),
 }
 
@@ -74,6 +78,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                         .0,
                     )
                 }
+                #[cfg(any(
+                    target_os = "linux",
+                    target_os = "fuchsia",
+                    target_os = "android"
+                ))]
+                k if k == u8::from(AddressFamily::Mctp) as u16 => {
+                    AfSpecUnspec::Mctp(
+                        VecAfSpecMctp::parse(
+                            &NlaBuffer::new_checked(&nla.value())
+                                .context(err)?,
+                        )
+                        .context(err)?
+                        .0,
+                    )
+                }
                 kind => AfSpecUnspec::Other(DefaultNla::parse(&nla).context(
                     format!(
                         "Unknown AF_XXX type {kind} for \
@@ -91,6 +110,7 @@ impl Nla for AfSpecUnspec {
         match *self {
             Self::Inet(ref nlas) => nlas.as_slice().buffer_len(),
             Self::Inet6(ref nlas) => nlas.as_slice().buffer_len(),
+            Self::Mctp(ref nlas) => nlas.as_slice().buffer_len(),
             Self::Other(ref nla) => nla.value_len(),
         }
     }
@@ -99,6 +119,7 @@ impl Nla for AfSpecUnspec {
         match *self {
             Self::Inet(ref nlas) => nlas.as_slice().emit(buffer),
             Self::Inet6(ref nlas) => nlas.as_slice().emit(buffer),
+            Self::Mctp(ref nlas) => nlas.as_slice().emit(buffer),
             Self::Other(ref nla) => nla.emit_value(buffer),
         }
     }
@@ -107,6 +128,21 @@ impl Nla for AfSpecUnspec {
         match *self {
             Self::Inet(_) => u8::from(AddressFamily::Inet) as u16,
             Self::Inet6(_) => u8::from(AddressFamily::Inet6) as u16,
+            Self::Mctp(_) => {
+                #[cfg(any(
+                    target_os = "linux",
+                    target_os = "fuchsia",
+                    target_os = "android"
+                ))]
+                let af = AddressFamily::Mctp;
+                #[cfg(not(any(
+                    target_os = "linux",
+                    target_os = "fuchsia",
+                    target_os = "android"
+                )))]
+                let af = AddressFamily::Unspec;
+                u8::from(af) as u16
+            }
             Self::Other(ref nla) => nla.kind(),
         }
     }

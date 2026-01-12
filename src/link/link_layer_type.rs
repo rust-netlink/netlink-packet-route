@@ -25,6 +25,7 @@ const ARPHRD_ROSE: u16 = 270;
 const ARPHRD_X25: u16 = 271;
 const ARPHRD_HWX25: u16 = 272;
 const ARPHRD_CAN: u16 = 280;
+const ARPHRD_MCTP: u16 = 290;
 const ARPHRD_PPP: u16 = 512;
 const ARPHRD_CISCO: u16 = 513;
 const ARPHRD_HDLC: u16 = ARPHRD_CISCO;
@@ -100,6 +101,7 @@ pub enum LinkLayerType {
     X25 = ARPHRD_X25,
     Hwx25 = ARPHRD_HWX25,
     Can = ARPHRD_CAN,
+    Mctp = ARPHRD_MCTP,
     Ppp = ARPHRD_PPP,
     Hdlc = ARPHRD_HDLC,
     Lapb = ARPHRD_LAPB,
@@ -173,6 +175,7 @@ impl From<u16> for LinkLayerType {
             d if d == ARPHRD_X25 => Self::X25,
             d if d == ARPHRD_HWX25 => Self::Hwx25,
             d if d == ARPHRD_CAN => Self::Can,
+            d if d == ARPHRD_MCTP => Self::Mctp,
             d if d == ARPHRD_PPP => Self::Ppp,
             d if d == ARPHRD_HDLC => Self::Hdlc,
             d if d == ARPHRD_LAPB => Self::Lapb,
@@ -262,6 +265,7 @@ impl std::fmt::Display for LinkLayerType {
                 Self::X25 => "X25",
                 Self::Hwx25 => "HWX25",
                 Self::Can => "CAN",
+                Self::Mctp => "MCTP",
                 Self::Ppp => "PPP",
                 Self::Hdlc => "HDLC",
                 Self::Lapb => "LAPB",
