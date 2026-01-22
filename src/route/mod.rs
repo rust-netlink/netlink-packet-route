@@ -36,6 +36,6 @@ pub use self::{
     next_hops::{RouteNextHop, RouteNextHopBuffer, RouteNextHopFlags},
     preference::RoutePreference,
     realm::RouteRealm,
-    seg6::{RouteSeg6IpTunnel, Seg6Header, Seg6Mode},
+    seg6::{RouteSeg6IpTunnel, Seg6Error, Seg6Header, Seg6Mode},
     via::{RouteVia, RouteViaBuffer},
 };

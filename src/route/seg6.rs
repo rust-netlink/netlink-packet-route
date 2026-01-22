@@ -103,6 +103,26 @@ buffer!(Seg6SegmentBuffer(SEG6_SEGMENT_LEN) {
     rest: (slice, SEG6_SEGMENT_LEN..)
 });
 
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum Seg6Error {
+    InvalidSegmentList,
+}
+
+impl std::fmt::Display for Seg6Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Seg6Error::InvalidSegmentList => write!(
+                f,
+                "Invalid segment list. A segment list should contain at least \
+                 one segment."
+            ),
+        }
+    }
+}
+
+impl std::error::Error for Seg6Error {}
+
 /// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to
 /// `LWTUNNEL_ENCAP_SEG6`.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -115,6 +135,17 @@ pub struct Seg6Header {
 }
 
 impl Seg6Header {
+    pub fn new(
+        mode: Seg6Mode,
+        segments: Vec<Ipv6Addr>,
+    ) -> Result<Seg6Header, Seg6Error> {
+        if !segments.is_empty() {
+            Ok(Seg6Header { mode, segments })
+        } else {
+            Err(Seg6Error::InvalidSegmentList)
+        }
+    }
+
     fn push_segments(buf: &mut [u8], mut segments: Vec<Ipv6Addr>) {
         if let Some(segment) = segments.pop() {
             let mut segment_buffer = Seg6SegmentBuffer::new(buf);
