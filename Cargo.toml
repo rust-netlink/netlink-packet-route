@@ -11,9 +11,6 @@ readme = "README.md"
 repository = "https://github.com/rust-netlink/netlink-packet-route"
 description = "netlink packet types"
 
-[features]
-rich_nlas = []
-
 [dependencies]
 bitflags = "2"
 libc = "0.2.66"
