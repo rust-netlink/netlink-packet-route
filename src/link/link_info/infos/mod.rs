@@ -5,6 +5,9 @@ mod freebsd;
 #[cfg(not(target_os = "freebsd"))]
 mod linux;
 
+#[cfg(not(target_os = "freebsd"))]
+use netlink_packet_core::{Emitable, ParseableParametrized};
+
 use netlink_packet_core::{
     DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, NlasIterator,
     Parseable,

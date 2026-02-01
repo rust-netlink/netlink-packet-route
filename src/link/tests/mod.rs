@@ -6,7 +6,7 @@ mod afspec;
 mod bond;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod bridge;
-#[cfg(test)]
+#[cfg(all(test, target_os = "freebsd"))]
 mod freebsd;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod geneve;

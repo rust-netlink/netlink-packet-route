@@ -60,6 +60,10 @@ pub use self::{
         BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
     },
     bond_port::{BondPortState, InfoBondPort, MiiStatus},
+    bridge::{
+        BridgeId, BridgeIdBuffer, BridgeMulticastRouterType,
+        BridgeQuerierState, BridgeStpState, InfoBridge,
+    },
     bridge_boolopt::{BridgeBooleanOptionFlags, BridgeBooleanOptions},
     bridge_port::{BridgePortState, InfoBridgePort},
     geneve::{GeneveDf, InfoGeneve},

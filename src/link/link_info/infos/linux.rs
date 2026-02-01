@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_string, DecodeError, DefaultNla, Emitable, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable, ParseableParametrized,
+    parse_string, DecodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use super::*;

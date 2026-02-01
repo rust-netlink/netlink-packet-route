@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "freebsd"))]
 mod freebsd;
 #[cfg(test)]
 mod ipv4;
