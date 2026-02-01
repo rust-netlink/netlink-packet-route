@@ -82,6 +82,7 @@ fn main() {
     }
 }
 
+#[cfg(target_os = "freebsd")]
 fn main() {
     let mut socket = freebsd::NetlinkSocket::new().unwrap();
     let mut packet = NetlinkMessage::new(
