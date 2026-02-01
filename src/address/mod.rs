@@ -6,6 +6,9 @@ mod attribute;
 mod cache_info;
 mod message;
 
+#[cfg(target_os = "freebsd")]
+mod freebsd;
+
 #[cfg(test)]
 mod tests;
 

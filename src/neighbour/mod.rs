@@ -4,6 +4,8 @@ mod address;
 mod attribute;
 mod cache_info;
 mod flags;
+#[cfg(target_os = "freebsd")]
+mod freebsd;
 mod header;
 mod message;
 mod state;

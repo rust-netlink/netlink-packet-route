@@ -225,12 +225,6 @@ impl From<u16> for LinkLayerType {
     }
 }
 
-impl From<LinkLayerType> for u16 {
-    fn from(v: LinkLayerType) -> u16 {
-        v as u16
-    }
-}
-
 impl std::fmt::Display for LinkLayerType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -306,9 +300,4 @@ impl std::fmt::Display for LinkLayerType {
             }
         )
     }
-}
-
-impl LinkLayerType {
-    #[allow(non_upper_case_globals)]
-    pub const Cisco: LinkLayerType = LinkLayerType::Hdlc;
 }
