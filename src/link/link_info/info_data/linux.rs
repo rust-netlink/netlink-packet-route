@@ -5,11 +5,14 @@ use netlink_packet_core::{
     Parseable, ParseableParametrized,
 };
 
-use super::super::{
-    InfoBond, InfoBridge, InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr,
-    InfoIpTunnel, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec,
-    InfoMacVlan, InfoMacVtap, InfoNetkit, InfoTun, InfoVeth, InfoVlan, InfoVrf,
-    InfoVti, InfoVxcan, InfoVxlan, InfoXfrm,
+use super::{
+    super::{
+        InfoBond, InfoBridge, InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr,
+        InfoIpTunnel, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec,
+        InfoMacVlan, InfoMacVtap, InfoNetkit, InfoTun, InfoVeth, InfoVlan,
+        InfoVrf, InfoVti, InfoVxcan, InfoVxlan, InfoXfrm,
+    },
+    IFLA_INFO_DATA,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
