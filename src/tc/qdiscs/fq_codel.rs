@@ -331,7 +331,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 )?)
             }
             _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse u32 nla")?,
+                DefaultNla::parse(buf)
+                    .context("failed to parse fq_codel nla")?,
             ),
         })
     }

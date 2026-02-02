@@ -116,7 +116,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_U32_CLASSID => Self::ClassId(TcHandle::from(
-                parse_u32(payload).context("failed to parse TCA_U32_UNSPEC")?,
+                parse_u32(payload)
+                    .context("failed to parse TCA_U32_CLASSID")?,
             )),
             TCA_U32_HASH => Self::Hash(
                 parse_u32(payload).context("failed to parse TCA_U32_HASH")?,

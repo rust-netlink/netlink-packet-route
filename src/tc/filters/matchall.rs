@@ -73,7 +73,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         Ok(match buf.kind() {
             TCA_MATCHALL_CLASSID => Self::ClassId(
                 parse_u32(payload)
-                    .context("failed to parse TCA_MATCHALL_UNSPEC")?
+                    .context("failed to parse TCA_MATCHALL_CLASSID")?
                     .into(),
             ),
             TCA_MATCHALL_ACT => {
@@ -93,7 +93,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context("failed to parse TCA_MATCHALL_FLAGS")?,
             ),
             _ => Self::Other(
-                DefaultNla::parse(buf).context("failed to parse u32 nla")?,
+                DefaultNla::parse(buf)
+                    .context("failed to parse matchall nla")?,
             ),
         })
     }
