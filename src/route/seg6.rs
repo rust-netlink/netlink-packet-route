@@ -14,12 +14,13 @@ const SEG6_IPTUN_MODE_ENCAP: u32 = 1;
 //const SEG6_IPTUN_MODE_ENCAP_RED: u32 = 3;
 //const SEG6_IPTUN_MODE_L2ENCAP_RED: u32 = 4;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 #[non_exhaustive]
 pub enum Seg6Mode {
     // Inline mode for Seg6
     Inline,
     // Encapsulation mode for Seg6
+    #[default]
     Encap,
     // L2ENCAP = 2,
     // ENCAP_RED = 3,
@@ -105,7 +106,7 @@ buffer!(Seg6SegmentBuffer(SEG6_SEGMENT_LEN) {
 
 /// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to
 /// `LWTUNNEL_ENCAP_SEG6`.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct Seg6Header {
     // Operation mode
