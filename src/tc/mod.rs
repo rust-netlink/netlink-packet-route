@@ -22,7 +22,8 @@ pub use self::{
     },
     attribute::TcAttribute,
     filters::{
-        TcFilterFlower, TcFilterFlowerMplsLseOption, TcFilterFlowerMplsOption,
+        TcBpfFlags, TcFilterBpf, TcFilterBpfOption, TcFilterFlower,
+        TcFilterFlowerMplsLseOption, TcFilterFlowerMplsOption,
         TcFilterFlowerOption, TcFilterMatchAll, TcFilterMatchAllOption,
         TcFilterU32, TcFilterU32Option, TcU32Key, TcU32OptionFlags,
         TcU32Selector, TcU32SelectorBuffer, TcU32SelectorFlags,

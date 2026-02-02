@@ -6,9 +6,9 @@ use netlink_packet_core::{
 };
 
 use super::{
-    TcFilterFlower, TcFilterFlowerOption, TcFilterMatchAll,
-    TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option, TcQdiscFqCodel,
-    TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
+    TcFilterBpf, TcFilterBpfOption, TcFilterFlower, TcFilterFlowerOption,
+    TcFilterMatchAll, TcFilterMatchAllOption, TcFilterU32, TcFilterU32Option,
+    TcQdiscFqCodel, TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -22,6 +22,8 @@ pub enum TcOption {
     U32(TcFilterU32Option),
     // matchall options
     MatchAll(TcFilterMatchAllOption),
+    // BPF filter options
+    Bpf(TcFilterBpfOption),
     // Other options
     Other(DefaultNla),
 }
@@ -34,6 +36,7 @@ impl Nla for TcOption {
             Self::U32(u) => u.value_len(),
             Self::Flower(u) => u.value_len(),
             Self::MatchAll(m) => m.value_len(),
+            Self::Bpf(u) => u.value_len(),
             Self::Other(o) => o.value_len(),
         }
     }
@@ -45,6 +48,7 @@ impl Nla for TcOption {
             Self::Flower(u) => u.emit_value(buffer),
             Self::U32(u) => u.emit_value(buffer),
             Self::MatchAll(m) => m.emit_value(buffer),
+            Self::Bpf(u) => u.emit_value(buffer),
             Self::Other(o) => o.emit_value(buffer),
         }
     }
@@ -56,6 +60,7 @@ impl Nla for TcOption {
             Self::Flower(u) => u.kind(),
             Self::U32(u) => u.kind(),
             Self::MatchAll(m) => m.kind(),
+            Self::Bpf(u) => u.kind(),
             Self::Other(o) => o.kind(),
         }
     }
@@ -93,6 +98,10 @@ where
                     "failed to parse matchall TCA_OPTIONS attributes",
                 )?)
             }
+            TcFilterBpf::KIND => Self::Bpf(
+                TcFilterBpfOption::parse(buf)
+                    .context("failed to parse bpf TCA_OPTIONS attributes")?,
+            ),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
@@ -113,7 +122,8 @@ where
             | TcFilterMatchAll::KIND
             | TcFilterFlower::KIND
             | TcQdiscIngress::KIND
-            | TcQdiscFqCodel::KIND => {
+            | TcQdiscFqCodel::KIND
+            | TcFilterBpf::KIND => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(buf.value()) {
                     let nla = nla.context(format!(
