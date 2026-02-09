@@ -33,7 +33,7 @@ use super::{
     AfSpecBridge, AfSpecUnspec, LinkEvent, LinkExtentMask, LinkInfo, LinkMode,
     LinkPhysId, LinkProtoInfoBridge, LinkProtoInfoInet6,
     LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkXdp, Map, MapBuffer,
-    Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer,
+    Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer, WirelessEvent,
 };
 use crate::AddressFamily;
 
@@ -49,9 +49,7 @@ const IFLA_STATS: u16 = 7;
 // No kernel code is using IFLA_PRIORITY
 // const IFLA_PRIORITY: u16 = 9;
 const IFLA_MASTER: u16 = 10;
-// Not able to trigger this and kernel code is not clear when it will be
-// emitted.
-// const IFLA_WIRELESS: u16 = 11;
+const IFLA_WIRELESS: u16 = 11;
 const IFLA_PROTINFO: u16 = 12;
 const IFLA_TXQLEN: u16 = 13;
 const IFLA_MAP: u16 = 14;
@@ -126,6 +124,7 @@ pub enum LinkAttribute {
     ProtoInfoBridge(Vec<LinkProtoInfoBridge>),
     ProtoInfoInet6(Vec<LinkProtoInfoInet6>),
     ProtoInfoUnknown(DefaultNla),
+    Wireless(WirelessEvent),
     PropList(Vec<Prop>),
     ProtoDownReason(Vec<LinkProtocolDownReason>),
     Address(Vec<u8>),
@@ -232,6 +231,7 @@ impl Nla for LinkAttribute {
             Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
             Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
             Self::ProtoInfoUnknown(attr) => attr.value_len(),
+            Self::Wireless(v) => v.buffer_len(),
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -302,6 +302,7 @@ impl Nla for LinkAttribute {
             Self::PropList(nlas) => nlas.as_slice().emit(buffer),
             Self::AfSpecUnspec(nlas) => nlas.as_slice().emit(buffer),
             Self::AfSpecBridge(nlas) => nlas.as_slice().emit(buffer),
+            Self::Wireless(v) => v.emit(buffer),
             Self::ProtoInfoUnknown(attr) | Self::Other(attr) => {
                 attr.emit_value(buffer)
             }
@@ -362,6 +363,7 @@ impl Nla for LinkAttribute {
             Self::AfSpecUnspec(_)
             | Self::AfSpecBridge(_)
             | Self::AfSpecUnknown(_) => IFLA_AF_SPEC,
+            Self::Wireless(_) => IFLA_WIRELESS,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -682,6 +684,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 let buf = NlaBuffer::new_checked(payload).context(err)?;
                 Self::Xdp(VecLinkXdp::parse(&buf).context(err)?.0)
             }
+            IFLA_WIRELESS => Self::Wireless(
+                WirelessEvent::parse(payload)
+                    .context("invalid IFLA_WIRELESS value")?,
+            ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
