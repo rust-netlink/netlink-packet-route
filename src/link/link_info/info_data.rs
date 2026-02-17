@@ -9,7 +9,7 @@ use super::super::{
     InfoBond, InfoBridge, InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr,
     InfoIpTunnel, InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec,
     InfoMacVlan, InfoMacVtap, InfoNetkit, InfoTun, InfoVeth, InfoVlan, InfoVrf,
-    InfoVti, InfoVxlan, InfoXfrm,
+    InfoVti, InfoVxcan, InfoVxlan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -41,6 +41,7 @@ pub enum InfoData {
     Geneve(Vec<InfoGeneve>),
     IpTunnel(Vec<InfoIpTunnel>),
     Netkit(Vec<InfoNetkit>),
+    Vxcan(InfoVxcan),
     Other(Vec<u8>),
 }
 
@@ -71,6 +72,7 @@ impl Nla for InfoData {
             Self::Geneve(nlas) => nlas.as_slice().buffer_len(),
             Self::IpTunnel(nlas) => nlas.as_slice().buffer_len(),
             Self::Netkit(nlas) => nlas.as_slice().buffer_len(),
+            Self::Vxcan(nlas) => nlas.buffer_len(),
             Self::Other(v) => v.len(),
         }
     }
@@ -101,6 +103,7 @@ impl Nla for InfoData {
             Self::Geneve(nlas) => nlas.as_slice().emit(buffer),
             Self::IpTunnel(nlas) => nlas.as_slice().emit(buffer),
             Self::Netkit(nlas) => nlas.as_slice().emit(buffer),
+            Self::Vxcan(msg) => msg.emit(buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
         }
     }
@@ -376,6 +379,13 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::Netkit(v)
+            }
+            InfoKind::Vxcan => {
+                let nla_buf = NlaBuffer::new_checked(&payload).context(
+                    format!("invalid IFLA_INFO_DATA for {kind} {payload:?}"),
+                )?;
+                let parsed = InfoVxcan::parse(&nla_buf)?;
+                InfoData::Vxcan(parsed)
             }
             _ => InfoData::Other(payload.to_vec()),
         })

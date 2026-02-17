@@ -23,6 +23,7 @@ mod veth;
 mod vlan;
 mod vrf;
 mod vti;
+mod vxcan;
 mod vxlan;
 mod xfrm;
 mod xstats;
@@ -67,6 +68,7 @@ pub use self::{
     vlan::{InfoVlan, VlanFlags, VlanQosMapping},
     vrf::InfoVrf,
     vti::InfoVti,
+    vxcan::InfoVxcan,
     vxlan::InfoVxlan,
     xfrm::InfoXfrm,
     xstats::LinkXstats,
