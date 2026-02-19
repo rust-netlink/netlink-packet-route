@@ -1,4 +1,23 @@
 # Changelog
+## [0.29.0] - 2026-02-19
+### Breaking changes
+ - link bond: Change `InfoBond::AdSelect` from u8 to enum. (1a16af8)
+ - link bridge: Change `NeighVlanSupress` to `NeighVlanSuppress`. (420d181)
+
+### New features
+ - link: add vxcan support. (dcd3afb)
+ - link: AF_SPEC(MCTP): Add physical binding type attribute. (cfba8ea)
+ - tc: add TC filter for BPF/TC_BPF_*. (890416d)
+ - link: Add MCTP definitions for IFLA_AF_SPEC. (301a0a1)
+ - link: Add definitons for ARPHRD_MCTP. (e8250a6)
+ - link: Add initial support of `IFLA_WIRELESS`. (80b2e54)
+
+### Bug fixes
+ - LinkHeader: zero padding explicitly. (f0ae7c5)
+ - tc: parse error message to correct kind. (6241e51)
+ - link: downgrade `warn` to `debug`. (caec633)
+ - Remove unused rich_nlas feat. (33580ca)
+
 ## [0.28.0] - 2026-01-01
 ### Breaking changes
  - link: Changed `InfoIpoib::Mode` from u16 to enum. (b1b8ef4)
