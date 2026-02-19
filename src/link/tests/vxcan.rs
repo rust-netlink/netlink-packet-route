@@ -101,7 +101,8 @@ fn test_create_vxcan() {
     // ```
     //
     // Due to the iproute bug (https://issues.redhat.com/browse/RHEL-14964),
-    // The IFLA_INFO_KIND length has been manually fixed to 10 instead of the 9 produced by iproute.
+    // The IFLA_INFO_KIND length has been manually fixed to 10 instead of the 9
+    // produced by iproute.
     let raw: Vec<u8> = vec![
         0x00, // interface family AF_UNSPEC
         0x00, // reserved
