@@ -27,6 +27,7 @@ mod address_family;
 pub mod link;
 pub mod neighbour;
 pub mod neighbour_table;
+pub mod nexthop;
 pub mod nsid;
 pub mod prefix;
 pub mod route;
