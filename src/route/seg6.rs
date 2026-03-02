@@ -18,9 +18,9 @@ const SEG6_IPTUN_MODE_ENCAP: u32 = 1;
 #[non_exhaustive]
 pub enum Seg6Mode {
     // Inline mode for Seg6
+    #[default]
     Inline,
     // Encapsulation mode for Seg6
-    #[default]
     Encap,
     // L2ENCAP = 2,
     // ENCAP_RED = 3,
