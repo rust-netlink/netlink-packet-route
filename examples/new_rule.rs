@@ -9,9 +9,11 @@ use netlink_packet_route::{
     rule::{RuleAction, RuleAttribute, RuleHeader, RuleMessage},
     AddressFamily, RouteNetlinkMessage,
 };
-use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
+#[cfg(not(target_os = "freebsd"))]
 fn main() {
+    use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
+
     let mut socket = Socket::new(NETLINK_ROUTE).unwrap();
     let _port_number = socket.bind_auto().unwrap().port_number();
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
@@ -65,4 +67,9 @@ fn main() {
             }
         }
     }
+}
+
+#[cfg(target_os = "freebsd")]
+fn main() {
+    println!("This example cannot be run on FreeBSD");
 }
