@@ -22,4 +22,4 @@ name = "dump_packet_links"
 
 [dev-dependencies]
 netlink-sys = { version = "0.8.5" }
-pretty_assertions = "0.7.2"
+pretty_assertions = "1.4.1"
