@@ -22,7 +22,7 @@ jobs:
           - rust_target: "x86_64-linux-android"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Install Rust Stable
         run: |
