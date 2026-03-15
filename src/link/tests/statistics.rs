@@ -389,14 +389,8 @@ fn test_parsing_link_statistics_on_kernel_4_18() {
                 ]),
             ]),
             LinkAttribute::PropList(vec![Prop::AltIfName("enp0s3".into())]),
-            LinkAttribute::Other(DefaultNla::new(
-                56,
-                vec![118, 105, 114, 116, 105, 111, 48, 0],
-            )),
-            LinkAttribute::Other(DefaultNla::new(
-                57,
-                vec![118, 105, 114, 116, 105, 111, 0],
-            )),
+            LinkAttribute::ParentDevName("virtio0".into()),
+            LinkAttribute::ParentDevBusName("virtio".into()),
         ],
     };
 
@@ -526,15 +520,15 @@ fn test_parsing_link_statistics() {
             LinkAttribute::MaxMtu(2304),
             LinkAttribute::Group(0),
             LinkAttribute::Promiscuity(0),
-            LinkAttribute::Other(DefaultNla::new(61, vec![0, 0, 0, 0])),
+            LinkAttribute::AllMulticast(0),
             LinkAttribute::NumTxQueues(1),
             LinkAttribute::GsoMaxSegs(65535),
             LinkAttribute::GsoMaxSize(65536),
-            LinkAttribute::Other(DefaultNla::new(58, vec![0, 0, 1, 0])),
+            LinkAttribute::GroMaxSize(65536),
             LinkAttribute::Other(DefaultNla::new(63, vec![0, 0, 1, 0])),
             LinkAttribute::Other(DefaultNla::new(64, vec![0, 0, 1, 0])),
-            LinkAttribute::Other(DefaultNla::new(59, vec![0, 0, 1, 0])),
-            LinkAttribute::Other(DefaultNla::new(60, vec![255, 255, 0, 0])),
+            LinkAttribute::TsoMaxSize(65536),
+            LinkAttribute::TsoMaxSegs(65535),
             LinkAttribute::NumRxQueues(1),
             LinkAttribute::Carrier(1),
             LinkAttribute::Qdisc("noqueue".into()),
@@ -722,11 +716,8 @@ fn test_parsing_link_statistics() {
                 ]),
             ]),
             LinkAttribute::PropList(vec![Prop::AltIfName("wlp0s20f3".into())]),
-            LinkAttribute::Other(DefaultNla::new(
-                56,
-                vec![48, 48, 48, 48, 58, 48, 48, 58, 49, 52, 46, 51, 0],
-            )),
-            LinkAttribute::Other(DefaultNla::new(57, vec![112, 99, 105, 0])),
+            LinkAttribute::ParentDevName("0000:00:14.3".into()),
+            LinkAttribute::ParentDevBusName("pci".into()),
             LinkAttribute::Other(DefaultNla::new(
                 32830, // NLA_F_NESTED|IFLA_DEVLINK_PORT
                 vec![],
