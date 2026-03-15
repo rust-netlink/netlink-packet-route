@@ -94,16 +94,20 @@ const IFLA_MAX_MTU: u16 = 51;
 const IFLA_PROP_LIST: u16 = 52;
 const IFLA_PERM_ADDRESS: u16 = 54;
 const IFLA_PROTO_DOWN_REASON: u16 = 55;
-
-/* TODO:(Gris Ge)
 const IFLA_PARENT_DEV_NAME: u16 = 56;
 const IFLA_PARENT_DEV_BUS_NAME: u16 = 57;
 const IFLA_GRO_MAX_SIZE: u16 = 58;
 const IFLA_TSO_MAX_SIZE: u16 = 59;
 const IFLA_TSO_MAX_SEGS: u16 = 60;
 const IFLA_ALLMULTI: u16 = 61;
-const IFLA_DEVLINK_PORT: u16 = 62;
-*/
+// const IFLA_DEVLINK_PORT: u16 = 62;
+// const IFLA_GSO_IPV4_MAX_SIZE: u16 = 63;
+// const IFLA_GRO_IPV4_MAX_SIZE: u16 = 64;
+// const IFLA_DPLL_PIN: u16 = 65;
+// const IFLA_MAX_PACING_OFFLOAD_HORIZON: u16 = 66;
+// const IFLA_NETNS_IMMUTABLE: u16 = 67;
+// const IFLA_HEADROOM: u16 = 68;
+// const IFLA_TAILROOM: u16 = 69;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -168,6 +172,12 @@ pub enum LinkAttribute {
     AfSpecUnspec(Vec<AfSpecUnspec>),
     AfSpecBridge(Vec<AfSpecBridge>),
     AfSpecUnknown(Vec<u8>),
+    ParentDevName(String),
+    ParentDevBusName(String),
+    GroMaxSize(u32),
+    TsoMaxSize(u32),
+    TsoMaxSegs(u32),
+    AllMulticast(u32),
     Other(DefaultNla),
 }
 
@@ -192,7 +202,9 @@ impl Nla for LinkAttribute {
             Self::IfName(string)
             | Self::Qdisc(string)
             | Self::IfAlias(string)
-            | Self::PhysPortName(string) => string.len() + 1,
+            | Self::PhysPortName(string)
+            | Self::ParentDevName(string)
+            | Self::ParentDevBusName(string) => string.len() + 1,
 
             Self::Mode(_) => 1,
             Self::Carrier(_) | Self::ProtoDown(_) => 1,
@@ -219,7 +231,11 @@ impl Nla for LinkAttribute {
             | Self::CarrierUpCount(_)
             | Self::CarrierDownCount(_)
             | Self::NewIfIndex(_)
-            | Self::MaxMtu(_) => 4,
+            | Self::MaxMtu(_)
+            | Self::GroMaxSize(_)
+            | Self::TsoMaxSize(_)
+            | Self::TsoMaxSegs(_)
+            | Self::AllMulticast(_) => 4,
 
             Self::OperState(_) => 1,
             Self::Stats(_) => LINK_STATS_LEN,
@@ -257,7 +273,9 @@ impl Nla for LinkAttribute {
             Self::IfName(string)
             | Self::Qdisc(string)
             | Self::IfAlias(string)
-            | Self::PhysPortName(string) => {
+            | Self::PhysPortName(string)
+            | Self::ParentDevName(string)
+            | Self::ParentDevBusName(string) => {
                 buffer[..string.len()].copy_from_slice(string.as_bytes());
                 buffer[string.len()] = 0;
             }
@@ -281,7 +299,11 @@ impl Nla for LinkAttribute {
             | Self::GsoMaxSegs(value)
             | Self::GsoMaxSize(value)
             | Self::MinMtu(value)
-            | Self::MaxMtu(value) => emit_u32(buffer, *value).unwrap(),
+            | Self::MaxMtu(value)
+            | Self::GroMaxSize(value)
+            | Self::TsoMaxSize(value)
+            | Self::TsoMaxSegs(value)
+            | Self::AllMulticast(value) => emit_u32(buffer, *value).unwrap(),
 
             Self::ExtMask(value) => {
                 emit_u32(buffer, u32::from(&VecLinkExtentMask(value.to_vec())))
@@ -364,6 +386,12 @@ impl Nla for LinkAttribute {
             | Self::AfSpecBridge(_)
             | Self::AfSpecUnknown(_) => IFLA_AF_SPEC,
             Self::Wireless(_) => IFLA_WIRELESS,
+            Self::ParentDevName(_) => IFLA_PARENT_DEV_NAME,
+            Self::ParentDevBusName(_) => IFLA_PARENT_DEV_BUS_NAME,
+            Self::GroMaxSize(_) => IFLA_GRO_MAX_SIZE,
+            Self::TsoMaxSize(_) => IFLA_TSO_MAX_SIZE,
+            Self::TsoMaxSegs(_) => IFLA_TSO_MAX_SEGS,
+            Self::AllMulticast(_) => IFLA_ALLMULTI,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -687,6 +715,29 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_WIRELESS => Self::Wireless(
                 WirelessEvent::parse(payload)
                     .context("invalid IFLA_WIRELESS value")?,
+            ),
+            IFLA_PARENT_DEV_NAME => Self::ParentDevName(
+                parse_string(payload)
+                    .context("invalid IFLA_PARENT_DEV_NAME value")?,
+            ),
+            IFLA_PARENT_DEV_BUS_NAME => Self::ParentDevBusName(
+                parse_string(payload)
+                    .context("invalid IFLA_PARENT_DEV_BUS_NAME value")?,
+            ),
+            IFLA_GRO_MAX_SIZE => Self::GroMaxSize(
+                parse_u32(payload)
+                    .context("invalid IFLA_GRO_MAX_SIZE value")?,
+            ),
+            IFLA_TSO_MAX_SIZE => Self::TsoMaxSize(
+                parse_u32(payload)
+                    .context("invalid IFLA_TSO_MAX_SIZE value")?,
+            ),
+            IFLA_TSO_MAX_SEGS => Self::TsoMaxSegs(
+                parse_u32(payload)
+                    .context("invalid IFLA_TSO_MAX_SEGS value")?,
+            ),
+            IFLA_ALLMULTI => Self::AllMulticast(
+                parse_u32(payload).context("invalid IFLA_ALLMULTI value")?,
             ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
