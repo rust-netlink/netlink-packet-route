@@ -2,7 +2,7 @@
 
 use std::net::Ipv6Addr;
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     link::{
@@ -254,13 +254,13 @@ fn test_link_info_with_ifla_vrf_port_table() {
             LinkAttribute::MaxMtu(65535),
             LinkAttribute::Group(0),
             LinkAttribute::Promiscuity(0),
-            LinkAttribute::Other(DefaultNla::new(61, vec![0, 0, 0, 0])),
+            LinkAttribute::AllMulticast(0),
             LinkAttribute::NumTxQueues(26),
             LinkAttribute::GsoMaxSegs(65535),
             LinkAttribute::GsoMaxSize(65536),
-            LinkAttribute::Other(DefaultNla::new(58, vec![0, 0, 1, 0])),
-            LinkAttribute::Other(DefaultNla::new(59, vec![248, 255, 7, 0])),
-            LinkAttribute::Other(DefaultNla::new(60, vec![255, 255, 0, 0])),
+            LinkAttribute::GroMaxSize(65536),
+            LinkAttribute::TsoMaxSize(524280),
+            LinkAttribute::TsoMaxSegs(65535),
             LinkAttribute::NumRxQueues(26),
             LinkAttribute::Controller(33),
             LinkAttribute::Carrier(0),
