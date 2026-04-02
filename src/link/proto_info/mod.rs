@@ -3,7 +3,7 @@
 mod bridge;
 mod inet6;
 
+#[cfg(not(target_os = "freebsd"))]
+pub(crate) use self::bridge::VecLinkProtoInfoBridge;
+pub(crate) use self::inet6::VecLinkProtoInfoInet6;
 pub use self::{bridge::LinkProtoInfoBridge, inet6::LinkProtoInfoInet6};
-pub(crate) use self::{
-    bridge::VecLinkProtoInfoBridge, inet6::VecLinkProtoInfoInet6,
-};
