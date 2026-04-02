@@ -6,9 +6,9 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     address::{
-        freebsd::{FreeBsdAddressAttribute, IfaFlags},
-        AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
-        AddressMessage, AddressMessageBuffer, AddressScope,
+        freebsd::FreeBsdAddressAttribute, AddressAttribute, AddressFlags,
+        AddressHeader, AddressHeaderFlags, AddressMessage,
+        AddressMessageBuffer, AddressScope,
     },
     AddressFamily,
 };

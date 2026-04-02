@@ -34,7 +34,7 @@ mod macvtap;
 mod message;
 #[cfg(all(test, not(target_os = "freebsd")))]
 mod netkit;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod prop_list;
 #[cfg(test)]
 mod sriov;

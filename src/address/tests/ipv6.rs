@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-use std::{
-    net::{IpAddr, Ipv6Addr},
-    str::FromStr,
-};
+#[cfg(not(target_os = "freebsd"))]
+use std::net::{IpAddr, Ipv6Addr};
+#[cfg(not(target_os = "freebsd"))]
+use std::str::FromStr;
 
 use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
+use crate::address::{AddressAttribute, AddressFlags};
+#[cfg(not(target_os = "freebsd"))]
 use crate::{
     address::{
-        AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
-        AddressMessage, AddressMessageBuffer, AddressProtocol, AddressScope,
-        CacheInfo,
+        AddressHeader, AddressHeaderFlags, AddressMessage,
+        AddressMessageBuffer, AddressProtocol, AddressScope, CacheInfo,
     },
     AddressFamily,
 };
@@ -41,6 +42,7 @@ fn test_addr_flag_stable_privacy() {
     assert_eq!(buffer, raw);
 }
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn test_get_loopback_ipv6_addr() {
     let raw = vec![

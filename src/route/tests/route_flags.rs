@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: MIT
 
+#[cfg(not(target_os = "freebsd"))]
 use std::{net::Ipv6Addr, str::FromStr};
 
+#[cfg(not(target_os = "freebsd"))]
 use netlink_packet_core::{Emitable, Parseable};
 
+use crate::route::RouteNextHopBuffer;
+#[cfg(not(target_os = "freebsd"))]
 use crate::{
     route::{
         flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
-        RouteMessageBuffer, RouteNextHopBuffer, RouteProtocol, RouteScope,
-        RouteType,
+        RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
 
 // wireshark capture(netlink message header removed) of nlmon against command:
 //   ip route add 2001:db8:1::/64 dev lo onlink
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn test_ipv6_add_route_onlink() {
     let raw = vec![

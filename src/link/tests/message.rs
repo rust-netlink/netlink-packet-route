@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{Emitable, ParseableParametrized};
+#[cfg(not(target_os = "freebsd"))]
+use netlink_packet_core::Emitable;
+use netlink_packet_core::ParseableParametrized;
 
+#[cfg(not(target_os = "freebsd"))]
+use crate::link::{
+    link_flag::LinkFlags, LinkHeader, LinkLayerType, LinkMessage,
+};
 use crate::{
-    link::{
-        link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
-        LinkMessage, LinkMessageBuffer, LinkMode, State,
-    },
+    link::{LinkAttribute, LinkMessageBuffer, LinkMode, State},
     AddressFamily,
 };
 

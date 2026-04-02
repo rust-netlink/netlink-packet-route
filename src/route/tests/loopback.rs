@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::Ipv4Addr;
+#[cfg(not(target_os = "freebsd"))]
+use std::net::Ipv6Addr;
 
 use netlink_packet_core::{Emitable, Parseable};
 
+#[cfg(not(target_os = "freebsd"))]
+use crate::route::{RouteCacheInfo, RoutePreference};
 use crate::{
     route::{
-        flags::RouteFlags, RouteAttribute, RouteCacheInfo, RouteHeader,
-        RouteMessage, RouteMessageBuffer, RoutePreference, RouteProtocol,
-        RouteScope, RouteType,
+        flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
+        RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -103,6 +106,7 @@ fn test_ipv4_route_loopback_broadcast() {
     assert_eq!(buf, raw);
 }
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 // wireshark capture(netlink message header removed) of nlmon against command:
 //   ip -6 route show dev lo table local

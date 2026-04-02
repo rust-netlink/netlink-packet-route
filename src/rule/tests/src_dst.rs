@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use std::{
-    net::{Ipv4Addr, Ipv6Addr},
-    str::FromStr,
-};
+#[cfg(not(target_os = "freebsd"))]
+use std::net::Ipv6Addr;
+use std::{net::Ipv4Addr, str::FromStr};
 
 use netlink_packet_core::{Emitable, Parseable};
 
@@ -70,6 +69,7 @@ fn test_ipv4_src_dst_blackhole() {
 //          goto 32766
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 rule show priority 20000
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn test_ipv6_src_dst_goto() {
     let raw = vec![

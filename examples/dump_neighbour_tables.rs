@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
+#[cfg(not(target_os = "freebsd"))]
 use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
+#[cfg(not(target_os = "freebsd"))]
 use netlink_packet_route::{
     neighbour_table::NeighbourTableMessage, RouteNetlinkMessage,
 };

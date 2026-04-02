@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod cache_info;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod expires;
 #[cfg(all(test, target_os = "freebsd"))]
 mod freebsd;
@@ -18,9 +18,9 @@ mod multipath;
 mod realm;
 #[cfg(test)]
 mod route_flags;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod seg6;
 #[cfg(test)]
 mod uid;
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "freebsd")))]
 mod via;
