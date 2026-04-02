@@ -3,8 +3,6 @@
 #[cfg(target_os = "freebsd")]
 mod freebsd;
 
-use std::io::{Read, Write};
-
 use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
@@ -82,8 +80,9 @@ fn main() {
     }
 }
 
-#[cfg(target_os = "freebsd")]
 fn main() {
+    use std::io::{Read, Write};
+    
     let mut socket = freebsd::NetlinkSocket::new().unwrap();
     let mut packet = NetlinkMessage::new(
         NetlinkHeader::default(),
