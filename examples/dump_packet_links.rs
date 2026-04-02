@@ -82,7 +82,7 @@ fn main() {
 
 fn main() {
     use std::io::{Read, Write};
-    
+
     let mut socket = freebsd::NetlinkSocket::new().unwrap();
     let mut packet = NetlinkMessage::new(
         NetlinkHeader::default(),
