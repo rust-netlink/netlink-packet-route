@@ -2,11 +2,13 @@
 
 use netlink_packet_core::{Emitable, Parseable};
 
+#[cfg(not(target_os = "freebsd"))]
+use crate::rule::RuleUidRange;
 use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
-        RuleMessageBuffer, RuleUidRange,
+        RuleMessageBuffer,
     },
     AddressFamily,
 };
@@ -59,6 +61,7 @@ fn test_ipv4_l3mdev() {
 //      ip -6 rule add priority 2999 l3mdev uidrange 1000-1999
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 rule show priority 2999
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn test_ipv6_l3mdev_uid() {
     let raw = vec![

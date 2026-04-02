@@ -2,12 +2,20 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
+#[cfg(not(target_os = "freebsd"))]
+use netlink_packet_core::parse_u8;
+#[cfg(target_os = "freebsd")]
+use netlink_packet_core::NlasIterator;
 use netlink_packet_core::{
-    emit_i32, emit_u32, parse_i32, parse_string, parse_u32, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    emit_i32, emit_u32, parse_i32, parse_string, parse_u32, DecodeError,
+    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::address::{AddressFlags, CacheInfo, CacheInfoBuffer};
+#[cfg(target_os = "freebsd")]
+use crate::{
+    address::freebsd::FreeBsdAddressAttribute, buffer_freebsd::FreeBSDBuffer,
+};
 
 const IFA_ADDRESS: u16 = 1;
 const IFA_LOCAL: u16 = 2;
@@ -19,7 +27,10 @@ const IFA_MULTICAST: u16 = 7;
 const IFA_FLAGS: u16 = 8;
 const IFA_RT_PRIORITY: u16 = 9;
 const IFA_TARGET_NETNSID: u16 = 10;
+#[cfg(not(target_os = "freebsd"))]
 const IFA_PROTO: u16 = 11;
+#[cfg(target_os = "freebsd")]
+const IFA_FREEBSD: u16 = 11;
 
 // 32 bites
 const IPV4_ADDR_LEN: usize = 4;
@@ -43,7 +54,10 @@ pub enum AddressAttribute {
     /// priority/metric for prefix route
     RoutePriority(u32),
     TargetNetNsId(i32),
+    #[cfg(not(target_os = "freebsd"))]
     Protocol(AddressProtocol),
+    #[cfg(target_os = "freebsd")]
+    FreeBSD(Vec<FreeBsdAddressAttribute>),
     Other(DefaultNla),
 }
 
@@ -64,7 +78,10 @@ impl Nla for AddressAttribute {
             | Self::RoutePriority(_)
             | Self::TargetNetNsId(_) => 4,
             Self::CacheInfo(ref attr) => attr.buffer_len(),
+            #[cfg(not(target_os = "freebsd"))]
             Self::Protocol(_) => 1,
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(ref attr) => attr.as_slice().buffer_len(),
             Self::Other(ref attr) => attr.value_len(),
         }
     }
@@ -87,7 +104,10 @@ impl Nla for AddressAttribute {
             Self::CacheInfo(ref attr) => attr.emit(buffer),
             Self::RoutePriority(v) => emit_u32(buffer, *v).unwrap(),
             Self::TargetNetNsId(v) => emit_i32(buffer, *v).unwrap(),
+            #[cfg(not(target_os = "freebsd"))]
             Self::Protocol(v) => buffer[0] = u8::from(*v),
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(ref attr) => attr.emit_value(buffer),
         }
     }
@@ -104,7 +124,10 @@ impl Nla for AddressAttribute {
             Self::Flags(_) => IFA_FLAGS,
             Self::RoutePriority(_) => IFA_RT_PRIORITY,
             Self::TargetNetNsId(_) => IFA_TARGET_NETNSID,
+            #[cfg(not(target_os = "freebsd"))]
             Self::Protocol(_) => IFA_PROTO,
+            #[cfg(target_os = "freebsd")]
+            Self::FreeBSD(_) => IFA_FREEBSD,
             Self::Other(ref nla) => nla.kind(),
         }
     }
@@ -201,9 +224,23 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 parse_i32(payload)
                     .context("invalid IFA_TARGET_NETNSID value")?,
             ),
+            #[cfg(not(target_os = "freebsd"))]
             IFA_PROTO => Self::Protocol(
                 parse_u8(payload).context("invalid IFA_PROTO value")?.into(),
             ),
+            #[cfg(target_os = "freebsd")]
+            IFA_FREEBSD => {
+                let mut nlas = vec![];
+                for item in NlasIterator::new(payload) {
+                    let item = item.context("invalid IFA_FREEBSD value")?;
+                    let fb_buf = FreeBSDBuffer::new(item.into_inner());
+                    nlas.push(
+                        FreeBsdAddressAttribute::parse(&fb_buf)
+                            .context("invalid IFA_FREEBSD value")?,
+                    );
+                }
+                Self::FreeBSD(nlas)
+            }
             kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,

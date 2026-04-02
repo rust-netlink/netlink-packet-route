@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{Emitable, ParseableParametrized};
+#[cfg(not(target_os = "freebsd"))]
+use netlink_packet_core::Emitable;
+use netlink_packet_core::ParseableParametrized;
 
+#[cfg(not(target_os = "freebsd"))]
+use crate::link::{
+    link_flag::LinkFlags, LinkHeader, LinkLayerType, LinkMessage,
+};
 use crate::{
-    link::{
-        link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
-        LinkMessage, LinkMessageBuffer, LinkMode, State,
-    },
+    link::{LinkAttribute, LinkMessageBuffer, LinkMode, State},
     AddressFamily,
 };
 
@@ -38,6 +41,7 @@ static LINK_MSG: [u8; 96] = [
     0x00, // Maximum GSO size L=8,T=41,V=65536
 ];
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn link_message_packet_header_read() {
     let packet = LinkMessageBuffer::new(&LINK_MSG[0..16]);
@@ -56,6 +60,7 @@ fn link_message_packet_header_read() {
     assert_eq!(packet.change_mask(), 0);
 }
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn link_message_packet_header_build() {
     let mut buf = vec![0xff; 16];
@@ -166,6 +171,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(parsed, LinkAttribute::NumTxQueues(1));
 }
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn link_message_emit() {
     let header = LinkHeader {
@@ -202,6 +208,7 @@ fn link_message_emit() {
     assert_eq!(buf, &LINK_MSG[..96]);
 }
 
+#[cfg(not(target_os = "freebsd"))]
 #[test]
 fn link_type_mctp() {
     const LINK_MSG_MCTP: [u8; 16] = [
