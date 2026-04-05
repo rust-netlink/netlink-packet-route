@@ -101,8 +101,8 @@ const IFLA_TSO_MAX_SIZE: u16 = 59;
 const IFLA_TSO_MAX_SEGS: u16 = 60;
 const IFLA_ALLMULTI: u16 = 61;
 // const IFLA_DEVLINK_PORT: u16 = 62;
-// const IFLA_GSO_IPV4_MAX_SIZE: u16 = 63;
-// const IFLA_GRO_IPV4_MAX_SIZE: u16 = 64;
+const IFLA_GSO_IPV4_MAX_SIZE: u16 = 63;
+const IFLA_GRO_IPV4_MAX_SIZE: u16 = 64;
 // const IFLA_DPLL_PIN: u16 = 65;
 // const IFLA_MAX_PACING_OFFLOAD_HORIZON: u16 = 66;
 // const IFLA_NETNS_IMMUTABLE: u16 = 67;
@@ -178,6 +178,8 @@ pub enum LinkAttribute {
     TsoMaxSize(u32),
     TsoMaxSegs(u32),
     AllMulticast(u32),
+    GsoIpv4MaxSize(u32),
+    GroIpv4MaxSize(u32),
     Other(DefaultNla),
 }
 
@@ -235,7 +237,9 @@ impl Nla for LinkAttribute {
             | Self::GroMaxSize(_)
             | Self::TsoMaxSize(_)
             | Self::TsoMaxSegs(_)
-            | Self::AllMulticast(_) => 4,
+            | Self::AllMulticast(_)
+            | Self::GsoIpv4MaxSize(_)
+            | Self::GroIpv4MaxSize(_) => 4,
 
             Self::OperState(_) => 1,
             Self::Stats(_) => LINK_STATS_LEN,
@@ -303,7 +307,9 @@ impl Nla for LinkAttribute {
             | Self::GroMaxSize(value)
             | Self::TsoMaxSize(value)
             | Self::TsoMaxSegs(value)
-            | Self::AllMulticast(value) => emit_u32(buffer, *value).unwrap(),
+            | Self::AllMulticast(value)
+            | Self::GsoIpv4MaxSize(value)
+            | Self::GroIpv4MaxSize(value) => emit_u32(buffer, *value).unwrap(),
 
             Self::ExtMask(value) => {
                 emit_u32(buffer, u32::from(&VecLinkExtentMask(value.to_vec())))
@@ -392,6 +398,8 @@ impl Nla for LinkAttribute {
             Self::TsoMaxSize(_) => IFLA_TSO_MAX_SIZE,
             Self::TsoMaxSegs(_) => IFLA_TSO_MAX_SEGS,
             Self::AllMulticast(_) => IFLA_ALLMULTI,
+            Self::GsoIpv4MaxSize(_) => IFLA_GSO_IPV4_MAX_SIZE,
+            Self::GroIpv4MaxSize(_) => IFLA_GRO_IPV4_MAX_SIZE,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -738,6 +746,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             ),
             IFLA_ALLMULTI => Self::AllMulticast(
                 parse_u32(payload).context("invalid IFLA_ALLMULTI value")?,
+            ),
+            IFLA_GSO_IPV4_MAX_SIZE => Self::GsoIpv4MaxSize(
+                parse_u32(payload)
+                    .context("invalid IFLA_GSO_IPV4_MAX_SIZE value")?,
+            ),
+            IFLA_GRO_IPV4_MAX_SIZE => Self::GroIpv4MaxSize(
+                parse_u32(payload)
+                    .context("invalid IFLA_GRO_IPV4_MAX_SIZE value")?,
             ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
