@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     link::{
@@ -106,8 +106,8 @@ fn test_empty_af_spec() {
             LinkAttribute::GsoMaxSegs(65535),
             LinkAttribute::GsoMaxSize(65536),
             LinkAttribute::GroMaxSize(65536),
-            LinkAttribute::Other(DefaultNla::new(63, vec![0, 0, 1, 0])),
-            LinkAttribute::Other(DefaultNla::new(64, vec![0, 0, 1, 0])),
+            LinkAttribute::GsoIpv4MaxSize(65536),
+            LinkAttribute::GroIpv4MaxSize(65536),
             LinkAttribute::TsoMaxSize(65536),
             LinkAttribute::TsoMaxSegs(65535),
             LinkAttribute::NumRxQueues(4),
