@@ -47,8 +47,7 @@ impl Display for In6AddrGenMode {
         match self {
             Self::Eui64 => write!(f, "eui64"),
             Self::None => write!(f, "none"),
-            // https://github.com/iproute2/iproute2/blob/afbfd2f2b0a633d068990775f8e1b73b8ee83733/ip/ipaddress.c#L325-L329
-            Self::StablePrivacy => write!(f, "stable_secret"),
+            Self::StablePrivacy => write!(f, "stable_privacy"),
             Self::Random => write!(f, "random"),
             Self::Other(d) => write!(f, "other({d})"),
         }
