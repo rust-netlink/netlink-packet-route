@@ -369,7 +369,7 @@ fn test_parsing_link_vxlan() {
                     }),
                 ]),
             ]),
-            LinkAttribute::Other(DefaultNla::new(32830, vec![])),
+            LinkAttribute::DevlinkPort(vec![]),
         ],
     };
 

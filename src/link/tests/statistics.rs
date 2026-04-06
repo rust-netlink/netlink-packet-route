@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     link::{
@@ -720,10 +720,7 @@ fn test_parsing_link_statistics() {
             LinkAttribute::PropList(vec![Prop::AltIfName("wlp0s20f3".into())]),
             LinkAttribute::ParentDevName("0000:00:14.3".into()),
             LinkAttribute::ParentDevBusName("pci".into()),
-            LinkAttribute::Other(DefaultNla::new(
-                32830, // NLA_F_NESTED|IFLA_DEVLINK_PORT
-                vec![],
-            )),
+            LinkAttribute::DevlinkPort(vec![]),
         ],
     };
 

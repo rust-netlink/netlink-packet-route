@@ -3,6 +3,7 @@
 mod af_spec;
 mod attribute;
 mod buffer_tool;
+mod devlink_port;
 mod down_reason;
 mod event;
 pub(crate) mod ext_mask;
@@ -36,6 +37,7 @@ pub use self::{
         MctpPhysBinding,
     },
     attribute::LinkAttribute,
+    devlink_port::DevlinkPort,
     down_reason::LinkProtocolDownReason,
     event::LinkEvent,
     ext_mask::LinkExtentMask,

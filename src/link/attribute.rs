@@ -23,6 +23,7 @@ use super::proto_info::VecLinkProtoInfoBridge;
 use super::{
     af_spec::VecAfSpecUnspec,
     buffer_tool::expand_buffer_if_small,
+    devlink_port::DevlinkPort,
     ext_mask::VecLinkExtentMask,
     link_info::VecLinkInfo,
     proto_info::VecLinkProtoInfoInet6,
@@ -100,7 +101,7 @@ const IFLA_GRO_MAX_SIZE: u16 = 58;
 const IFLA_TSO_MAX_SIZE: u16 = 59;
 const IFLA_TSO_MAX_SEGS: u16 = 60;
 const IFLA_ALLMULTI: u16 = 61;
-// const IFLA_DEVLINK_PORT: u16 = 62;
+const IFLA_DEVLINK_PORT: u16 = 62;
 const IFLA_GSO_IPV4_MAX_SIZE: u16 = 63;
 const IFLA_GRO_IPV4_MAX_SIZE: u16 = 64;
 // const IFLA_DPLL_PIN: u16 = 65;
@@ -181,6 +182,7 @@ pub enum LinkAttribute {
     GsoIpv4MaxSize(u32),
     GroIpv4MaxSize(u32),
     NetnsImmutable(bool),
+    DevlinkPort(Vec<DevlinkPort>),
     Other(DefaultNla),
 }
 
@@ -253,6 +255,7 @@ impl Nla for LinkAttribute {
             Self::PropList(nlas) => nlas.as_slice().buffer_len(),
             Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
             Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
+            Self::DevlinkPort(nlas) => nlas.as_slice().buffer_len(),
             Self::ProtoInfoUnknown(attr) => attr.value_len(),
             Self::Wireless(v) => v.buffer_len(),
             Self::Other(attr) => attr.value_len(),
@@ -335,6 +338,7 @@ impl Nla for LinkAttribute {
             Self::PropList(nlas) => nlas.as_slice().emit(buffer),
             Self::AfSpecUnspec(nlas) => nlas.as_slice().emit(buffer),
             Self::AfSpecBridge(nlas) => nlas.as_slice().emit(buffer),
+            Self::DevlinkPort(nlas) => nlas.as_slice().emit(buffer),
             Self::Wireless(v) => v.emit(buffer),
             Self::ProtoInfoUnknown(attr) | Self::Other(attr) => {
                 attr.emit_value(buffer)
@@ -406,6 +410,7 @@ impl Nla for LinkAttribute {
             Self::GsoIpv4MaxSize(_) => IFLA_GSO_IPV4_MAX_SIZE,
             Self::GroIpv4MaxSize(_) => IFLA_GRO_IPV4_MAX_SIZE,
             Self::NetnsImmutable(_) => IFLA_NETNS_IMMUTABLE,
+            Self::DevlinkPort(_) => IFLA_DEVLINK_PORT | NLA_F_NESTED,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -766,6 +771,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context("invalid IFLA_NETNS_IMMUTABLE value")?
                     != 0,
             ),
+            IFLA_DEVLINK_PORT => {
+                let err = "invalid IFLA_DEVLINK_PORT value";
+                let mut nlas = vec![];
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(err)?;
+                    let parsed = DevlinkPort::parse(nla).context(err)?;
+                    nlas.push(parsed);
+                }
+                Self::DevlinkPort(nlas)
+            }
             kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,

@@ -420,7 +420,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                     }),
                 ]),
             ]),
-            LinkAttribute::Other(DefaultNla::new(32830, vec![])),
+            LinkAttribute::DevlinkPort(vec![]),
         ],
     };
 
@@ -1217,7 +1217,7 @@ fn test_bridge_netns_immutable() {
                 dma: 0,
                 port: 0,
             }),
-            LinkAttribute::Other(DefaultNla::new(32830, vec![])),
+            LinkAttribute::DevlinkPort(vec![]),
             LinkAttribute::Other(DefaultNla::new(32833, vec![])),
         ],
     };
