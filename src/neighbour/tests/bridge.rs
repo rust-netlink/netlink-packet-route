@@ -28,7 +28,7 @@ fn test_bridge_neighbour_show() {
             flags: NeighbourFlags::Own,
             kind: RouteType::Unspec,
         },
-        attributes: vec![NeighbourAttribute::LinkLocalAddress(vec![
+        attributes: vec![NeighbourAttribute::LinkLayerAddress(vec![
             1, 0, 94, 0, 0, 1,
         ])],
     };

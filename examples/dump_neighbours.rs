@@ -106,7 +106,7 @@ fn print_entry(entry: NeighbourMessage) {
             }
         }),
         entry.attributes.iter().find_map(|nla| {
-            if let NeighbourAttribute::LinkLocalAddress(addr) = nla {
+            if let NeighbourAttribute::LinkLayerAddress(addr) = nla {
                 Some(format_mac(addr))
             } else {
                 None

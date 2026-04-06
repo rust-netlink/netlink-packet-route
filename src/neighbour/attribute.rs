@@ -33,7 +33,7 @@ const NDA_FLAGS_EXT: u16 = 15;
 #[non_exhaustive]
 pub enum NeighbourAttribute {
     Destination(NeighbourAddress),
-    LinkLocalAddress(Vec<u8>),
+    LinkLayerAddress(Vec<u8>),
     CacheInfo(NeighbourCacheInfo),
     Probes(u32),
     Vlan(u16),
@@ -51,7 +51,7 @@ pub enum NeighbourAttribute {
 impl Nla for NeighbourAttribute {
     fn value_len(&self) -> usize {
         match self {
-            Self::LinkLocalAddress(bytes) => bytes.len(),
+            Self::LinkLayerAddress(bytes) => bytes.len(),
             Self::Destination(v) => v.buffer_len(),
             Self::CacheInfo(v) => v.buffer_len(),
             Self::Vlan(_) | Self::Port(_) => 2,
@@ -70,7 +70,7 @@ impl Nla for NeighbourAttribute {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Destination(v) => v.emit(buffer),
-            Self::LinkLocalAddress(bytes) => {
+            Self::LinkLayerAddress(bytes) => {
                 buffer.copy_from_slice(bytes.as_slice())
             }
             Self::CacheInfo(v) => v.emit(buffer),
@@ -91,7 +91,7 @@ impl Nla for NeighbourAttribute {
     fn kind(&self) -> u16 {
         match self {
             Self::Destination(_) => NDA_DST,
-            Self::LinkLocalAddress(_) => NDA_LLADDR,
+            Self::LinkLayerAddress(_) => NDA_LLADDR,
             Self::CacheInfo(_) => NDA_CACHEINFO,
             Self::Probes(_) => NDA_PROBES,
             Self::Vlan(_) => NDA_VLAN,
@@ -122,7 +122,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 NeighbourAddress::parse_with_param(address_family, payload)
                     .context(format!("invalid NDA_DST value {payload:?}"))?,
             ),
-            NDA_LLADDR => Self::LinkLocalAddress(payload.to_vec()),
+            NDA_LLADDR => Self::LinkLayerAddress(payload.to_vec()),
             NDA_CACHEINFO => Self::CacheInfo(
                 NeighbourCacheInfo::parse(
                     &NeighbourCacheInfoBuffer::new_checked(payload).context(
