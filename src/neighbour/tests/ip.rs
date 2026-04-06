@@ -41,7 +41,7 @@ fn test_ipv4_neighbour_show() {
             NeighbourAttribute::Destination(
                 Ipv4Addr::from_str("172.17.2.1").unwrap().into(),
             ),
-            NeighbourAttribute::LinkLocalAddress(vec![
+            NeighbourAttribute::LinkLayerAddress(vec![
                 28, 105, 122, 7, 195, 54,
             ]),
             NeighbourAttribute::Probes(1),
@@ -93,7 +93,7 @@ fn test_ipv6_neighbour_show() {
                     .unwrap()
                     .into(),
             ),
-            NeighbourAttribute::LinkLocalAddress(vec![
+            NeighbourAttribute::LinkLayerAddress(vec![
                 28, 105, 122, 7, 195, 54,
             ]),
             NeighbourAttribute::Probes(1),
@@ -146,7 +146,7 @@ fn test_ipv4_neighbour_protocol_show() {
             NeighbourAttribute::Destination(
                 Ipv4Addr::from_str("172.17.2.99").unwrap().into(),
             ),
-            NeighbourAttribute::LinkLocalAddress(vec![
+            NeighbourAttribute::LinkLayerAddress(vec![
                 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
             ]),
             NeighbourAttribute::Probes(0),
@@ -231,7 +231,7 @@ fn test_ipv4_neighbour_show_ext_flags() {
             NeighbourAttribute::Destination(
                 Ipv4Addr::from_str("172.17.2.1").unwrap().into(),
             ),
-            NeighbourAttribute::LinkLocalAddress(vec![72, 33, 11, 60, 31, 1]),
+            NeighbourAttribute::LinkLayerAddress(vec![72, 33, 11, 60, 31, 1]),
             NeighbourAttribute::Probes(4),
             NeighbourAttribute::CacheInfo(NeighbourCacheInfo {
                 confirmed: 601,
