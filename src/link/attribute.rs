@@ -105,7 +105,7 @@ const IFLA_GSO_IPV4_MAX_SIZE: u16 = 63;
 const IFLA_GRO_IPV4_MAX_SIZE: u16 = 64;
 // const IFLA_DPLL_PIN: u16 = 65;
 // const IFLA_MAX_PACING_OFFLOAD_HORIZON: u16 = 66;
-// const IFLA_NETNS_IMMUTABLE: u16 = 67;
+const IFLA_NETNS_IMMUTABLE: u16 = 67;
 // const IFLA_HEADROOM: u16 = 68;
 // const IFLA_TAILROOM: u16 = 69;
 
@@ -180,6 +180,7 @@ pub enum LinkAttribute {
     AllMulticast(u32),
     GsoIpv4MaxSize(u32),
     GroIpv4MaxSize(u32),
+    NetnsImmutable(bool),
     Other(DefaultNla),
 }
 
@@ -210,6 +211,8 @@ impl Nla for LinkAttribute {
 
             Self::Mode(_) => 1,
             Self::Carrier(_) | Self::ProtoDown(_) => 1,
+
+            Self::NetnsImmutable(_) => 1,
 
             Self::Mtu(_)
             | Self::NewNetnsId(_)
@@ -286,6 +289,8 @@ impl Nla for LinkAttribute {
             Self::Mode(v) => buffer[0] = (*v).into(),
 
             Self::Carrier(val) | Self::ProtoDown(val) => buffer[0] = *val,
+
+            Self::NetnsImmutable(val) => buffer[0] = u8::from(*val),
 
             Self::Mtu(value)
             | Self::Link(value)
@@ -400,6 +405,7 @@ impl Nla for LinkAttribute {
             Self::AllMulticast(_) => IFLA_ALLMULTI,
             Self::GsoIpv4MaxSize(_) => IFLA_GSO_IPV4_MAX_SIZE,
             Self::GroIpv4MaxSize(_) => IFLA_GRO_IPV4_MAX_SIZE,
+            Self::NetnsImmutable(_) => IFLA_NETNS_IMMUTABLE,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -754,6 +760,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_GRO_IPV4_MAX_SIZE => Self::GroIpv4MaxSize(
                 parse_u32(payload)
                     .context("invalid IFLA_GRO_IPV4_MAX_SIZE value")?,
+            ),
+            IFLA_NETNS_IMMUTABLE => Self::NetnsImmutable(
+                parse_u8(payload)
+                    .context("invalid IFLA_NETNS_IMMUTABLE value")?
+                    != 0,
             ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
