@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     link::{
@@ -330,8 +330,7 @@ fn test_macvtap_link_info() {
                     }),
                 ]),
             ]),
-            // TODO: Need to parse NLA_F_NESTED|IFLA_DEVLINK_PORT
-            LinkAttribute::Other(DefaultNla::new(32830, Vec::new())),
+            LinkAttribute::DevlinkPort(vec![]),
         ],
     };
 
