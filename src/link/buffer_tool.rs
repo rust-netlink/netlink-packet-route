@@ -5,9 +5,8 @@ pub(crate) fn expand_buffer_if_small(
     expected_size: usize,
     nla_name: &str,
 ) -> Vec<u8> {
-    let mut payload = got.to_vec();
-    match payload.len() {
-        l if l > expected_size => {
+    match got.len().cmp(&expected_size) {
+        std::cmp::Ordering::Greater => {
             log::debug!(
                 "Specified {nla_name} NLA attribute holds more(most likely \
                  new kernel) data which is unknown to netlink-packet-route \
@@ -15,10 +14,12 @@ pub(crate) fn expand_buffer_if_small(
                 got.len()
             );
         }
-        l if l < expected_size => {
-            payload.extend_from_slice(&vec![0; expected_size - got.len()]);
+        std::cmp::Ordering::Less => {
+            let mut payload = got.to_vec();
+            payload.resize(expected_size, 0);
+            return payload;
         }
-        _ => (),
+        std::cmp::Ordering::Equal => {}
     }
-    payload
+    got.to_vec()
 }
