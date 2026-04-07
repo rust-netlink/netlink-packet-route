@@ -29,7 +29,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             }
             IFLA_PROTO_DOWN_REASON_VALUE => {
                 Self::Value(parse_u32(payload).context(format!(
-                    "invalid IFLA_PROTO_DOWN_REASON_MASK {payload:?}"
+                    "invalid IFLA_PROTO_DOWN_REASON_VALUE {payload:?}"
                 ))?)
             }
             kind => Self::Other(DefaultNla::parse(buf).context(format!(
