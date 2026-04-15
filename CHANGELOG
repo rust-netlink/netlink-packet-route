@@ -1,4 +1,24 @@
 # Changelog
+## [0.30.0] - 2026-04-15
+### Breaking changes
+ - API break: Change `In6AddrGenMode::StablePrivacy` display to
+   `stable_privacy`. (900e42c)
+ - API break: Change `NeighbourAttribute::LinkLocalAddress` to
+   `LinkLayerAddress`. (2442c1d)
+
+### New features
+ - route: Add default for Seg6Header. (ffb7a4c)
+ - link: Add DEVCONF_FORCE_FORWARDING to Inet6DevConf (kernel 6.17+). (7fa59a8)
+ - link: Add support of `IFLA_PARENT_DEV_NAME` and etc. (a21e273)
+ - link: Add support of `IFLA_DEVLINK_PORT`. (e223320)
+ - link: Add support of `IFLA_NETNS_IMMUTABLE`. (609d4a1)
+ - link: Add support of `IFLA_GSO_IPV4_MAX_SIZE` and `IFLA_GRO_IPV4_MAX_SIZE`.
+   (4c39988)
+
+### Bug fixes
+ - link: Fix typo in IFLA_PROTO_DOWN_REASON_VALUE process. (372d94a)
+ - link: Use std::cmp::Ordering instead manual compare. (1b149f4)
+
 ## [0.29.0] - 2026-02-19
 ### Breaking changes
  - link bond: Change `InfoBond::AdSelect` from u8 to enum. (1a16af8)
