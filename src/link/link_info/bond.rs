@@ -48,6 +48,8 @@ const IFLA_BOND_PEER_NOTIF_DELAY: u16 = 28;
 const IFLA_BOND_AD_LACP_ACTIVE: u16 = 29;
 const IFLA_BOND_MISSED_MAX: u16 = 30;
 const IFLA_BOND_NS_IP6_TARGET: u16 = 31;
+const IFLA_BOND_COUPLED_CONTROL: u16 = 32;
+const IFLA_BOND_BROADCAST_NEIGH: u16 = 33;
 
 const BOND_MODE_ROUNDROBIN: u8 = 0;
 const BOND_MODE_ACTIVEBACKUP: u8 = 1;
@@ -684,6 +686,8 @@ pub enum InfoBond {
     AdLacpActive(bool),
     MissedMax(u8),
     NsIp6Target(Vec<Ipv6Addr>),
+    CoupledControl(bool),
+    BroadcastNeigh(bool),
     Other(DefaultNla),
 }
 
@@ -701,7 +705,9 @@ impl Nla for InfoBond {
             | Self::AdLacpRate(_)
             | Self::AdSelect(_)
             | Self::TlbDynamicLb(_)
-            | Self::MissedMax(_) => 1,
+            | Self::MissedMax(_)
+            | Self::CoupledControl(_)
+            | Self::BroadcastNeigh(_) => 1,
             Self::AdActorSysPrio(_) | Self::AdUserPortKey(_) => 2,
             Self::ActivePort(_)
             | Self::MiiMon(_)
@@ -739,7 +745,9 @@ impl Nla for InfoBond {
             }
             Self::UseCarrier(value)
             | Self::AdLacpActive(value)
-            | Self::TlbDynamicLb(value) => buffer[0] = (*value).into(),
+            | Self::TlbDynamicLb(value)
+            | Self::CoupledControl(value)
+            | Self::BroadcastNeigh(value) => buffer[0] = (*value).into(),
             Self::AdLacpRate(value) => buffer[0] = (*value).into(),
             Self::AllPortsActive(value) => buffer[0] = (*value).into(),
             Self::FailOverMac(value) => buffer[0] = (*value).into(),
@@ -808,6 +816,8 @@ impl Nla for InfoBond {
             Self::AdLacpActive(_) => IFLA_BOND_AD_LACP_ACTIVE,
             Self::MissedMax(_) => IFLA_BOND_MISSED_MAX,
             Self::NsIp6Target(_) => IFLA_BOND_NS_IP6_TARGET,
+            Self::CoupledControl(_) => IFLA_BOND_COUPLED_CONTROL,
+            Self::BroadcastNeigh(_) => IFLA_BOND_BROADCAST_NEIGH,
             Self::Other(v) => v.kind(),
         }
     }
@@ -972,6 +982,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                 }
                 Self::NsIp6Target(addrs)
             }
+            IFLA_BOND_COUPLED_CONTROL => Self::CoupledControl(
+                parse_u8(payload)
+                    .context("invalid IFLA_BOND_COUPLED_CONTROL value")?
+                    > 0,
+            ),
+            IFLA_BOND_BROADCAST_NEIGH => Self::BroadcastNeigh(
+                parse_u8(payload)
+                    .context("invalid IFLA_BOND_BROADCAST_NEIGH value")?
+                    > 0,
+            ),
             _ => Self::Other(DefaultNla::parse(buf).context(format!(
                 "invalid NLA for {}: {payload:?}",
                 buf.kind()
