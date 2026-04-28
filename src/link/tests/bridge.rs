@@ -1218,7 +1218,7 @@ fn test_bridge_netns_immutable() {
                 port: 0,
             }),
             LinkAttribute::DevlinkPort(vec![]),
-            LinkAttribute::Other(DefaultNla::new(32833, vec![])),
+            LinkAttribute::DpllPin(vec![]),
         ],
     };
 

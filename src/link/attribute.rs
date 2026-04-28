@@ -24,6 +24,7 @@ use super::{
     af_spec::VecAfSpecUnspec,
     buffer_tool::expand_buffer_if_small,
     devlink_port::DevlinkPort,
+    dpll_pin::DpllPin,
     ext_mask::VecLinkExtentMask,
     link_info::VecLinkInfo,
     proto_info::VecLinkProtoInfoInet6,
@@ -104,7 +105,7 @@ const IFLA_ALLMULTI: u16 = 61;
 const IFLA_DEVLINK_PORT: u16 = 62;
 const IFLA_GSO_IPV4_MAX_SIZE: u16 = 63;
 const IFLA_GRO_IPV4_MAX_SIZE: u16 = 64;
-// const IFLA_DPLL_PIN: u16 = 65;
+const IFLA_DPLL_PIN: u16 = 65;
 // const IFLA_MAX_PACING_OFFLOAD_HORIZON: u16 = 66;
 const IFLA_NETNS_IMMUTABLE: u16 = 67;
 // const IFLA_HEADROOM: u16 = 68;
@@ -183,6 +184,7 @@ pub enum LinkAttribute {
     GroIpv4MaxSize(u32),
     NetnsImmutable(bool),
     DevlinkPort(Vec<DevlinkPort>),
+    DpllPin(Vec<DpllPin>),
     Other(DefaultNla),
 }
 
@@ -256,6 +258,7 @@ impl Nla for LinkAttribute {
             Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
             Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
             Self::DevlinkPort(nlas) => nlas.as_slice().buffer_len(),
+            Self::DpllPin(nlas) => nlas.as_slice().buffer_len(),
             Self::ProtoInfoUnknown(attr) => attr.value_len(),
             Self::Wireless(v) => v.buffer_len(),
             Self::Other(attr) => attr.value_len(),
@@ -339,6 +342,7 @@ impl Nla for LinkAttribute {
             Self::AfSpecUnspec(nlas) => nlas.as_slice().emit(buffer),
             Self::AfSpecBridge(nlas) => nlas.as_slice().emit(buffer),
             Self::DevlinkPort(nlas) => nlas.as_slice().emit(buffer),
+            Self::DpllPin(nlas) => nlas.as_slice().emit(buffer),
             Self::Wireless(v) => v.emit(buffer),
             Self::ProtoInfoUnknown(attr) | Self::Other(attr) => {
                 attr.emit_value(buffer)
@@ -411,6 +415,7 @@ impl Nla for LinkAttribute {
             Self::GroIpv4MaxSize(_) => IFLA_GRO_IPV4_MAX_SIZE,
             Self::NetnsImmutable(_) => IFLA_NETNS_IMMUTABLE,
             Self::DevlinkPort(_) => IFLA_DEVLINK_PORT | NLA_F_NESTED,
+            Self::DpllPin(_) => IFLA_DPLL_PIN | NLA_F_NESTED,
             Self::Other(attr) => attr.kind(),
         }
     }
@@ -780,6 +785,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     nlas.push(parsed);
                 }
                 Self::DevlinkPort(nlas)
+            }
+            IFLA_DPLL_PIN => {
+                let err = "invalid IFLA_DPLL_PIN value";
+                let mut nlas = vec![];
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(err)?;
+                    let parsed = DpllPin::parse(nla).context(err)?;
+                    nlas.push(parsed);
+                }
+                Self::DpllPin(nlas)
             }
             kind => Self::Other(
                 DefaultNla::parse(buf)

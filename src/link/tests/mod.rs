@@ -7,6 +7,8 @@ mod bond;
 #[cfg(test)]
 mod bridge;
 #[cfg(test)]
+mod dpll_pin;
+#[cfg(test)]
 mod geneve;
 #[cfg(test)]
 mod gre;

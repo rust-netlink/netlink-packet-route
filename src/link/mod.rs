@@ -5,6 +5,7 @@ mod attribute;
 mod buffer_tool;
 mod devlink_port;
 mod down_reason;
+mod dpll_pin;
 mod event;
 pub(crate) mod ext_mask;
 mod header;
@@ -39,6 +40,7 @@ pub use self::{
     attribute::LinkAttribute,
     devlink_port::DevlinkPort,
     down_reason::LinkProtocolDownReason,
+    dpll_pin::DpllPin,
     event::LinkEvent,
     ext_mask::LinkExtentMask,
     header::{LinkHeader, LinkMessageBuffer},
