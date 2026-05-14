@@ -178,3 +178,61 @@ impl From<AddressFamily> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for AddressFamily {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unspec => f.write_str("unspec"),
+            Self::Local => f.write_str("local"),
+            Self::Unix => f.write_str("unix"),
+            Self::Inet => f.write_str("inet"),
+            Self::Ax25 => f.write_str("ax25"),
+            Self::Ipx => f.write_str("ipx"),
+            Self::Appletalk => f.write_str("appletalk"),
+            Self::Netrom => f.write_str("netrom"),
+            Self::Bridge => f.write_str("bridge"),
+            Self::Atmpvc => f.write_str("atmpvc"),
+            Self::X25 => f.write_str("x25"),
+            Self::Inet6 => f.write_str("inet6"),
+            Self::Rose => f.write_str("rose"),
+            Self::Decnet => f.write_str("decnet"),
+            Self::Netbeui => f.write_str("netbeui"),
+            Self::Security => f.write_str("security"),
+            Self::Key => f.write_str("key"),
+            Self::Route => f.write_str("route"),
+            Self::Netlink => f.write_str("netlink"),
+            Self::Packet => f.write_str("packet"),
+            Self::Ash => f.write_str("ash"),
+            Self::Econet => f.write_str("econet"),
+            Self::Atmsvc => f.write_str("atmsvc"),
+            Self::Rds => f.write_str("rds"),
+            Self::Sna => f.write_str("sna"),
+            Self::Irda => f.write_str("irda"),
+            Self::Pppox => f.write_str("pppox"),
+            Self::Wanpipe => f.write_str("wanpipe"),
+            Self::Llc => f.write_str("llc"),
+            #[cfg(not(target_os = "android"))]
+            Self::Ib => f.write_str("ib"),
+            #[cfg(not(target_os = "android"))]
+            Self::Mpls => f.write_str("mpls"),
+            Self::Can => f.write_str("can"),
+            Self::Tipc => f.write_str("tipc"),
+            Self::Bluetooth => f.write_str("bluetooth"),
+            Self::Iucv => f.write_str("iucv"),
+            Self::Rxrpc => f.write_str("rxrpc"),
+            Self::Isdn => f.write_str("isdn"),
+            Self::Phonet => f.write_str("phonet"),
+            Self::Ieee802154 => f.write_str("ieee802154"),
+            Self::Caif => f.write_str("caif"),
+            Self::Alg => f.write_str("alg"),
+            Self::Nfc => f.write_str("nfc"),
+            Self::Vsock => f.write_str("vsock"),
+            Self::Kcm => f.write_str("kcm"),
+            Self::Qipcrtr => f.write_str("qipcrtr"),
+            Self::Smc => f.write_str("smc"),
+            Self::Xdp => f.write_str("xdp"),
+            Self::Mctp => f.write_str("mctp"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}

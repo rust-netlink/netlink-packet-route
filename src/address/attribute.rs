@@ -246,3 +246,14 @@ impl From<AddressProtocol> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for AddressProtocol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Loopback => f.write_str("kernel_lo"),
+            Self::RouterAnnouncement => f.write_str("kernel_ra"),
+            Self::LinkLocal => f.write_str("kernel_ll"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
