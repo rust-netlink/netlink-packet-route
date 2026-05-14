@@ -115,3 +115,42 @@ impl From<AddressFamily> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for AddressFamily {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unspec => f.write_str("unspec"),
+            Self::Local => f.write_str("local"),
+            Self::Unix => f.write_str("unix"),
+            Self::Inet => f.write_str("inet"),
+            Self::Implink => f.write_str("implink"),
+            Self::Pup => f.write_str("pup"),
+            Self::Chaos => f.write_str("chaos"),
+            Self::Netbios => f.write_str("netbios"),
+            Self::Iso => f.write_str("iso"),
+            Self::Osi => f.write_str("osi"),
+            Self::Ecma => f.write_str("ecma"),
+            Self::Datakit => f.write_str("datakit"),
+            Self::Ccitt => f.write_str("ccitt"),
+            Self::Sna => f.write_str("sna"),
+            Self::Decnet => f.write_str("decnet"),
+            Self::Dli => f.write_str("dli"),
+            Self::Lat => f.write_str("lat"),
+            Self::Hylink => f.write_str("hylink"),
+            Self::Appletalk => f.write_str("appletalk"),
+            Self::Route => f.write_str("route"),
+            Self::Link => f.write_str("link"),
+            Self::Coip => f.write_str("coip"),
+            Self::Cnt => f.write_str("cnt"),
+            Self::Ipx => f.write_str("ipx"),
+            Self::Sip => f.write_str("sip"),
+            Self::Isdn => f.write_str("isdn"),
+            Self::E164 => f.write_str("e164"),
+            Self::Inet6 => f.write_str("inet6"),
+            Self::Natm => f.write_str("natm"),
+            Self::Atm => f.write_str("atm"),
+            Self::Netgraph => f.write_str("netgraph"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}

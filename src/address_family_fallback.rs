@@ -39,3 +39,16 @@ impl From<AddressFamily> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for AddressFamily {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unspec => f.write_str("unspec"),
+            Self::Local => f.write_str("local"),
+            Self::Unix => f.write_str("unix"),
+            Self::Inet => f.write_str("inet"),
+            Self::Inet6 => f.write_str("inet6"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
