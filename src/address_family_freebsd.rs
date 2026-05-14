@@ -115,3 +115,44 @@ impl From<AddressFamily> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for AddressFamily {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Self::Unspec => "unspec",
+            Self::Local => "local",
+            Self::Unix => "unix",
+            Self::Inet => "inet",
+            Self::Implink => "implink",
+            Self::Pup => "pup",
+            Self::Chaos => "chaos",
+            Self::Netbios => "netbios",
+            Self::Iso => "iso",
+            Self::Osi => "osi",
+            Self::Ecma => "ecma",
+            Self::Datakit => "datakit",
+            Self::Ccitt => "ccitt",
+            Self::Sna => "sna",
+            Self::Decnet => "decnet",
+            Self::Dli => "dli",
+            Self::Lat => "lat",
+            Self::Hylink => "hylink",
+            Self::Appletalk => "appletalk",
+            Self::Route => "route",
+            Self::Link => "link",
+            Self::Coip => "coip",
+            Self::Cnt => "cnt",
+            Self::Ipx => "ipx",
+            Self::Sip => "sip",
+            Self::Isdn => "isdn",
+            Self::E164 => "e164",
+            Self::Inet6 => "inet6",
+            Self::Natm => "natm",
+            Self::Atm => "atm",
+            Self::Netgraph => "netgraph",
+            Self::Other(_) => "unknown",
+        };
+
+        f.write_str(name)
+    }
+}

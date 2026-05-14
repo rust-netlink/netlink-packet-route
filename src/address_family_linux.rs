@@ -178,3 +178,63 @@ impl From<AddressFamily> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for AddressFamily {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Self::Unspec => "unspec",
+            Self::Local => "local",
+            Self::Unix => "unix",
+            Self::Inet => "inet",
+            Self::Ax25 => "ax25",
+            Self::Ipx => "ipx",
+            Self::Appletalk => "appletalk",
+            Self::Netrom => "netrom",
+            Self::Bridge => "bridge",
+            Self::Atmpvc => "atmpvc",
+            Self::X25 => "x25",
+            Self::Inet6 => "inet6",
+            Self::Rose => "rose",
+            Self::Decnet => "decnet",
+            Self::Netbeui => "netbeui",
+            Self::Security => "security",
+            Self::Key => "key",
+            Self::Route => "route",
+            Self::Netlink => "netlink",
+            Self::Packet => "packet",
+            Self::Ash => "ash",
+            Self::Econet => "econet",
+            Self::Atmsvc => "atmsvc",
+            Self::Rds => "rds",
+            Self::Sna => "sna",
+            Self::Irda => "irda",
+            Self::Pppox => "pppox",
+            Self::Wanpipe => "wanpipe",
+            Self::Llc => "llc",
+            #[cfg(not(target_os = "android"))]
+            Self::Ib => "ib",
+            #[cfg(not(target_os = "android"))]
+            Self::Mpls => "mpls",
+            Self::Can => "can",
+            Self::Tipc => "tipc",
+            Self::Bluetooth => "bluetooth",
+            Self::Iucv => "iucv",
+            Self::Rxrpc => "rxrpc",
+            Self::Isdn => "isdn",
+            Self::Phonet => "phonet",
+            Self::Ieee802154 => "ieee802154",
+            Self::Caif => "caif",
+            Self::Alg => "alg",
+            Self::Nfc => "nfc",
+            Self::Vsock => "vsock",
+            Self::Kcm => "kcm",
+            Self::Qipcrtr => "qipcrtr",
+            Self::Smc => "smc",
+            Self::Xdp => "xdp",
+            Self::Mctp => "mctp",
+            Self::Other(_) => "unknown",
+        };
+
+        f.write_str(name)
+    }
+}

@@ -45,3 +45,18 @@ impl From<AddressScope> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for AddressScope {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Self::Universe => "global",
+            Self::Site => "site",
+            Self::Link => "link",
+            Self::Host => "host",
+            Self::Nowhere => "nowhere",
+            Self::Other(_) => "unknown",
+        };
+
+        f.write_str(name)
+    }
+}
