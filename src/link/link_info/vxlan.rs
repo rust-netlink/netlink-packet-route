@@ -38,6 +38,7 @@ const IFLA_VXLAN_TTL_INHERIT: u16 = 28;
 const IFLA_VXLAN_DF: u16 = 29;
 const IFLA_VXLAN_VNIFILTER: u16 = 30;
 const IFLA_VXLAN_LOCALBYPASS: u16 = 31;
+const IFLA_VXLAN_LABEL_POLICY: u16 = 32;
 const IFLA_VXLAN_RESERVED_BITS: u16 = 33;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -74,6 +75,7 @@ pub enum InfoVxlan {
     Df(u8),
     Vnifilter(bool),
     Localbypass(bool),
+    LabelPolicy(u32),
     /// Tolerated reserved bits in VxLAN header
     ///
     /// When set to 1 on certain reserved bit, linux kernel will not
@@ -107,6 +109,7 @@ impl Nla for InfoVxlan {
             Self::Port(_) => 2,
             Self::Id(_)
             | Self::Label(_)
+            | Self::LabelPolicy(_)
             | Self::Link(_)
             | Self::Ageing(_)
             | Self::Limit(_)
@@ -123,6 +126,7 @@ impl Nla for InfoVxlan {
         match self {
             Self::Id(value)
             | Self::Label(value)
+            | Self::LabelPolicy(value)
             | Self::Link(value)
             | Self::Ageing(value)
             | Self::Limit(value) => emit_u32(buffer, *value).unwrap(),
@@ -195,6 +199,7 @@ impl Nla for InfoVxlan {
             Self::Df(_) => IFLA_VXLAN_DF,
             Self::Vnifilter(_) => IFLA_VXLAN_VNIFILTER,
             Self::Localbypass(_) => IFLA_VXLAN_LOCALBYPASS,
+            Self::LabelPolicy(_) => IFLA_VXLAN_LABEL_POLICY,
             Self::ReservedBits(_) => IFLA_VXLAN_RESERVED_BITS,
             Self::Other(nla) => nla.kind(),
         }
@@ -358,6 +363,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_LOCALBYPASS value")?
                     > 0,
+            ),
+            IFLA_VXLAN_LABEL_POLICY => Self::LabelPolicy(
+                parse_u32(payload)
+                    .context("invalid IFLA_VXLAN_LABEL_POLICY value")?,
             ),
             IFLA_VXLAN_RESERVED_BITS => Self::ReservedBits(
                 parse_u64_be(payload)
