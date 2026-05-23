@@ -40,6 +40,7 @@ const IFLA_VXLAN_VNIFILTER: u16 = 30;
 const IFLA_VXLAN_LOCALBYPASS: u16 = 31;
 const IFLA_VXLAN_LABEL_POLICY: u16 = 32;
 const IFLA_VXLAN_RESERVED_BITS: u16 = 33;
+const IFLA_VXLAN_MC_ROUTE: u16 = 34;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -82,6 +83,7 @@ pub enum InfoVxlan {
     /// reject(drop and count as error) the VxLAN packet with that reserved
     /// bits set to 1.
     ReservedBits(u64),
+    McRoute(bool),
     Other(DefaultNla),
 }
 
@@ -104,7 +106,8 @@ impl Nla for InfoVxlan {
             | Self::TtlInherit(_)
             | Self::Df(_)
             | Self::Vnifilter(_)
-            | Self::Localbypass(_) => 1,
+            | Self::Localbypass(_)
+            | Self::McRoute(_) => 1,
             Self::Gbp(_) | Self::Gpe(_) | Self::RemCsumNoPartial(_) => 0,
             Self::Port(_) => 2,
             Self::Id(_)
@@ -149,7 +152,8 @@ impl Nla for InfoVxlan {
             | Self::UDPZeroCsumRX(value)
             | Self::RemCsumTX(value)
             | Self::RemCsumRX(value)
-            | Self::TtlInherit(value) => buffer[0] = *value as u8,
+            | Self::TtlInherit(value)
+            | Self::McRoute(value) => buffer[0] = *value as u8,
             Self::Group(value) | Self::Local(value) => {
                 buffer.copy_from_slice(&value.octets())
             }
@@ -201,6 +205,7 @@ impl Nla for InfoVxlan {
             Self::Localbypass(_) => IFLA_VXLAN_LOCALBYPASS,
             Self::LabelPolicy(_) => IFLA_VXLAN_LABEL_POLICY,
             Self::ReservedBits(_) => IFLA_VXLAN_RESERVED_BITS,
+            Self::McRoute(_) => IFLA_VXLAN_MC_ROUTE,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -371,6 +376,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
             IFLA_VXLAN_RESERVED_BITS => Self::ReservedBits(
                 parse_u64_be(payload)
                     .context("invalid IFLA_VXLAN_RESERVED_BITS value")?,
+            ),
+            IFLA_VXLAN_MC_ROUTE => Self::McRoute(
+                parse_u8(payload)
+                    .context("invalid IFLA_VXLAN_MC_ROUTE value")?
+                    > 0,
             ),
             unknown_kind => {
                 Self::Other(DefaultNla::parse(buf).context(format!(
