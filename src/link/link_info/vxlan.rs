@@ -3,8 +3,8 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, parse_u16_be, parse_u32, parse_u8, DecodeError,
-    DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    emit_u16_be, emit_u32, emit_u64_be, parse_u16_be, parse_u32, parse_u64_be,
+    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_VXLAN_ID: u16 = 1;
@@ -38,6 +38,7 @@ const IFLA_VXLAN_TTL_INHERIT: u16 = 28;
 const IFLA_VXLAN_DF: u16 = 29;
 const IFLA_VXLAN_VNIFILTER: u16 = 30;
 const IFLA_VXLAN_LOCALBYPASS: u16 = 31;
+const IFLA_VXLAN_RESERVED_BITS: u16 = 33;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -73,6 +74,12 @@ pub enum InfoVxlan {
     Df(u8),
     Vnifilter(bool),
     Localbypass(bool),
+    /// Tolerated reserved bits in VxLAN header
+    ///
+    /// When set to 1 on certain reserved bit, linux kernel will not
+    /// reject(drop and count as error) the VxLAN packet with that reserved
+    /// bits set to 1.
+    ReservedBits(u64),
     Other(DefaultNla),
 }
 
@@ -107,6 +114,7 @@ impl Nla for InfoVxlan {
             | Self::Group(_)
             | Self::Local(_) => 4,
             Self::Group6(_) | Self::Local6(_) => 16,
+            Self::ReservedBits(_) => 8,
             Self::Other(nla) => nla.value_len(),
         }
     }
@@ -149,6 +157,7 @@ impl Nla for InfoVxlan {
                 emit_u16_be(buffer, range.0).unwrap();
                 emit_u16_be(&mut buffer[2..], range.1).unwrap()
             }
+            Self::ReservedBits(value) => emit_u64_be(buffer, *value).unwrap(),
             Self::Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -186,6 +195,7 @@ impl Nla for InfoVxlan {
             Self::Df(_) => IFLA_VXLAN_DF,
             Self::Vnifilter(_) => IFLA_VXLAN_VNIFILTER,
             Self::Localbypass(_) => IFLA_VXLAN_LOCALBYPASS,
+            Self::ReservedBits(_) => IFLA_VXLAN_RESERVED_BITS,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -348,6 +358,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_LOCALBYPASS value")?
                     > 0,
+            ),
+            IFLA_VXLAN_RESERVED_BITS => Self::ReservedBits(
+                parse_u64_be(payload)
+                    .context("invalid IFLA_VXLAN_RESERVED_BITS value")?,
             ),
             unknown_kind => {
                 Self::Other(DefaultNla::parse(buf).context(format!(
