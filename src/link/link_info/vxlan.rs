@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::{
+    fmt,
+    net::{Ipv4Addr, Ipv6Addr},
+};
 
 use netlink_packet_core::{
     emit_u16_be, emit_u32, emit_u64_be, parse_u16_be, parse_u32, parse_u64_be,
@@ -61,6 +64,17 @@ impl From<u8> for VxlanDf {
             VXLAN_DF_SET => Self::Set,
             VXLAN_DF_INHERIT => Self::Inherit,
             _ => Self::Other(d),
+        }
+    }
+}
+
+impl fmt::Display for VxlanDf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VxlanDf::Unset => write!(f, "unset"),
+            VxlanDf::Set => write!(f, "set"),
+            VxlanDf::Inherit => write!(f, "inherit"),
+            VxlanDf::Other(v) => write!(f, "{v}"),
         }
     }
 }
