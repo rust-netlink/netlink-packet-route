@@ -302,6 +302,47 @@ impl Nla for InfoKind {
     }
 }
 
+impl TryFrom<&str> for InfoKind {
+    type Error = DecodeError;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Ok(match s {
+            DUMMY => Self::Dummy,
+            IFB => Self::Ifb,
+            BRIDGE => Self::Bridge,
+            TUN => Self::Tun,
+            NLMON => Self::Nlmon,
+            VLAN => Self::Vlan,
+            VETH => Self::Veth,
+            VXLAN => Self::Vxlan,
+            BOND => Self::Bond,
+            IPVLAN => Self::IpVlan,
+            IPVTAP => Self::IpVtap,
+            MACVLAN => Self::MacVlan,
+            MACVTAP => Self::MacVtap,
+            GRETAP => Self::GreTap,
+            IP6GRETAP => Self::GreTap6,
+            IPIP => Self::IpIp,
+            IP6TNL => Self::Ip6Tnl,
+            SIT => Self::SitTun,
+            GRE => Self::GreTun,
+            IP6GRE => Self::GreTun6,
+            VTI => Self::Vti,
+            VRF => Self::Vrf,
+            GTP => Self::Gtp,
+            IPOIB => Self::Ipoib,
+            WIREGUARD => Self::Wireguard,
+            XFRM => Self::Xfrm,
+            MACSEC => Self::MacSec,
+            HSR => Self::Hsr,
+            GENEVE => Self::Geneve,
+            NETKIT => Self::Netkit,
+            VXCAN => Self::Vxcan,
+            _ => Self::Other(s.to_owned()),
+        })
+    }
+}
+
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoKind, DecodeError> {
         if buf.kind() != IFLA_INFO_KIND {
