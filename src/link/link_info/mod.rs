@@ -69,7 +69,7 @@ pub use self::{
     vrf::InfoVrf,
     vti::InfoVti,
     vxcan::InfoVxcan,
-    vxlan::InfoVxlan,
+    vxlan::{InfoVxlan, VxlanDf},
     xfrm::InfoXfrm,
     xstats::LinkXstats,
 };

@@ -36,6 +36,45 @@ const IFLA_VXLAN_LABEL: u16 = 26;
 const IFLA_VXLAN_GPE: u16 = 27;
 const IFLA_VXLAN_TTL_INHERIT: u16 = 28;
 const IFLA_VXLAN_DF: u16 = 29;
+
+const VXLAN_DF_UNSET: u8 = 0;
+const VXLAN_DF_SET: u8 = 1;
+const VXLAN_DF_INHERIT: u8 = 2;
+
+/// VxLAN Don't Fragment flag
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum VxlanDf {
+    /// Set to 0
+    Unset,
+    /// Set to 1
+    Set,
+    /// Copy from original IP header
+    Inherit,
+    Other(u8),
+}
+
+impl From<u8> for VxlanDf {
+    fn from(d: u8) -> Self {
+        match d {
+            VXLAN_DF_UNSET => Self::Unset,
+            VXLAN_DF_SET => Self::Set,
+            VXLAN_DF_INHERIT => Self::Inherit,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<VxlanDf> for u8 {
+    fn from(d: VxlanDf) -> Self {
+        match d {
+            VxlanDf::Unset => VXLAN_DF_UNSET,
+            VxlanDf::Set => VXLAN_DF_SET,
+            VxlanDf::Inherit => VXLAN_DF_INHERIT,
+            VxlanDf::Other(value) => value,
+        }
+    }
+}
 const IFLA_VXLAN_VNIFILTER: u16 = 30;
 const IFLA_VXLAN_LOCALBYPASS: u16 = 31;
 const IFLA_VXLAN_LABEL_POLICY: u16 = 32;
@@ -73,7 +112,7 @@ pub enum InfoVxlan {
     Gpe(bool),
     RemCsumNoPartial(bool),
     TtlInherit(bool),
-    Df(u8),
+    Df(VxlanDf),
     Vnifilter(bool),
     Localbypass(bool),
     LabelPolicy(u32),
@@ -136,9 +175,8 @@ impl Nla for InfoVxlan {
             Self::Gbp(_value)
             | Self::Gpe(_value)
             | Self::RemCsumNoPartial(_value) => (),
-            Self::Tos(value) | Self::Ttl(value) | Self::Df(value) => {
-                buffer[0] = *value
-            }
+            Self::Tos(value) | Self::Ttl(value) => buffer[0] = *value,
+            Self::Df(value) => buffer[0] = u8::from(*value),
             Self::Vnifilter(value)
             | Self::Localbypass(value)
             | Self::Learning(value)
@@ -348,9 +386,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                     .context("invalid IFLA_VXLAN_REMCSUM_RX value")?
                     > 0,
             ),
-            IFLA_VXLAN_DF => Self::Df(
+            IFLA_VXLAN_DF => Self::Df(VxlanDf::from(
                 parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?,
-            ),
+            )),
             IFLA_VXLAN_GBP => Self::Gbp(true),
             IFLA_VXLAN_GPE => Self::Gpe(true),
             IFLA_VXLAN_REMCSUM_NOPARTIAL => Self::RemCsumNoPartial(true),

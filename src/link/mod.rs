@@ -63,7 +63,7 @@ pub use self::{
         MacVlanFlags, MacVlanMacAddressMode, MacVlanMode, MacVtapFlags,
         MacVtapMacAddressMode, MacVtapMode, MiiStatus, NetkitMode,
         NetkitPolicy, NetkitScrub, TunnelEncapFlags, TunnelEncapType,
-        VlanFlags, VlanQosMapping,
+        VlanFlags, VlanQosMapping, VxlanDf,
     },
     link_layer_type::LinkLayerType,
     link_mode::LinkMode,
