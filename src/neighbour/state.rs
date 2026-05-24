@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_core::DecodeError;
+
 const NUD_INCOMPLETE: u16 = 0x01;
 const NUD_REACHABLE: u16 = 0x02;
 const NUD_STALE: u16 = 0x04;
@@ -74,5 +76,75 @@ impl std::fmt::Display for NeighbourState {
             Self::None => write!(f, "none"),
             Self::Other(d) => write!(f, "other({d}"),
         }
+    }
+}
+
+impl std::str::FromStr for NeighbourState {
+    type Err = DecodeError;
+
+    fn from_str(state: &str) -> Result<Self, Self::Err> {
+        let state = match state {
+            "incomplete" => Self::Incomplete,
+            "reachable" => Self::Reachable,
+            "stale" => Self::Stale,
+            "delay" => Self::Delay,
+            "probe" => Self::Probe,
+            "failed" => Self::Failed,
+            "noarp" => Self::Noarp,
+            "permanent" => Self::Permanent,
+            "none" => Self::None,
+            _ => return Err(format!("Invalid state string '{state}'").into()),
+        };
+
+        Ok(state)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::NeighbourState;
+
+    #[test]
+    fn test_neighbour_state_decoding() {
+        assert!(matches!(
+            NeighbourState::from_str("incomplete"),
+            Ok(NeighbourState::Incomplete)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("reachable"),
+            Ok(NeighbourState::Reachable)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("stale"),
+            Ok(NeighbourState::Stale)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("delay"),
+            Ok(NeighbourState::Delay)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("probe"),
+            Ok(NeighbourState::Probe)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("failed"),
+            Ok(NeighbourState::Failed)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("noarp"),
+            Ok(NeighbourState::Noarp)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("permanent"),
+            Ok(NeighbourState::Permanent)
+        ));
+        assert!(matches!(
+            NeighbourState::from_str("none"),
+            Ok(NeighbourState::None)
+        ));
+        assert!(matches!(NeighbourState::from_str("None"), Err(..)));
+        assert!(matches!(NeighbourState::from_str("not a nud"), Err(..)));
     }
 }
