@@ -302,18 +302,9 @@ impl Nla for InfoKind {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoKind, DecodeError> {
-        if buf.kind() != IFLA_INFO_KIND {
-            return Err(format!(
-                "failed to parse IFLA_INFO_KIND: NLA type is {}",
-                buf.kind()
-            )
-            .into());
-        }
-        let s = parse_string(buf.value())
-            .context("invalid IFLA_INFO_KIND value")?;
-        Ok(match s.as_str() {
+impl From<&str> for InfoKind {
+    fn from(s: &str) -> Self {
+        match s {
             DUMMY => Self::Dummy,
             IFB => Self::Ifb,
             BRIDGE => Self::Bridge,
@@ -339,13 +330,28 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
             GTP => Self::Gtp,
             IPOIB => Self::Ipoib,
             WIREGUARD => Self::Wireguard,
-            MACSEC => Self::MacSec,
             XFRM => Self::Xfrm,
+            MACSEC => Self::MacSec,
             HSR => Self::Hsr,
             GENEVE => Self::Geneve,
             NETKIT => Self::Netkit,
             VXCAN => Self::Vxcan,
-            _ => Self::Other(s),
-        })
+            _ => Self::Other(s.to_owned()),
+        }
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoKind, DecodeError> {
+        if buf.kind() != IFLA_INFO_KIND {
+            return Err(format!(
+                "failed to parse IFLA_INFO_KIND: NLA type is {}",
+                buf.kind()
+            )
+            .into());
+        }
+        let s = parse_string(buf.value())
+            .context("invalid IFLA_INFO_KIND value")?;
+        Ok(s.as_str().into())
     }
 }
