@@ -316,3 +316,11 @@ fn test_bond_ad_select_from_str() {
     );
     assert!(BondAdSelect::from_str("bogus").is_err());
 }
+
+#[test]
+fn test_bond_lacp_rate_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondLacpRate::Slow, "slow".parse().unwrap());
+    assert_eq!(BondLacpRate::Fast, "fast".parse().unwrap());
+    assert!(BondLacpRate::from_str("bogus").is_err());
+}

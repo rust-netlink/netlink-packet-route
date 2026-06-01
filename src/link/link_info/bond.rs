@@ -720,6 +720,32 @@ impl From<BondLacpRate> for u8 {
     }
 }
 
+impl std::fmt::Display for BondLacpRate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BondLacpRate::Slow => f.write_str("slow"),
+            BondLacpRate::Fast => f.write_str("fast"),
+            BondLacpRate::Other(v) => write!(f, "{v}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BondLacpRate {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "slow" => Self::Slow,
+            "fast" => Self::Fast,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond lacp rate: {s}"
+                )))
+            }
+        })
+    }
+}
+
 const BOND_AD_STABLE: u8 = 0;
 const BOND_AD_BANDWIDTH: u8 = 1;
 const BOND_AD_COUNT: u8 = 2;
