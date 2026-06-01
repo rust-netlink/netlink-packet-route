@@ -324,3 +324,20 @@ fn test_bond_lacp_rate_from_str() {
     assert_eq!(BondLacpRate::Fast, "fast".parse().unwrap());
     assert!(BondLacpRate::from_str("bogus").is_err());
 }
+
+#[test]
+fn test_bond_all_ports_active_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondAllPortActive::Dropped, "dropped".parse().unwrap());
+    assert_eq!(BondAllPortActive::Delivered, "delivered".parse().unwrap());
+    assert_eq!(BondAllPortActive::Dropped, "0".parse().unwrap());
+    assert_eq!(BondAllPortActive::Delivered, "1".parse().unwrap());
+    assert!(BondAllPortActive::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bond_all_ports_active_display() {
+    assert_eq!("dropped", BondAllPortActive::Dropped.to_string());
+    assert_eq!("delivered", BondAllPortActive::Delivered.to_string());
+    assert_eq!("255", BondAllPortActive::Other(255).to_string());
+}
