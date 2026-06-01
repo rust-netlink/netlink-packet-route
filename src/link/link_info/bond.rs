@@ -436,11 +436,11 @@ impl std::fmt::Display for BondXmitHashPolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let kernel_name = match self {
             BondXmitHashPolicy::Layer2 => "layer2",
-            BondXmitHashPolicy::Layer34 => "layer34",
-            BondXmitHashPolicy::Layer23 => "layer23",
-            BondXmitHashPolicy::Encap23 => "encap23",
-            BondXmitHashPolicy::Encap34 => "encap34",
-            BondXmitHashPolicy::VlanSrcMac => "vlan-src-mac",
+            BondXmitHashPolicy::Layer34 => "layer3+4",
+            BondXmitHashPolicy::Layer23 => "layer2+3",
+            BondXmitHashPolicy::Encap23 => "encap2+3",
+            BondXmitHashPolicy::Encap34 => "encap3+4",
+            BondXmitHashPolicy::VlanSrcMac => "vlan+srcmac",
             BondXmitHashPolicy::Other(d) => {
                 return write!(f, "unknown-variant ({d})")
             }
@@ -455,11 +455,11 @@ impl std::str::FromStr for BondXmitHashPolicy {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "layer2" => Self::Layer2,
-            "layer34" => Self::Layer34,
-            "layer23" => Self::Layer23,
-            "encap23" => Self::Encap23,
-            "encap34" => Self::Encap34,
-            "vlan-src-mac" => Self::VlanSrcMac,
+            "layer3+4" => Self::Layer34,
+            "layer2+3" => Self::Layer23,
+            "encap2+3" => Self::Encap23,
+            "encap3+4" => Self::Encap34,
+            "vlan+srcmac" => Self::VlanSrcMac,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond xmit hash policy: {s}"
@@ -723,6 +723,7 @@ impl From<BondLacpRate> for u8 {
 const BOND_AD_STABLE: u8 = 0;
 const BOND_AD_BANDWIDTH: u8 = 1;
 const BOND_AD_COUNT: u8 = 2;
+const BOND_AD_ACTOR_PORT_PRIO: u8 = 3;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
@@ -730,6 +731,7 @@ pub enum BondAdSelect {
     Stable,
     Bandwidth,
     Count,
+    ActorPortPrio,
     Other(u8),
 }
 
@@ -739,6 +741,7 @@ impl From<u8> for BondAdSelect {
             BOND_AD_STABLE => Self::Stable,
             BOND_AD_BANDWIDTH => Self::Bandwidth,
             BOND_AD_COUNT => Self::Count,
+            BOND_AD_ACTOR_PORT_PRIO => Self::ActorPortPrio,
             _ => Self::Other(d),
         }
     }
@@ -750,6 +753,7 @@ impl From<BondAdSelect> for u8 {
             BondAdSelect::Stable => BOND_AD_STABLE,
             BondAdSelect::Bandwidth => BOND_AD_BANDWIDTH,
             BondAdSelect::Count => BOND_AD_COUNT,
+            BondAdSelect::ActorPortPrio => BOND_AD_ACTOR_PORT_PRIO,
             BondAdSelect::Other(d) => d,
         }
     }
@@ -761,6 +765,7 @@ impl std::fmt::Display for BondAdSelect {
             BondAdSelect::Stable => "stable",
             BondAdSelect::Bandwidth => "bandwidth",
             BondAdSelect::Count => "count",
+            BondAdSelect::ActorPortPrio => "actor_port_prio",
             BondAdSelect::Other(d) => {
                 return write!(f, "unknown-variant ({d})")
             }
@@ -777,6 +782,7 @@ impl std::str::FromStr for BondAdSelect {
             "stable" => Self::Stable,
             "bandwidth" => Self::Bandwidth,
             "count" => Self::Count,
+            "actor_port_prio" => Self::ActorPortPrio,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond ad select: {s}"
