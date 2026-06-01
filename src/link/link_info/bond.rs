@@ -224,6 +224,27 @@ impl std::fmt::Display for BondMode {
     }
 }
 
+impl std::str::FromStr for BondMode {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "balance-rr" => Self::BalanceRr,
+            "active-backup" => Self::ActiveBackup,
+            "balance-xor" => Self::BalanceXor,
+            "broadcast" => Self::Broadcast,
+            "802.3ad" => Self::Ieee8023Ad,
+            "balance-tlb" => Self::BalanceTlb,
+            "balance-alb" => Self::BalanceAlb,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond mode: {s}"
+                )))
+            }
+        })
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub enum BondArpValidate {
@@ -286,6 +307,27 @@ impl std::fmt::Display for BondArpValidate {
     }
 }
 
+impl std::str::FromStr for BondArpValidate {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "none" => Self::None,
+            "active" => Self::Active,
+            "backup" => Self::Backup,
+            "all" => Self::All,
+            "filter" => Self::Filter,
+            "filter_active" => Self::FilterActive,
+            "filter_backup" => Self::FilterBackup,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond arp validate: {s}"
+                )))
+            }
+        })
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub enum BondPrimaryReselect {
@@ -329,6 +371,23 @@ impl std::fmt::Display for BondPrimaryReselect {
             }
         };
         f.write_str(kernel_name)
+    }
+}
+
+impl std::str::FromStr for BondPrimaryReselect {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "always" => Self::Always,
+            "better" => Self::Better,
+            "failure" => Self::Failure,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond primary reselect: {s}"
+                )))
+            }
+        })
     }
 }
 
@@ -390,6 +449,26 @@ impl std::fmt::Display for BondXmitHashPolicy {
     }
 }
 
+impl std::str::FromStr for BondXmitHashPolicy {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "layer2" => Self::Layer2,
+            "layer34" => Self::Layer34,
+            "layer23" => Self::Layer23,
+            "encap23" => Self::Encap23,
+            "encap34" => Self::Encap34,
+            "vlan-src-mac" => Self::VlanSrcMac,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond xmit hash policy: {s}"
+                )))
+            }
+        })
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub enum BondArpAllTargets {
@@ -429,6 +508,22 @@ impl std::fmt::Display for BondArpAllTargets {
             }
         };
         f.write_str(kernel_name)
+    }
+}
+
+impl std::str::FromStr for BondArpAllTargets {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "any" => Self::Any,
+            "all" => Self::All,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond arp all targets: {s}"
+                )))
+            }
+        })
     }
 }
 
@@ -475,6 +570,23 @@ impl std::fmt::Display for BondFailOverMac {
             }
         };
         f.write_str(kernel_name)
+    }
+}
+
+impl std::str::FromStr for BondFailOverMac {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "none" => Self::None,
+            "active" => Self::Active,
+            "follow" => Self::Follow,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond fail over mac: {s}"
+                )))
+            }
+        })
     }
 }
 
@@ -640,6 +752,37 @@ impl From<BondAdSelect> for u8 {
             BondAdSelect::Count => BOND_AD_COUNT,
             BondAdSelect::Other(d) => d,
         }
+    }
+}
+
+impl std::fmt::Display for BondAdSelect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kernel_name = match self {
+            BondAdSelect::Stable => "stable",
+            BondAdSelect::Bandwidth => "bandwidth",
+            BondAdSelect::Count => "count",
+            BondAdSelect::Other(d) => {
+                return write!(f, "unknown-variant ({d})")
+            }
+        };
+        f.write_str(kernel_name)
+    }
+}
+
+impl std::str::FromStr for BondAdSelect {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "stable" => Self::Stable,
+            "bandwidth" => Self::Bandwidth,
+            "count" => Self::Count,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond ad select: {s}"
+                )))
+            }
+        })
     }
 }
 
