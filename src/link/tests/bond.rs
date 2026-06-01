@@ -230,3 +230,85 @@ fn test_bond_arp_validate() {
 
     assert_eq!(raw, buf);
 }
+
+#[test]
+fn test_bond_mode_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondMode::BalanceRr, "balance-rr".parse().unwrap());
+    assert_eq!(BondMode::ActiveBackup, "active-backup".parse().unwrap());
+    assert_eq!(BondMode::BalanceXor, "balance-xor".parse().unwrap());
+    assert_eq!(BondMode::Broadcast, "broadcast".parse().unwrap());
+    assert_eq!(BondMode::Ieee8023Ad, "802.3ad".parse().unwrap());
+    assert_eq!(BondMode::BalanceTlb, "balance-tlb".parse().unwrap());
+    assert_eq!(BondMode::BalanceAlb, "balance-alb".parse().unwrap());
+    assert!(BondMode::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bond_arp_validate_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondArpValidate::None, "none".parse().unwrap());
+    assert_eq!(BondArpValidate::Active, "active".parse().unwrap());
+    assert_eq!(BondArpValidate::Backup, "backup".parse().unwrap());
+    assert_eq!(BondArpValidate::All, "all".parse().unwrap());
+    assert_eq!(BondArpValidate::Filter, "filter".parse().unwrap());
+    assert_eq!(
+        BondArpValidate::FilterActive,
+        "filter_active".parse().unwrap()
+    );
+    assert_eq!(
+        BondArpValidate::FilterBackup,
+        "filter_backup".parse().unwrap()
+    );
+    assert!(BondArpValidate::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bond_primary_reselect_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondPrimaryReselect::Always, "always".parse().unwrap());
+    assert_eq!(BondPrimaryReselect::Better, "better".parse().unwrap());
+    assert_eq!(BondPrimaryReselect::Failure, "failure".parse().unwrap());
+    assert!(BondPrimaryReselect::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bond_xmit_hash_policy_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondXmitHashPolicy::Layer2, "layer2".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Layer34, "layer34".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Layer23, "layer23".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Encap23, "encap23".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Encap34, "encap34".parse().unwrap());
+    assert_eq!(
+        BondXmitHashPolicy::VlanSrcMac,
+        "vlan-src-mac".parse().unwrap()
+    );
+    assert!(BondXmitHashPolicy::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bond_arp_all_targets_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondArpAllTargets::Any, "any".parse().unwrap());
+    assert_eq!(BondArpAllTargets::All, "all".parse().unwrap());
+    assert!(BondArpAllTargets::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bond_fail_over_mac_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondFailOverMac::None, "none".parse().unwrap());
+    assert_eq!(BondFailOverMac::Active, "active".parse().unwrap());
+    assert_eq!(BondFailOverMac::Follow, "follow".parse().unwrap());
+    assert!(BondFailOverMac::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bond_ad_select_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BondAdSelect::Stable, "stable".parse().unwrap());
+    assert_eq!(BondAdSelect::Bandwidth, "bandwidth".parse().unwrap());
+    assert_eq!(BondAdSelect::Count, "count".parse().unwrap());
+    assert!(BondAdSelect::from_str("bogus").is_err());
+}
