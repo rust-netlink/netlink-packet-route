@@ -276,13 +276,13 @@ fn test_bond_primary_reselect_from_str() {
 fn test_bond_xmit_hash_policy_from_str() {
     use std::str::FromStr;
     assert_eq!(BondXmitHashPolicy::Layer2, "layer2".parse().unwrap());
-    assert_eq!(BondXmitHashPolicy::Layer34, "layer34".parse().unwrap());
-    assert_eq!(BondXmitHashPolicy::Layer23, "layer23".parse().unwrap());
-    assert_eq!(BondXmitHashPolicy::Encap23, "encap23".parse().unwrap());
-    assert_eq!(BondXmitHashPolicy::Encap34, "encap34".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Layer34, "layer3+4".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Layer23, "layer2+3".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Encap23, "encap2+3".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Encap34, "encap3+4".parse().unwrap());
     assert_eq!(
         BondXmitHashPolicy::VlanSrcMac,
-        "vlan-src-mac".parse().unwrap()
+        "vlan+srcmac".parse().unwrap()
     );
     assert!(BondXmitHashPolicy::from_str("bogus").is_err());
 }
@@ -310,5 +310,9 @@ fn test_bond_ad_select_from_str() {
     assert_eq!(BondAdSelect::Stable, "stable".parse().unwrap());
     assert_eq!(BondAdSelect::Bandwidth, "bandwidth".parse().unwrap());
     assert_eq!(BondAdSelect::Count, "count".parse().unwrap());
+    assert_eq!(
+        BondAdSelect::ActorPortPrio,
+        "actor_port_prio".parse().unwrap()
+    );
     assert!(BondAdSelect::from_str("bogus").is_err());
 }
