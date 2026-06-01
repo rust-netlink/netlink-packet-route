@@ -688,6 +688,34 @@ impl From<BondAllPortActive> for u8 {
     }
 }
 
+impl std::fmt::Display for BondAllPortActive {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BondAllPortActive::Dropped => f.write_str("dropped"),
+            BondAllPortActive::Delivered => f.write_str("delivered"),
+            BondAllPortActive::Other(v) => write!(f, "{v}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BondAllPortActive {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "dropped" => Self::Dropped,
+            "delivered" => Self::Delivered,
+            "0" => Self::Dropped,
+            "1" => Self::Delivered,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond all ports active: {s}"
+                )))
+            }
+        })
+    }
+}
+
 const AD_LACP_SLOW: u8 = 0;
 const AD_LACP_FAST: u8 = 1;
 
