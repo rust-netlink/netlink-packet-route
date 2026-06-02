@@ -222,6 +222,30 @@ impl From<BridgeFlag> for u16 {
     }
 }
 
+impl std::fmt::Display for BridgeFlag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Controller => f.write_str("master"),
+            Self::LowerDev => f.write_str("self"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BridgeFlag {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "master" => Ok(Self::Controller),
+            "self" => Ok(Self::LowerDev),
+            _ => s.parse::<u16>().map(Self::from).map_err(|_| {
+                DecodeError::from(format!("unknown bridge flag: {s}"))
+            }),
+        }
+    }
+}
+
 impl BridgeFlag {
     pub const LENGTH: usize = 2;
 }
@@ -255,6 +279,30 @@ impl From<BridgeMode> for u16 {
             BridgeMode::Veb => BRIDGE_MODE_VEB,
             BridgeMode::Vepa => BRIDGE_MODE_VEPA,
             BridgeMode::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for BridgeMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Veb => f.write_str("veb"),
+            Self::Vepa => f.write_str("vepa"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BridgeMode {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "veb" => Ok(Self::Veb),
+            "vepa" => Ok(Self::Vepa),
+            _ => s.parse::<u16>().map(Self::from).map_err(|_| {
+                DecodeError::from(format!("unknown bridge mode: {s}"))
+            }),
         }
     }
 }

@@ -564,3 +564,33 @@ impl From<BridgePortState> for u8 {
         }
     }
 }
+
+impl std::fmt::Display for BridgePortState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Disabled => f.write_str("disabled"),
+            Self::Listening => f.write_str("listening"),
+            Self::Learning => f.write_str("learning"),
+            Self::Forwarding => f.write_str("forwarding"),
+            Self::Blocking => f.write_str("blocking"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BridgePortState {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "disabled" => Ok(Self::Disabled),
+            "listening" => Ok(Self::Listening),
+            "learning" => Ok(Self::Learning),
+            "forwarding" => Ok(Self::Forwarding),
+            "blocking" => Ok(Self::Blocking),
+            _ => s.parse::<u8>().map(Self::from).map_err(|_| {
+                DecodeError::from(format!("unknown bridge port state: {s}"))
+            }),
+        }
+    }
+}

@@ -743,6 +743,32 @@ impl From<BridgeStpState> for u32 {
     }
 }
 
+impl std::fmt::Display for BridgeStpState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Disabled => f.write_str("no"),
+            Self::KernelStp => f.write_str("kernel_stp"),
+            Self::UserStp => f.write_str("user_stp"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BridgeStpState {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "no" => Ok(Self::Disabled),
+            "kernel_stp" => Ok(Self::KernelStp),
+            "user_stp" => Ok(Self::UserStp),
+            _ => s.parse::<u32>().map(Self::from).map_err(|_| {
+                DecodeError::from(format!("unknown bridge STP state: {s}"))
+            }),
+        }
+    }
+}
+
 const MDB_RTR_TYPE_DISABLED: u8 = 0;
 const MDB_RTR_TYPE_TEMP_QUERY: u8 = 1;
 const MDB_RTR_TYPE_PERM: u8 = 2;
@@ -784,6 +810,36 @@ impl From<BridgeMulticastRouterType> for u8 {
             BridgeMulticastRouterType::Permanent => MDB_RTR_TYPE_PERM,
             BridgeMulticastRouterType::Temp => MDB_RTR_TYPE_TEMP,
             BridgeMulticastRouterType::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for BridgeMulticastRouterType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Disabled => f.write_str("disabled"),
+            Self::TempQuery => f.write_str("auto"),
+            Self::Permanent => f.write_str("permanent"),
+            Self::Temp => f.write_str("temp"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BridgeMulticastRouterType {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "disabled" => Ok(Self::Disabled),
+            "auto" | "temp_query" => Ok(Self::TempQuery),
+            "permanent" => Ok(Self::Permanent),
+            "temp" => Ok(Self::Temp),
+            _ => s.parse::<u8>().map(Self::from).map_err(|_| {
+                DecodeError::from(format!(
+                    "unknown bridge multicast router type: {s}"
+                ))
+            }),
         }
     }
 }

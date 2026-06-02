@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_core::DecodeError;
+
 const ETH_P_8021Q: u16 = 0x8100;
 const ETH_P_8021AD: u16 = 0x88A8;
 
@@ -49,5 +51,19 @@ impl std::fmt::Display for VlanProtocol {
                 VlanProtocol::Ieee8021Ad => "802.1ad",
             }
         )
+    }
+}
+
+impl std::str::FromStr for VlanProtocol {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.eq_ignore_ascii_case("802.1q") {
+            Ok(Self::Ieee8021Q)
+        } else if s.eq_ignore_ascii_case("802.1ad") {
+            Ok(Self::Ieee8021Ad)
+        } else {
+            Err(DecodeError::from(format!("unknown VLAN protocol: {s}")))
+        }
     }
 }
