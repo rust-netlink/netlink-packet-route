@@ -1231,3 +1231,144 @@ fn test_bridge_netns_immutable() {
 
     expected.emit(&mut buf);
 }
+
+#[test]
+fn test_bridge_flag_display() {
+    assert_eq!("master", BridgeFlag::Controller.to_string());
+    assert_eq!("self", BridgeFlag::LowerDev.to_string());
+    assert_eq!("255", BridgeFlag::Other(255).to_string());
+}
+
+#[test]
+fn test_bridge_flag_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BridgeFlag::Controller, "master".parse().unwrap());
+    assert_eq!(BridgeFlag::LowerDev, "self".parse().unwrap());
+    assert_eq!(BridgeFlag::from(1), "1".parse().unwrap());
+    assert_eq!(BridgeFlag::from(2), "2".parse().unwrap());
+    assert_eq!(BridgeFlag::Other(99), "99".parse().unwrap());
+    assert!(BridgeFlag::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bridge_mode_display() {
+    assert_eq!("veb", BridgeMode::Veb.to_string());
+    assert_eq!("vepa", BridgeMode::Vepa.to_string());
+    assert_eq!("255", BridgeMode::Other(255).to_string());
+}
+
+#[test]
+fn test_bridge_mode_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BridgeMode::Veb, "veb".parse().unwrap());
+    assert_eq!(BridgeMode::Vepa, "vepa".parse().unwrap());
+    assert_eq!(BridgeMode::from(0), "0".parse().unwrap());
+    assert_eq!(BridgeMode::from(1), "1".parse().unwrap());
+    assert_eq!(BridgeMode::Other(99), "99".parse().unwrap());
+    assert!(BridgeMode::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bridge_stp_state_display() {
+    assert_eq!("no", BridgeStpState::Disabled.to_string());
+    assert_eq!("kernel_stp", BridgeStpState::KernelStp.to_string());
+    assert_eq!("user_stp", BridgeStpState::UserStp.to_string());
+    assert_eq!("255", BridgeStpState::Other(255).to_string());
+}
+
+#[test]
+fn test_bridge_stp_state_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BridgeStpState::Disabled, "no".parse().unwrap());
+    assert_eq!(BridgeStpState::KernelStp, "kernel_stp".parse().unwrap());
+    assert_eq!(BridgeStpState::UserStp, "user_stp".parse().unwrap());
+    assert_eq!(BridgeStpState::Disabled, "0".parse().unwrap());
+    assert_eq!(BridgeStpState::KernelStp, "1".parse().unwrap());
+    assert_eq!(BridgeStpState::UserStp, "2".parse().unwrap());
+    assert_eq!(BridgeStpState::Other(99), "99".parse().unwrap());
+    assert!(BridgeStpState::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bridge_multicast_router_type_display() {
+    assert_eq!("disabled", BridgeMulticastRouterType::Disabled.to_string());
+    assert_eq!("auto", BridgeMulticastRouterType::TempQuery.to_string());
+    assert_eq!(
+        "permanent",
+        BridgeMulticastRouterType::Permanent.to_string()
+    );
+    assert_eq!("temp", BridgeMulticastRouterType::Temp.to_string());
+    assert_eq!("255", BridgeMulticastRouterType::Other(255).to_string());
+}
+
+#[test]
+fn test_bridge_multicast_router_type_from_str() {
+    use std::str::FromStr;
+    assert_eq!(
+        BridgeMulticastRouterType::Disabled,
+        "disabled".parse().unwrap()
+    );
+    assert_eq!(
+        BridgeMulticastRouterType::TempQuery,
+        "auto".parse().unwrap()
+    );
+    assert_eq!(
+        BridgeMulticastRouterType::TempQuery,
+        "temp_query".parse().unwrap()
+    );
+    assert_eq!(
+        BridgeMulticastRouterType::Permanent,
+        "permanent".parse().unwrap()
+    );
+    assert_eq!(BridgeMulticastRouterType::Temp, "temp".parse().unwrap());
+    assert_eq!(BridgeMulticastRouterType::from(0), "0".parse().unwrap());
+    assert_eq!(BridgeMulticastRouterType::from(1), "1".parse().unwrap());
+    assert_eq!(BridgeMulticastRouterType::from(2), "2".parse().unwrap());
+    assert_eq!(BridgeMulticastRouterType::from(3), "3".parse().unwrap());
+    assert_eq!(BridgeMulticastRouterType::Other(99), "99".parse().unwrap());
+    assert!(BridgeMulticastRouterType::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_bridge_port_state_display() {
+    assert_eq!("disabled", BridgePortState::Disabled.to_string());
+    assert_eq!("listening", BridgePortState::Listening.to_string());
+    assert_eq!("learning", BridgePortState::Learning.to_string());
+    assert_eq!("forwarding", BridgePortState::Forwarding.to_string());
+    assert_eq!("blocking", BridgePortState::Blocking.to_string());
+    assert_eq!("255", BridgePortState::Other(255).to_string());
+}
+
+#[test]
+fn test_bridge_port_state_from_str() {
+    use std::str::FromStr;
+    assert_eq!(BridgePortState::Disabled, "disabled".parse().unwrap());
+    assert_eq!(BridgePortState::Listening, "listening".parse().unwrap());
+    assert_eq!(BridgePortState::Learning, "learning".parse().unwrap());
+    assert_eq!(BridgePortState::Forwarding, "forwarding".parse().unwrap());
+    assert_eq!(BridgePortState::Blocking, "blocking".parse().unwrap());
+    assert_eq!(BridgePortState::from(0), "0".parse().unwrap());
+    assert_eq!(BridgePortState::from(1), "1".parse().unwrap());
+    assert_eq!(BridgePortState::from(2), "2".parse().unwrap());
+    assert_eq!(BridgePortState::from(3), "3".parse().unwrap());
+    assert_eq!(BridgePortState::from(4), "4".parse().unwrap());
+    assert_eq!(BridgePortState::Other(99), "99".parse().unwrap());
+    assert!(BridgePortState::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_vlan_protocol_display() {
+    assert_eq!("802.1q", VlanProtocol::Ieee8021Q.to_string());
+    assert_eq!("802.1ad", VlanProtocol::Ieee8021Ad.to_string());
+}
+
+#[test]
+fn test_vlan_protocol_from_str() {
+    use std::str::FromStr;
+    assert_eq!(VlanProtocol::Ieee8021Q, "802.1q".parse().unwrap());
+    assert_eq!(VlanProtocol::Ieee8021Ad, "802.1ad".parse().unwrap());
+    assert_eq!(VlanProtocol::Ieee8021Q, "802.1Q".parse().unwrap());
+    assert_eq!(VlanProtocol::Ieee8021Ad, "802.1AD".parse().unwrap());
+    assert!(VlanProtocol::from_str("bogus").is_err());
+    assert!(VlanProtocol::from_str("802.1Qq").is_err());
+}
