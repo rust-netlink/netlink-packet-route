@@ -54,7 +54,7 @@ pub enum InfoIpTunnel {
     EncapFlags(TunnelEncapFlags),
     EncapSPort(u16),
     EncapDPort(u16),
-    CollectMetadata(bool),
+    CollectMetadata,
     FwMark(u32),
     Other(DefaultNla),
 }
@@ -78,8 +78,8 @@ impl Nla for InfoIpTunnel {
             | EncapDPort(_)
             | Ipv6RdPrefixLen(_)
             | Ipv6RdRelayPrefixLen(_) => 2,
-            Ttl(_) | Tos(_) | Protocol(_) | PMtuDisc(_)
-            | CollectMetadata(_) | EncapLimit(_) => 1,
+            Ttl(_) | Tos(_) | Protocol(_) | PMtuDisc(_) | EncapLimit(_) => 1,
+            CollectMetadata => 0,
             Other(nla) => nla.value_len(),
         }
     }
@@ -110,9 +110,8 @@ impl Nla for InfoIpTunnel {
             }
             Protocol(value) => buffer[0] = u8::from(*value),
             Ttl(value) | Tos(value) | EncapLimit(value) => buffer[0] = *value,
-            PMtuDisc(value) | CollectMetadata(value) => {
-                buffer[0] = if *value { 1 } else { 0 }
-            }
+            PMtuDisc(value) => buffer[0] = if *value { 1 } else { 0 },
+            CollectMetadata => { /* zero-length flag attribute */ }
             Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -138,7 +137,7 @@ impl Nla for InfoIpTunnel {
             EncapFlags(_) => IFLA_IPTUN_ENCAP_FLAGS,
             EncapSPort(_) => IFLA_IPTUN_ENCAP_SPORT,
             EncapDPort(_) => IFLA_IPTUN_ENCAP_DPORT,
-            CollectMetadata(_) => IFLA_IPTUN_COLLECT_METADATA,
+            CollectMetadata => IFLA_IPTUN_COLLECT_METADATA,
             FwMark(_) => IFLA_IPTUN_FWMARK,
             Other(nla) => nla.kind(),
         }
@@ -264,11 +263,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 parse_u16_be(payload)
                     .context("invalid IFLA_IPTUN_ENCAP_DPORT value")?,
             ),
-            IFLA_IPTUN_COLLECT_METADATA => CollectMetadata(
-                parse_u8(payload)
-                    .context("invalid IFLA_IPTUN_COLLECT_METADATA value")?
-                    > 0,
-            ),
+            IFLA_IPTUN_COLLECT_METADATA => CollectMetadata,
             IFLA_IPTUN_FWMARK => FwMark(
                 parse_u32(payload)
                     .context("invalid IFLA_IPTUN_FWMARK value")?,
