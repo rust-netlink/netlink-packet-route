@@ -1,4 +1,28 @@
 # Changelog
+## [0.31.0] - 2026-06-10
+### Breaking changes
+ - link: InfoIpTunnel::CollectMetadata(bool) -> CollectMetadata. (c91e440)
+ - link: InfoVxlan::Df changed u8 to VxlanDf enum. (2fac888)
+
+### New features
+ - link vxlan: add support for IFLA_VXLAN_LABEL_POLICY. (e7ee5bc)
+ - link vxlan: add support of IFLA_VXLAN_RESERVED_BITS. (8d60902)
+ - link: add Display + FromStr impls for bridge enums. (7c7c6a9)
+ - link: bond: add FromStr/Display for BondAllPortActive. (b97280b)
+ - link: bond: add FromStr/Display for BondLacpRate. (afd072d)
+ - link: bond: align FromStr/Display strings with iproute2. (35d39ab)
+ - link: bond: implement FromStr for bond enums. (192cb0c)
+ - neigh: impl FromStr for NeighbourState. (b3abdf8)
+ - link: add From<&str> For InfoKind. (4e952be)
+ - link: Implement Display for VxlanDf. (6dd74c9)
+ - link vxlan: Add IFLA_VXLAN_MC_ROUTE support and test. (aad6df2)
+ - addr: impl Display AddressScope, AddressProtocol, and AddressFamily. (492033a)
+ - link: Adds support for 2 bond link info fields. (9bc8ba0)
+ - link: Add initial support of IFLA_DPLL_PIN. (c514c3a)
+
+### Bug fixes
+ - N/A
+
 ## [0.30.0] - 2026-04-15
 ### Breaking changes
  - API break: Change `In6AddrGenMode::StablePrivacy` display to
