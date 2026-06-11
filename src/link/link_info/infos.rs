@@ -44,6 +44,7 @@ const HSR: &str = "hsr";
 const GENEVE: &str = "geneve";
 const NETKIT: &str = "netkit";
 const VXCAN: &str = "vxcan";
+const AMT: &str = "amt";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -205,6 +206,7 @@ pub enum InfoKind {
     Geneve,
     Netkit,
     Vxcan,
+    Amt,
     Other(String),
 }
 
@@ -245,6 +247,7 @@ impl std::fmt::Display for InfoKind {
                 Self::Geneve => GENEVE,
                 Self::Netkit => NETKIT,
                 Self::Vxcan => VXCAN,
+                Self::Amt => AMT,
                 Self::Other(s) => s.as_str(),
             }
         )
@@ -285,6 +288,7 @@ impl Nla for InfoKind {
             Self::Geneve => GENEVE.len(),
             Self::Netkit => NETKIT.len(),
             Self::Vxcan => VXCAN.len(),
+            Self::Amt => AMT.len(),
             Self::Other(s) => s.len(),
         };
         len + 1
@@ -336,6 +340,7 @@ impl From<&str> for InfoKind {
             GENEVE => Self::Geneve,
             NETKIT => Self::Netkit,
             VXCAN => Self::Vxcan,
+            AMT => Self::Amt,
             _ => Self::Other(s.to_owned()),
         }
     }

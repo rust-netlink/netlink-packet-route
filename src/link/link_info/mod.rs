@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+mod amt;
 mod bond;
 mod bond_port;
 mod bridge;
@@ -30,6 +31,7 @@ mod xstats;
 
 pub(crate) use self::infos::VecLinkInfo;
 pub use self::{
+    amt::{AmtMode, InfoAmt},
     bond::{
         BondAdInfo, BondAdSelect, BondAllPortActive, BondArpAllTargets,
         BondArpValidate, BondFailOverMac, BondLacpRate, BondMode,
