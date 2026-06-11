@@ -38,6 +38,28 @@ impl From<u32> for NetkitMode {
     }
 }
 
+impl std::fmt::Display for NetkitMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::L2 => f.write_str("l2"),
+            Self::L3 => f.write_str("l3"),
+            Self::Other(v) => write!(f, "{v}"),
+        }
+    }
+}
+
+impl std::str::FromStr for NetkitMode {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "l2" => Ok(Self::L2),
+            "l3" => Ok(Self::L3),
+            _ => Err(DecodeError::from(format!("unknown netkit mode: {s}"))),
+        }
+    }
+}
+
 const NETKIT_PASS: u32 = 0;
 const NETKIT_DROP: u32 = 2;
 const NETKIT_REDIRECT: u32 = 7;
@@ -78,6 +100,30 @@ impl From<u32> for NetkitPolicy {
     }
 }
 
+impl std::fmt::Display for NetkitPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pass => f.write_str("forward"),
+            Self::Drop => f.write_str("blackhole"),
+            Self::Redirect => f.write_str("redirect"),
+            Self::Other(v) => write!(f, "{v}"),
+        }
+    }
+}
+
+impl std::str::FromStr for NetkitPolicy {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "forward" => Ok(Self::Pass),
+            "blackhole" => Ok(Self::Drop),
+            "redirect" => Ok(Self::Redirect),
+            _ => Err(DecodeError::from(format!("unknown netkit policy: {s}"))),
+        }
+    }
+}
+
 const NETKIT_SCRUB_NONE: u32 = 0;
 const NETKIT_SCRUB_DEFAULT: u32 = 1;
 
@@ -102,6 +148,27 @@ impl From<u32> for NetkitScrub {
         match value {
             NETKIT_SCRUB_NONE => NetkitScrub::None,
             _ => NetkitScrub::Default,
+        }
+    }
+}
+
+impl std::fmt::Display for NetkitScrub {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::None => f.write_str("none"),
+            Self::Default => f.write_str("default"),
+        }
+    }
+}
+
+impl std::str::FromStr for NetkitScrub {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "none" => Ok(Self::None),
+            "default" => Ok(Self::Default),
+            _ => Err(DecodeError::from(format!("unknown netkit scrub: {s}"))),
         }
     }
 }

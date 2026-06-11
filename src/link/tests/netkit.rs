@@ -6,7 +6,7 @@ use crate::{
     link::{
         InfoData, InfoKind, InfoNetkit, LinkAttribute, LinkHeader, LinkInfo,
         LinkLayerType, LinkMessage, LinkMessageBuffer, NetkitMode,
-        NetkitPolicy,
+        NetkitPolicy, NetkitScrub,
     },
     AddressFamily,
 };
@@ -84,4 +84,52 @@ fn test_create_netkit() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_netkit_mode_display() {
+    assert_eq!("l2", NetkitMode::L2.to_string());
+    assert_eq!("l3", NetkitMode::L3.to_string());
+    assert_eq!("255", NetkitMode::Other(255).to_string());
+}
+
+#[test]
+fn test_netkit_mode_from_str() {
+    use std::str::FromStr;
+    assert_eq!(NetkitMode::L2, "l2".parse().unwrap());
+    assert_eq!(NetkitMode::L3, "l3".parse().unwrap());
+    assert!(NetkitMode::from_str("42").is_err());
+    assert!(NetkitMode::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_netkit_policy_display() {
+    assert_eq!("forward", NetkitPolicy::Pass.to_string());
+    assert_eq!("blackhole", NetkitPolicy::Drop.to_string());
+    assert_eq!("redirect", NetkitPolicy::Redirect.to_string());
+    assert_eq!("255", NetkitPolicy::Other(255).to_string());
+}
+
+#[test]
+fn test_netkit_policy_from_str() {
+    use std::str::FromStr;
+    assert_eq!(NetkitPolicy::Pass, "forward".parse().unwrap());
+    assert_eq!(NetkitPolicy::Drop, "blackhole".parse().unwrap());
+    assert_eq!(NetkitPolicy::Redirect, "redirect".parse().unwrap());
+    assert!(NetkitPolicy::from_str("42").is_err());
+    assert!(NetkitPolicy::from_str("bogus").is_err());
+}
+
+#[test]
+fn test_netkit_scrub_display() {
+    assert_eq!("none", NetkitScrub::None.to_string());
+    assert_eq!("default", NetkitScrub::Default.to_string());
+}
+
+#[test]
+fn test_netkit_scrub_from_str() {
+    use std::str::FromStr;
+    assert_eq!(NetkitScrub::None, "none".parse().unwrap());
+    assert_eq!(NetkitScrub::Default, "default".parse().unwrap());
+    assert!(NetkitScrub::from_str("bogus").is_err());
 }
