@@ -3,9 +3,9 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, parse_u16, parse_u16_be, parse_u32,
-    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
-    ParseableParametrized,
+    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_u16, parse_u16_be,
+    parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla, ErrorContext,
+    Nla, NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use crate::ip::{parse_ip_addr, IpProtocol};
@@ -89,9 +89,8 @@ impl Nla for InfoIpTunnel {
         match self {
             Ipv6RdPrefix(value) => buffer.copy_from_slice(&value.octets()),
             Ipv6RdRelayPrefix(value) => buffer.copy_from_slice(&value.octets()),
-            Link(value) | FwMark(value) | FlowInfo(value) => {
-                emit_u32(buffer, *value).unwrap()
-            }
+            Link(value) | FwMark(value) => emit_u32(buffer, *value).unwrap(),
+            FlowInfo(value) => emit_u32_be(buffer, *value).unwrap(),
             Ipv6Flags(f) => emit_u32(buffer, f.bits()).unwrap(),
             Ipv6SitFlags(val) | Ipv4Flags(val) => {
                 emit_u16_be(buffer, *val).unwrap()
@@ -180,7 +179,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context("invalid IFLA_IPTUN_ENCAP_LIMIT value")?,
             ),
             IFLA_IPTUN_FLOWINFO => FlowInfo(
-                parse_u32(payload)
+                parse_u32_be(payload)
                     .context("invalid IFLA_IPTUN_FLOWINFO value")?,
             ),
             IFLA_IPTUN_FLAGS => match kind {
