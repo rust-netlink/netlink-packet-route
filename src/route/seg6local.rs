@@ -182,7 +182,7 @@ impl Nla for RouteSeg6LocalIpTunnel {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            RouteSeg6LocalIpTunnel::Unspec => todo!(),
+            RouteSeg6LocalIpTunnel::Unspec => (),
             RouteSeg6LocalIpTunnel::Action(v) => {
                 emit_u32(buffer, (*v).into()).unwrap()
             }
