@@ -20,7 +20,8 @@ use crate::{
 // Setup:
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -72,7 +73,8 @@ fn test_end() {
 // Setup:
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.X nh6 fe80:1:2:: dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.X nh6 fe80:1:2:: dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -133,7 +135,8 @@ fn test_end_x() {
 //      ip link set vrf-dummy up
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.T table 10 dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.T table 10 dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -192,8 +195,8 @@ fn test_end_t() {
 
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.B6 srh segs \
-//          fe80:1:2::,fe80:2:3:: dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.B6 srh segs fe80:1:2::,fe80:2:3:: dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -236,7 +239,8 @@ fn test_end_b6() {
                         segments: vec![
                             Ipv6Addr::from_str("fe80:1:2::").unwrap().into(),
                             Ipv6Addr::from_str("fe80:2:3::").unwrap().into(),
-                            // without encap, we have **must have** an additional segment
+                            // without encap, we have **must have** an
+                            // additional segment
                             Ipv6Addr::from_str("::").unwrap().into(),
                         ],
                     },
@@ -263,8 +267,8 @@ fn test_end_b6() {
 
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.B6.Encaps srh segs \
-//          fe80:1:2::,fe80:2:3:: dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.B6.Encaps srh segs fe80:1:2::,fe80:2:3:: dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -330,7 +334,8 @@ fn test_end_b6_encap() {
 // Setup:
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.DX2 oif dummy1 dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.DX2 oif dummy1 dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -386,7 +391,8 @@ fn test_end_dx2() {
 // Setup:
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.DX6 nh6 fe80:1:2:: dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.DX6 nh6 fe80:1:2:: dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -445,7 +451,8 @@ fn test_end_dx6() {
 // Setup:
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.DX4 nh4 10.1.2.1 dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.DX4 nh4 10.1.2.1 dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -505,7 +512,8 @@ fn test_end_dx4() {
 //      ip link set vrf-dummy up
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.DT6 table 10 dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.DT6 table 10 dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -567,7 +575,8 @@ fn test_end_dt6() {
 //      ip link set vrf-dummy up
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.DT4 vrftable 10 dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.DT4 vrftable 10 dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
@@ -629,7 +638,8 @@ fn test_end_dt4() {
 //      ip link set vrf-dummy up
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
-//      ip route add fe80::/32 encap seg6local action End.DT46 vrftable 10 dev dummy1
+//      ip route add fe80::/32 encap seg6local \
+//          action End.DT46 vrftable 10 dev dummy1
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 route show dev dummy1
 #[test]
