@@ -184,9 +184,13 @@ impl Nla for RouteAttribute {
 
     fn is_nested(&self) -> bool {
         if let Self::Encap(encap) = self {
-            encap
-                .iter()
-                .any(|e| matches!(e, RouteLwTunnelEncap::Seg6(_)))
+            encap.iter().any(|e| {
+                matches!(
+                    e,
+                    RouteLwTunnelEncap::Seg6(_)
+                        | RouteLwTunnelEncap::Seg6Local(_)
+                )
+            })
         } else {
             false
         }
