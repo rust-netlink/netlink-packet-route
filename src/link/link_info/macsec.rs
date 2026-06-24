@@ -156,119 +156,127 @@ pub enum InfoMacSec {
 
 impl Nla for InfoMacSec {
     fn value_len(&self) -> usize {
-        use self::InfoMacSec::*;
         match self {
-            Sci(_) | CipherSuite(_) => 8,
-            Window(_) => 4,
-            Port(_) => 2,
-            IcvLen(_) | EncodingSa(_) | Encrypt(_) | Protect(_) | IncSci(_)
-            | Es(_) | Scb(_) | ReplayProtect(_) | Validation(_)
-            | Offload(_) => 1,
-            Other(nla) => nla.value_len(),
+            Self::Sci(_) | Self::CipherSuite(_) => 8,
+            Self::Window(_) => 4,
+            Self::Port(_) => 2,
+            Self::IcvLen(_)
+            | Self::EncodingSa(_)
+            | Self::Encrypt(_)
+            | Self::Protect(_)
+            | Self::IncSci(_)
+            | Self::Es(_)
+            | Self::Scb(_)
+            | Self::ReplayProtect(_)
+            | Self::Validation(_)
+            | Self::Offload(_) => 1,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoMacSec::*;
         match self {
-            Sci(value) => emit_u64(buffer, *value).unwrap(),
-            CipherSuite(value) => emit_u64(buffer, (*value).into()).unwrap(),
-            Window(value) => emit_u32(buffer, *value).unwrap(),
-            Port(value) => emit_u16(buffer, *value).unwrap(),
-            IcvLen(value) | EncodingSa(value) | Encrypt(value)
-            | Protect(value) | IncSci(value) | Es(value) | Scb(value)
-            | ReplayProtect(value) => buffer[0] = *value,
-            Offload(value) => buffer[0] = (*value).into(),
-            Validation(value) => buffer[0] = (*value).into(),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Sci(value) => emit_u64(buffer, *value).unwrap(),
+            Self::CipherSuite(value) => {
+                emit_u64(buffer, (*value).into()).unwrap()
+            }
+            Self::Window(value) => emit_u32(buffer, *value).unwrap(),
+            Self::Port(value) => emit_u16(buffer, *value).unwrap(),
+            Self::IcvLen(value)
+            | Self::EncodingSa(value)
+            | Self::Encrypt(value)
+            | Self::Protect(value)
+            | Self::IncSci(value)
+            | Self::Es(value)
+            | Self::Scb(value)
+            | Self::ReplayProtect(value) => buffer[0] = *value,
+            Self::Offload(value) => buffer[0] = (*value).into(),
+            Self::Validation(value) => buffer[0] = (*value).into(),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoMacSec::*;
         match self {
-            Sci(_) => IFLA_MACSEC_SCI,
-            Port(_) => IFLA_MACSEC_PORT,
-            IcvLen(_) => IFLA_MACSEC_ICV_LEN,
-            CipherSuite(_) => IFLA_MACSEC_CIPHER_SUITE,
-            Window(_) => IFLA_MACSEC_WINDOW,
-            EncodingSa(_) => IFLA_MACSEC_ENCODING_SA,
-            Encrypt(_) => IFLA_MACSEC_ENCRYPT,
-            Protect(_) => IFLA_MACSEC_PROTECT,
-            IncSci(_) => IFLA_MACSEC_INC_SCI,
-            Es(_) => IFLA_MACSEC_ES,
-            Scb(_) => IFLA_MACSEC_SCB,
-            ReplayProtect(_) => IFLA_MACSEC_REPLAY_PROTECT,
-            Validation(_) => IFLA_MACSEC_VALIDATION,
-            Offload(_) => IFLA_MACSEC_OFFLOAD,
-            Other(nla) => nla.kind(),
+            Self::Sci(_) => IFLA_MACSEC_SCI,
+            Self::Port(_) => IFLA_MACSEC_PORT,
+            Self::IcvLen(_) => IFLA_MACSEC_ICV_LEN,
+            Self::CipherSuite(_) => IFLA_MACSEC_CIPHER_SUITE,
+            Self::Window(_) => IFLA_MACSEC_WINDOW,
+            Self::EncodingSa(_) => IFLA_MACSEC_ENCODING_SA,
+            Self::Encrypt(_) => IFLA_MACSEC_ENCRYPT,
+            Self::Protect(_) => IFLA_MACSEC_PROTECT,
+            Self::IncSci(_) => IFLA_MACSEC_INC_SCI,
+            Self::Es(_) => IFLA_MACSEC_ES,
+            Self::Scb(_) => IFLA_MACSEC_SCB,
+            Self::ReplayProtect(_) => IFLA_MACSEC_REPLAY_PROTECT,
+            Self::Validation(_) => IFLA_MACSEC_VALIDATION,
+            Self::Offload(_) => IFLA_MACSEC_OFFLOAD,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacSec {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoMacSec::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_MACSEC_SCI => {
-                Sci(parse_u64(payload)
-                    .context("invalid IFLA_MACSEC_SCI value")?)
-            }
-            IFLA_MACSEC_PORT => Port(
+            IFLA_MACSEC_SCI => Self::Sci(
+                parse_u64(payload).context("invalid IFLA_MACSEC_SCI value")?,
+            ),
+            IFLA_MACSEC_PORT => Self::Port(
                 parse_u16(payload).context("invalid IFLA_MACSEC_PORT value")?,
             ),
-            IFLA_MACSEC_ICV_LEN => IcvLen(
+            IFLA_MACSEC_ICV_LEN => Self::IcvLen(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_ICV_LEN value")?,
             ),
-            IFLA_MACSEC_CIPHER_SUITE => CipherSuite(
+            IFLA_MACSEC_CIPHER_SUITE => Self::CipherSuite(
                 parse_u64(payload)
                     .context("invalid IFLA_MACSEC_CIPHER_SUITE value")?
                     .into(),
             ),
-            IFLA_MACSEC_WINDOW => Window(
+            IFLA_MACSEC_WINDOW => Self::Window(
                 parse_u32(payload)
                     .context("invalid IFLA_MACSEC_WINDOW value")?,
             ),
-            IFLA_MACSEC_ENCODING_SA => EncodingSa(
+            IFLA_MACSEC_ENCODING_SA => Self::EncodingSa(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_ENCODING_SA value")?,
             ),
-            IFLA_MACSEC_ENCRYPT => Encrypt(
+            IFLA_MACSEC_ENCRYPT => Self::Encrypt(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_ENCRYPT value")?,
             ),
-            IFLA_MACSEC_PROTECT => Protect(
+            IFLA_MACSEC_PROTECT => Self::Protect(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_PROTECT value")?,
             ),
-            IFLA_MACSEC_INC_SCI => IncSci(
+            IFLA_MACSEC_INC_SCI => Self::IncSci(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_INC_SCI value")?,
             ),
-            IFLA_MACSEC_ES => {
-                Es(parse_u8(payload).context("invalid IFLA_MACSEC_ES value")?)
-            }
-            IFLA_MACSEC_SCB => {
-                Scb(parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_SCB value")?)
-            }
-            IFLA_MACSEC_REPLAY_PROTECT => ReplayProtect(
+            IFLA_MACSEC_ES => Self::Es(
+                parse_u8(payload).context("invalid IFLA_MACSEC_ES value")?,
+            ),
+            IFLA_MACSEC_SCB => Self::Scb(
+                parse_u8(payload).context("invalid IFLA_MACSEC_SCB value")?,
+            ),
+            IFLA_MACSEC_REPLAY_PROTECT => Self::ReplayProtect(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_REPLAY_PROTECT value")?,
             ),
-            IFLA_MACSEC_VALIDATION => Validation(
+            IFLA_MACSEC_VALIDATION => Self::Validation(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_VALIDATION value")?
                     .into(),
             ),
-            IFLA_MACSEC_OFFLOAD => Offload(
+            IFLA_MACSEC_OFFLOAD => Self::Offload(
                 parse_u8(payload)
                     .context("invalid IFLA_MACSEC_OFFLOAD value")?
                     .into(),
             ),
-            kind => Other(
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
             ),

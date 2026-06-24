@@ -72,27 +72,27 @@ impl Nla for RouteMetric {
         }
     }
 
-    #[rustfmt::skip]
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Lock(value)
-                 | Self:: Mtu(value)
-                 | Self:: Window(value)
-                 | Self:: Rtt(value)
-                 | Self:: RttVar(value)
-                 | Self:: SsThresh(value)
-                 | Self:: Cwnd(value)
-                 | Self:: Advmss(value)
-                 | Self:: Reordering(value)
-                 | Self:: Hoplimit(value)
-                 | Self:: InitCwnd(value)
-                 | Self:: Features(value)
-                 | Self:: RtoMin(value)
-                 | Self:: InitRwnd(value)
-                 | Self:: QuickAck(value)
-                 | Self:: CcAlgo(value)
-                 | Self:: FastopenNoCookie(value)
-                => emit_u32(buffer, *value).unwrap(),
+            | Self::Mtu(value)
+            | Self::Window(value)
+            | Self::Rtt(value)
+            | Self::RttVar(value)
+            | Self::SsThresh(value)
+            | Self::Cwnd(value)
+            | Self::Advmss(value)
+            | Self::Reordering(value)
+            | Self::Hoplimit(value)
+            | Self::InitCwnd(value)
+            | Self::Features(value)
+            | Self::RtoMin(value)
+            | Self::InitRwnd(value)
+            | Self::QuickAck(value)
+            | Self::CcAlgo(value)
+            | Self::FastopenNoCookie(value) => {
+                emit_u32(buffer, *value).unwrap()
+            }
 
             Self::Other(attr) => attr.emit_value(buffer),
         }

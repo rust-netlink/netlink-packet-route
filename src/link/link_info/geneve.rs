@@ -79,73 +79,73 @@ pub enum InfoGeneve {
 
 impl Nla for InfoGeneve {
     fn value_len(&self) -> usize {
-        use self::InfoGeneve::*;
         match self {
-            Id(_) | Remote(_) | Label(_) => 4,
-            Remote6(_) => 16,
-            Ttl(_) | Tos(_) | UdpCsum(_) | UdpZeroCsum6Tx(_)
-            | UdpZeroCsum6Rx(_) | TtlInherit(_) | Df(_) => 1,
-            Port(_) => 2,
-            CollectMetadata | InnerProtoInherit => 0,
-            Other(nla) => nla.value_len(),
+            Self::Id(_) | Self::Remote(_) | Self::Label(_) => 4,
+            Self::Remote6(_) => 16,
+            Self::Ttl(_)
+            | Self::Tos(_)
+            | Self::UdpCsum(_)
+            | Self::UdpZeroCsum6Tx(_)
+            | Self::UdpZeroCsum6Rx(_)
+            | Self::TtlInherit(_)
+            | Self::Df(_) => 1,
+            Self::Port(_) => 2,
+            Self::CollectMetadata | Self::InnerProtoInherit => 0,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoGeneve::*;
         match self {
-            Id(value) => emit_u32(buffer, *value).unwrap(),
-            Remote(value) => buffer.copy_from_slice(&value.octets()),
-            Remote6(value) => buffer.copy_from_slice(&value.octets()),
-            Ttl(value) | Tos(value) => buffer[0] = *value,
-            Port(value) => emit_u16_be(buffer, *value).unwrap(),
-            CollectMetadata | InnerProtoInherit => (),
-            UdpCsum(value)
-            | UdpZeroCsum6Tx(value)
-            | UdpZeroCsum6Rx(value)
-            | TtlInherit(value) => buffer[0] = *value as u8,
-            Label(value) => emit_u32_be(buffer, *value).unwrap(),
-            Df(value) => buffer[0] = (*value).into(),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Id(value) => emit_u32(buffer, *value).unwrap(),
+            Self::Remote(value) => buffer.copy_from_slice(&value.octets()),
+            Self::Remote6(value) => buffer.copy_from_slice(&value.octets()),
+            Self::Ttl(value) | Self::Tos(value) => buffer[0] = *value,
+            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
+            Self::CollectMetadata | Self::InnerProtoInherit => (),
+            Self::UdpCsum(value)
+            | Self::UdpZeroCsum6Tx(value)
+            | Self::UdpZeroCsum6Rx(value)
+            | Self::TtlInherit(value) => buffer[0] = *value as u8,
+            Self::Label(value) => emit_u32_be(buffer, *value).unwrap(),
+            Self::Df(value) => buffer[0] = (*value).into(),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoGeneve::*;
         match self {
-            Id(_) => IFLA_GENEVE_ID,
-            Remote(_) => IFLA_GENEVE_REMOTE,
-            Remote6(_) => IFLA_GENEVE_REMOTE6,
-            Ttl(_) => IFLA_GENEVE_TTL,
-            Tos(_) => IFLA_GENEVE_TOS,
-            Port(_) => IFLA_GENEVE_PORT,
-            CollectMetadata => IFLA_GENEVE_COLLECT_METADATA,
-            UdpCsum(_) => IFLA_GENEVE_UDP_CSUM,
-            UdpZeroCsum6Tx(_) => IFLA_GENEVE_UDP_ZERO_CSUM6_TX,
-            UdpZeroCsum6Rx(_) => IFLA_GENEVE_UDP_ZERO_CSUM6_RX,
-            Label(_) => IFLA_GENEVE_LABEL,
-            TtlInherit(_) => IFLA_GENEVE_TTL_INHERIT,
-            Df(_) => IFLA_GENEVE_DF,
-            InnerProtoInherit => IFLA_GENEVE_INNER_PROTO_INHERIT,
-            Other(nla) => nla.kind(),
+            Self::Id(_) => IFLA_GENEVE_ID,
+            Self::Remote(_) => IFLA_GENEVE_REMOTE,
+            Self::Remote6(_) => IFLA_GENEVE_REMOTE6,
+            Self::Ttl(_) => IFLA_GENEVE_TTL,
+            Self::Tos(_) => IFLA_GENEVE_TOS,
+            Self::Port(_) => IFLA_GENEVE_PORT,
+            Self::CollectMetadata => IFLA_GENEVE_COLLECT_METADATA,
+            Self::UdpCsum(_) => IFLA_GENEVE_UDP_CSUM,
+            Self::UdpZeroCsum6Tx(_) => IFLA_GENEVE_UDP_ZERO_CSUM6_TX,
+            Self::UdpZeroCsum6Rx(_) => IFLA_GENEVE_UDP_ZERO_CSUM6_RX,
+            Self::Label(_) => IFLA_GENEVE_LABEL,
+            Self::TtlInherit(_) => IFLA_GENEVE_TTL_INHERIT,
+            Self::Df(_) => IFLA_GENEVE_DF,
+            Self::InnerProtoInherit => IFLA_GENEVE_INNER_PROTO_INHERIT,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoGeneve::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_GENEVE_ID => {
-                Id(parse_u32(payload)
-                    .context("invalid IFLA_GENEVE_ID value")?)
-            }
+            IFLA_GENEVE_ID => Self::Id(
+                parse_u32(payload).context("invalid IFLA_GENEVE_ID value")?,
+            ),
             IFLA_GENEVE_REMOTE => {
                 if payload.len() == 4 {
                     let mut data = [0u8; 4];
                     data.copy_from_slice(&payload[0..4]);
-                    Remote(Ipv4Addr::from(data))
+                    Self::Remote(Ipv4Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
                         "Invalid IFLA_GENEVE_REMOTE, got unexpected length of \
@@ -157,7 +157,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
                 if payload.len() == 16 {
                     let mut data = [0u8; 16];
                     data.copy_from_slice(&payload[0..16]);
-                    Remote6(Ipv6Addr::from(data))
+                    Self::Remote6(Ipv6Addr::from(data))
                 } else {
                     return Err(DecodeError::from(format!(
                         "Invalid IFLA_GENEVE_REMOTE6, got unexpected length \
@@ -165,48 +165,48 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
                     )));
                 }
             }
-            IFLA_GENEVE_TTL => {
-                Ttl(parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_TTL value")?)
-            }
-            IFLA_GENEVE_TOS => {
-                Tos(parse_u8(payload)
-                    .context("invalid IFLA_GENEVE_TOS value")?)
-            }
-            IFLA_GENEVE_PORT => Port(
+            IFLA_GENEVE_TTL => Self::Ttl(
+                parse_u8(payload).context("invalid IFLA_GENEVE_TTL value")?,
+            ),
+            IFLA_GENEVE_TOS => Self::Tos(
+                parse_u8(payload).context("invalid IFLA_GENEVE_TOS value")?,
+            ),
+            IFLA_GENEVE_PORT => Self::Port(
                 parse_u16_be(payload)
                     .context("invalid IFLA_GENEVE_PORT value")?,
             ),
-            IFLA_GENEVE_COLLECT_METADATA => CollectMetadata,
-            IFLA_GENEVE_UDP_CSUM => UdpCsum(
+            IFLA_GENEVE_COLLECT_METADATA => Self::CollectMetadata,
+            IFLA_GENEVE_UDP_CSUM => Self::UdpCsum(
                 parse_u8(payload)
                     .context("invalid IFLA_GENEVE_UDP_CSUM value")?
                     > 0,
             ),
-            IFLA_GENEVE_UDP_ZERO_CSUM6_TX => UdpZeroCsum6Tx(
+            IFLA_GENEVE_UDP_ZERO_CSUM6_TX => Self::UdpZeroCsum6Tx(
                 parse_u8(payload)
                     .context("invalid IFLA_GENEVE_UDP_ZERO_CSUM6_TX value")?
                     > 0,
             ),
-            IFLA_GENEVE_UDP_ZERO_CSUM6_RX => UdpZeroCsum6Rx(
+            IFLA_GENEVE_UDP_ZERO_CSUM6_RX => Self::UdpZeroCsum6Rx(
                 parse_u8(payload)
                     .context("invalid IFLA_GENEVE_UDP_ZERO_CSUM6_RX value")?
                     > 0,
             ),
-            IFLA_GENEVE_LABEL => Label(
+            IFLA_GENEVE_LABEL => Self::Label(
                 parse_u32_be(payload)
                     .context("invalid IFLA_GENEVE_LABEL value")?,
             ),
-            IFLA_GENEVE_TTL_INHERIT => TtlInherit(
+            IFLA_GENEVE_TTL_INHERIT => Self::TtlInherit(
                 parse_u8(payload)
                     .context("invalid IFLA_GENEVE_TTL_INHERIT value")?
                     > 0,
             ),
-            IFLA_GENEVE_DF => Df(parse_u8(payload)
-                .context("invalid IFLA_GENEVE_DF value")?
-                .into()),
-            IFLA_GENEVE_INNER_PROTO_INHERIT => InnerProtoInherit,
-            kind => Other(
+            IFLA_GENEVE_DF => Self::Df(
+                parse_u8(payload)
+                    .context("invalid IFLA_GENEVE_DF value")?
+                    .into(),
+            ),
+            IFLA_GENEVE_INNER_PROTO_INHERIT => Self::InnerProtoInherit,
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
             ),

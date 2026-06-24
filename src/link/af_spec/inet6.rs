@@ -63,66 +63,61 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 
 impl Nla for AfSpecInet6 {
     fn value_len(&self) -> usize {
-        use self::AfSpecInet6::*;
         match *self {
-            CacheInfo(ref cache_info) => cache_info.buffer_len(),
-            DevConf(ref dev_conf) => dev_conf.buffer_len(),
-            Stats(ref stats) => stats.buffer_len(),
-            Icmp6Stats(ref icmp_stats) => icmp_stats.buffer_len(),
-            Flags(_) | RaMtu(_) => 4,
-            Token(_) => 16,
-            AddrGenMode(_) => 1,
-            Other(ref nla) => nla.value_len(),
+            Self::CacheInfo(ref cache_info) => cache_info.buffer_len(),
+            Self::DevConf(ref dev_conf) => dev_conf.buffer_len(),
+            Self::Stats(ref stats) => stats.buffer_len(),
+            Self::Icmp6Stats(ref icmp_stats) => icmp_stats.buffer_len(),
+            Self::Flags(_) | Self::RaMtu(_) => 4,
+            Self::Token(_) => 16,
+            Self::AddrGenMode(_) => 1,
+            Self::Other(ref nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::AfSpecInet6::*;
         match *self {
-            Flags(ref value) => emit_u32(buffer, value.bits()).unwrap(),
-            RaMtu(ref value) => emit_u32(buffer, *value).unwrap(),
-            CacheInfo(ref v) => v.emit(buffer),
-            DevConf(ref v) => v.emit(buffer),
-            Stats(ref v) => v.emit(buffer),
-            Icmp6Stats(ref v) => v.emit(buffer),
-            Token(v) => buffer.copy_from_slice(&v.octets()),
-            AddrGenMode(ref v) => buffer[0] = v.into(),
-            Other(ref nla) => nla.emit_value(buffer),
+            Self::Flags(ref value) => emit_u32(buffer, value.bits()).unwrap(),
+            Self::RaMtu(ref value) => emit_u32(buffer, *value).unwrap(),
+            Self::CacheInfo(ref v) => v.emit(buffer),
+            Self::DevConf(ref v) => v.emit(buffer),
+            Self::Stats(ref v) => v.emit(buffer),
+            Self::Icmp6Stats(ref v) => v.emit(buffer),
+            Self::Token(v) => buffer.copy_from_slice(&v.octets()),
+            Self::AddrGenMode(ref v) => buffer[0] = v.into(),
+            Self::Other(ref nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::AfSpecInet6::*;
         match *self {
-            Flags(_) => IFLA_INET6_FLAGS,
-            CacheInfo(_) => IFLA_INET6_CACHEINFO,
-            DevConf(_) => IFLA_INET6_CONF,
-            Stats(_) => IFLA_INET6_STATS,
-            Icmp6Stats(_) => IFLA_INET6_ICMP6STATS,
-            Token(_) => IFLA_INET6_TOKEN,
-            AddrGenMode(_) => IFLA_INET6_ADDR_GEN_MODE,
-            RaMtu(_) => IFLA_INET6_RA_MTU,
-            Other(ref nla) => nla.kind(),
+            Self::Flags(_) => IFLA_INET6_FLAGS,
+            Self::CacheInfo(_) => IFLA_INET6_CACHEINFO,
+            Self::DevConf(_) => IFLA_INET6_CONF,
+            Self::Stats(_) => IFLA_INET6_STATS,
+            Self::Icmp6Stats(_) => IFLA_INET6_ICMP6STATS,
+            Self::Token(_) => IFLA_INET6_TOKEN,
+            Self::AddrGenMode(_) => IFLA_INET6_ADDR_GEN_MODE,
+            Self::RaMtu(_) => IFLA_INET6_RA_MTU,
+            Self::Other(ref nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::AfSpecInet6::*;
-
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_INET6_FLAGS => Flags(Inet6IfaceFlags::from_bits_retain(
+            IFLA_INET6_FLAGS => Self::Flags(Inet6IfaceFlags::from_bits_retain(
                 parse_u32(payload).context("invalid IFLA_INET6_FLAGS value")?,
             )),
-            IFLA_INET6_CACHEINFO => CacheInfo(
+            IFLA_INET6_CACHEINFO => Self::CacheInfo(
                 Inet6CacheInfo::parse(&Inet6CacheInfoBuffer::new(payload))
                     .context(format!(
                         "invalid IFLA_INET6_CACHEINFO value {payload:?}"
                     ))?,
             ),
-            IFLA_INET6_CONF => DevConf(
+            IFLA_INET6_CONF => Self::DevConf(
                 Inet6DevConf::parse(&Inet6DevConfBuffer::new(
                     expand_buffer_if_small(
                         payload,
@@ -135,7 +130,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                     "invalid IFLA_INET6_CONF value {payload:?}"
                 ))?,
             ),
-            IFLA_INET6_STATS => Stats(
+            IFLA_INET6_STATS => Self::Stats(
                 Inet6Stats::parse(&Inet6StatsBuffer::new(
                     expand_buffer_if_small(
                         payload,
@@ -148,7 +143,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                     "invalid IFLA_INET6_STATS value {payload:?}"
                 ))?,
             ),
-            IFLA_INET6_ICMP6STATS => Icmp6Stats(
+            IFLA_INET6_ICMP6STATS => Self::Icmp6Stats(
                 super::super::Icmp6Stats::parse(&Icmp6StatsBuffer::new(
                     expand_buffer_if_small(
                         payload,
@@ -161,20 +156,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
                     "invalid IFLA_INET6_ICMP6STATS value {payload:?}"
                 ))?,
             ),
-            IFLA_INET6_TOKEN => Token(
+            IFLA_INET6_TOKEN => Self::Token(
                 parse_ipv6_addr(payload)
                     .context("invalid IFLA_INET6_TOKEN value")?,
             ),
             IFLA_INET6_ADDR_GEN_MODE => {
                 let mode = parse_u8(payload)
                     .context("invalid IFLA_INET6_ADDR_GEN_MODE")?;
-                AddrGenMode(In6AddrGenMode::from(mode))
+                Self::AddrGenMode(In6AddrGenMode::from(mode))
             }
-            IFLA_INET6_RA_MTU => RaMtu(
+            IFLA_INET6_RA_MTU => Self::RaMtu(
                 parse_u32(payload)
                     .context("invalid IFLA_INET6_RA_MTU value")?,
             ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown AF_INET6 NLA type {kind} for IFLA_AF_SPEC(AF_UNSPEC)"
             ))?),
         })

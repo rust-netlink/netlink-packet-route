@@ -61,84 +61,101 @@ pub enum InfoIpTunnel {
 
 impl Nla for InfoIpTunnel {
     fn value_len(&self) -> usize {
-        use self::InfoIpTunnel::*;
         match self {
-            Ipv6RdPrefix(_) => 16,
-            Ipv6RdRelayPrefix(_) => 4,
-            Local(value) | Remote(value) => match value {
+            Self::Ipv6RdPrefix(_) => 16,
+            Self::Ipv6RdRelayPrefix(_) => 4,
+            Self::Local(value) | Self::Remote(value) => match value {
                 IpAddr::V4(_) => 4,
                 IpAddr::V6(_) => 16,
             },
-            Link(_) | FwMark(_) | FlowInfo(_) | Ipv6Flags(_) => 4,
-            Ipv6SitFlags(_)
-            | Ipv4Flags(_)
-            | EncapType(_)
-            | EncapFlags(_)
-            | EncapSPort(_)
-            | EncapDPort(_)
-            | Ipv6RdPrefixLen(_)
-            | Ipv6RdRelayPrefixLen(_) => 2,
-            Ttl(_) | Tos(_) | Protocol(_) | PMtuDisc(_) | EncapLimit(_) => 1,
-            CollectMetadata => 0,
-            Other(nla) => nla.value_len(),
+            Self::Link(_)
+            | Self::FwMark(_)
+            | Self::FlowInfo(_)
+            | Self::Ipv6Flags(_) => 4,
+            Self::Ipv6SitFlags(_)
+            | Self::Ipv4Flags(_)
+            | Self::EncapType(_)
+            | Self::EncapFlags(_)
+            | Self::EncapSPort(_)
+            | Self::EncapDPort(_)
+            | Self::Ipv6RdPrefixLen(_)
+            | Self::Ipv6RdRelayPrefixLen(_) => 2,
+            Self::Ttl(_)
+            | Self::Tos(_)
+            | Self::Protocol(_)
+            | Self::PMtuDisc(_)
+            | Self::EncapLimit(_) => 1,
+            Self::CollectMetadata => 0,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoIpTunnel::*;
         match self {
-            Ipv6RdPrefix(value) => buffer.copy_from_slice(&value.octets()),
-            Ipv6RdRelayPrefix(value) => buffer.copy_from_slice(&value.octets()),
-            Link(value) | FwMark(value) => emit_u32(buffer, *value).unwrap(),
-            FlowInfo(value) => emit_u32_be(buffer, *value).unwrap(),
-            Ipv6Flags(f) => emit_u32(buffer, f.bits()).unwrap(),
-            Ipv6SitFlags(val) | Ipv4Flags(val) => {
+            Self::Ipv6RdPrefix(value) => {
+                buffer.copy_from_slice(&value.octets())
+            }
+            Self::Ipv6RdRelayPrefix(value) => {
+                buffer.copy_from_slice(&value.octets())
+            }
+            Self::Link(value) | Self::FwMark(value) => {
+                emit_u32(buffer, *value).unwrap()
+            }
+            Self::FlowInfo(value) => emit_u32_be(buffer, *value).unwrap(),
+            Self::Ipv6Flags(f) => emit_u32(buffer, f.bits()).unwrap(),
+            Self::Ipv6SitFlags(val) | Self::Ipv4Flags(val) => {
                 emit_u16_be(buffer, *val).unwrap()
             }
-            Local(value) | Remote(value) => match value {
+            Self::Local(value) | Self::Remote(value) => match value {
                 IpAddr::V4(ipv4) => buffer.copy_from_slice(&ipv4.octets()),
                 IpAddr::V6(ipv6) => buffer.copy_from_slice(&ipv6.octets()),
             },
-            EncapType(value) => emit_u16(buffer, (*value).into()).unwrap(),
-            EncapFlags(f) => emit_u16(buffer, f.bits()).unwrap(),
-            EncapSPort(value) | EncapDPort(value) => {
+            Self::EncapType(value) => {
+                emit_u16(buffer, (*value).into()).unwrap()
+            }
+            Self::EncapFlags(f) => emit_u16(buffer, f.bits()).unwrap(),
+            Self::EncapSPort(value) | Self::EncapDPort(value) => {
                 emit_u16_be(buffer, *value).unwrap()
             }
-            Ipv6RdPrefixLen(value) | Ipv6RdRelayPrefixLen(value) => {
+            Self::Ipv6RdPrefixLen(value)
+            | Self::Ipv6RdRelayPrefixLen(value) => {
                 emit_u16(buffer, *value).unwrap()
             }
-            Protocol(value) => buffer[0] = u8::from(*value),
-            Ttl(value) | Tos(value) | EncapLimit(value) => buffer[0] = *value,
-            PMtuDisc(value) => buffer[0] = if *value { 1 } else { 0 },
-            CollectMetadata => { /* zero-length flag attribute */ }
-            Other(nla) => nla.emit_value(buffer),
+            Self::Protocol(value) => buffer[0] = u8::from(*value),
+            Self::Ttl(value) | Self::Tos(value) | Self::EncapLimit(value) => {
+                buffer[0] = *value
+            }
+            Self::PMtuDisc(value) => buffer[0] = if *value { 1 } else { 0 },
+            Self::CollectMetadata => { /* zero-length flag attribute */ }
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoIpTunnel::*;
         match self {
-            Link(_) => IFLA_IPTUN_LINK,
-            Local(_) => IFLA_IPTUN_LOCAL,
-            Remote(_) => IFLA_IPTUN_REMOTE,
-            Ttl(_) => IFLA_IPTUN_TTL,
-            Tos(_) => IFLA_IPTUN_TOS,
-            EncapLimit(_) => IFLA_IPTUN_ENCAP_LIMIT,
-            FlowInfo(_) => IFLA_IPTUN_FLOWINFO,
-            Ipv6SitFlags(_) | Ipv4Flags(_) | Ipv6Flags(_) => IFLA_IPTUN_FLAGS,
-            Protocol(_) => IFLA_IPTUN_PROTO,
-            PMtuDisc(_) => IFLA_IPTUN_PMTUDISC,
-            Ipv6RdPrefix(_) => IFLA_IPTUN_6RD_PREFIX,
-            Ipv6RdRelayPrefix(_) => IFLA_IPTUN_6RD_RELAY_PREFIX,
-            Ipv6RdPrefixLen(_) => IFLA_IPTUN_6RD_PREFIXLEN,
-            Ipv6RdRelayPrefixLen(_) => IFLA_IPTUN_6RD_RELAY_PREFIXLEN,
-            EncapType(_) => IFLA_IPTUN_ENCAP_TYPE,
-            EncapFlags(_) => IFLA_IPTUN_ENCAP_FLAGS,
-            EncapSPort(_) => IFLA_IPTUN_ENCAP_SPORT,
-            EncapDPort(_) => IFLA_IPTUN_ENCAP_DPORT,
-            CollectMetadata => IFLA_IPTUN_COLLECT_METADATA,
-            FwMark(_) => IFLA_IPTUN_FWMARK,
-            Other(nla) => nla.kind(),
+            Self::Link(_) => IFLA_IPTUN_LINK,
+            Self::Local(_) => IFLA_IPTUN_LOCAL,
+            Self::Remote(_) => IFLA_IPTUN_REMOTE,
+            Self::Ttl(_) => IFLA_IPTUN_TTL,
+            Self::Tos(_) => IFLA_IPTUN_TOS,
+            Self::EncapLimit(_) => IFLA_IPTUN_ENCAP_LIMIT,
+            Self::FlowInfo(_) => IFLA_IPTUN_FLOWINFO,
+            Self::Ipv6SitFlags(_) | Self::Ipv4Flags(_) | Self::Ipv6Flags(_) => {
+                IFLA_IPTUN_FLAGS
+            }
+            Self::Protocol(_) => IFLA_IPTUN_PROTO,
+            Self::PMtuDisc(_) => IFLA_IPTUN_PMTUDISC,
+            Self::Ipv6RdPrefix(_) => IFLA_IPTUN_6RD_PREFIX,
+            Self::Ipv6RdRelayPrefix(_) => IFLA_IPTUN_6RD_RELAY_PREFIX,
+            Self::Ipv6RdPrefixLen(_) => IFLA_IPTUN_6RD_PREFIXLEN,
+            Self::Ipv6RdRelayPrefixLen(_) => IFLA_IPTUN_6RD_RELAY_PREFIXLEN,
+            Self::EncapType(_) => IFLA_IPTUN_ENCAP_TYPE,
+            Self::EncapFlags(_) => IFLA_IPTUN_ENCAP_FLAGS,
+            Self::EncapSPort(_) => IFLA_IPTUN_ENCAP_SPORT,
+            Self::EncapDPort(_) => IFLA_IPTUN_ENCAP_DPORT,
+            Self::CollectMetadata => IFLA_IPTUN_COLLECT_METADATA,
+            Self::FwMark(_) => IFLA_IPTUN_FWMARK,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
@@ -150,10 +167,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
         buf: &NlaBuffer<&'a T>,
         kind: super::InfoKind,
     ) -> Result<Self, DecodeError> {
-        use self::InfoIpTunnel::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_IPTUN_LINK => Link(
+            IFLA_IPTUN_LINK => Self::Link(
                 parse_u32(payload).context("invalid IFLA_IPTUN_LINK value")?,
             ),
             IFLA_IPTUN_LOCAL => {
@@ -166,19 +182,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context("invalid IFLA_IPTUN_REMOTE")?;
                 Self::Remote(ip)
             }
-            IFLA_IPTUN_TTL => {
-                Ttl(parse_u8(payload)
-                    .context("invalid IFLA_IPTUN_TTL value")?)
-            }
-            IFLA_IPTUN_TOS => {
-                Tos(parse_u8(payload)
-                    .context("invalid IFLA_IPTUN_TOS value")?)
-            }
-            IFLA_IPTUN_ENCAP_LIMIT => EncapLimit(
+            IFLA_IPTUN_TTL => Self::Ttl(
+                parse_u8(payload).context("invalid IFLA_IPTUN_TTL value")?,
+            ),
+            IFLA_IPTUN_TOS => Self::Tos(
+                parse_u8(payload).context("invalid IFLA_IPTUN_TOS value")?,
+            ),
+            IFLA_IPTUN_ENCAP_LIMIT => Self::EncapLimit(
                 parse_u8(payload)
                     .context("invalid IFLA_IPTUN_ENCAP_LIMIT value")?,
             ),
-            IFLA_IPTUN_FLOWINFO => FlowInfo(
+            IFLA_IPTUN_FLOWINFO => Self::FlowInfo(
                 parse_u32_be(payload)
                     .context("invalid IFLA_IPTUN_FLOWINFO value")?,
             ),
@@ -203,10 +217,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     )));
                 }
             },
-            IFLA_IPTUN_PROTO => Protocol(IpProtocol::from(
+            IFLA_IPTUN_PROTO => Self::Protocol(IpProtocol::from(
                 parse_u8(payload).context("invalid IFLA_IPTUN_PROTO value")?,
             )),
-            IFLA_IPTUN_PMTUDISC => PMtuDisc(
+            IFLA_IPTUN_PMTUDISC => Self::PMtuDisc(
                 parse_u8(payload)
                     .context("invalid IFLA_IPTUN_PMTUDISC value")?
                     > 0,
@@ -235,39 +249,39 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     )));
                 }
             }
-            IFLA_IPTUN_6RD_PREFIXLEN => Ipv6RdPrefixLen(
+            IFLA_IPTUN_6RD_PREFIXLEN => Self::Ipv6RdPrefixLen(
                 parse_u16(payload)
                     .context("invalid IFLA_IPTUN_6RD_PREFIXLEN value")?,
             ),
-            IFLA_IPTUN_6RD_RELAY_PREFIXLEN => Ipv6RdRelayPrefixLen(
+            IFLA_IPTUN_6RD_RELAY_PREFIXLEN => Self::Ipv6RdRelayPrefixLen(
                 parse_u16(payload)
                     .context("invalid IFLA_IPTUN_6RD_RELAY_PREFIXLEN value")?,
             ),
-            IFLA_IPTUN_ENCAP_TYPE => EncapType(
+            IFLA_IPTUN_ENCAP_TYPE => Self::EncapType(
                 parse_u16(payload)
                     .context("invalid IFLA_IPTUN_ENCAP_TYPE value")?
                     .into(),
             ),
             IFLA_IPTUN_ENCAP_FLAGS => {
-                EncapFlags(TunnelEncapFlags::from_bits_retain(
+                Self::EncapFlags(TunnelEncapFlags::from_bits_retain(
                     parse_u16(payload)
                         .context("failed to parse IFLA_IPTUN_ENCAP_FLAGS")?,
                 ))
             }
-            IFLA_IPTUN_ENCAP_SPORT => EncapSPort(
+            IFLA_IPTUN_ENCAP_SPORT => Self::EncapSPort(
                 parse_u16_be(payload)
                     .context("invalid IFLA_IPTUN_ENCAP_SPORT value")?,
             ),
-            IFLA_IPTUN_ENCAP_DPORT => EncapDPort(
+            IFLA_IPTUN_ENCAP_DPORT => Self::EncapDPort(
                 parse_u16_be(payload)
                     .context("invalid IFLA_IPTUN_ENCAP_DPORT value")?,
             ),
-            IFLA_IPTUN_COLLECT_METADATA => CollectMetadata,
-            IFLA_IPTUN_FWMARK => FwMark(
+            IFLA_IPTUN_COLLECT_METADATA => Self::CollectMetadata,
+            IFLA_IPTUN_FWMARK => Self::FwMark(
                 parse_u32(payload)
                     .context("invalid IFLA_IPTUN_FWMARK value")?,
             ),
-            kind => Other(
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
             ),

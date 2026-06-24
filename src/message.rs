@@ -523,181 +523,157 @@ impl RouteNetlinkMessage {
     }
 
     pub fn message_type(&self) -> u16 {
-        use self::RouteNetlinkMessage::*;
-
         match self {
-            NewLink(_) => RTM_NEWLINK,
-            DelLink(_) => RTM_DELLINK,
-            GetLink(_) => RTM_GETLINK,
-            SetLink(_) => RTM_SETLINK,
-            NewLinkProp(_) => RTM_NEWLINKPROP,
-            DelLinkProp(_) => RTM_DELLINKPROP,
-            NewAddress(_) => RTM_NEWADDR,
-            DelAddress(_) => RTM_DELADDR,
-            GetAddress(_) => RTM_GETADDR,
-            GetNeighbour(_) => RTM_GETNEIGH,
-            NewNeighbour(_) => RTM_NEWNEIGH,
-            DelNeighbour(_) => RTM_DELNEIGH,
-            GetNeighbourTable(_) => RTM_GETNEIGHTBL,
-            NewNeighbourTable(_) => RTM_NEWNEIGHTBL,
-            SetNeighbourTable(_) => RTM_SETNEIGHTBL,
-            NewRoute(_) => RTM_NEWROUTE,
-            DelRoute(_) => RTM_DELROUTE,
-            GetRoute(_) => RTM_GETROUTE,
-            NewPrefix(_) => RTM_NEWPREFIX,
-            NewQueueDiscipline(_) => RTM_NEWQDISC,
-            DelQueueDiscipline(_) => RTM_DELQDISC,
-            GetQueueDiscipline(_) => RTM_GETQDISC,
-            NewTrafficClass(_) => RTM_NEWTCLASS,
-            DelTrafficClass(_) => RTM_DELTCLASS,
-            GetTrafficClass(_) => RTM_GETTCLASS,
-            NewTrafficFilter(_) => RTM_NEWTFILTER,
-            DelTrafficFilter(_) => RTM_DELTFILTER,
-            GetTrafficFilter(_) => RTM_GETTFILTER,
-            NewTrafficAction(_) => RTM_NEWACTION,
-            DelTrafficAction(_) => RTM_DELACTION,
-            GetTrafficAction(_) => RTM_GETACTION,
-            NewTrafficChain(_) => RTM_NEWCHAIN,
-            DelTrafficChain(_) => RTM_DELCHAIN,
-            GetTrafficChain(_) => RTM_GETCHAIN,
-            GetNsId(_) => RTM_GETNSID,
-            NewNsId(_) => RTM_NEWNSID,
-            DelNsId(_) => RTM_DELNSID,
-            GetRule(_) => RTM_GETRULE,
-            NewRule(_) => RTM_NEWRULE,
-            DelRule(_) => RTM_DELRULE,
+            Self::NewLink(_) => RTM_NEWLINK,
+            Self::DelLink(_) => RTM_DELLINK,
+            Self::GetLink(_) => RTM_GETLINK,
+            Self::SetLink(_) => RTM_SETLINK,
+            Self::NewLinkProp(_) => RTM_NEWLINKPROP,
+            Self::DelLinkProp(_) => RTM_DELLINKPROP,
+            Self::NewAddress(_) => RTM_NEWADDR,
+            Self::DelAddress(_) => RTM_DELADDR,
+            Self::GetAddress(_) => RTM_GETADDR,
+            Self::GetNeighbour(_) => RTM_GETNEIGH,
+            Self::NewNeighbour(_) => RTM_NEWNEIGH,
+            Self::DelNeighbour(_) => RTM_DELNEIGH,
+            Self::GetNeighbourTable(_) => RTM_GETNEIGHTBL,
+            Self::NewNeighbourTable(_) => RTM_NEWNEIGHTBL,
+            Self::SetNeighbourTable(_) => RTM_SETNEIGHTBL,
+            Self::NewRoute(_) => RTM_NEWROUTE,
+            Self::DelRoute(_) => RTM_DELROUTE,
+            Self::GetRoute(_) => RTM_GETROUTE,
+            Self::NewPrefix(_) => RTM_NEWPREFIX,
+            Self::NewQueueDiscipline(_) => RTM_NEWQDISC,
+            Self::DelQueueDiscipline(_) => RTM_DELQDISC,
+            Self::GetQueueDiscipline(_) => RTM_GETQDISC,
+            Self::NewTrafficClass(_) => RTM_NEWTCLASS,
+            Self::DelTrafficClass(_) => RTM_DELTCLASS,
+            Self::GetTrafficClass(_) => RTM_GETTCLASS,
+            Self::NewTrafficFilter(_) => RTM_NEWTFILTER,
+            Self::DelTrafficFilter(_) => RTM_DELTFILTER,
+            Self::GetTrafficFilter(_) => RTM_GETTFILTER,
+            Self::NewTrafficAction(_) => RTM_NEWACTION,
+            Self::DelTrafficAction(_) => RTM_DELACTION,
+            Self::GetTrafficAction(_) => RTM_GETACTION,
+            Self::NewTrafficChain(_) => RTM_NEWCHAIN,
+            Self::DelTrafficChain(_) => RTM_DELCHAIN,
+            Self::GetTrafficChain(_) => RTM_GETCHAIN,
+            Self::GetNsId(_) => RTM_GETNSID,
+            Self::NewNsId(_) => RTM_NEWNSID,
+            Self::DelNsId(_) => RTM_DELNSID,
+            Self::GetRule(_) => RTM_GETRULE,
+            Self::NewRule(_) => RTM_NEWRULE,
+            Self::DelRule(_) => RTM_DELRULE,
         }
     }
 }
 
 impl Emitable for RouteNetlinkMessage {
-    #[rustfmt::skip]
     fn buffer_len(&self) -> usize {
-        use self::RouteNetlinkMessage::*;
         match self {
-            | NewLink(ref msg)
-            | DelLink(ref msg)
-            | GetLink(ref msg)
-            | SetLink(ref msg)
-            | NewLinkProp(ref msg)
-            | DelLinkProp(ref msg)
-            =>  msg.buffer_len(),
+            Self::NewLink(ref msg)
+            | Self::DelLink(ref msg)
+            | Self::GetLink(ref msg)
+            | Self::SetLink(ref msg)
+            | Self::NewLinkProp(ref msg)
+            | Self::DelLinkProp(ref msg) => msg.buffer_len(),
 
-            | NewAddress(ref msg)
-            | DelAddress(ref msg)
-            | GetAddress(ref msg)
-            => msg.buffer_len(),
+            Self::NewAddress(ref msg)
+            | Self::DelAddress(ref msg)
+            | Self::GetAddress(ref msg) => msg.buffer_len(),
 
-            | NewNeighbour(ref msg)
-            | GetNeighbour(ref msg)
-            | DelNeighbour(ref msg)
-            => msg.buffer_len(),
+            Self::NewNeighbour(ref msg)
+            | Self::GetNeighbour(ref msg)
+            | Self::DelNeighbour(ref msg) => msg.buffer_len(),
 
-            | NewNeighbourTable(ref msg)
-            | GetNeighbourTable(ref msg)
-            | SetNeighbourTable(ref msg)
-            => msg.buffer_len(),
+            Self::NewNeighbourTable(ref msg)
+            | Self::GetNeighbourTable(ref msg)
+            | Self::SetNeighbourTable(ref msg) => msg.buffer_len(),
 
-            | NewRoute(ref msg)
-            | DelRoute(ref msg)
-            | GetRoute(ref msg)
-            => msg.buffer_len(),
+            Self::NewRoute(ref msg)
+            | Self::DelRoute(ref msg)
+            | Self::GetRoute(ref msg) => msg.buffer_len(),
 
-            NewPrefix(ref msg) => msg.buffer_len(),
+            Self::NewPrefix(ref msg) => msg.buffer_len(),
 
-            | NewQueueDiscipline(ref msg)
-            | DelQueueDiscipline(ref msg)
-            | GetQueueDiscipline(ref msg)
-            | NewTrafficClass(ref msg)
-            | DelTrafficClass(ref msg)
-            | GetTrafficClass(ref msg)
-            | NewTrafficFilter(ref msg)
-            | DelTrafficFilter(ref msg)
-            | GetTrafficFilter(ref msg)
-            | NewTrafficChain(ref msg)
-            | DelTrafficChain(ref msg)
-            | GetTrafficChain(ref msg)
-            => msg.buffer_len(),
+            Self::NewQueueDiscipline(ref msg)
+            | Self::DelQueueDiscipline(ref msg)
+            | Self::GetQueueDiscipline(ref msg)
+            | Self::NewTrafficClass(ref msg)
+            | Self::DelTrafficClass(ref msg)
+            | Self::GetTrafficClass(ref msg)
+            | Self::NewTrafficFilter(ref msg)
+            | Self::DelTrafficFilter(ref msg)
+            | Self::GetTrafficFilter(ref msg)
+            | Self::NewTrafficChain(ref msg)
+            | Self::DelTrafficChain(ref msg)
+            | Self::GetTrafficChain(ref msg) => msg.buffer_len(),
 
-            | NewNsId(ref msg)
-            | DelNsId(ref msg)
-            | GetNsId(ref msg)
-            => msg.buffer_len(),
+            Self::NewNsId(ref msg)
+            | Self::DelNsId(ref msg)
+            | Self::GetNsId(ref msg) => msg.buffer_len(),
 
-            | NewRule(ref msg)
-            | DelRule(ref msg)
-            | GetRule(ref msg)
-            => msg.buffer_len(),
+            Self::NewRule(ref msg)
+            | Self::DelRule(ref msg)
+            | Self::GetRule(ref msg) => msg.buffer_len(),
 
-            | NewTrafficAction(ref msg)
-            | DelTrafficAction(ref msg)
-            | GetTrafficAction(ref msg)
-            => msg.buffer_len(),
+            Self::NewTrafficAction(ref msg)
+            | Self::DelTrafficAction(ref msg)
+            | Self::GetTrafficAction(ref msg) => msg.buffer_len(),
         }
     }
 
-    #[rustfmt::skip]
     fn emit(&self, buffer: &mut [u8]) {
-        use self::RouteNetlinkMessage::*;
         match self {
-            | NewLink(ref msg)
-            | DelLink(ref msg)
-            | GetLink(ref msg)
-            | SetLink(ref msg)
-            | NewLinkProp(ref msg)
-            | DelLinkProp(ref msg)
-            => msg.emit(buffer),
+            Self::NewLink(ref msg)
+            | Self::DelLink(ref msg)
+            | Self::GetLink(ref msg)
+            | Self::SetLink(ref msg)
+            | Self::NewLinkProp(ref msg)
+            | Self::DelLinkProp(ref msg) => msg.emit(buffer),
 
-            | NewAddress(ref msg)
-            | DelAddress(ref msg)
-            | GetAddress(ref msg)
-            => msg.emit(buffer),
+            Self::NewAddress(ref msg)
+            | Self::DelAddress(ref msg)
+            | Self::GetAddress(ref msg) => msg.emit(buffer),
 
-            | GetNeighbour(ref msg)
-            | NewNeighbour(ref msg)
-            | DelNeighbour(ref msg)
-            => msg.emit(buffer),
+            Self::GetNeighbour(ref msg)
+            | Self::NewNeighbour(ref msg)
+            | Self::DelNeighbour(ref msg) => msg.emit(buffer),
 
-            | GetNeighbourTable(ref msg)
-            | NewNeighbourTable(ref msg)
-            | SetNeighbourTable(ref msg)
-            => msg.emit(buffer),
+            Self::GetNeighbourTable(ref msg)
+            | Self::NewNeighbourTable(ref msg)
+            | Self::SetNeighbourTable(ref msg) => msg.emit(buffer),
 
-            | NewRoute(ref msg)
-            | DelRoute(ref msg)
-            | GetRoute(ref msg)
-            => msg.emit(buffer),
+            Self::NewRoute(ref msg)
+            | Self::DelRoute(ref msg)
+            | Self::GetRoute(ref msg) => msg.emit(buffer),
 
-            | NewPrefix(ref msg) => msg.emit(buffer),
+            Self::NewPrefix(ref msg) => msg.emit(buffer),
 
-            | NewQueueDiscipline(ref msg)
-            | DelQueueDiscipline(ref msg)
-            | GetQueueDiscipline(ref msg)
-            | NewTrafficClass(ref msg)
-            | DelTrafficClass(ref msg)
-            | GetTrafficClass(ref msg)
-            | NewTrafficFilter(ref msg)
-            | DelTrafficFilter(ref msg)
-            | GetTrafficFilter(ref msg)
-            | NewTrafficChain(ref msg)
-            | DelTrafficChain(ref msg)
-            | GetTrafficChain(ref msg)
-            => msg.emit(buffer),
+            Self::NewQueueDiscipline(ref msg)
+            | Self::DelQueueDiscipline(ref msg)
+            | Self::GetQueueDiscipline(ref msg)
+            | Self::NewTrafficClass(ref msg)
+            | Self::DelTrafficClass(ref msg)
+            | Self::GetTrafficClass(ref msg)
+            | Self::NewTrafficFilter(ref msg)
+            | Self::DelTrafficFilter(ref msg)
+            | Self::GetTrafficFilter(ref msg)
+            | Self::NewTrafficChain(ref msg)
+            | Self::DelTrafficChain(ref msg)
+            | Self::GetTrafficChain(ref msg) => msg.emit(buffer),
 
-            | NewNsId(ref msg)
-            | DelNsId(ref msg)
-            | GetNsId(ref msg)
-            => msg.emit(buffer),
+            Self::NewNsId(ref msg)
+            | Self::DelNsId(ref msg)
+            | Self::GetNsId(ref msg) => msg.emit(buffer),
 
-            | NewRule(ref msg)
-            | DelRule(ref msg)
-            | GetRule(ref msg)
-            => msg.emit(buffer),
+            Self::NewRule(ref msg)
+            | Self::DelRule(ref msg)
+            | Self::GetRule(ref msg) => msg.emit(buffer),
 
-            | NewTrafficAction(ref msg)
-            | DelTrafficAction(ref msg)
-            | GetTrafficAction(ref msg)
-            => msg.emit(buffer),
+            Self::NewTrafficAction(ref msg)
+            | Self::DelTrafficAction(ref msg)
+            | Self::GetTrafficAction(ref msg) => msg.emit(buffer),
         }
     }
 }

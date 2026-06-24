@@ -611,39 +611,38 @@ pub enum BridgeQuerierState {
 
 impl Nla for BridgeQuerierState {
     fn value_len(&self) -> usize {
-        use self::BridgeQuerierState::*;
         match self {
-            Ipv4Address(_) => 4,
-            Ipv6Address(_) => 16,
-            Ipv4Port(_) | Ipv6Port(_) => 4,
-            Ipv4OtherTimer(_) | Ipv6OtherTimer(_) => 8,
-            Other(nla) => nla.value_len(),
+            Self::Ipv4Address(_) => 4,
+            Self::Ipv6Address(_) => 16,
+            Self::Ipv4Port(_) | Self::Ipv6Port(_) => 4,
+            Self::Ipv4OtherTimer(_) | Self::Ipv6OtherTimer(_) => 8,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::BridgeQuerierState::*;
         match self {
-            Ipv4Address(_) => BRIDGE_QUERIER_IP_ADDRESS,
-            Ipv4Port(_) => BRIDGE_QUERIER_IP_PORT,
-            Ipv4OtherTimer(_) => BRIDGE_QUERIER_IP_OTHER_TIMER,
-            Ipv6Address(_) => BRIDGE_QUERIER_IPV6_ADDRESS,
-            Ipv6Port(_) => BRIDGE_QUERIER_IPV6_PORT,
-            Ipv6OtherTimer(_) => BRIDGE_QUERIER_IPV6_OTHER_TIMER,
-            Other(nla) => nla.kind(),
+            Self::Ipv4Address(_) => BRIDGE_QUERIER_IP_ADDRESS,
+            Self::Ipv4Port(_) => BRIDGE_QUERIER_IP_PORT,
+            Self::Ipv4OtherTimer(_) => BRIDGE_QUERIER_IP_OTHER_TIMER,
+            Self::Ipv6Address(_) => BRIDGE_QUERIER_IPV6_ADDRESS,
+            Self::Ipv6Port(_) => BRIDGE_QUERIER_IPV6_PORT,
+            Self::Ipv6OtherTimer(_) => BRIDGE_QUERIER_IPV6_OTHER_TIMER,
+            Self::Other(nla) => nla.kind(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::BridgeQuerierState::*;
         match self {
-            Ipv4Port(d) | Ipv6Port(d) => emit_u32(buffer, *d).unwrap(),
-            Ipv4OtherTimer(d) | Ipv6OtherTimer(d) => {
+            Self::Ipv4Port(d) | Self::Ipv6Port(d) => {
+                emit_u32(buffer, *d).unwrap()
+            }
+            Self::Ipv4OtherTimer(d) | Self::Ipv6OtherTimer(d) => {
                 emit_u64(buffer, *d).unwrap()
             }
-            Ipv4Address(addr) => buffer.copy_from_slice(&addr.octets()),
-            Ipv6Address(addr) => buffer.copy_from_slice(&addr.octets()),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Ipv4Address(addr) => buffer.copy_from_slice(&addr.octets()),
+            Self::Ipv6Address(addr) => buffer.copy_from_slice(&addr.octets()),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 }
@@ -652,11 +651,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for BridgeQuerierState
 {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::BridgeQuerierState::*;
         let payload = buf.value();
         Ok(match buf.kind() {
             BRIDGE_QUERIER_IP_ADDRESS => match parse_ip(payload) {
-                Ok(IpAddr::V4(addr)) => Ipv4Address(addr),
+                Ok(IpAddr::V4(addr)) => Self::Ipv4Address(addr),
                 Ok(v) => {
                     return Err(DecodeError::from(format!(
                         "Invalid BRIDGE_QUERIER_IP_ADDRESS, expecting IPv4 \
@@ -670,7 +668,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 }
             },
             BRIDGE_QUERIER_IPV6_ADDRESS => match parse_ip(payload) {
-                Ok(IpAddr::V6(addr)) => Ipv6Address(addr),
+                Ok(IpAddr::V6(addr)) => Self::Ipv6Address(addr),
                 Ok(v) => {
                     return Err(DecodeError::from(format!(
                         "Invalid BRIDGE_QUERIER_IPV6_ADDRESS, expecting IPv6 \
@@ -683,24 +681,24 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     )));
                 }
             },
-            BRIDGE_QUERIER_IP_PORT => Ipv4Port(
+            BRIDGE_QUERIER_IP_PORT => Self::Ipv4Port(
                 parse_u32(payload)
                     .context("invalid BRIDGE_QUERIER_IP_PORT value")?,
             ),
-            BRIDGE_QUERIER_IPV6_PORT => Ipv6Port(
+            BRIDGE_QUERIER_IPV6_PORT => Self::Ipv6Port(
                 parse_u32(payload)
                     .context("invalid BRIDGE_QUERIER_IPV6_PORT value")?,
             ),
-            BRIDGE_QUERIER_IP_OTHER_TIMER => Ipv4OtherTimer(
+            BRIDGE_QUERIER_IP_OTHER_TIMER => Self::Ipv4OtherTimer(
                 parse_u64(payload)
                     .context("invalid BRIDGE_QUERIER_IP_OTHER_TIMER value")?,
             ),
-            BRIDGE_QUERIER_IPV6_OTHER_TIMER => Ipv6OtherTimer(
+            BRIDGE_QUERIER_IPV6_OTHER_TIMER => Self::Ipv6OtherTimer(
                 parse_u64(payload)
                     .context("invalid BRIDGE_QUERIER_IPV6_OTHER_TIMER value")?,
             ),
 
-            kind => Other(
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
             ),

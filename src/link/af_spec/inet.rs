@@ -38,38 +38,33 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 
 impl Nla for AfSpecInet {
     fn value_len(&self) -> usize {
-        use self::AfSpecInet::*;
         match *self {
-            DevConf(ref c) => c.buffer_len(),
-            Other(ref nla) => nla.value_len(),
+            Self::DevConf(ref c) => c.buffer_len(),
+            Self::Other(ref nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::AfSpecInet::*;
         match *self {
-            DevConf(ref c) => c.emit(buffer),
-            Other(ref nla) => nla.emit_value(buffer),
+            Self::DevConf(ref c) => c.emit(buffer),
+            Self::Other(ref nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::AfSpecInet::*;
         match *self {
-            DevConf(_) => IFLA_INET_CONF,
-            Other(ref nla) => nla.kind(),
+            Self::DevConf(_) => IFLA_INET_CONF,
+            Self::Other(ref nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::AfSpecInet::*;
-
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_INET_CONF => {
-                DevConf(InetDevConf::parse(&InetDevConfBuffer::new(
+                Self::DevConf(InetDevConf::parse(&InetDevConfBuffer::new(
                     expand_buffer_if_small(
                         payload,
                         DEV_CONF_LEN,
@@ -78,7 +73,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
                     .as_slice(),
                 ))?)
             }
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "Unknown NLA type {kind} for IFLA_AF_SPEC(inet)"
             ))?),
         })
