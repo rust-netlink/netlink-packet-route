@@ -20,52 +20,48 @@ pub enum InfoIpoib {
 
 impl Nla for InfoIpoib {
     fn value_len(&self) -> usize {
-        use self::InfoIpoib::*;
         match self {
-            Pkey(_) | Mode(_) | UmCast(_) => 2,
-            Other(nla) => nla.value_len(),
+            Self::Pkey(_) | Self::Mode(_) | Self::UmCast(_) => 2,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoIpoib::*;
         match self {
-            Pkey(value) => emit_u16(buffer, *value).unwrap(),
-            Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
-            UmCast(value) => emit_u16(buffer, *value).unwrap(),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Pkey(value) => emit_u16(buffer, *value).unwrap(),
+            Self::Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
+            Self::UmCast(value) => emit_u16(buffer, *value).unwrap(),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoIpoib::*;
         match self {
-            Pkey(_) => IFLA_IPOIB_PKEY,
-            Mode(_) => IFLA_IPOIB_MODE,
-            UmCast(_) => IFLA_IPOIB_UMCAST,
-            Other(nla) => nla.kind(),
+            Self::Pkey(_) => IFLA_IPOIB_PKEY,
+            Self::Mode(_) => IFLA_IPOIB_MODE,
+            Self::UmCast(_) => IFLA_IPOIB_UMCAST,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpoib {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoIpoib::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_IPOIB_PKEY => Pkey(
+            IFLA_IPOIB_PKEY => Self::Pkey(
                 parse_u16(payload).context("invalid IFLA_IPOIB_PKEY value")?,
             ),
-            IFLA_IPOIB_MODE => Mode(
+            IFLA_IPOIB_MODE => Self::Mode(
                 parse_u16(payload)
                     .context("invalid IFLA_IPOIB_MODE value")?
                     .into(),
             ),
-            IFLA_IPOIB_UMCAST => UmCast(
+            IFLA_IPOIB_UMCAST => Self::UmCast(
                 parse_u16(payload)
                     .context("invalid IFLA_IPOIB_UMCAST value")?,
             ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(ipoib)"
             ))?),
         })

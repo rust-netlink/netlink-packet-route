@@ -15,32 +15,27 @@ pub enum Prop {
 }
 
 impl Nla for Prop {
-    #[rustfmt::skip]
     fn value_len(&self) -> usize {
-        use self::Prop::*;
         match self {
-            AltIfName(ref string) => string.len() + 1,
-            Other(nla) => nla.value_len()
+            Self::AltIfName(ref string) => string.len() + 1,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
-    #[rustfmt::skip]
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::Prop::*;
         match self {
-            AltIfName(ref string) => {
+            Self::AltIfName(ref string) => {
                 buffer[..string.len()].copy_from_slice(string.as_bytes());
                 buffer[string.len()] = 0;
-            },
-            Other(nla) => nla.emit_value(buffer)
+            }
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::Prop::*;
         match self {
-            AltIfName(_) => IFLA_ALT_IFNAME,
-            Other(nla) => nla.kind(),
+            Self::AltIfName(_) => IFLA_ALT_IFNAME,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }

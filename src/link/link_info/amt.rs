@@ -86,89 +86,89 @@ pub enum InfoAmt {
 
 impl Nla for InfoAmt {
     fn value_len(&self) -> usize {
-        use self::InfoAmt::*;
         match self {
-            Mode(_) | MaxTunnels(_) | Link(_) => 4,
-            RelayPort(_) | GatewayPort(_) => 2,
-            LocalIp(ip) | RemoteIp(ip) | DiscoveryIp(ip) => match ip {
-                IpAddr::V4(_) => 4,
-                IpAddr::V6(_) => 16,
-            },
-            Other(nla) => nla.value_len(),
+            Self::Mode(_) | Self::MaxTunnels(_) | Self::Link(_) => 4,
+            Self::RelayPort(_) | Self::GatewayPort(_) => 2,
+            Self::LocalIp(ip) | Self::RemoteIp(ip) | Self::DiscoveryIp(ip) => {
+                match ip {
+                    IpAddr::V4(_) => 4,
+                    IpAddr::V6(_) => 16,
+                }
+            }
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoAmt::*;
         match self {
-            Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
-            Link(value) | MaxTunnels(value) => {
+            Self::Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
+            Self::Link(value) | Self::MaxTunnels(value) => {
                 emit_u32(buffer, *value).unwrap()
             }
-            RelayPort(value) | GatewayPort(value) => {
+            Self::RelayPort(value) | Self::GatewayPort(value) => {
                 emit_u16_be(buffer, *value).unwrap()
             }
-            LocalIp(ip) | RemoteIp(ip) | DiscoveryIp(ip) => match ip {
-                IpAddr::V4(ipv4) => buffer.copy_from_slice(&ipv4.octets()),
-                IpAddr::V6(ipv6) => buffer.copy_from_slice(&ipv6.octets()),
-            },
-            Other(nla) => nla.emit_value(buffer),
+            Self::LocalIp(ip) | Self::RemoteIp(ip) | Self::DiscoveryIp(ip) => {
+                match ip {
+                    IpAddr::V4(ipv4) => buffer.copy_from_slice(&ipv4.octets()),
+                    IpAddr::V6(ipv6) => buffer.copy_from_slice(&ipv6.octets()),
+                }
+            }
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoAmt::*;
         match self {
-            Mode(_) => IFLA_AMT_MODE,
-            RelayPort(_) => IFLA_AMT_RELAY_PORT,
-            GatewayPort(_) => IFLA_AMT_GATEWAY_PORT,
-            Link(_) => IFLA_AMT_LINK,
-            LocalIp(_) => IFLA_AMT_LOCAL_IP,
-            RemoteIp(_) => IFLA_AMT_REMOTE_IP,
-            DiscoveryIp(_) => IFLA_AMT_DISCOVERY_IP,
-            MaxTunnels(_) => IFLA_AMT_MAX_TUNNELS,
-            Other(nla) => nla.kind(),
+            Self::Mode(_) => IFLA_AMT_MODE,
+            Self::RelayPort(_) => IFLA_AMT_RELAY_PORT,
+            Self::GatewayPort(_) => IFLA_AMT_GATEWAY_PORT,
+            Self::Link(_) => IFLA_AMT_LINK,
+            Self::LocalIp(_) => IFLA_AMT_LOCAL_IP,
+            Self::RemoteIp(_) => IFLA_AMT_REMOTE_IP,
+            Self::DiscoveryIp(_) => IFLA_AMT_DISCOVERY_IP,
+            Self::MaxTunnels(_) => IFLA_AMT_MAX_TUNNELS,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoAmt {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoAmt::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_AMT_MODE => Mode(
+            IFLA_AMT_MODE => Self::Mode(
                 parse_u32(payload)
                     .context("invalid IFLA_AMT_MODE value")?
                     .into(),
             ),
-            IFLA_AMT_RELAY_PORT => RelayPort(
+            IFLA_AMT_RELAY_PORT => Self::RelayPort(
                 parse_u16_be(payload)
                     .context("invalid IFLA_AMT_RELAY_PORT value")?,
             ),
-            IFLA_AMT_GATEWAY_PORT => GatewayPort(
+            IFLA_AMT_GATEWAY_PORT => Self::GatewayPort(
                 parse_u16_be(payload)
                     .context("invalid IFLA_AMT_GATEWAY_PORT value")?,
             ),
-            IFLA_AMT_LINK => Link(
+            IFLA_AMT_LINK => Self::Link(
                 parse_u32(payload).context("invalid IFLA_AMT_LINK value")?,
             ),
-            IFLA_AMT_LOCAL_IP => LocalIp(
+            IFLA_AMT_LOCAL_IP => Self::LocalIp(
                 parse_ip(payload).context("invalid IFLA_AMT_LOCAL_IP value")?,
             ),
-            IFLA_AMT_REMOTE_IP => RemoteIp(
+            IFLA_AMT_REMOTE_IP => Self::RemoteIp(
                 parse_ip(payload)
                     .context("invalid IFLA_AMT_REMOTE_IP value")?,
             ),
-            IFLA_AMT_DISCOVERY_IP => DiscoveryIp(
+            IFLA_AMT_DISCOVERY_IP => Self::DiscoveryIp(
                 parse_ip(payload)
                     .context("invalid IFLA_AMT_DISCOVERY_IP value")?,
             ),
-            IFLA_AMT_MAX_TUNNELS => MaxTunnels(
+            IFLA_AMT_MAX_TUNNELS => Self::MaxTunnels(
                 parse_u32(payload)
                     .context("invalid IFLA_AMT_MAX_TUNNELS value")?,
             ),
-            kind => Other(
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind} for amt"))?,
             ),

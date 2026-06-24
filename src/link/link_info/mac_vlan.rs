@@ -66,42 +66,40 @@ impl Nla for InfoMacVlan {
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoMacVlan::*;
         match self {
-            Mode(_) => IFLA_MACVLAN_MODE,
-            Flags(_) => IFLA_MACVLAN_FLAGS,
-            MacAddrMode(_) => IFLA_MACVLAN_MACADDR_MODE,
-            MacAddr(_) => IFLA_MACVLAN_MACADDR,
-            MacAddrData(_) => IFLA_MACVLAN_MACADDR_DATA,
-            MacAddrCount(_) => IFLA_MACVLAN_MACADDR_COUNT,
-            BcQueueLen(_) => IFLA_MACVLAN_BC_QUEUE_LEN,
-            BcQueueLenUsed(_) => IFLA_MACVLAN_BC_QUEUE_LEN_USED,
-            BcCutoff(_) => IFLA_MACVLAN_BC_CUTOFF,
-            Other(nla) => nla.kind(),
+            Self::Mode(_) => IFLA_MACVLAN_MODE,
+            Self::Flags(_) => IFLA_MACVLAN_FLAGS,
+            Self::MacAddrMode(_) => IFLA_MACVLAN_MACADDR_MODE,
+            Self::MacAddr(_) => IFLA_MACVLAN_MACADDR,
+            Self::MacAddrData(_) => IFLA_MACVLAN_MACADDR_DATA,
+            Self::MacAddrCount(_) => IFLA_MACVLAN_MACADDR_COUNT,
+            Self::BcQueueLen(_) => IFLA_MACVLAN_BC_QUEUE_LEN,
+            Self::BcQueueLenUsed(_) => IFLA_MACVLAN_BC_QUEUE_LEN_USED,
+            Self::BcCutoff(_) => IFLA_MACVLAN_BC_CUTOFF,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoMacVlan::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_MACVLAN_MODE => Mode(
+            IFLA_MACVLAN_MODE => Self::Mode(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_MODE value")?
                     .into(),
             ),
-            IFLA_MACVLAN_FLAGS => Flags(MacVlanFlags::from_bits_retain(
+            IFLA_MACVLAN_FLAGS => Self::Flags(MacVlanFlags::from_bits_retain(
                 parse_u16(payload)
                     .context("invalid IFLA_MACVLAN_FLAGS value")?,
             )),
-            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(
+            IFLA_MACVLAN_MACADDR_MODE => Self::MacAddrMode(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_MACADDR_MODE value")?
                     .into(),
             ),
-            IFLA_MACVLAN_MACADDR => MacAddr(
+            IFLA_MACVLAN_MACADDR => Self::MacAddr(
                 parse_mac(payload)
                     .context("invalid IFLA_MACVLAN_MACADDR value")?,
             ),
@@ -113,25 +111,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
                     let parsed = InfoMacVlan::parse(nla).context(err)?;
                     mac_data.push(parsed);
                 }
-                MacAddrData(mac_data)
+                Self::MacAddrData(mac_data)
             }
-            IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(
+            IFLA_MACVLAN_MACADDR_COUNT => Self::MacAddrCount(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
             ),
-            IFLA_MACVLAN_BC_QUEUE_LEN => BcQueueLen(
+            IFLA_MACVLAN_BC_QUEUE_LEN => Self::BcQueueLen(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN value")?,
             ),
-            IFLA_MACVLAN_BC_QUEUE_LEN_USED => BcQueueLenUsed(
+            IFLA_MACVLAN_BC_QUEUE_LEN_USED => Self::BcQueueLenUsed(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN_USED value")?,
             ),
-            IFLA_MACVLAN_BC_CUTOFF => BcCutoff(
+            IFLA_MACVLAN_BC_CUTOFF => Self::BcCutoff(
                 parse_i32(payload)
                     .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
             ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(mac_vlan)"
             ))?),
         })
@@ -155,74 +153,72 @@ pub enum InfoMacVtap {
 
 impl Nla for InfoMacVtap {
     fn value_len(&self) -> usize {
-        use self::InfoMacVtap::*;
         match self {
-            Mode(_) => 4,
-            Flags(_) => 2,
-            MacAddrMode(_) => 4,
-            MacAddr(_) => 6,
-            MacAddrData(ref nlas) => nlas.as_slice().buffer_len(),
-            MacAddrCount(_) => 4,
-            BcQueueLen(_) => 4,
-            BcQueueLenUsed(_) => 4,
-            BcCutoff(_) => 4,
-            Other(nla) => nla.value_len(),
+            Self::Mode(_) => 4,
+            Self::Flags(_) => 2,
+            Self::MacAddrMode(_) => 4,
+            Self::MacAddr(_) => 6,
+            Self::MacAddrData(ref nlas) => nlas.as_slice().buffer_len(),
+            Self::MacAddrCount(_) => 4,
+            Self::BcQueueLen(_) => 4,
+            Self::BcQueueLenUsed(_) => 4,
+            Self::BcCutoff(_) => 4,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoMacVtap::*;
         match self {
-            Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
-            Flags(value) => emit_u16(buffer, value.bits()).unwrap(),
-            MacAddrMode(value) => emit_u32(buffer, (*value).into()).unwrap(),
-            MacAddr(bytes) => buffer.copy_from_slice(bytes),
-            MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
-            MacAddrCount(value) => emit_u32(buffer, *value).unwrap(),
-            BcQueueLen(value) => emit_u32(buffer, *value).unwrap(),
-            BcQueueLenUsed(value) => emit_u32(buffer, *value).unwrap(),
-            BcCutoff(value) => emit_i32(buffer, *value).unwrap(),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
+            Self::Flags(value) => emit_u16(buffer, value.bits()).unwrap(),
+            Self::MacAddrMode(value) => {
+                emit_u32(buffer, (*value).into()).unwrap()
+            }
+            Self::MacAddr(bytes) => buffer.copy_from_slice(bytes),
+            Self::MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
+            Self::MacAddrCount(value) => emit_u32(buffer, *value).unwrap(),
+            Self::BcQueueLen(value) => emit_u32(buffer, *value).unwrap(),
+            Self::BcQueueLenUsed(value) => emit_u32(buffer, *value).unwrap(),
+            Self::BcCutoff(value) => emit_i32(buffer, *value).unwrap(),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoMacVtap::*;
         match self {
-            Mode(_) => IFLA_MACVLAN_MODE,
-            Flags(_) => IFLA_MACVLAN_FLAGS,
-            MacAddrMode(_) => IFLA_MACVLAN_MACADDR_MODE,
-            MacAddr(_) => IFLA_MACVLAN_MACADDR,
-            MacAddrData(_) => IFLA_MACVLAN_MACADDR_DATA,
-            MacAddrCount(_) => IFLA_MACVLAN_MACADDR_COUNT,
-            BcQueueLen(_) => IFLA_MACVLAN_BC_QUEUE_LEN,
-            BcQueueLenUsed(_) => IFLA_MACVLAN_BC_QUEUE_LEN_USED,
-            BcCutoff(_) => IFLA_MACVLAN_BC_CUTOFF,
-            Other(nla) => nla.kind(),
+            Self::Mode(_) => IFLA_MACVLAN_MODE,
+            Self::Flags(_) => IFLA_MACVLAN_FLAGS,
+            Self::MacAddrMode(_) => IFLA_MACVLAN_MACADDR_MODE,
+            Self::MacAddr(_) => IFLA_MACVLAN_MACADDR,
+            Self::MacAddrData(_) => IFLA_MACVLAN_MACADDR_DATA,
+            Self::MacAddrCount(_) => IFLA_MACVLAN_MACADDR_COUNT,
+            Self::BcQueueLen(_) => IFLA_MACVLAN_BC_QUEUE_LEN,
+            Self::BcQueueLenUsed(_) => IFLA_MACVLAN_BC_QUEUE_LEN_USED,
+            Self::BcCutoff(_) => IFLA_MACVLAN_BC_CUTOFF,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoMacVtap::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_MACVLAN_MODE => Mode(
+            IFLA_MACVLAN_MODE => Self::Mode(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_MODE value")?
                     .into(),
             ),
-            IFLA_MACVLAN_FLAGS => Flags(MacVtapFlags::from_bits_retain(
+            IFLA_MACVLAN_FLAGS => Self::Flags(MacVtapFlags::from_bits_retain(
                 parse_u16(payload)
                     .context("invalid IFLA_MACVLAN_FLAGS value")?,
             )),
-            IFLA_MACVLAN_MACADDR_MODE => MacAddrMode(
+            IFLA_MACVLAN_MACADDR_MODE => Self::MacAddrMode(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_MACADDR_MODE value")?
                     .into(),
             ),
-            IFLA_MACVLAN_MACADDR => MacAddr(
+            IFLA_MACVLAN_MACADDR => Self::MacAddr(
                 parse_mac(payload)
                     .context("invalid IFLA_MACVLAN_MACADDR value")?,
             ),
@@ -234,25 +230,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
                     let parsed = InfoMacVtap::parse(nla).context(err)?;
                     mac_data.push(parsed);
                 }
-                MacAddrData(mac_data)
+                Self::MacAddrData(mac_data)
             }
-            IFLA_MACVLAN_MACADDR_COUNT => MacAddrCount(
+            IFLA_MACVLAN_MACADDR_COUNT => Self::MacAddrCount(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_MACADDR_COUNT value")?,
             ),
-            IFLA_MACVLAN_BC_QUEUE_LEN => BcQueueLen(
+            IFLA_MACVLAN_BC_QUEUE_LEN => Self::BcQueueLen(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN value")?,
             ),
-            IFLA_MACVLAN_BC_QUEUE_LEN_USED => BcQueueLenUsed(
+            IFLA_MACVLAN_BC_QUEUE_LEN_USED => Self::BcQueueLenUsed(
                 parse_u32(payload)
                     .context("invalid IFLA_MACVLAN_BC_QUEUE_LEN_USED value")?,
             ),
-            IFLA_MACVLAN_BC_CUTOFF => BcCutoff(
+            IFLA_MACVLAN_BC_CUTOFF => Self::BcCutoff(
                 parse_i32(payload)
                     .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
             ),
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(mac_vtap)"
             ))?),
         })

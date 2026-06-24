@@ -20,42 +20,38 @@ pub enum InfoVeth {
 
 impl Nla for InfoVeth {
     fn value_len(&self) -> usize {
-        use self::InfoVeth::*;
         match *self {
-            Peer(ref message) => message.buffer_len(),
-            Other(ref attr) => attr.value_len(),
+            Self::Peer(ref message) => message.buffer_len(),
+            Self::Other(ref attr) => attr.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoVeth::*;
         match *self {
-            Peer(ref message) => message.emit(buffer),
-            Other(ref attr) => attr.emit_value(buffer),
+            Self::Peer(ref message) => message.emit(buffer),
+            Self::Other(ref attr) => attr.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoVeth::*;
         match *self {
-            Peer(_) => VETH_INFO_PEER,
-            Other(ref attr) => attr.kind(),
+            Self::Peer(_) => VETH_INFO_PEER,
+            Self::Other(ref attr) => attr.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVeth {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoVeth::*;
         let payload = buf.value();
         Ok(match buf.kind() {
             VETH_INFO_PEER => {
                 let err = "failed to parse veth link info";
                 let buffer =
                     LinkMessageBuffer::new_checked(&payload).context(err)?;
-                Peer(LinkMessage::parse(&buffer).context(err)?)
+                Self::Peer(LinkMessage::parse(&buffer).context(err)?)
             }
-            kind => Other(
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
             ),

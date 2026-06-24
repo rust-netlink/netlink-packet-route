@@ -18,38 +18,34 @@ pub enum InfoIpVlan {
 
 impl Nla for InfoIpVlan {
     fn value_len(&self) -> usize {
-        use self::InfoIpVlan::*;
         match self {
-            Mode(_) | Flags(_) => 2,
-            Other(nla) => nla.value_len(),
+            Self::Mode(_) | Self::Flags(_) => 2,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoIpVlan::*;
         match self {
-            Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
-            Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
+            Self::Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoIpVlan::*;
         match self {
-            Mode(_) => IFLA_IPVLAN_MODE,
-            Flags(_) => IFLA_IPVLAN_FLAGS,
-            Other(nla) => nla.kind(),
+            Self::Mode(_) => IFLA_IPVLAN_MODE,
+            Self::Flags(_) => IFLA_IPVLAN_FLAGS,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoIpVlan::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_IPVLAN_MODE => Mode(
+            IFLA_IPVLAN_MODE => Self::Mode(
                 parse_u16(payload)
                     .context("invalid IFLA_IPVLAN_MODE value")?
                     .into(),
@@ -58,7 +54,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
                 parse_u16(payload)
                     .context("failed to parse IFLA_IPVLAN_FLAGS")?,
             )),
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)"
             ))?),
         })
@@ -75,38 +71,34 @@ pub enum InfoIpVtap {
 
 impl Nla for InfoIpVtap {
     fn value_len(&self) -> usize {
-        use self::InfoIpVtap::*;
         match self {
-            Mode(_) | Flags(_) => 2,
-            Other(nla) => nla.value_len(),
+            Self::Mode(_) | Self::Flags(_) => 2,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoIpVtap::*;
         match self {
-            Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
-            Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
-            Other(nla) => nla.emit_value(buffer),
+            Self::Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
+            Self::Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoIpVtap::*;
         match self {
-            Mode(_) => IFLA_IPVLAN_MODE,
-            Flags(_) => IFLA_IPVLAN_FLAGS,
-            Other(nla) => nla.kind(),
+            Self::Mode(_) => IFLA_IPVLAN_MODE,
+            Self::Flags(_) => IFLA_IPVLAN_FLAGS,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVtap {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoIpVtap::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_IPVLAN_MODE => Mode(
+            IFLA_IPVLAN_MODE => Self::Mode(
                 parse_u16(payload)
                     .context("invalid IFLA_IPVLAN_MODE value")?
                     .into(),
@@ -115,7 +107,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVtap {
                 parse_u16(payload)
                     .context("failed to parse IFLA_IPVLAN_FLAGS")?,
             )),
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)"
             ))?),
         })

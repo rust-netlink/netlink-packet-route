@@ -118,13 +118,12 @@ impl Nla for VlanQosMapping {
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use VlanQosMapping::*;
         match self {
-            Mapping(from, to) => {
+            Self::Mapping(from, to) => {
                 emit_u32(buffer, *from).unwrap();
                 emit_u32(&mut buffer[4..], *to).unwrap();
             }
-            Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 }
@@ -133,21 +132,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for VlanQosMapping
 {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use VlanQosMapping::*;
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VLAN_QOS_MAPPING => {
                 if payload.len() != 8 {
                     return Err("invalid IFLA_VLAN_QOS_MAPPING value".into());
                 }
-                Mapping(
+                Self::Mapping(
                     parse_u32(&payload[..4])
                         .context("expected u32 from value")?,
                     parse_u32(&payload[4..])
                         .context("expected u32 to value")?,
                 )
             }
-            kind => Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for VLAN QoS mapping"
             ))?),
         })
@@ -166,12 +164,11 @@ fn parse_mappings(payload: &[u8]) -> Result<Vec<VlanQosMapping>, DecodeError> {
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoVlan::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VLAN_ID => {
-                Id(parse_u16(payload).context("invalid IFLA_VLAN_ID value")?)
-            }
+            IFLA_VLAN_ID => Self::Id(
+                parse_u16(payload).context("invalid IFLA_VLAN_ID value")?,
+            ),
             IFLA_VLAN_FLAGS => {
                 let err = "invalid IFLA_VLAN_FLAGS value";
                 if payload.len() != 8 {
@@ -179,20 +176,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
                 }
                 let flags = parse_u32(&payload[0..4]).context(err)?;
                 let mask = parse_u32(&payload[4..]).context(err)?;
-                Flags((
+                Self::Flags((
                     VlanFlags::from_bits_retain(flags),
                     VlanFlags::from_bits_retain(mask),
                 ))
             }
-            IFLA_VLAN_EGRESS_QOS => EgressQos(
+            IFLA_VLAN_EGRESS_QOS => Self::EgressQos(
                 parse_mappings(payload)
                     .context("failed to parse IFLA_VLAN_EGRESS_QOS")?,
             ),
-            IFLA_VLAN_INGRESS_QOS => IngressQos(
+            IFLA_VLAN_INGRESS_QOS => Self::IngressQos(
                 parse_mappings(payload)
                     .context("failed to parse IFLA_VLAN_INGRESS_QOS")?,
             ),
-            IFLA_VLAN_PROTOCOL => Protocol(
+            IFLA_VLAN_PROTOCOL => Self::Protocol(
                 parse_u16_be(payload)
                     .context("invalid IFLA_VLAN_PROTOCOL value")?
                     .into(),

@@ -32,81 +32,81 @@ pub enum InfoHsr {
 
 impl Nla for InfoHsr {
     fn value_len(&self) -> usize {
-        use self::InfoHsr::*;
         match self {
-            SupervisionAddr(_) => 6,
-            Port1(_) | Port2(_) | Interlink(_) => 4,
-            SeqNr(_) => 2,
-            MulticastSpec(_) | Version(_) | Protocol(_) => 1,
-            Other(nla) => nla.value_len(),
+            Self::SupervisionAddr(_) => 6,
+            Self::Port1(_) | Self::Port2(_) | Self::Interlink(_) => 4,
+            Self::SeqNr(_) => 2,
+            Self::MulticastSpec(_) | Self::Version(_) | Self::Protocol(_) => 1,
+            Self::Other(nla) => nla.value_len(),
         }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        use self::InfoHsr::*;
         match self {
-            Port1(value) | Port2(value) | Interlink(value) => {
-                emit_u32(buffer, *value).unwrap()
+            Self::Port1(value)
+            | Self::Port2(value)
+            | Self::Interlink(value) => emit_u32(buffer, *value).unwrap(),
+            Self::MulticastSpec(value) | Self::Version(value) => {
+                buffer[0] = *value
             }
-            MulticastSpec(value) | Version(value) => buffer[0] = *value,
-            SeqNr(value) => emit_u16(buffer, *value).unwrap(),
-            Protocol(value) => buffer[0] = (*value).into(),
-            SupervisionAddr(ref value) => buffer.copy_from_slice(&value[..]),
-            Other(nla) => nla.emit_value(buffer),
+            Self::SeqNr(value) => emit_u16(buffer, *value).unwrap(),
+            Self::Protocol(value) => buffer[0] = (*value).into(),
+            Self::SupervisionAddr(ref value) => {
+                buffer.copy_from_slice(&value[..])
+            }
+            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 
     fn kind(&self) -> u16 {
-        use self::InfoHsr::*;
         match self {
-            Port1(_) => IFLA_HSR_PORT1,
-            Port2(_) => IFLA_HSR_PORT2,
-            Interlink(_) => IFLA_HSR_INTERLINK,
-            MulticastSpec(_) => IFLA_HSR_MULTICAST_SPEC,
-            SupervisionAddr(_) => IFLA_HSR_SUPERVISION_ADDR,
-            SeqNr(_) => IFLA_HSR_SEQ_NR,
-            Version(_) => IFLA_HSR_VERSION,
-            Protocol(_) => IFLA_HSR_PROTOCOL,
-            Other(nla) => nla.kind(),
+            Self::Port1(_) => IFLA_HSR_PORT1,
+            Self::Port2(_) => IFLA_HSR_PORT2,
+            Self::Interlink(_) => IFLA_HSR_INTERLINK,
+            Self::MulticastSpec(_) => IFLA_HSR_MULTICAST_SPEC,
+            Self::SupervisionAddr(_) => IFLA_HSR_SUPERVISION_ADDR,
+            Self::SeqNr(_) => IFLA_HSR_SEQ_NR,
+            Self::Version(_) => IFLA_HSR_VERSION,
+            Self::Protocol(_) => IFLA_HSR_PROTOCOL,
+            Self::Other(nla) => nla.kind(),
         }
     }
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoHsr {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        use self::InfoHsr::*;
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_HSR_PORT1 => Port1(
+            IFLA_HSR_PORT1 => Self::Port1(
                 parse_u32(payload).context("invalid IFLA_HSR_PORT1 value")?,
             ),
-            IFLA_HSR_PORT2 => Port2(
+            IFLA_HSR_PORT2 => Self::Port2(
                 parse_u32(payload).context("invalid IFLA_HSR_PORT2 value")?,
             ),
-            IFLA_HSR_INTERLINK => Interlink(
+            IFLA_HSR_INTERLINK => Self::Interlink(
                 parse_u32(payload)
                     .context("invalid IFLA_HSR_INTERLINK value")?,
             ),
-            IFLA_HSR_MULTICAST_SPEC => MulticastSpec(
+            IFLA_HSR_MULTICAST_SPEC => Self::MulticastSpec(
                 parse_u8(payload)
                     .context("invalid IFLA_HSR_MULTICAST_SPEC value")?,
             ),
-            IFLA_HSR_SUPERVISION_ADDR => SupervisionAddr(
+            IFLA_HSR_SUPERVISION_ADDR => Self::SupervisionAddr(
                 parse_mac(payload)
                     .context("invalid IFLA_HSR_SUPERVISION_ADDR value")?,
             ),
-            IFLA_HSR_SEQ_NR => SeqNr(
+            IFLA_HSR_SEQ_NR => Self::SeqNr(
                 parse_u16(payload).context("invalid IFLA_HSR_SEQ_NR value")?,
             ),
-            IFLA_HSR_VERSION => Version(
+            IFLA_HSR_VERSION => Self::Version(
                 parse_u8(payload).context("invalid IFLA_HSR_VERSION value")?,
             ),
-            IFLA_HSR_PROTOCOL => Protocol(
+            IFLA_HSR_PROTOCOL => Self::Protocol(
                 parse_u8(payload)
                     .context("invalid IFLA_HSR_PROTOCOL value")?
                     .into(),
             ),
-            kind => Other(
+            kind => Self::Other(
                 DefaultNla::parse(buf)
                     .context(format!("unknown NLA type {kind}"))?,
             ),
