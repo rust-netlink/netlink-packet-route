@@ -25,6 +25,7 @@ mod netdevsim;
 mod netkit;
 mod pfcp;
 mod prop_list;
+mod rmnet;
 mod sriov;
 mod statistics;
 mod vcan;
