@@ -9,8 +9,8 @@ use super::super::{
     InfoAmt, InfoBareUdp, InfoBatAdv, InfoBond, InfoBridge, InfoCan, InfoDsa,
     InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan,
     InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap,
-    InfoNetkit, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxcan,
-    InfoVxlan, InfoWwan, InfoXfrm,
+    InfoNetkit, InfoRmNet, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti,
+    InfoVxcan, InfoVxlan, InfoWwan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -49,6 +49,7 @@ pub enum InfoData {
     BareUdp(Vec<InfoBareUdp>),
     Dsa(Vec<InfoDsa>),
     Wwan(Vec<InfoWwan>),
+    RmNet(Vec<InfoRmNet>),
     ErSpan(Vec<InfoGre>),
     Ip6ErSpan(Vec<InfoGre6>),
     Other(Vec<u8>),
@@ -88,6 +89,7 @@ impl Nla for InfoData {
             Self::BareUdp(nlas) => nlas.as_slice().buffer_len(),
             Self::Dsa(nlas) => nlas.as_slice().buffer_len(),
             Self::Wwan(nlas) => nlas.as_slice().buffer_len(),
+            Self::RmNet(nlas) => nlas.as_slice().buffer_len(),
             Self::ErSpan(nlas) => nlas.as_slice().buffer_len(),
             Self::Ip6ErSpan(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(v) => v.len(),
@@ -127,6 +129,7 @@ impl Nla for InfoData {
             Self::BareUdp(nlas) => nlas.as_slice().emit(buffer),
             Self::Dsa(nlas) => nlas.as_slice().emit(buffer),
             Self::Wwan(nlas) => nlas.as_slice().emit(buffer),
+            Self::RmNet(nlas) => nlas.as_slice().emit(buffer),
             Self::ErSpan(nlas) => nlas.as_slice().emit(buffer),
             Self::Ip6ErSpan(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
@@ -444,6 +447,17 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::Wwan(v)
+            }
+            InfoKind::RmNet => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoRmNet::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::RmNet(v)
             }
             InfoKind::BatAdv => {
                 let mut v = Vec::new();
