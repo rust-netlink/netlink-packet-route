@@ -304,6 +304,38 @@ impl From<MacVlanMode> for u32 {
     }
 }
 
+impl std::fmt::Display for MacVlanMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Private => f.write_str("private"),
+            Self::Vepa => f.write_str("vepa"),
+            Self::Bridge => f.write_str("bridge"),
+            Self::Passthrough => f.write_str("passthru"),
+            Self::Source => f.write_str("source"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for MacVlanMode {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "private" => Self::Private,
+            "vepa" => Self::Vepa,
+            "bridge" => Self::Bridge,
+            "passthru" => Self::Passthrough,
+            "source" => Self::Source,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown MAC VLAN mode: {s}"
+                )))
+            }
+        })
+    }
+}
+
 const MACVLAN_FLAG_NOPROMISC: u16 = 1;
 const MACVLAN_FLAG_NODST: u16 = 2;
 
