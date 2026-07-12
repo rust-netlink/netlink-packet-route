@@ -241,6 +241,13 @@ fn test_bond_mode_from_str() {
     assert_eq!(BondMode::Ieee8023Ad, "802.3ad".parse().unwrap());
     assert_eq!(BondMode::BalanceTlb, "balance-tlb".parse().unwrap());
     assert_eq!(BondMode::BalanceAlb, "balance-alb".parse().unwrap());
+    assert_eq!(BondMode::BalanceRr, "0".parse().unwrap());
+    assert_eq!(BondMode::ActiveBackup, "1".parse().unwrap());
+    assert_eq!(BondMode::BalanceXor, "2".parse().unwrap());
+    assert_eq!(BondMode::Broadcast, "3".parse().unwrap());
+    assert_eq!(BondMode::Ieee8023Ad, "4".parse().unwrap());
+    assert_eq!(BondMode::BalanceTlb, "5".parse().unwrap());
+    assert_eq!(BondMode::BalanceAlb, "6".parse().unwrap());
     assert!(BondMode::from_str("bogus").is_err());
 }
 
@@ -260,6 +267,13 @@ fn test_bond_arp_validate_from_str() {
         BondArpValidate::FilterBackup,
         "filter_backup".parse().unwrap()
     );
+    assert_eq!(BondArpValidate::None, "0".parse().unwrap());
+    assert_eq!(BondArpValidate::Active, "1".parse().unwrap());
+    assert_eq!(BondArpValidate::Backup, "2".parse().unwrap());
+    assert_eq!(BondArpValidate::All, "3".parse().unwrap());
+    assert_eq!(BondArpValidate::Filter, "4".parse().unwrap());
+    assert_eq!(BondArpValidate::FilterActive, "5".parse().unwrap());
+    assert_eq!(BondArpValidate::FilterBackup, "6".parse().unwrap());
     assert!(BondArpValidate::from_str("bogus").is_err());
 }
 
@@ -269,6 +283,9 @@ fn test_bond_primary_reselect_from_str() {
     assert_eq!(BondPrimaryReselect::Always, "always".parse().unwrap());
     assert_eq!(BondPrimaryReselect::Better, "better".parse().unwrap());
     assert_eq!(BondPrimaryReselect::Failure, "failure".parse().unwrap());
+    assert_eq!(BondPrimaryReselect::Always, "0".parse().unwrap());
+    assert_eq!(BondPrimaryReselect::Better, "1".parse().unwrap());
+    assert_eq!(BondPrimaryReselect::Failure, "2".parse().unwrap());
     assert!(BondPrimaryReselect::from_str("bogus").is_err());
 }
 
@@ -284,6 +301,12 @@ fn test_bond_xmit_hash_policy_from_str() {
         BondXmitHashPolicy::VlanSrcMac,
         "vlan+srcmac".parse().unwrap()
     );
+    assert_eq!(BondXmitHashPolicy::Layer2, "0".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Layer34, "1".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Layer23, "2".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Encap23, "3".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::Encap34, "4".parse().unwrap());
+    assert_eq!(BondXmitHashPolicy::VlanSrcMac, "5".parse().unwrap());
     assert!(BondXmitHashPolicy::from_str("bogus").is_err());
 }
 
@@ -292,6 +315,8 @@ fn test_bond_arp_all_targets_from_str() {
     use std::str::FromStr;
     assert_eq!(BondArpAllTargets::Any, "any".parse().unwrap());
     assert_eq!(BondArpAllTargets::All, "all".parse().unwrap());
+    assert_eq!(BondArpAllTargets::Any, "0".parse().unwrap());
+    assert_eq!(BondArpAllTargets::All, "1".parse().unwrap());
     assert!(BondArpAllTargets::from_str("bogus").is_err());
 }
 
@@ -301,6 +326,9 @@ fn test_bond_fail_over_mac_from_str() {
     assert_eq!(BondFailOverMac::None, "none".parse().unwrap());
     assert_eq!(BondFailOverMac::Active, "active".parse().unwrap());
     assert_eq!(BondFailOverMac::Follow, "follow".parse().unwrap());
+    assert_eq!(BondFailOverMac::None, "0".parse().unwrap());
+    assert_eq!(BondFailOverMac::Active, "1".parse().unwrap());
+    assert_eq!(BondFailOverMac::Follow, "2".parse().unwrap());
     assert!(BondFailOverMac::from_str("bogus").is_err());
 }
 
@@ -314,6 +342,10 @@ fn test_bond_ad_select_from_str() {
         BondAdSelect::ActorPortPrio,
         "actor_port_prio".parse().unwrap()
     );
+    assert_eq!(BondAdSelect::Stable, "0".parse().unwrap());
+    assert_eq!(BondAdSelect::Bandwidth, "1".parse().unwrap());
+    assert_eq!(BondAdSelect::Count, "2".parse().unwrap());
+    assert_eq!(BondAdSelect::ActorPortPrio, "3".parse().unwrap());
     assert!(BondAdSelect::from_str("bogus").is_err());
 }
 
@@ -322,6 +354,8 @@ fn test_bond_lacp_rate_from_str() {
     use std::str::FromStr;
     assert_eq!(BondLacpRate::Slow, "slow".parse().unwrap());
     assert_eq!(BondLacpRate::Fast, "fast".parse().unwrap());
+    assert_eq!(BondLacpRate::Slow, "0".parse().unwrap());
+    assert_eq!(BondLacpRate::Fast, "1".parse().unwrap());
     assert!(BondLacpRate::from_str("bogus").is_err());
 }
 
