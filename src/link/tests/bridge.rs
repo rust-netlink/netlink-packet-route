@@ -1358,7 +1358,7 @@ fn test_bridge_port_state_from_str() {
 
 #[test]
 fn test_vlan_protocol_display() {
-    assert_eq!("802.1q", VlanProtocol::Ieee8021Q.to_string());
+    assert_eq!("802.1Q", VlanProtocol::Ieee8021Q.to_string());
     assert_eq!("802.1ad", VlanProtocol::Ieee8021Ad.to_string());
 }
 

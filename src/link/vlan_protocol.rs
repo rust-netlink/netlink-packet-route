@@ -47,7 +47,7 @@ impl std::fmt::Display for VlanProtocol {
             f,
             "{}",
             match self {
-                VlanProtocol::Ieee8021Q => "802.1q",
+                VlanProtocol::Ieee8021Q => "802.1Q",
                 VlanProtocol::Ieee8021Ad => "802.1ad",
             }
         )
