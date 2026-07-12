@@ -229,13 +229,13 @@ impl std::str::FromStr for BondMode {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "balance-rr" => Self::BalanceRr,
-            "active-backup" => Self::ActiveBackup,
-            "balance-xor" => Self::BalanceXor,
-            "broadcast" => Self::Broadcast,
-            "802.3ad" => Self::Ieee8023Ad,
-            "balance-tlb" => Self::BalanceTlb,
-            "balance-alb" => Self::BalanceAlb,
+            "balance-rr" | "0" => Self::BalanceRr,
+            "active-backup" | "1" => Self::ActiveBackup,
+            "balance-xor" | "2" => Self::BalanceXor,
+            "broadcast" | "3" => Self::Broadcast,
+            "802.3ad" | "4" => Self::Ieee8023Ad,
+            "balance-tlb" | "5" => Self::BalanceTlb,
+            "balance-alb" | "6" => Self::BalanceAlb,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond mode: {s}"
@@ -312,13 +312,13 @@ impl std::str::FromStr for BondArpValidate {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "none" => Self::None,
-            "active" => Self::Active,
-            "backup" => Self::Backup,
-            "all" => Self::All,
-            "filter" => Self::Filter,
-            "filter_active" => Self::FilterActive,
-            "filter_backup" => Self::FilterBackup,
+            "none" | "0" => Self::None,
+            "active" | "1" => Self::Active,
+            "backup" | "2" => Self::Backup,
+            "all" | "3" => Self::All,
+            "filter" | "4" => Self::Filter,
+            "filter_active" | "5" => Self::FilterActive,
+            "filter_backup" | "6" => Self::FilterBackup,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond arp validate: {s}"
@@ -379,9 +379,9 @@ impl std::str::FromStr for BondPrimaryReselect {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "always" => Self::Always,
-            "better" => Self::Better,
-            "failure" => Self::Failure,
+            "always" | "0" => Self::Always,
+            "better" | "1" => Self::Better,
+            "failure" | "2" => Self::Failure,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond primary reselect: {s}"
@@ -454,12 +454,12 @@ impl std::str::FromStr for BondXmitHashPolicy {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "layer2" => Self::Layer2,
-            "layer3+4" => Self::Layer34,
-            "layer2+3" => Self::Layer23,
-            "encap2+3" => Self::Encap23,
-            "encap3+4" => Self::Encap34,
-            "vlan+srcmac" => Self::VlanSrcMac,
+            "layer2" | "0" => Self::Layer2,
+            "layer3+4" | "1" => Self::Layer34,
+            "layer2+3" | "2" => Self::Layer23,
+            "encap2+3" | "3" => Self::Encap23,
+            "encap3+4" | "4" => Self::Encap34,
+            "vlan+srcmac" | "5" => Self::VlanSrcMac,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond xmit hash policy: {s}"
@@ -516,8 +516,8 @@ impl std::str::FromStr for BondArpAllTargets {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "any" => Self::Any,
-            "all" => Self::All,
+            "any" | "0" => Self::Any,
+            "all" | "1" => Self::All,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond arp all targets: {s}"
@@ -578,9 +578,9 @@ impl std::str::FromStr for BondFailOverMac {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "none" => Self::None,
-            "active" => Self::Active,
-            "follow" => Self::Follow,
+            "none" | "0" => Self::None,
+            "active" | "1" => Self::Active,
+            "follow" | "2" => Self::Follow,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond fail over mac: {s}"
@@ -763,8 +763,8 @@ impl std::str::FromStr for BondLacpRate {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "slow" => Self::Slow,
-            "fast" => Self::Fast,
+            "slow" | "0" => Self::Slow,
+            "fast" | "1" => Self::Fast,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond lacp rate: {s}"
@@ -833,10 +833,10 @@ impl std::str::FromStr for BondAdSelect {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "stable" => Self::Stable,
-            "bandwidth" => Self::Bandwidth,
-            "count" => Self::Count,
-            "actor_port_prio" => Self::ActorPortPrio,
+            "stable" | "0" => Self::Stable,
+            "bandwidth" | "1" => Self::Bandwidth,
+            "count" | "2" => Self::Count,
+            "actor_port_prio" | "3" => Self::ActorPortPrio,
             _ => {
                 return Err(DecodeError::from(format!(
                     "unknown bond ad select: {s}"
