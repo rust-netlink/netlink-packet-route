@@ -22,6 +22,7 @@ mod netkit;
 mod prop_list;
 mod sriov;
 mod statistics;
+mod vcan;
 mod veth;
 mod vlan;
 mod vrf;
