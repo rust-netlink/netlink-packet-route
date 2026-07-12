@@ -57,6 +57,34 @@ impl From<GeneveDf> for u8 {
     }
 }
 
+impl std::fmt::Display for GeneveDf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unset => f.write_str("unset"),
+            Self::Set => f.write_str("set"),
+            Self::Inherit => f.write_str("inherit"),
+            Self::Other(v) => write!(f, "{v}"),
+        }
+    }
+}
+
+impl std::str::FromStr for GeneveDf {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "unset" => Self::Unset,
+            "set" => Self::Set,
+            "inherit" => Self::Inherit,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown GENEVE DF: {s}"
+                )))
+            }
+        })
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoGeneve {
