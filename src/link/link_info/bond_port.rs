@@ -51,6 +51,32 @@ impl From<BondPortState> for u8 {
     }
 }
 
+impl std::fmt::Display for BondPortState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Active => f.write_str("active"),
+            Self::Backup => f.write_str("backup"),
+            Self::Other(v) => write!(f, "{v}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BondPortState {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            s if s.eq_ignore_ascii_case("active") => Self::Active,
+            s if s.eq_ignore_ascii_case("backup") => Self::Backup,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown bond port state: {s}"
+                )))
+            }
+        })
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum MiiStatus {
@@ -82,6 +108,36 @@ impl From<MiiStatus> for u8 {
             MiiStatus::GoingBack => IFLA_BOND_PORT_MII_STATUS_GOING_BACK,
             MiiStatus::Other(other) => other,
         }
+    }
+}
+
+impl std::fmt::Display for MiiStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Up => f.write_str("up"),
+            Self::GoingDown => f.write_str("going_down"),
+            Self::Down => f.write_str("down"),
+            Self::GoingBack => f.write_str("going_back"),
+            Self::Other(v) => write!(f, "{v}"),
+        }
+    }
+}
+
+impl std::str::FromStr for MiiStatus {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            s if s.eq_ignore_ascii_case("up") => Self::Up,
+            s if s.eq_ignore_ascii_case("going_down") => Self::GoingDown,
+            s if s.eq_ignore_ascii_case("down") => Self::Down,
+            s if s.eq_ignore_ascii_case("going_back") => Self::GoingBack,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown MII status: {s}"
+                )))
+            }
+        })
     }
 }
 
