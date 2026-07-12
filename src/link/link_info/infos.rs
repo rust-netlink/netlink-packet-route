@@ -43,6 +43,7 @@ const MACSEC: &str = "macsec";
 const HSR: &str = "hsr";
 const GENEVE: &str = "geneve";
 const NETKIT: &str = "netkit";
+const VCAN: &str = "vcan";
 const VXCAN: &str = "vxcan";
 const AMT: &str = "amt";
 const NETDEVSIM: &str = "netdevsim";
@@ -206,6 +207,7 @@ pub enum InfoKind {
     Hsr,
     Geneve,
     Netkit,
+    Vcan,
     Vxcan,
     Amt,
     Netdevsim,
@@ -248,6 +250,7 @@ impl std::fmt::Display for InfoKind {
                 Self::Hsr => HSR,
                 Self::Geneve => GENEVE,
                 Self::Netkit => NETKIT,
+                Self::Vcan => VCAN,
                 Self::Vxcan => VXCAN,
                 Self::Amt => AMT,
                 Self::Netdevsim => NETDEVSIM,
@@ -290,6 +293,7 @@ impl Nla for InfoKind {
             Self::Hsr => HSR.len(),
             Self::Geneve => GENEVE.len(),
             Self::Netkit => NETKIT.len(),
+            Self::Vcan => VCAN.len(),
             Self::Vxcan => VXCAN.len(),
             Self::Amt => AMT.len(),
             Self::Netdevsim => NETDEVSIM.len(),
@@ -343,6 +347,7 @@ impl From<&str> for InfoKind {
             HSR => Self::Hsr,
             GENEVE => Self::Geneve,
             NETKIT => Self::Netkit,
+            VCAN => Self::Vcan,
             VXCAN => Self::Vxcan,
             AMT => Self::Amt,
             NETDEVSIM => Self::Netdevsim,
