@@ -26,6 +26,7 @@ mod vlan_protocol;
 mod wireless;
 mod xdp;
 
+#[cfg(test)]
 mod tests;
 
 pub use self::{
