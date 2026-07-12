@@ -154,6 +154,34 @@ impl From<IpVlanMode> for u16 {
     }
 }
 
+impl std::fmt::Display for IpVlanMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::L2 => f.write_str("l2"),
+            Self::L3 => f.write_str("l3"),
+            Self::L3S => f.write_str("l3s"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for IpVlanMode {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "l2" => Self::L2,
+            "l3" => Self::L3,
+            "l3s" => Self::L3S,
+            _ => {
+                return Err(DecodeError::from(format!(
+                    "unknown IP VLAN mode: {s}"
+                )))
+            }
+        })
+    }
+}
+
 const IPVLAN_F_PRIVATE: u16 = 0x01;
 const IPVLAN_F_VEPA: u16 = 0x02;
 
