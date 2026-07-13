@@ -2,5 +2,5 @@ Cargo.lock
 target
 vendor/
 tags
-
+AGENTS.md
 *.swp
