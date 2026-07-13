@@ -14,6 +14,7 @@ use crate::{
     prefix::{PrefixMessage, PrefixMessageBuffer},
     route::{RouteHeader, RouteMessage, RouteMessageBuffer},
     rule::{RuleMessage, RuleMessageBuffer},
+    stats::{StatsMessage, StatsMessageBuffer},
     tc::{TcActionMessage, TcActionMessageBuffer, TcMessage, TcMessageBuffer},
 };
 
@@ -66,8 +67,8 @@ const RTM_SETNEIGHTBL: u16 = 67;
 const RTM_NEWNSID: u16 = 88;
 const RTM_DELNSID: u16 = 89;
 const RTM_GETNSID: u16 = 90;
-// const RTM_NEWSTATS: u16 = 92;
-// const RTM_GETSTATS: u16 = 94;
+const RTM_NEWSTATS: u16 = 92;
+const RTM_GETSTATS: u16 = 94;
 // const RTM_NEWCACHEREPORT: u16 = 96;
 const RTM_NEWCHAIN: u16 = 100;
 const RTM_DELCHAIN: u16 = 101;
@@ -302,6 +303,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
 
+            // Stats messages
+            RTM_NEWSTATS | RTM_GETSTATS => {
+                let err = "invalid stats message";
+                let msg = StatsMessage::parse(
+                    &StatsMessageBuffer::new_checked(&buf.inner())
+                        .context(err)?,
+                )
+                .context(err)?;
+                match message_type {
+                    RTM_NEWSTATS => RouteNetlinkMessage::NewStats(msg),
+                    RTM_GETSTATS => RouteNetlinkMessage::GetStats(msg),
+                    _ => unreachable!(),
+                }
+            }
+
             // ND ID Messages
             RTM_NEWNSID | RTM_GETNSID | RTM_DELNSID => {
                 let err = "invalid nsid message";
@@ -365,6 +381,8 @@ pub enum RouteNetlinkMessage {
     NewTrafficChain(TcMessage),
     DelTrafficChain(TcMessage),
     GetTrafficChain(TcMessage),
+    NewStats(StatsMessage),
+    GetStats(StatsMessage),
     NewNsId(NsidMessage),
     DelNsId(NsidMessage),
     GetNsId(NsidMessage),
@@ -522,6 +540,14 @@ impl RouteNetlinkMessage {
         matches!(self, RouteNetlinkMessage::DelRule(_))
     }
 
+    pub fn is_new_stats(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::NewStats(_))
+    }
+
+    pub fn is_get_stats(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::GetStats(_))
+    }
+
     pub fn message_type(&self) -> u16 {
         match self {
             Self::NewLink(_) => RTM_NEWLINK,
@@ -561,6 +587,8 @@ impl RouteNetlinkMessage {
             Self::GetNsId(_) => RTM_GETNSID,
             Self::NewNsId(_) => RTM_NEWNSID,
             Self::DelNsId(_) => RTM_DELNSID,
+            Self::NewStats(_) => RTM_NEWSTATS,
+            Self::GetStats(_) => RTM_GETSTATS,
             Self::GetRule(_) => RTM_GETRULE,
             Self::NewRule(_) => RTM_NEWRULE,
             Self::DelRule(_) => RTM_DELRULE,
@@ -612,6 +640,10 @@ impl Emitable for RouteNetlinkMessage {
             Self::NewNsId(ref msg)
             | Self::DelNsId(ref msg)
             | Self::GetNsId(ref msg) => msg.buffer_len(),
+
+            Self::NewStats(ref msg) | Self::GetStats(ref msg) => {
+                msg.buffer_len()
+            }
 
             Self::NewRule(ref msg)
             | Self::DelRule(ref msg)
@@ -666,6 +698,10 @@ impl Emitable for RouteNetlinkMessage {
             Self::NewNsId(ref msg)
             | Self::DelNsId(ref msg)
             | Self::GetNsId(ref msg) => msg.emit(buffer),
+
+            Self::NewStats(ref msg) | Self::GetStats(ref msg) => {
+                msg.emit(buffer)
+            }
 
             Self::NewRule(ref msg)
             | Self::DelRule(ref msg)

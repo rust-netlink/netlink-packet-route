@@ -31,6 +31,7 @@ pub mod nsid;
 pub mod prefix;
 pub mod route;
 pub mod rule;
+pub mod stats;
 pub mod tc;
 
 mod message;
