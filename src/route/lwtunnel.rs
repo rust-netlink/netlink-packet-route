@@ -8,7 +8,7 @@ use netlink_packet_core::{
     NlasIterator, Parseable, ParseableParametrized,
 };
 
-use super::{RouteMplsIpTunnel, RouteSeg6IpTunnel};
+use super::{RouteMplsIpTunnel, RouteSeg6IpTunnel, RouteSeg6LocalIpTunnel};
 use crate::ip::parse_ipv6_addr;
 
 const LWTUNNEL_ENCAP_NONE: u16 = 0;
@@ -259,6 +259,7 @@ where
 pub enum RouteLwTunnelEncap {
     Mpls(RouteMplsIpTunnel),
     Seg6(RouteSeg6IpTunnel),
+    Seg6Local(RouteSeg6LocalIpTunnel),
     Ip6(RouteIp6Tunnel),
     Other(DefaultNla),
 }
@@ -268,6 +269,7 @@ impl Nla for RouteLwTunnelEncap {
         match self {
             Self::Mpls(v) => v.value_len(),
             Self::Seg6(v) => v.value_len(),
+            Self::Seg6Local(v) => v.value_len(),
             Self::Ip6(v) => v.value_len(),
             Self::Other(v) => v.value_len(),
         }
@@ -277,6 +279,7 @@ impl Nla for RouteLwTunnelEncap {
         match self {
             Self::Mpls(v) => v.emit_value(buffer),
             Self::Seg6(v) => v.emit_value(buffer),
+            Self::Seg6Local(v) => v.emit_value(buffer),
             Self::Ip6(v) => v.emit_value(buffer),
             Self::Other(v) => v.emit_value(buffer),
         }
@@ -286,6 +289,7 @@ impl Nla for RouteLwTunnelEncap {
         match self {
             Self::Mpls(v) => v.kind(),
             Self::Seg6(v) => v.kind(),
+            Self::Seg6Local(v) => v.kind(),
             Self::Ip6(v) => v.kind(),
             Self::Other(v) => v.kind(),
         }
@@ -307,6 +311,9 @@ where
             }
             RouteLwEnCapType::Seg6 => {
                 Self::Seg6(RouteSeg6IpTunnel::parse(buf)?)
+            }
+            RouteLwEnCapType::Seg6Local => {
+                Self::Seg6Local(RouteSeg6LocalIpTunnel::parse(buf)?)
             }
             RouteLwEnCapType::Ip6 => Self::Ip6(RouteIp6Tunnel::parse(buf)?),
             _ => Self::Other(DefaultNla::parse(buf)?),

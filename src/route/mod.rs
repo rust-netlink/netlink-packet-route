@@ -14,6 +14,7 @@ mod next_hops;
 mod preference;
 mod realm;
 mod seg6;
+mod seg6local;
 mod via;
 
 #[cfg(test)]
@@ -37,5 +38,6 @@ pub use self::{
     preference::RoutePreference,
     realm::RouteRealm,
     seg6::{RouteSeg6IpTunnel, Seg6Header, Seg6Mode},
+    seg6local::{RouteSeg6LocalIpTunnel, Seg6LocalAction, SRH},
     via::{RouteVia, RouteViaBuffer},
 };
