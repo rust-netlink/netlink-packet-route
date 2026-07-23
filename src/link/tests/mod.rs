@@ -16,6 +16,7 @@ mod loopback;
 mod macsec;
 mod macvlan;
 mod macvtap;
+mod map;
 mod message;
 mod netdevsim;
 mod netkit;
