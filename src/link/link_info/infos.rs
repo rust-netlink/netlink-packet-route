@@ -48,6 +48,7 @@ const VXCAN: &str = "vxcan";
 const AMT: &str = "amt";
 const NETDEVSIM: &str = "netdevsim";
 const VIRT_WIFI: &str = "virt_wifi";
+const WWAN: &str = "wwan";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -213,6 +214,7 @@ pub enum InfoKind {
     Amt,
     Netdevsim,
     VirtWifi,
+    Wwan,
     Other(String),
 }
 
@@ -257,6 +259,7 @@ impl std::fmt::Display for InfoKind {
                 Self::Amt => AMT,
                 Self::Netdevsim => NETDEVSIM,
                 Self::VirtWifi => VIRT_WIFI,
+                Self::Wwan => WWAN,
                 Self::Other(s) => s.as_str(),
             }
         )
@@ -301,6 +304,7 @@ impl Nla for InfoKind {
             Self::Amt => AMT.len(),
             Self::Netdevsim => NETDEVSIM.len(),
             Self::VirtWifi => VIRT_WIFI.len(),
+            Self::Wwan => WWAN.len(),
             Self::Other(s) => s.len(),
         };
         len + 1
@@ -356,6 +360,7 @@ impl From<&str> for InfoKind {
             AMT => Self::Amt,
             NETDEVSIM => Self::Netdevsim,
             VIRT_WIFI => Self::VirtWifi,
+            WWAN => Self::Wwan,
             _ => Self::Other(s.to_owned()),
         }
     }
