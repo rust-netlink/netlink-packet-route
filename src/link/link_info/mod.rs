@@ -46,7 +46,7 @@ pub use self::{
     bridge_port::{BridgePortState, InfoBridgePort},
     geneve::{GeneveDf, InfoGeneve},
     gre::{GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6},
-    gtp::InfoGtp,
+    gtp::{GtpRole, InfoGtp},
     hsr::{HsrProtocol, InfoHsr},
     info_data::InfoData,
     info_port::{InfoPortData, InfoPortKind, InfoVrfPort},

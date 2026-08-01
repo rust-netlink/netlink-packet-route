@@ -7,6 +7,7 @@ mod bridge;
 mod dpll_pin;
 mod geneve;
 mod gre;
+mod gtp;
 mod hsr;
 mod ipoib;
 mod iptunnel;
