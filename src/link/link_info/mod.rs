@@ -2,6 +2,7 @@
 
 mod amt;
 mod bareudp;
+mod batadv;
 mod bond;
 mod bond_port;
 mod bridge;
@@ -35,6 +36,7 @@ pub(crate) use self::infos::VecLinkInfo;
 pub use self::{
     amt::{AmtMode, InfoAmt},
     bareudp::InfoBareUdp,
+    batadv::InfoBatAdv,
     bond::{
         BondAdInfo, BondAdSelect, BondAllPortActive, BondArpAllTargets,
         BondArpValidate, BondFailOverMac, BondLacpRate, BondMode,
