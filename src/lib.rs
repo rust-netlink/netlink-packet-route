@@ -34,6 +34,7 @@ pub mod rule;
 pub mod stats;
 pub mod tc;
 
+mod mac;
 mod message;
 #[cfg(test)]
 mod tests;
@@ -70,6 +71,7 @@ mod address_family_fallback;
 pub use self::address_family_fallback::AddressFamily;
 pub use self::{
     ip::IpProtocol,
+    mac::EthernetProtocol,
     message::{RouteNetlinkMessage, RouteNetlinkMessageBuffer},
 };
 
