@@ -3,6 +3,7 @@
 mod afspec;
 mod amt;
 mod bareudp;
+mod batadv;
 mod bond;
 mod bridge;
 mod dpll_pin;
