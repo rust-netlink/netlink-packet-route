@@ -42,7 +42,9 @@ pub use self::{
         BondArpValidate, BondFailOverMac, BondLacpRate, BondMode,
         BondPrimaryReselect, BondXmitHashPolicy, InfoBond,
     },
-    bond_port::{BondPortState, InfoBondPort, MiiStatus},
+    bond_port::{
+        BondPortState, ChurnState, InfoBondPort, LacpState, MiiStatus,
+    },
     bridge::{
         BridgeId, BridgeIdBuffer, BridgeMulticastRouterType,
         BridgeQuerierState, BridgeStpState, InfoBridge,
