@@ -46,6 +46,7 @@ const NETKIT: &str = "netkit";
 const VCAN: &str = "vcan";
 const VXCAN: &str = "vxcan";
 const AMT: &str = "amt";
+const BAREUDP: &str = "bareudp";
 const NETDEVSIM: &str = "netdevsim";
 const VIRT_WIFI: &str = "virt_wifi";
 const WWAN: &str = "wwan";
@@ -213,6 +214,7 @@ pub enum InfoKind {
     Vcan,
     Vxcan,
     Amt,
+    BareUdp,
     Netdevsim,
     VirtWifi,
     Wwan,
@@ -259,6 +261,7 @@ impl std::fmt::Display for InfoKind {
                 Self::Vcan => VCAN,
                 Self::Vxcan => VXCAN,
                 Self::Amt => AMT,
+                Self::BareUdp => BAREUDP,
                 Self::Netdevsim => NETDEVSIM,
                 Self::VirtWifi => VIRT_WIFI,
                 Self::Wwan => WWAN,
@@ -305,6 +308,7 @@ impl Nla for InfoKind {
             Self::Vcan => VCAN.len(),
             Self::Vxcan => VXCAN.len(),
             Self::Amt => AMT.len(),
+            Self::BareUdp => BAREUDP.len(),
             Self::Netdevsim => NETDEVSIM.len(),
             Self::VirtWifi => VIRT_WIFI.len(),
             Self::Wwan => WWAN.len(),
@@ -362,6 +366,7 @@ impl From<&str> for InfoKind {
             VCAN => Self::Vcan,
             VXCAN => Self::Vxcan,
             AMT => Self::Amt,
+            BAREUDP => Self::BareUdp,
             NETDEVSIM => Self::Netdevsim,
             VIRT_WIFI => Self::VirtWifi,
             WWAN => Self::Wwan,
