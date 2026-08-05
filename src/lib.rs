@@ -34,7 +34,6 @@ pub mod rule;
 pub mod stats;
 pub mod tc;
 
-mod mac;
 mod message;
 #[cfg(test)]
 mod tests;
@@ -62,6 +61,11 @@ pub use self::address_family_freebsd::AddressFamily;
     target_os = "android",
 )))]
 mod address_family_fallback;
+// Re-export `EthernetProtocol` from `netlink-packet-core` 0.8.2 so that
+// `netlink_packet_route::EthernetProtocol` stays available (previously
+// defined locally in `mac` module).
+pub use netlink_packet_core::EthernetProtocol;
+
 #[cfg(not(any(
     target_os = "linux",
     target_os = "fuchsia",
@@ -71,7 +75,6 @@ mod address_family_fallback;
 pub use self::address_family_fallback::AddressFamily;
 pub use self::{
     ip::IpProtocol,
-    mac::EthernetProtocol,
     message::{RouteNetlinkMessage, RouteNetlinkMessageBuffer},
 };
 
