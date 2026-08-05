@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16_be, parse_u16_be, DecodeError, DefaultNla, ErrorContext, Nla,
-    NlaBuffer, Parseable,
+    emit_u16_be, parse_u16_be, DecodeError, DefaultNla, ErrorContext,
+    EthernetProtocol, Nla, NlaBuffer, Parseable,
 };
-
-use crate::mac::EthernetProtocol;
 
 const IFLA_BAREUDP_PORT: u16 = 1;
 const IFLA_BAREUDP_ETHERTYPE: u16 = 2;
