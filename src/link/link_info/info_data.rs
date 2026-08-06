@@ -6,11 +6,11 @@ use netlink_packet_core::{
 };
 
 use super::super::{
-    InfoAmt, InfoBareUdp, InfoBatAdv, InfoBond, InfoBridge, InfoGeneve,
-    InfoGre, InfoGre6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan, InfoIpVtap,
-    InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoNetkit,
-    InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxcan, InfoVxlan,
-    InfoWwan, InfoXfrm,
+    InfoAmt, InfoBareUdp, InfoBatAdv, InfoBond, InfoBridge, InfoCan,
+    InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan,
+    InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap,
+    InfoNetkit, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxcan,
+    InfoVxlan, InfoWwan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -19,6 +19,7 @@ const IFLA_INFO_DATA: u16 = 2;
 #[non_exhaustive]
 pub enum InfoData {
     Bridge(Vec<InfoBridge>),
+    Can(Vec<InfoCan>),
     Tun(Vec<InfoTun>),
     Vlan(Vec<InfoVlan>),
     Veth(InfoVeth),
@@ -53,6 +54,7 @@ pub enum InfoData {
 impl Nla for InfoData {
     fn value_len(&self) -> usize {
         match self {
+            Self::Can(nlas) => nlas.as_slice().buffer_len(),
             Self::Bond(nlas) => nlas.as_slice().buffer_len(),
             Self::Bridge(nlas) => nlas.as_slice().buffer_len(),
             Self::Vlan(nlas) => nlas.as_slice().buffer_len(),
@@ -88,6 +90,7 @@ impl Nla for InfoData {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
+            Self::Can(nlas) => nlas.as_slice().emit(buffer),
             Self::Bond(nlas) => nlas.as_slice().emit(buffer),
             Self::Bridge(nlas) => nlas.as_slice().emit(buffer),
             Self::Vlan(nlas) => nlas.as_slice().emit(buffer),
@@ -132,6 +135,17 @@ impl InfoData {
         kind: &InfoKind,
     ) -> Result<InfoData, DecodeError> {
         Ok(match kind {
+            InfoKind::Can => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoCan::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Can(v)
+            }
             InfoKind::Bridge => {
                 let mut v = Vec::new();
                 for nla in NlasIterator::new(payload) {

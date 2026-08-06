@@ -6,6 +6,7 @@ mod bareudp;
 mod batadv;
 mod bond;
 mod bridge;
+mod can;
 mod dpll_pin;
 mod geneve;
 mod gre;
