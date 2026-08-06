@@ -9,6 +9,7 @@ mod bridge;
 mod bridge_boolopt;
 mod bridge_port;
 mod can;
+mod dsa;
 mod geneve;
 mod gre;
 mod gtp;
@@ -56,6 +57,7 @@ pub use self::{
         CanBerrCounter, CanBitTiming, CanBitTimingConst, CanClock, CanCtrlMode,
         CanCtrlModeFlags, CanTdc, InfoCan,
     },
+    dsa::InfoDsa,
     geneve::{GeneveDf, InfoGeneve},
     gre::{GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6},
     gtp::{GtpRole, InfoGtp},
