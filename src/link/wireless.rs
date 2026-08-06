@@ -27,6 +27,13 @@ pub enum WirelessEvent {
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for WirelessEvent {
     fn parse(buf: &T) -> Result<Self, DecodeError> {
         let payload = buf.as_ref();
+        if payload.len() < IW_HEADER_LEN {
+            return Err(DecodeError::invalid_buffer(
+                "WirelessEvent",
+                payload.len(),
+                IW_HEADER_LEN,
+            ));
+        }
         let cmd = parse_u16(&payload[2..4])?;
         let data = &payload[IW_HEADER_LEN..];
         Ok(match cmd {
