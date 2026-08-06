@@ -6,7 +6,7 @@ use netlink_packet_core::{
 };
 
 use super::super::{
-    InfoAmt, InfoBareUdp, InfoBatAdv, InfoBond, InfoBridge, InfoCan,
+    InfoAmt, InfoBareUdp, InfoBatAdv, InfoBond, InfoBridge, InfoCan, InfoDsa,
     InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan,
     InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap,
     InfoNetkit, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti, InfoVxcan,
@@ -47,6 +47,7 @@ pub enum InfoData {
     Amt(Vec<InfoAmt>),
     BatAdv(Vec<InfoBatAdv>),
     BareUdp(Vec<InfoBareUdp>),
+    Dsa(Vec<InfoDsa>),
     Wwan(Vec<InfoWwan>),
     Other(Vec<u8>),
 }
@@ -83,6 +84,7 @@ impl Nla for InfoData {
             Self::Amt(nlas) => nlas.as_slice().buffer_len(),
             Self::BatAdv(nlas) => nlas.as_slice().buffer_len(),
             Self::BareUdp(nlas) => nlas.as_slice().buffer_len(),
+            Self::Dsa(nlas) => nlas.as_slice().buffer_len(),
             Self::Wwan(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(v) => v.len(),
         }
@@ -119,6 +121,7 @@ impl Nla for InfoData {
             Self::Amt(nlas) => nlas.as_slice().emit(buffer),
             Self::BatAdv(nlas) => nlas.as_slice().emit(buffer),
             Self::BareUdp(nlas) => nlas.as_slice().emit(buffer),
+            Self::Dsa(nlas) => nlas.as_slice().emit(buffer),
             Self::Wwan(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
         }
@@ -457,6 +460,17 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::BareUdp(v)
+            }
+            InfoKind::Dsa => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoDsa::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Dsa(v)
             }
             _ => InfoData::Other(payload.to_vec()),
         })
