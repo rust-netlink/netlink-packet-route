@@ -51,6 +51,7 @@ const BAREUDP: &str = "bareudp";
 const NETDEVSIM: &str = "netdevsim";
 const VIRT_WIFI: &str = "virt_wifi";
 const WWAN: &str = "wwan";
+const CAN: &str = "can";
 const TEAM: &str = "team";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -220,6 +221,7 @@ pub enum InfoKind {
     Netdevsim,
     VirtWifi,
     Wwan,
+    Can,
     Team,
     Other(String),
 }
@@ -268,6 +270,7 @@ impl std::fmt::Display for InfoKind {
                 Self::Netdevsim => NETDEVSIM,
                 Self::VirtWifi => VIRT_WIFI,
                 Self::Wwan => WWAN,
+                Self::Can => CAN,
                 Self::Team => TEAM,
                 Self::Other(s) => s.as_str(),
             }
@@ -316,6 +319,7 @@ impl Nla for InfoKind {
             Self::Netdevsim => NETDEVSIM.len(),
             Self::VirtWifi => VIRT_WIFI.len(),
             Self::Wwan => WWAN.len(),
+            Self::Can => CAN.len(),
             Self::Team => TEAM.len(),
             Self::Other(s) => s.len(),
         };
@@ -375,6 +379,7 @@ impl From<&str> for InfoKind {
             NETDEVSIM => Self::Netdevsim,
             VIRT_WIFI => Self::VirtWifi,
             WWAN => Self::Wwan,
+            CAN => Self::Can,
             TEAM => Self::Team,
             _ => Self::Other(s.to_owned()),
         }

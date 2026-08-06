@@ -8,6 +8,7 @@ mod bond_port;
 mod bridge;
 mod bridge_boolopt;
 mod bridge_port;
+mod can;
 mod geneve;
 mod gre;
 mod gtp;
@@ -51,6 +52,10 @@ pub use self::{
     },
     bridge_boolopt::{BridgeBooleanOptionFlags, BridgeBooleanOptions},
     bridge_port::{BridgePortState, InfoBridgePort},
+    can::{
+        CanBerrCounter, CanBitTiming, CanBitTimingConst, CanClock, CanCtrlMode,
+        CanCtrlModeFlags, CanTdc, InfoCan,
+    },
     geneve::{GeneveDf, InfoGeneve},
     gre::{GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6},
     gtp::{GtpRole, InfoGtp},
