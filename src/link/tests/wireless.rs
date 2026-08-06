@@ -4,6 +4,21 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::link::WirelessEvent;
 
+#[test]
+fn test_wireless_event_rejects_short_payload() {
+    // Linux Wireless Extensions' IW_EV_LCP_LEN includes native ABI padding:
+    // 4 bytes on 32-bit targets and 8 bytes on 64-bit targets.
+    let header_len = if cfg!(target_pointer_width = "32") {
+        4
+    } else {
+        8
+    };
+
+    for len in 0..header_len {
+        assert!(WirelessEvent::parse(&vec![0; len]).is_err());
+    }
+}
+
 // Netlink monitor capture of `ip monitor` when WIFI associated with an AP
 // With content netlink attribute of `IFLA_WIRELESS` only
 #[test]
