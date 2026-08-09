@@ -54,9 +54,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
                 parse_u16(payload)
                     .context("failed to parse IFLA_IPVLAN_FLAGS")?,
             )),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)")
+            })?),
         })
     }
 }
@@ -107,9 +107,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVtap {
                 parse_u16(payload)
                     .context("failed to parse IFLA_IPVLAN_FLAGS")?,
             )),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(ipvlan)")
+            })?),
         })
     }
 }

@@ -334,13 +334,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 })? > 0,
             ),
             IFLA_BRPORT_ROOT_ID => Self::RootId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).context(
-                    format!("invalid IFLA_BRPORT_ROOT_ID {payload:?}"),
+                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(
+                    || format!("invalid IFLA_BRPORT_ROOT_ID {payload:?}"),
                 )?,
             ),
             IFLA_BRPORT_BRIDGE_ID => Self::BridgeId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).context(
-                    format!("invalid IFLA_BRPORT_BRIDGE_ID {payload:?}"),
+                BridgeId::parse(&BridgeIdBuffer::new(payload)).with_context(
+                    || format!("invalid IFLA_BRPORT_BRIDGE_ID {payload:?}"),
                 )?,
             ),
             IFLA_BRPORT_DESIGNATED_PORT => {
@@ -358,10 +358,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     format!("invalid IFLA_BRPORT_ID {payload:?}")
                 })?)
             }
-            IFLA_BRPORT_NO => InfoBridgePort::PortNumber(
-                parse_u16(payload)
-                    .context(format!("invalid IFLA_BRPORT_NO {payload:?}"))?,
-            ),
+            IFLA_BRPORT_NO => {
+                InfoBridgePort::PortNumber(parse_u16(payload).with_context(
+                    || format!("invalid IFLA_BRPORT_NO {payload:?}"),
+                )?)
+            }
             IFLA_BRPORT_TOPOLOGY_CHANGE_ACK => {
                 InfoBridgePort::TopologyChangeAck(
                     parse_u8(payload).context({
@@ -443,8 +444,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 })? > 0,
             ),
             IFLA_BRPORT_BACKUP_PORT => {
-                InfoBridgePort::BackupPort(parse_u32(payload).context(
-                    format!("invalid IFLA_BRPORT_BACKUP_PORT {payload:?}"),
+                InfoBridgePort::BackupPort(parse_u32(payload).with_context(
+                    || format!("invalid IFLA_BRPORT_BACKUP_PORT {payload:?}"),
                 )?)
             }
             IFLA_BRPORT_MRP_RING_OPEN => InfoBridgePort::MrpRingOpen(
@@ -507,11 +508,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     })? > 0,
                 )
             }
-            IFLA_BRPORT_BACKUP_NHID => {
-                InfoBridgePort::BackupNextHopId(parse_u32(payload).context(
-                    format!("invalid IFLA_BRPORT_BACKUP_NHID {payload:?}"),
-                )?)
-            }
+            IFLA_BRPORT_BACKUP_NHID => InfoBridgePort::BackupNextHopId(
+                parse_u32(payload).with_context(|| {
+                    format!("invalid IFLA_BRPORT_BACKUP_NHID {payload:?}")
+                })?,
+            ),
             kind => InfoBridgePort::Other(DefaultNla::parse(buf).context({
                 format!(
                     "failed to parse bridge port NLA of type '{kind}' into \

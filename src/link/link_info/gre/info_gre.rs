@@ -175,10 +175,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre {
                 parse_u32_be(payload)
                     .context("invalid IFLA_GRE_FWMARK value")?,
             ),
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind} for ip6gre"))?,
-            ),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for ip6gre")
+            })?),
         })
     }
 }

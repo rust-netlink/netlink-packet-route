@@ -49,9 +49,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBatAdv {
                 parse_string(payload)
                     .context("invalid IFLA_BATADV_ALGO_NAME value")?,
             ),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(batadv)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(batadv)")
+            })?),
         })
     }
 }

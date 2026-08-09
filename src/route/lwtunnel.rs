@@ -329,11 +329,14 @@ where
     ) -> Result<Self, DecodeError> {
         let mut ret = Vec::new();
         for nla in NlasIterator::new(buf.value()) {
-            let nla =
-                nla.context(format!("Invalid RTA_ENCAP for kind: {kind}"))?;
-            ret.push(RouteLwTunnelEncap::parse_with_param(&nla, kind).context(
-                format!("Failed to parse RTA_ENCAP for kind: {kind}",),
-            )?)
+            let nla = nla.with_context(|| {
+                format!("Invalid RTA_ENCAP for kind: {kind}")
+            })?;
+            ret.push(
+                RouteLwTunnelEncap::parse_with_param(&nla, kind).with_context(
+                    || format!("Failed to parse RTA_ENCAP for kind: {kind}",),
+                )?,
+            )
         }
         Ok(Self(ret))
     }

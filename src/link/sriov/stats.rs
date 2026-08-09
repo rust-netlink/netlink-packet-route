@@ -71,48 +71,56 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfStats {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VF_STATS_RX_PACKETS => {
-                Self::RxPackets(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_RX_PACKETS value {payload:?}"
-                ))?)
+                Self::RxPackets(parse_u64(payload).with_context(|| {
+                    format!(
+                        "invalid IFLA_VF_STATS_RX_PACKETS value {payload:?}"
+                    )
+                })?)
             }
             IFLA_VF_STATS_TX_PACKETS => {
-                Self::TxPackets(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_TX_PACKETS value {payload:?}"
-                ))?)
+                Self::TxPackets(parse_u64(payload).with_context(|| {
+                    format!(
+                        "invalid IFLA_VF_STATS_TX_PACKETS value {payload:?}"
+                    )
+                })?)
             }
             IFLA_VF_STATS_RX_BYTES => {
-                Self::RxBytes(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_RX_BYTES value {payload:?}"
-                ))?)
+                Self::RxBytes(parse_u64(payload).with_context(|| {
+                    format!("invalid IFLA_VF_STATS_RX_BYTES value {payload:?}")
+                })?)
             }
             IFLA_VF_STATS_TX_BYTES => {
-                Self::TxBytes(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_TX_BYTES value {payload:?}"
-                ))?)
+                Self::TxBytes(parse_u64(payload).with_context(|| {
+                    format!("invalid IFLA_VF_STATS_TX_BYTES value {payload:?}")
+                })?)
             }
             IFLA_VF_STATS_BROADCAST => {
-                Self::Broadcast(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_BROADCAST value {payload:?}"
-                ))?)
+                Self::Broadcast(parse_u64(payload).with_context(|| {
+                    format!("invalid IFLA_VF_STATS_BROADCAST value {payload:?}")
+                })?)
             }
             IFLA_VF_STATS_MULTICAST => {
-                Self::Multicast(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_MULTICAST value {payload:?}"
-                ))?)
+                Self::Multicast(parse_u64(payload).with_context(|| {
+                    format!("invalid IFLA_VF_STATS_MULTICAST value {payload:?}")
+                })?)
             }
             IFLA_VF_STATS_RX_DROPPED => {
-                Self::RxDropped(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_RX_DROPPED value {payload:?}"
-                ))?)
+                Self::RxDropped(parse_u64(payload).with_context(|| {
+                    format!(
+                        "invalid IFLA_VF_STATS_RX_DROPPED value {payload:?}"
+                    )
+                })?)
             }
             IFLA_VF_STATS_TX_DROPPED => {
-                Self::TxDropped(parse_u64(payload).context(format!(
-                    "invalid IFLA_VF_STATS_TX_DROPPED value {payload:?}"
-                ))?)
+                Self::TxDropped(parse_u64(payload).with_context(|| {
+                    format!(
+                        "invalid IFLA_VF_STATS_TX_DROPPED value {payload:?}"
+                    )
+                })?)
             }
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "failed to parse {kind} as DefaultNla: {payload:?}"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("failed to parse {kind} as DefaultNla: {payload:?}")
+            })?),
         })
     }
 }

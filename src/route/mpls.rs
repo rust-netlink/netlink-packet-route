@@ -52,9 +52,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         Ok(match buf.kind() {
             MPLS_IPTUNNEL_DST => Self::Destination(
                 VecMplsLabel::parse(payload)
-                    .context(format!(
-                        "invalid MPLS_IPTUNNEL_DST value {payload:?}"
-                    ))?
+                    .with_context(|| {
+                        format!("invalid MPLS_IPTUNNEL_DST value {payload:?}")
+                    })?
                     .0,
             ),
             MPLS_IPTUNNEL_TTL => Self::Ttl(
