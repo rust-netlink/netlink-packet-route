@@ -49,6 +49,8 @@ pub enum InfoData {
     BareUdp(Vec<InfoBareUdp>),
     Dsa(Vec<InfoDsa>),
     Wwan(Vec<InfoWwan>),
+    ErSpan(Vec<InfoGre>),
+    Ip6ErSpan(Vec<InfoGre6>),
     Other(Vec<u8>),
 }
 
@@ -86,6 +88,8 @@ impl Nla for InfoData {
             Self::BareUdp(nlas) => nlas.as_slice().buffer_len(),
             Self::Dsa(nlas) => nlas.as_slice().buffer_len(),
             Self::Wwan(nlas) => nlas.as_slice().buffer_len(),
+            Self::ErSpan(nlas) => nlas.as_slice().buffer_len(),
+            Self::Ip6ErSpan(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(v) => v.len(),
         }
     }
@@ -123,6 +127,8 @@ impl Nla for InfoData {
             Self::BareUdp(nlas) => nlas.as_slice().emit(buffer),
             Self::Dsa(nlas) => nlas.as_slice().emit(buffer),
             Self::Wwan(nlas) => nlas.as_slice().emit(buffer),
+            Self::ErSpan(nlas) => nlas.as_slice().emit(buffer),
+            Self::Ip6ErSpan(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
         }
     }
@@ -471,6 +477,28 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::Dsa(v)
+            }
+            InfoKind::ErSpan => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoGre::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::ErSpan(v)
+            }
+            InfoKind::Ip6ErSpan => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoGre6::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Ip6ErSpan(v)
             }
             _ => InfoData::Other(payload.to_vec()),
         })

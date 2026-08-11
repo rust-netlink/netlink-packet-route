@@ -89,6 +89,48 @@ impl Display for GreEncapType {
     }
 }
 
+const ERSPAN_DIR_INGRESS: u8 = 0;
+const ERSPAN_DIR_EGRESS: u8 = 1;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[non_exhaustive]
+pub enum ErSpanDir {
+    #[default]
+    Ingress,
+    Egress,
+    Other(u8),
+}
+
+impl From<u8> for ErSpanDir {
+    fn from(d: u8) -> Self {
+        match d {
+            ERSPAN_DIR_INGRESS => Self::Ingress,
+            ERSPAN_DIR_EGRESS => Self::Egress,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<&ErSpanDir> for u8 {
+    fn from(d: &ErSpanDir) -> Self {
+        match d {
+            ErSpanDir::Ingress => ERSPAN_DIR_INGRESS,
+            ErSpanDir::Egress => ERSPAN_DIR_EGRESS,
+            ErSpanDir::Other(v) => *v,
+        }
+    }
+}
+
+impl Display for ErSpanDir {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ingress => write!(f, "ingress"),
+            Self::Egress => write!(f, "egress"),
+            Self::Other(d) => write!(f, "other({d})"),
+        }
+    }
+}
+
 pub(super) const IFLA_GRE_LINK: u16 = 1;
 pub(super) const IFLA_GRE_IFLAGS: u16 = 2;
 pub(super) const IFLA_GRE_OFLAGS: u16 = 3;
@@ -108,3 +150,7 @@ pub(super) const IFLA_GRE_ENCAP_SPORT: u16 = 16;
 pub(super) const IFLA_GRE_ENCAP_DPORT: u16 = 17;
 pub(super) const IFLA_GRE_COLLECT_METADATA: u16 = 18;
 pub(super) const IFLA_GRE_FWMARK: u16 = 20;
+pub(super) const IFLA_GRE_ERSPAN_INDEX: u16 = 21;
+pub(super) const IFLA_GRE_ERSPAN_VER: u16 = 22;
+pub(super) const IFLA_GRE_ERSPAN_DIR: u16 = 23;
+pub(super) const IFLA_GRE_ERSPAN_HWID: u16 = 24;
