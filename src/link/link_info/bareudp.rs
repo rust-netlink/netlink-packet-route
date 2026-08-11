@@ -72,9 +72,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBareUdp {
                 Self::SrcPortMin(u16::from_ne_bytes(bytes))
             }
             IFLA_BAREUDP_MULTIPROTO_MODE => Self::MultiprotoMode,
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(bareudp)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(bareudp)")
+            })?),
         })
     }
 }

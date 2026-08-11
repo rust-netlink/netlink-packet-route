@@ -23,19 +23,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_PROTO_DOWN_REASON_MASK => {
-                Self::Mask(parse_u32(payload).context(format!(
-                    "invalid IFLA_PROTO_DOWN_REASON_MASK {payload:?}"
-                ))?)
+                Self::Mask(parse_u32(payload).with_context(|| {
+                    format!("invalid IFLA_PROTO_DOWN_REASON_MASK {payload:?}")
+                })?)
             }
             IFLA_PROTO_DOWN_REASON_VALUE => {
-                Self::Value(parse_u32(payload).context(format!(
-                    "invalid IFLA_PROTO_DOWN_REASON_VALUE {payload:?}"
-                ))?)
+                Self::Value(parse_u32(payload).with_context(|| {
+                    format!("invalid IFLA_PROTO_DOWN_REASON_VALUE {payload:?}")
+                })?)
             }
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_PROTO_DOWN_REASON: \
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!(
+                    "unknown NLA type {kind} for IFLA_PROTO_DOWN_REASON: \
                  {payload:?}"
-            ))?),
+                )
+            })?),
         })
     }
 }

@@ -110,10 +110,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkXdp {
             IFLA_XDP_EXPECTED_FD => Self::ExpectedFd(
                 parse_u32(payload).context("invalid IFLA_XDP_PROG_ID value")?,
             ),
-            _ => Self::Other(
-                DefaultNla::parse(nla)
-                    .context(format!("unknown NLA type {}", nla.kind()))?,
-            ),
+            _ => {
+                Self::Other(DefaultNla::parse(nla).with_context(|| {
+                    format!("unknown NLA type {}", nla.kind())
+                })?)
+            }
         })
     }
 }

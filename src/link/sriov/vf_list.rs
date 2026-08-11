@@ -25,10 +25,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.context(format!(
-                "invalid IFLA_VFINFO_LIST value: {:?}",
-                buf.value()
-            ))?;
+            let nla = &nla.with_context(|| {
+                format!("invalid IFLA_VFINFO_LIST value: {:?}", buf.value())
+            })?;
             if nla.kind() == IFLA_VF_INFO {
                 nlas.push(LinkVfInfo::parse(&NlaBuffer::new_checked(
                     nla.value(),
@@ -66,10 +65,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkVfInfo {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.context(format!(
-                "invalid IFLA_VF_INFO value {:?}",
-                buf.value()
-            ))?;
+            let nla = &nla.with_context(|| {
+                format!("invalid IFLA_VF_INFO value {:?}", buf.value())
+            })?;
             nlas.push(VfInfo::parse(nla)?);
         }
         Ok(Self(nlas))
@@ -173,64 +171,79 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfInfo {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VF_MAC => Self::Mac(
-                VfInfoMac::parse(&VfInfoMacBuffer::new(payload))
-                    .context(format!("invalid IFLA_VF_MAC {payload:?}"))?,
+                VfInfoMac::parse(&VfInfoMacBuffer::new(payload)).with_context(
+                    || format!("invalid IFLA_VF_MAC {payload:?}"),
+                )?,
             ),
             IFLA_VF_VLAN => Self::Vlan(
                 VfInfoVlan::parse(&VfInfoVlanBuffer::new(payload))
-                    .context(format!("invalid IFLA_VF_VLAN {payload:?}"))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_VLAN {payload:?}")
+                    })?,
             ),
             IFLA_VF_BROADCAST => Self::Broadcast(
                 VfInfoBroadcast::parse(&VfInfoBroadcastBuffer::new(payload))
-                    .context(format!(
-                        "invalid IFLA_VF_BROADCAST {payload:?}"
-                    ))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_BROADCAST {payload:?}")
+                    })?,
             ),
             IFLA_VF_RATE => Self::Rate(
                 VfInfoRate::parse(&VfInfoRateBuffer::new(payload))
-                    .context(format!("invalid IFLA_VF_RATE {payload:?}"))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_RATE {payload:?}")
+                    })?,
             ),
             IFLA_VF_TX_RATE => Self::TxRate(
                 VfInfoTxRate::parse(&VfInfoTxRateBuffer::new(payload))
-                    .context(format!("invalid IFLA_VF_TX_RATE {payload:?}"))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_TX_RATE {payload:?}")
+                    })?,
             ),
             IFLA_VF_SPOOFCHK => Self::SpoofCheck(
                 VfInfoSpoofCheck::parse(&VfInfoSpoofCheckBuffer::new(payload))
-                    .context(format!("invalid IFLA_VF_SPOOFCHK {payload:?}"))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_SPOOFCHK {payload:?}")
+                    })?,
             ),
             IFLA_VF_LINK_STATE => Self::LinkState(
                 VfInfoLinkState::parse(&VfInfoLinkStateBuffer::new(payload))
-                    .context(format!(
-                        "invalid IFLA_VF_LINK_STATE {payload:?}"
-                    ))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_LINK_STATE {payload:?}")
+                    })?,
             ),
             IFLA_VF_RSS_QUERY_EN => Self::RssQueryEn(
                 VfInfoRssQueryEn::parse(&VfInfoRssQueryEnBuffer::new(payload))
-                    .context(format!(
-                        "invalid IFLA_VF_RSS_QUERY_EN {payload:?}"
-                    ))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_RSS_QUERY_EN {payload:?}")
+                    })?,
             ),
             IFLA_VF_TRUST => Self::Trust(
                 VfInfoTrust::parse(&VfInfoTrustBuffer::new(payload))
-                    .context(format!("invalid IFLA_VF_TRUST {payload:?}"))?,
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_TRUST {payload:?}")
+                    })?,
             ),
             IFLA_VF_IB_NODE_GUID => Self::IbNodeGuid(
-                VfInfoGuid::parse(&VfInfoGuidBuffer::new(payload)).context(
-                    format!("invalid IFLA_VF_IB_NODE_GUID {payload:?}"),
-                )?,
+                VfInfoGuid::parse(&VfInfoGuidBuffer::new(payload))
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_IB_NODE_GUID {payload:?}")
+                    })?,
             ),
             IFLA_VF_IB_PORT_GUID => Self::IbPortGuid(
-                VfInfoGuid::parse(&VfInfoGuidBuffer::new(payload)).context(
-                    format!("invalid IFLA_VF_IB_PORT_GUID {payload:?}"),
-                )?,
+                VfInfoGuid::parse(&VfInfoGuidBuffer::new(payload))
+                    .with_context(|| {
+                        format!("invalid IFLA_VF_IB_PORT_GUID {payload:?}")
+                    })?,
             ),
             IFLA_VF_VLAN_LIST => {
                 let mut nlas: Vec<VfVlan> = Vec::new();
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(format!(
-                        "invalid IFLA_VF_VLAN_LIST value: {:?}",
-                        buf.value()
-                    ))?;
+                    let nla = &nla.with_context(|| {
+                        format!(
+                            "invalid IFLA_VF_VLAN_LIST value: {:?}",
+                            buf.value()
+                        )
+                    })?;
 
                     nlas.push(VfVlan::parse(nla)?);
                 }
@@ -239,18 +252,20 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfInfo {
             IFLA_VF_STATS => {
                 let mut nlas: Vec<VfStats> = Vec::new();
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(format!(
-                        "invalid IFLA_VF_STATS value: {:?}",
-                        buf.value()
-                    ))?;
+                    let nla = &nla.with_context(|| {
+                        format!(
+                            "invalid IFLA_VF_STATS value: {:?}",
+                            buf.value()
+                        )
+                    })?;
 
                     nlas.push(VfStats::parse(nla)?);
                 }
                 Self::Stats(nlas)
             }
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "failed to parse {kind} as DefaultNla: {payload:?}"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("failed to parse {kind} as DefaultNla: {payload:?}")
+            })?),
         })
     }
 }

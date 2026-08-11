@@ -64,10 +64,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for DevlinkPort {
                 parse_u32(payload)
                     .context("invalid DEVLINK_ATTR_PORT_INDEX value")?,
             ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown DEVLINK_ATTR type {}",
-                buf.kind()
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown DEVLINK_ATTR type {}", buf.kind())
+            })?),
         })
     }
 }

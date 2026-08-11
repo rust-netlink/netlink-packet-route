@@ -103,9 +103,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecMctp {
                     .context("invalid IFLA_MCTP_PHYS_BINDING value")?;
                 Self::PhysBinding(MctpPhysBinding::from(b))
             }
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!(
                 "unknown AF_MCTP NLA type {kind} for IFLA_AF_SPEC(AF_UNSPEC)"
-            ))?),
+            )
+            })?),
         })
     }
 }

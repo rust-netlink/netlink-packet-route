@@ -94,25 +94,29 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             NDTA_CONFIG => Self::Config(
                 NeighbourTableConfig::parse(
                     &NeighbourTableConfigBuffer::new_checked(payload)
-                        .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
+                        .with_context(|| {
+                            format!("invalid NDTA_CONFIG {payload:?}")
+                        })?,
                 )
-                .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
+                .with_context(|| format!("invalid NDTA_CONFIG {payload:?}"))?,
             ),
             NDTA_STATS => Self::Stats(
                 NeighbourTableStats::parse(
                     &NeighbourTableStatsBuffer::new_checked(payload)
-                        .context(format!("invalid NDTA_STATS {payload:?}"))?,
+                        .with_context(|| {
+                            format!("invalid NDTA_STATS {payload:?}")
+                        })?,
                 )
-                .context(format!("invalid NDTA_STATS {payload:?}"))?,
+                .with_context(|| format!("invalid NDTA_STATS {payload:?}"))?,
             ),
             NDTA_PARMS => {
                 let err = |payload| format!("invalid NDTA_PARMS {payload:?}");
                 Self::Parms(
                     VecNeighbourTableParameter::parse(
                         &NlaBuffer::new_checked(payload)
-                            .context(err(payload))?,
+                            .with_context(|| err(payload))?,
                     )
-                    .context(err(payload))?
+                    .with_context(|| err(payload))?
                     .0,
                 )
             }
@@ -130,7 +134,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
+                    .with_context(|| format!("unknown NLA type {kind}"))?,
             ),
         })
     }

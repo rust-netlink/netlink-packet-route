@@ -61,8 +61,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 }
             }
             PREFIX_CACHEINFO => Ok(Self::CacheInfo(
-                CacheInfo::parse(&CacheInfoBuffer::new(payload)).context(
-                    format!("Invalid PREFIX_CACHEINFO: {payload:?}"),
+                CacheInfo::parse(&CacheInfoBuffer::new(payload)).with_context(
+                    || format!("Invalid PREFIX_CACHEINFO: {payload:?}"),
                 )?,
             )),
             _ => Ok(Self::Other(DefaultNla::parse(buf)?)),

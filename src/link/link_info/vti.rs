@@ -34,10 +34,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVti {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         #[allow(clippy::match_single_binding)]
         Ok(match buf.kind() {
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind} for vti"))?,
-            ),
+            kind => {
+                Self::Other(DefaultNla::parse(buf).with_context(|| {
+                    format!("unknown NLA type {kind} for vti")
+                })?)
+            }
         })
     }
 }
