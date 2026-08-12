@@ -32,6 +32,58 @@ bitflags! {
     }
 }
 
+impl std::fmt::Display for RouteNextHopFlags {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut first = true;
+        if self.contains(Self::Dead) {
+            write!(f, "dead")?;
+            first = false;
+        }
+        if self.contains(Self::Onlink) {
+            if !first {
+                write!(f, " ")?;
+            }
+            write!(f, "onlink")?;
+            first = false;
+        }
+        if self.contains(Self::Pervasive) {
+            if !first {
+                write!(f, " ")?;
+            }
+            write!(f, "pervasive")?;
+            first = false;
+        }
+        if self.contains(Self::Offload) {
+            if !first {
+                write!(f, " ")?;
+            }
+            write!(f, "offload")?;
+            first = false;
+        }
+        if self.contains(Self::Linkdown) {
+            if !first {
+                write!(f, " ")?;
+            }
+            write!(f, "linkdown")?;
+            first = false;
+        }
+        if self.contains(Self::Unresolved) {
+            if !first {
+                write!(f, " ")?;
+            }
+            write!(f, "unresolved")?;
+            first = false;
+        }
+        if self.contains(Self::Trap) {
+            if !first {
+                write!(f, " ")?;
+            }
+            write!(f, "trap")?;
+        }
+        Ok(())
+    }
+}
+
 const PAYLOAD_OFFSET: usize = 8;
 
 buffer!(RouteNextHopBuffer {
