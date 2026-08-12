@@ -23,6 +23,7 @@ mod macvtap;
 mod message;
 mod netdevsim;
 mod netkit;
+mod pfcp;
 mod prop_list;
 mod sriov;
 mod statistics;
