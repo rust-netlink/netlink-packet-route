@@ -14,8 +14,9 @@ use super::{
         IFLA_GRE_ENCAP_LIMIT, IFLA_GRE_ENCAP_SPORT, IFLA_GRE_ENCAP_TYPE,
         IFLA_GRE_ERSPAN_DIR, IFLA_GRE_ERSPAN_HWID, IFLA_GRE_ERSPAN_INDEX,
         IFLA_GRE_ERSPAN_VER, IFLA_GRE_FLOWINFO, IFLA_GRE_FWMARK,
-        IFLA_GRE_IFLAGS, IFLA_GRE_IKEY, IFLA_GRE_LOCAL, IFLA_GRE_OFLAGS,
-        IFLA_GRE_OKEY, IFLA_GRE_REMOTE, IFLA_GRE_TOS, IFLA_GRE_TTL,
+        IFLA_GRE_IFLAGS, IFLA_GRE_IKEY, IFLA_GRE_LINK, IFLA_GRE_LOCAL,
+        IFLA_GRE_OFLAGS, IFLA_GRE_OKEY, IFLA_GRE_REMOTE, IFLA_GRE_TOS,
+        IFLA_GRE_TTL,
     },
     ErSpanDir, GreEncapFlags, GreEncapType, GreIOFlags,
 };
@@ -24,6 +25,7 @@ use crate::ip::parse_ipv6_addr;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoGre6 {
+    Link(u32),
     IFlags(GreIOFlags),
     OFlags(GreIOFlags),
     IKey(u32),
@@ -50,6 +52,7 @@ pub enum InfoGre6 {
 impl Nla for InfoGre6 {
     fn value_len(&self) -> usize {
         match self {
+            Self::Link(_) => size_of::<u32>(),
             Self::IFlags(_) | Self::OFlags(_) => size_of::<u16>(),
             Self::IKey(_) | Self::OKey(_) => size_of::<u32>(),
             Self::Local(_) | Self::Remote(_) => size_of::<Ipv6Addr>(),
@@ -70,6 +73,7 @@ impl Nla for InfoGre6 {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
+            Self::Link(id) => emit_u32(buffer, *id).unwrap(),
             Self::IFlags(flags) | Self::OFlags(flags) => {
                 emit_u16_be(buffer, flags.bits()).unwrap()
             }
@@ -101,6 +105,7 @@ impl Nla for InfoGre6 {
 
     fn kind(&self) -> u16 {
         match self {
+            Self::Link(_) => IFLA_GRE_LINK,
             Self::IFlags(_) => IFLA_GRE_IFLAGS,
             Self::OFlags(_) => IFLA_GRE_OFLAGS,
             Self::IKey(_) => IFLA_GRE_IKEY,
@@ -130,6 +135,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre6 {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
+            IFLA_GRE_LINK => Self::Link(
+                parse_u32(payload).context("invalid IFLA_GRE_LINK value")?,
+            ),
             IFLA_GRE_IFLAGS => Self::IFlags(GreIOFlags::from_bits_retain(
                 parse_u16_be(payload)
                     .context("invalid IFLA_GRE_IFLAGS value")?,
