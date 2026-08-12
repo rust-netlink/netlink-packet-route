@@ -56,6 +56,7 @@ const DSA: &str = "dsa";
 const TEAM: &str = "team";
 const ERSPAN: &str = "erspan";
 const IP6ERSPAN: &str = "ip6erspan";
+const PFCP: &str = "pfcp";
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -229,6 +230,7 @@ pub enum InfoKind {
     Team,
     ErSpan,
     Ip6ErSpan,
+    Pfcp,
     Other(String),
 }
 
@@ -281,6 +283,7 @@ impl std::fmt::Display for InfoKind {
                 Self::Team => TEAM,
                 Self::ErSpan => ERSPAN,
                 Self::Ip6ErSpan => IP6ERSPAN,
+                Self::Pfcp => PFCP,
                 Self::Other(s) => s.as_str(),
             }
         )
@@ -333,6 +336,7 @@ impl Nla for InfoKind {
             Self::Team => TEAM.len(),
             Self::ErSpan => ERSPAN.len(),
             Self::Ip6ErSpan => IP6ERSPAN.len(),
+            Self::Pfcp => PFCP.len(),
             Self::Other(s) => s.len(),
         };
         len + 1
@@ -396,6 +400,7 @@ impl From<&str> for InfoKind {
             TEAM => Self::Team,
             ERSPAN => Self::ErSpan,
             IP6ERSPAN => Self::Ip6ErSpan,
+            PFCP => Self::Pfcp,
             _ => Self::Other(s.to_owned()),
         }
     }
