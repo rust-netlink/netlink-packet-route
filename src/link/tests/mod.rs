@@ -12,6 +12,7 @@ mod geneve;
 mod gre;
 mod gtp;
 mod hsr;
+mod inet;
 mod ipoib;
 mod iptunnel;
 mod ipvlan;
