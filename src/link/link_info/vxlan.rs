@@ -122,10 +122,18 @@ pub enum InfoVxlan {
     UDPZeroCsumRX(bool),
     RemCsumTX(bool),
     RemCsumRX(bool),
-    Gbp(bool),
-    Gpe(bool),
-    RemCsumNoPartial(bool),
-    TtlInherit(bool),
+    Gbp,
+    Gpe,
+    RemCsumNoPartial,
+    /// Use this variant when creating a **set/new** request.
+    ///
+    /// The kernel nla_policy defines this as `NLA_FLAG`, so the attribute
+    /// must have an empty payload.
+    TtlInheritFlag,
+    /// Kernel dumps this attribute as a `u8` (even when disabled, value 0).
+    ///
+    /// Use this variant when **parsing dump/get** messages.
+    TtlInherit(u8),
     Df(VxlanDf),
     Vnifilter(bool),
     Localbypass(bool),
@@ -156,12 +164,15 @@ impl Nla for InfoVxlan {
             | Self::UDPZeroCsumRX(_)
             | Self::RemCsumTX(_)
             | Self::RemCsumRX(_)
-            | Self::TtlInherit(_)
             | Self::Df(_)
             | Self::Vnifilter(_)
             | Self::Localbypass(_)
             | Self::McRoute(_) => 1,
-            Self::Gbp(_) | Self::Gpe(_) | Self::RemCsumNoPartial(_) => 0,
+            Self::Gbp
+            | Self::Gpe
+            | Self::RemCsumNoPartial
+            | Self::TtlInheritFlag => 0,
+            Self::TtlInherit(_) => 1,
             Self::Port(_) => 2,
             Self::Id(_)
             | Self::Label(_)
@@ -186,9 +197,11 @@ impl Nla for InfoVxlan {
             | Self::Link(value)
             | Self::Ageing(value)
             | Self::Limit(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Gbp(_value)
-            | Self::Gpe(_value)
-            | Self::RemCsumNoPartial(_value) => (),
+            Self::Gbp
+            | Self::Gpe
+            | Self::RemCsumNoPartial
+            | Self::TtlInheritFlag => (),
+            Self::TtlInherit(value) => buffer[0] = *value,
             Self::Tos(value) | Self::Ttl(value) => buffer[0] = *value,
             Self::Df(value) => buffer[0] = u8::from(*value),
             Self::Vnifilter(value)
@@ -204,7 +217,6 @@ impl Nla for InfoVxlan {
             | Self::UDPZeroCsumRX(value)
             | Self::RemCsumTX(value)
             | Self::RemCsumRX(value)
-            | Self::TtlInherit(value)
             | Self::McRoute(value) => buffer[0] = *value as u8,
             Self::Group(value) | Self::Local(value) => {
                 buffer.copy_from_slice(&value.octets())
@@ -248,10 +260,12 @@ impl Nla for InfoVxlan {
             Self::UDPZeroCsumRX(_) => IFLA_VXLAN_UDP_ZERO_CSUM6_RX,
             Self::RemCsumTX(_) => IFLA_VXLAN_REMCSUM_TX,
             Self::RemCsumRX(_) => IFLA_VXLAN_REMCSUM_RX,
-            Self::Gbp(_) => IFLA_VXLAN_GBP,
-            Self::Gpe(_) => IFLA_VXLAN_GPE,
-            Self::RemCsumNoPartial(_) => IFLA_VXLAN_REMCSUM_NOPARTIAL,
-            Self::TtlInherit(_) => IFLA_VXLAN_TTL_INHERIT,
+            Self::Gbp => IFLA_VXLAN_GBP,
+            Self::Gpe => IFLA_VXLAN_GPE,
+            Self::RemCsumNoPartial => IFLA_VXLAN_REMCSUM_NOPARTIAL,
+            Self::TtlInheritFlag | Self::TtlInherit(_) => {
+                IFLA_VXLAN_TTL_INHERIT
+            }
             Self::Df(_) => IFLA_VXLAN_DF,
             Self::Vnifilter(_) => IFLA_VXLAN_VNIFILTER,
             Self::Localbypass(_) => IFLA_VXLAN_LOCALBYPASS,
@@ -403,14 +417,19 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
             IFLA_VXLAN_DF => Self::Df(VxlanDf::from(
                 parse_u8(payload).context("invalid IFLA_VXLAN_DF value")?,
             )),
-            IFLA_VXLAN_GBP => Self::Gbp(true),
-            IFLA_VXLAN_GPE => Self::Gpe(true),
-            IFLA_VXLAN_REMCSUM_NOPARTIAL => Self::RemCsumNoPartial(true),
-            IFLA_VXLAN_TTL_INHERIT => Self::TtlInherit(
-                parse_u8(payload)
-                    .context("invalid IFLA_VXLAN_TTL_INHERIT value")?
-                    > 0,
-            ),
+            IFLA_VXLAN_GBP => Self::Gbp,
+            IFLA_VXLAN_GPE => Self::Gpe,
+            IFLA_VXLAN_REMCSUM_NOPARTIAL => Self::RemCsumNoPartial,
+            IFLA_VXLAN_TTL_INHERIT => {
+                if payload.is_empty() {
+                    Self::TtlInheritFlag
+                } else {
+                    Self::TtlInherit(
+                        parse_u8(payload)
+                            .context("invalid IFLA_VXLAN_TTL_INHERIT value")?,
+                    )
+                }
+            }
             IFLA_VXLAN_VNIFILTER => Self::Vnifilter(
                 parse_u8(payload)
                     .context("invalid IFLA_VXLAN_VNIFILTER value")?
