@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, emit_u64, parse_u16, parse_u32, parse_u64, parse_u8, DecodeError,
-    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
-    ParseableParametrized,
+    emit_u32, emit_u64, parse_u16, parse_u16_be, parse_u32, parse_u64,
+    parse_u8, DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    Parseable, ParseableParametrized,
 };
 
 use super::{
@@ -40,11 +40,11 @@ const RTA_ENCAP: u16 = 22;
 const RTA_EXPIRES: u16 = 23;
 const RTA_UID: u16 = 25;
 const RTA_TTL_PROPAGATE: u16 = 26;
-// TODO
-// const RTA_IP_PROTO:u16 = 27;
-// const RTA_SPORT:u16 = 28;
-// const RTA_DPORT:u16 = 29;
-// const RTA_NH_ID:u16 = 30;
+const RTA_IP_PROTO: u16 = 27;
+const RTA_SPORT: u16 = 28;
+const RTA_DPORT: u16 = 29;
+const RTA_NH_ID: u16 = 30;
+const RTA_FLOWLABEL: u16 = 31;
 
 /// Netlink attributes for `RTM_NEWROUTE`, `RTM_DELROUTE`,
 /// `RTM_GETROUTE` netlink messages.
@@ -81,6 +81,11 @@ pub enum RouteAttribute {
     Realm(RouteRealm),
     Table(u32),
     Mark(u32),
+    IpProto(u8),
+    Sport(u16),
+    Dport(u16),
+    Flowlabel(u32),
+    NhId(u32),
     Other(DefaultNla),
 }
 
@@ -112,6 +117,9 @@ impl Nla for RouteAttribute {
             | Self::Table(_)
             | Self::Mark(_) => 4,
             Self::MulticastExpires(_) => 8,
+            Self::IpProto(_) => 1,
+            Self::Sport(_) | Self::Dport(_) => 2,
+            Self::Flowlabel(_) | Self::NhId(_) => 4,
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -149,6 +157,13 @@ impl Nla for RouteAttribute {
             | Self::Mark(value) => emit_u32(buffer, *value).unwrap(),
             Self::Realm(v) => v.emit(buffer),
             Self::MulticastExpires(value) => emit_u64(buffer, *value).unwrap(),
+            Self::IpProto(value) => buffer[0] = *value,
+            Self::Sport(value) | Self::Dport(value) => {
+                buffer[..2].copy_from_slice(&value.to_be_bytes())
+            }
+            Self::Flowlabel(value) | Self::NhId(value) => {
+                emit_u32(buffer, *value).unwrap()
+            }
             Self::Other(attr) => attr.emit_value(buffer),
         }
     }
@@ -178,6 +193,11 @@ impl Nla for RouteAttribute {
             Self::MulticastExpires(_) => RTA_EXPIRES,
             Self::Uid(_) => RTA_UID,
             Self::TtlPropagate(_) => RTA_TTL_PROPAGATE,
+            Self::IpProto(_) => RTA_IP_PROTO,
+            Self::Sport(_) => RTA_SPORT,
+            Self::Dport(_) => RTA_DPORT,
+            Self::Flowlabel(_) => RTA_FLOWLABEL,
+            Self::NhId(_) => RTA_NH_ID,
             Self::Other(ref attr) => attr.kind(),
         }
     }
@@ -322,6 +342,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
                 Self::MultiPath(next_hops)
             }
+            RTA_IP_PROTO => Self::IpProto(
+                parse_u8(payload).context("invalid RTA_IP_PROTO value")?,
+            ),
+            RTA_SPORT => Self::Sport(
+                parse_u16_be(payload).context("invalid RTA_SPORT value")?,
+            ),
+            RTA_DPORT => Self::Dport(
+                parse_u16_be(payload).context("invalid RTA_DPORT value")?,
+            ),
+            RTA_FLOWLABEL => Self::Flowlabel(
+                parse_u32(payload).context("invalid RTA_FLOWLABEL value")?,
+            ),
+            RTA_NH_ID => Self::NhId(
+                parse_u32(payload).context("invalid RTA_NH_ID value")?,
+            ),
             _ => Self::Other(
                 DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?,
             ),

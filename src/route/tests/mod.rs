@@ -9,6 +9,8 @@ mod ip6_tunnel;
 #[cfg(test)]
 mod loopback;
 #[cfg(test)]
+mod metrics;
+#[cfg(test)]
 mod mpls;
 #[cfg(test)]
 mod multipath;
