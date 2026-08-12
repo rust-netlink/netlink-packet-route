@@ -35,6 +35,7 @@ mod vrf;
 mod vti;
 mod vxcan;
 mod vxlan;
+mod wireguard;
 mod wireless;
 mod wwan;
 mod xdp;

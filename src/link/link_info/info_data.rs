@@ -10,7 +10,7 @@ use super::super::{
     InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan,
     InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap,
     InfoNetkit, InfoRmNet, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti,
-    InfoVxcan, InfoVxlan, InfoWwan, InfoXfrm,
+    InfoVxcan, InfoVxlan, InfoWireguard, InfoWwan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -52,6 +52,7 @@ pub enum InfoData {
     RmNet(Vec<InfoRmNet>),
     ErSpan(Vec<InfoGre>),
     Ip6ErSpan(Vec<InfoGre6>),
+    Wireguard(Vec<InfoWireguard>),
     Other(Vec<u8>),
 }
 
@@ -92,6 +93,7 @@ impl Nla for InfoData {
             Self::RmNet(nlas) => nlas.as_slice().buffer_len(),
             Self::ErSpan(nlas) => nlas.as_slice().buffer_len(),
             Self::Ip6ErSpan(nlas) => nlas.as_slice().buffer_len(),
+            Self::Wireguard(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(v) => v.len(),
         }
     }
@@ -132,6 +134,7 @@ impl Nla for InfoData {
             Self::RmNet(nlas) => nlas.as_slice().emit(buffer),
             Self::ErSpan(nlas) => nlas.as_slice().emit(buffer),
             Self::Ip6ErSpan(nlas) => nlas.as_slice().emit(buffer),
+            Self::Wireguard(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
         }
     }
@@ -513,6 +516,17 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::Ip6ErSpan(v)
+            }
+            InfoKind::Wireguard => {
+                let mut v = Vec::new();
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(format!(
+                        "invalid IFLA_INFO_DATA for {kind} {payload:?}"
+                    ))?;
+                    let parsed = InfoWireguard::parse(nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Wireguard(v)
             }
             _ => InfoData::Other(payload.to_vec()),
         })
