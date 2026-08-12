@@ -13,6 +13,15 @@ use crate::{
     AddressFamily,
 };
 
+#[test]
+fn test_route_realm_invalid_payload_lengths() {
+    let payload = [0u8; 4];
+
+    for len in 0..4 {
+        assert!(RouteRealm::parse(&payload[..len]).is_err());
+    }
+}
+
 // Setup
 //   ip route add 192.0.2.1 dev lo realm 250/254
 // wireshark capture(netlink message header removed) of nlmon against command:

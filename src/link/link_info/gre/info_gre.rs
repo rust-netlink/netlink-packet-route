@@ -3,19 +3,21 @@
 use std::{mem::size_of, net::Ipv4Addr};
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32_be, parse_u16_be, parse_u32_be, parse_u8,
-    DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_u16, parse_u16_be,
+    parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla, ErrorContext,
+    Nla, NlaBuffer, Parseable,
 };
 
 use super::{
     gre_common::{
         IFLA_GRE_COLLECT_METADATA, IFLA_GRE_ENCAP_DPORT, IFLA_GRE_ENCAP_FLAGS,
-        IFLA_GRE_ENCAP_SPORT, IFLA_GRE_ENCAP_TYPE, IFLA_GRE_FWMARK,
-        IFLA_GRE_IFLAGS, IFLA_GRE_IKEY, IFLA_GRE_LOCAL, IFLA_GRE_OFLAGS,
-        IFLA_GRE_OKEY, IFLA_GRE_PMTUDISC, IFLA_GRE_REMOTE, IFLA_GRE_TOS,
-        IFLA_GRE_TTL,
+        IFLA_GRE_ENCAP_SPORT, IFLA_GRE_ENCAP_TYPE, IFLA_GRE_ERSPAN_DIR,
+        IFLA_GRE_ERSPAN_HWID, IFLA_GRE_ERSPAN_INDEX, IFLA_GRE_ERSPAN_VER,
+        IFLA_GRE_FWMARK, IFLA_GRE_IFLAGS, IFLA_GRE_IKEY, IFLA_GRE_LOCAL,
+        IFLA_GRE_OFLAGS, IFLA_GRE_OKEY, IFLA_GRE_PMTUDISC, IFLA_GRE_REMOTE,
+        IFLA_GRE_TOS, IFLA_GRE_TTL,
     },
-    GreEncapFlags, GreEncapType, GreIOFlags,
+    ErSpanDir, GreEncapFlags, GreEncapType, GreIOFlags,
 };
 use crate::{
     ip::parse_ipv4_addr, link::link_info::gre::gre_common::IFLA_GRE_LINK,
@@ -40,6 +42,10 @@ pub enum InfoGre {
     DestinationPort(u16),
     CollectMetadata,
     FwMask(u32),
+    ErSpanIndex(u32),
+    ErSpanVer(u8),
+    ErSpanDir(ErSpanDir),
+    ErSpanHwId(u16),
     Other(DefaultNla),
 }
 
@@ -58,6 +64,9 @@ impl Nla for InfoGre {
             Self::SourcePort(_) | Self::DestinationPort(_) => size_of::<u16>(),
             Self::CollectMetadata => 0,
             Self::FwMask(_) => size_of::<u32>(),
+            Self::ErSpanIndex(_) => size_of::<u32>(),
+            Self::ErSpanVer(_) | Self::ErSpanDir(_) => size_of::<u8>(),
+            Self::ErSpanHwId(_) => size_of::<u16>(),
             Self::Other(nla) => nla.value_len(),
         }
     }
@@ -87,6 +96,10 @@ impl Nla for InfoGre {
             }
             Self::CollectMetadata => {}
             Self::FwMask(fw_mask) => emit_u32_be(buffer, *fw_mask).unwrap(),
+            Self::ErSpanIndex(idx) => emit_u32(buffer, *idx).unwrap(),
+            Self::ErSpanVer(v) => buffer[0] = *v,
+            Self::ErSpanDir(v) => buffer[0] = v.into(),
+            Self::ErSpanHwId(id) => emit_u16(buffer, *id).unwrap(),
             Self::Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -109,6 +122,10 @@ impl Nla for InfoGre {
             Self::DestinationPort(_) => IFLA_GRE_ENCAP_DPORT,
             Self::CollectMetadata => IFLA_GRE_COLLECT_METADATA,
             Self::FwMask(_) => IFLA_GRE_FWMARK,
+            Self::ErSpanIndex(_) => IFLA_GRE_ERSPAN_INDEX,
+            Self::ErSpanVer(_) => IFLA_GRE_ERSPAN_VER,
+            Self::ErSpanDir(_) => IFLA_GRE_ERSPAN_DIR,
+            Self::ErSpanHwId(_) => IFLA_GRE_ERSPAN_HWID,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -174,6 +191,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre {
             IFLA_GRE_FWMARK => Self::FwMask(
                 parse_u32_be(payload)
                     .context("invalid IFLA_GRE_FWMARK value")?,
+            ),
+            IFLA_GRE_ERSPAN_INDEX => Self::ErSpanIndex(
+                parse_u32(payload)
+                    .context("invalid IFLA_GRE_ERSPAN_INDEX value")?,
+            ),
+            IFLA_GRE_ERSPAN_VER => Self::ErSpanVer(
+                parse_u8(payload)
+                    .context("invalid IFLA_GRE_ERSPAN_VER value")?,
+            ),
+            IFLA_GRE_ERSPAN_DIR => Self::ErSpanDir(ErSpanDir::from(
+                parse_u8(payload)
+                    .context("invalid IFLA_GRE_ERSPAN_DIR value")?,
+            )),
+            IFLA_GRE_ERSPAN_HWID => Self::ErSpanHwId(
+                parse_u16(payload)
+                    .context("invalid IFLA_GRE_ERSPAN_HWID value")?,
             ),
             kind => Self::Other(
                 DefaultNla::parse(buf)

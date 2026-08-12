@@ -59,7 +59,9 @@ pub use self::{
     },
     dsa::InfoDsa,
     geneve::{GeneveDf, InfoGeneve},
-    gre::{GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6},
+    gre::{
+        ErSpanDir, GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6,
+    },
     gtp::{GtpRole, InfoGtp},
     hsr::{HsrProtocol, InfoHsr},
     info_data::InfoData,
