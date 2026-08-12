@@ -32,6 +32,7 @@ mod vrf;
 mod vti;
 mod vxcan;
 mod vxlan;
+mod wireguard;
 mod wwan;
 mod xfrm;
 mod xstats;
@@ -92,6 +93,7 @@ pub use self::{
     vti::InfoVti,
     vxcan::InfoVxcan,
     vxlan::{InfoVxlan, VxlanDf},
+    wireguard::InfoWireguard,
     wwan::InfoWwan,
     xfrm::InfoXfrm,
     xstats::LinkXstats,
