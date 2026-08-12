@@ -308,7 +308,7 @@ impl InfoData {
                 }
                 InfoData::GreTun6(v)
             }
-            InfoKind::Vti => {
+            InfoKind::Vti | InfoKind::Vti6 => {
                 let mut v = Vec::new();
                 for nla in NlasIterator::new(payload) {
                     let nla = &nla.context(format!(

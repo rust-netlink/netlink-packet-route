@@ -32,6 +32,7 @@ mod vcan;
 mod veth;
 mod vlan;
 mod vrf;
+mod vti;
 mod vxcan;
 mod vxlan;
 mod wireless;

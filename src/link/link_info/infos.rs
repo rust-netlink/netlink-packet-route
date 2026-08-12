@@ -34,6 +34,7 @@ const SIT: &str = "sit";
 const GRE: &str = "gre";
 const IP6GRE: &str = "ip6gre";
 const VTI: &str = "vti";
+const VTI6: &str = "vti6";
 const VRF: &str = "vrf";
 const GTP: &str = "gtp";
 const IPOIB: &str = "ipoib";
@@ -209,6 +210,7 @@ pub enum InfoKind {
     GreTun,
     GreTun6,
     Vti,
+    Vti6,
     Vrf,
     Gtp,
     Ipoib,
@@ -263,6 +265,7 @@ impl std::fmt::Display for InfoKind {
                 Self::GreTun => GRE,
                 Self::GreTun6 => IP6GRE,
                 Self::Vti => VTI,
+                Self::Vti6 => VTI6,
                 Self::Vrf => VRF,
                 Self::Gtp => GTP,
                 Self::Ipoib => IPOIB,
@@ -317,6 +320,7 @@ impl Nla for InfoKind {
             Self::GreTun => GRE.len(),
             Self::GreTun6 => IP6GRE.len(),
             Self::Vti => VTI.len(),
+            Self::Vti6 => VTI6.len(),
             Self::Vrf => VRF.len(),
             Self::Gtp => GTP.len(),
             Self::Ipoib => IPOIB.len(),
@@ -382,6 +386,7 @@ impl From<&str> for InfoKind {
             GRE => Self::GreTun,
             IP6GRE => Self::GreTun6,
             VTI => Self::Vti,
+            VTI6 => Self::Vti6,
             VRF => Self::Vrf,
             GTP => Self::Gtp,
             IPOIB => Self::Ipoib,
