@@ -73,7 +73,7 @@ impl Nla for InfoGre {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
-            Self::Link(id) => emit_u32_be(buffer, *id).unwrap(),
+            Self::Link(id) => emit_u32(buffer, *id).unwrap(),
             Self::IFlags(flags) | Self::OFlags(flags) => {
                 emit_u16_be(buffer, flags.bits()).unwrap()
             }
@@ -136,7 +136,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_GRE_LINK => Self::Link(
-                parse_u32_be(payload).context("invalid IFLA_GRE_LINK value")?,
+                parse_u32(payload).context("invalid IFLA_GRE_LINK value")?,
             ),
             IFLA_GRE_IFLAGS => Self::IFlags(GreIOFlags::from_bits_retain(
                 parse_u16_be(payload)

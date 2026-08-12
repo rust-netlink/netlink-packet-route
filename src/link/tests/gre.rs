@@ -241,6 +241,135 @@ fn test_create_gre6() {
 }
 
 #[test]
+fn test_create_gre6_with_link() {
+    // This is nlmon capture for `ip link add name foo type ip6gre \
+    //   local fc00::1 remote fc00::2 dev lo` on Linux kernel 7.1.8-arch1-3
+    // with iproute2 version 7.1.0.
+    let raw: Vec<u8> = vec![
+        0x00, // interface family AF_UNSPEC
+        0x00, // reserved
+        0x00, 0x00, // link layer type 0
+        0x00, 0x00, 0x00, 0x00, // iface index 0
+        0x00, 0x00, 0x00, 0x00, // device flags 0
+        0x00, 0x00, 0x00, 0x00, // change flags 0
+        0x08, 0x00, // length 8
+        0x03, 0x00, // device name
+        0x66, 0x6f, 0x6f, 0x00, // foo\0
+        0xb4, 0x00, // length 180
+        0x12, 0x00, // IFLA_LINKINFO 18
+        0x0b, 0x00, // length 11
+        0x01, 0x00, // IFLA_INFO_KIND 1
+        0x69, 0x70, 0x36, 0x67, 0x72, 0x65, 0x00, // ip6gre\0
+        0x00, // padding
+        0xa4, 0x00, // length 164
+        0x02, 0x00, // IFLA_INFO_DATA 2
+        0x08, 0x00, // length 8
+        0x04, 0x00, // IFLA_GRE_IKEY 4
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x08, 0x00, // length 8
+        0x05, 0x00, // IFLA_GRE_OKEY 5
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x06, 0x00, // length 6
+        0x02, 0x00, // IFLA_GRE_IFLAGS 2
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x03, 0x00, // IFLA_GRE_OFLAGS 3
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+        0x14, 0x00, // length 20
+        0x06, 0x00, // IFLA_GRE_LOCAL 6
+        0xfc, 0x00, 0x00, 0x00, // fc00::1
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0x14, 0x00, // length 20
+        0x07, 0x00, // IFLA_GRE_REMOTE 7
+        0xfc, 0x00, 0x00, 0x00, // fc00::2
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+        0x08, 0x00, // length 8
+        0x01, 0x00, // IFLA_GRE_LINK 1
+        0x01, 0x00, 0x00, 0x00, // ifindex of lo
+        0x05, 0x00, // length 5
+        0x08, 0x00, // IFLA_GRE_TTL 8
+        0x40, // 64
+        0x00, 0x00, 0x00, // padding
+        0x05, 0x00, // length 5
+        0x0b, 0x00, // IFLA_GRE_ENCAP_LIMIT 11
+        0x04, // 4
+        0x00, 0x00, 0x00, // padding
+        0x08, 0x00, // length 8
+        0x0c, 0x00, // IFLA_GRE_FLOWINFO 12
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x08, 0x00, // length 8
+        0x0d, 0x00, // IFLA_GRE_FLAGS 13
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x08, 0x00, // length 8
+        0x14, 0x00, // IFLA_GRE_FWMARK 20
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x05, 0x00, // length 5
+        0x16, 0x00, // IFLA_GRE_ERSPAN_VER 22
+        0x01, // 1
+        0x00, 0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x0e, 0x00, // IFLA_GRE_ENCAP_TYPE 14
+        0x00, 0x00, // UNSPEC
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x0f, 0x00, // IFLA_GRE_ENCAP_FLAGS 15
+        0x02, 0x00, // Checksum6 (enabled by default for IPv6)
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x10, 0x00, // IFLA_GRE_ENCAP_SPORT 16
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x11, 0x00, // IFLA_GRE_ENCAP_DPORT 17
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+    ];
+
+    let expected = LinkMessage {
+        attributes: vec![
+            LinkAttribute::IfName("foo".to_string()),
+            LinkAttribute::LinkInfo(vec![
+                LinkInfo::Kind(InfoKind::GreTun6),
+                LinkInfo::Data(InfoData::GreTun6(vec![
+                    InfoGre6::IKey(0),
+                    InfoGre6::OKey(0),
+                    InfoGre6::IFlags(GreIOFlags::empty()),
+                    InfoGre6::OFlags(GreIOFlags::empty()),
+                    InfoGre6::Local(Ipv6Addr::new(
+                        0xfc00, 0, 0, 0, 0, 0, 0, 0x01,
+                    )),
+                    InfoGre6::Remote(Ipv6Addr::new(
+                        0xfc00, 0, 0, 0, 0, 0, 0, 0x02,
+                    )),
+                    InfoGre6::Link(1),
+                    InfoGre6::Ttl(64),
+                    InfoGre6::EncapLimit(4),
+                    InfoGre6::FlowLabel(0),
+                    InfoGre6::Other(DefaultNla::new(13, vec![0; 4])),
+                    InfoGre6::FwMask(0),
+                    InfoGre6::ErSpanVer(1),
+                    InfoGre6::EncapType(GreEncapType::default()),
+                    // enabled by default for IPv6
+                    InfoGre6::EncapFlags(GreEncapFlags::Checksum6),
+                    InfoGre6::SourcePort(0),
+                    InfoGre6::DestinationPort(0),
+                ])),
+            ]),
+        ],
+        ..Default::default()
+    };
+    assert_eq!(
+        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
+        expected
+    );
+    let mut buf = vec![0; expected.buffer_len()];
+    expected.emit(&mut buf);
+    assert_eq!(buf, raw);
+}
+
+#[test]
 fn test_create_gre6tap() {
     // This is nlmon capture was created on Linux kernel 6.15.9 with iproute
     // version 6.16.0:
@@ -564,6 +693,119 @@ fn test_create_gre() {
                     InfoGre::EncapFlags(GreEncapFlags::default()),
                     InfoGre::SourcePort(4242),
                     InfoGre::DestinationPort(4242),
+                ])),
+            ]),
+        ],
+        ..Default::default()
+    };
+    assert_eq!(
+        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
+        expected
+    );
+    let mut buf = vec![0; expected.buffer_len()];
+    expected.emit(&mut buf);
+    assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_create_gre_with_link() {
+    // This is nlmon capture for `ip link add name bar type gre \
+    //   local 192.0.2.1 remote 192.0.2.2 dev lo` on Linux kernel
+    // 7.1.8-arch1-3 with iproute2 version 7.1.0.
+    let raw: Vec<u8> = vec![
+        0x00, // interface family AF_UNSPEC
+        0x00, // reserved
+        0x00, 0x00, // link layer type 0
+        0x00, 0x00, 0x00, 0x00, // iface index 0
+        0x00, 0x00, 0x00, 0x00, // device flags 0
+        0x00, 0x00, 0x00, 0x00, // change flags 0
+        0x08, 0x00, // length 8
+        0x03, 0x00, // device name
+        0x62, 0x61, 0x72, 0x00, // bar\0
+        0x88, 0x00, // length 136
+        0x12, 0x00, // IFLA_LINKINFO 18
+        0x08, 0x00, // length 8
+        0x01, 0x00, // IFLA_INFO_KIND 1
+        0x67, 0x72, 0x65, 0x00, // gre\0
+        0x7c, 0x00, // length 124
+        0x02, 0x00, // IFLA_INFO_DATA 2
+        0x08, 0x00, // length 8
+        0x04, 0x00, // IFLA_GRE_IKEY 4
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x08, 0x00, // length 8
+        0x05, 0x00, // IFLA_GRE_OKEY 5
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x06, 0x00, // length 6
+        0x02, 0x00, // IFLA_GRE_IFLAGS 2
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x03, 0x00, // IFLA_GRE_OFLAGS 3
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+        0x08, 0x00, // length 8
+        0x06, 0x00, // IFLA_GRE_LOCAL 6
+        0xc0, 0x00, 0x02, 0x01, // 192.0.2.1
+        0x08, 0x00, // length 8
+        0x07, 0x00, // IFLA_GRE_REMOTE 7
+        0xc0, 0x00, 0x02, 0x02, // 192.0.2.2
+        0x05, 0x00, // length 5
+        0x0a, 0x00, // IFLA_GRE_PMTUDISC 10
+        0x01, // 1
+        0x00, 0x00, 0x00, // padding
+        0x05, 0x00, // length 5
+        0x09, 0x00, // IFLA_GRE_TOS 9
+        0x00, // 0
+        0x00, 0x00, 0x00, // padding
+        0x08, 0x00, // length 8
+        0x01, 0x00, // IFLA_GRE_LINK 1
+        0x01, 0x00, 0x00, 0x00, // ifindex of lo
+        0x05, 0x00, // length 5
+        0x08, 0x00, // IFLA_GRE_TTL 8
+        0x00, // 0
+        0x00, 0x00, 0x00, // padding
+        0x08, 0x00, // length 8
+        0x14, 0x00, // IFLA_GRE_FWMARK 20
+        0x00, 0x00, 0x00, 0x00, // 0
+        0x06, 0x00, // length 6
+        0x0e, 0x00, // IFLA_GRE_ENCAP_TYPE 14
+        0x00, 0x00, // UNSPEC
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x0f, 0x00, // IFLA_GRE_ENCAP_FLAGS 15
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x10, 0x00, // IFLA_GRE_ENCAP_SPORT 16
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+        0x06, 0x00, // length 6
+        0x11, 0x00, // IFLA_GRE_ENCAP_DPORT 17
+        0x00, 0x00, // 0
+        0x00, 0x00, // padding
+    ];
+
+    let expected = LinkMessage {
+        attributes: vec![
+            LinkAttribute::IfName("bar".to_string()),
+            LinkAttribute::LinkInfo(vec![
+                LinkInfo::Kind(InfoKind::GreTun),
+                LinkInfo::Data(InfoData::GreTun(vec![
+                    InfoGre::IKey(0),
+                    InfoGre::OKey(0),
+                    InfoGre::IFlags(GreIOFlags::empty()),
+                    InfoGre::OFlags(GreIOFlags::empty()),
+                    InfoGre::Local(Ipv4Addr::new(192, 0, 2, 1)),
+                    InfoGre::Remote(Ipv4Addr::new(192, 0, 2, 2)),
+                    InfoGre::PathMTUDiscovery(true),
+                    InfoGre::Tos(0),
+                    InfoGre::Link(1),
+                    InfoGre::Ttl(0),
+                    InfoGre::FwMask(0),
+                    InfoGre::EncapType(GreEncapType::default()),
+                    InfoGre::EncapFlags(GreEncapFlags::empty()),
+                    InfoGre::SourcePort(0),
+                    InfoGre::DestinationPort(0),
                 ])),
             ]),
         ],
