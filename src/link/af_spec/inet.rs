@@ -2,21 +2,62 @@
 
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    NlasIterator, Parseable, NLA_F_NESTED,
 };
 
 use super::super::buffer_tool::expand_buffer_if_small;
 
-const IFLA_INET_CONF: u16 = 1;
+pub(crate) const IFLA_INET_CONF: u16 = 1;
+
 // This number might change when kernel add more IPV4_DEV_CONF
 const __IPV4_DEVCONF_MAX: usize = 34;
 const IPV4_DEVCONF_MAX: usize = __IPV4_DEVCONF_MAX - 1;
-const DEV_CONF_LEN: usize = IPV4_DEVCONF_MAX * 4;
+pub(crate) const DEV_CONF_LEN: usize = IPV4_DEVCONF_MAX * 4;
+
+// IPV4_DEVCONF_* enum values from linux/ip.h (1-based)
+const IPV4_DEVCONF_FORWARDING: u16 = 1;
+const IPV4_DEVCONF_MC_FORWARDING: u16 = 2;
+const IPV4_DEVCONF_PROXY_ARP: u16 = 3;
+const IPV4_DEVCONF_ACCEPT_REDIRECTS: u16 = 4;
+const IPV4_DEVCONF_SECURE_REDIRECTS: u16 = 5;
+const IPV4_DEVCONF_SEND_REDIRECTS: u16 = 6;
+const IPV4_DEVCONF_SHARED_MEDIA: u16 = 7;
+const IPV4_DEVCONF_RP_FILTER: u16 = 8;
+const IPV4_DEVCONF_ACCEPT_SOURCE_ROUTE: u16 = 9;
+const IPV4_DEVCONF_BOOTP_RELAY: u16 = 10;
+const IPV4_DEVCONF_LOG_MARTIANS: u16 = 11;
+const IPV4_DEVCONF_TAG: u16 = 12;
+const IPV4_DEVCONF_ARPFILTER: u16 = 13;
+const IPV4_DEVCONF_MEDIUM_ID: u16 = 14;
+const IPV4_DEVCONF_NOXFRM: u16 = 15;
+const IPV4_DEVCONF_NOPOLICY: u16 = 16;
+const IPV4_DEVCONF_FORCE_IGMP_VERSION: u16 = 17;
+const IPV4_DEVCONF_ARP_ANNOUNCE: u16 = 18;
+const IPV4_DEVCONF_ARP_IGNORE: u16 = 19;
+const IPV4_DEVCONF_PROMOTE_SECONDARIES: u16 = 20;
+const IPV4_DEVCONF_ARP_ACCEPT: u16 = 21;
+const IPV4_DEVCONF_ARP_NOTIFY: u16 = 22;
+const IPV4_DEVCONF_ACCEPT_LOCAL: u16 = 23;
+const IPV4_DEVCONF_SRC_VMARK: u16 = 24;
+const IPV4_DEVCONF_PROXY_ARP_PVLAN: u16 = 25;
+const IPV4_DEVCONF_ROUTE_LOCALNET: u16 = 26;
+const IPV4_DEVCONF_IGMPV2_UNSOLICITED_REPORT_INTERVAL: u16 = 27;
+const IPV4_DEVCONF_IGMPV3_UNSOLICITED_REPORT_INTERVAL: u16 = 28;
+const IPV4_DEVCONF_IGNORE_ROUTES_WITH_LINKDOWN: u16 = 29;
+const IPV4_DEVCONF_DROP_UNICAST_IN_L2_MULTICAST: u16 = 30;
+const IPV4_DEVCONF_DROP_GRATUITOUS_ARP: u16 = 31;
+const IPV4_DEVCONF_BC_FORWARDING: u16 = 32;
+const IPV4_DEVCONF_ARP_EVICT_NOCARRIER: u16 = 33;
+
+// ---- AfSpecInet (parse + flat-buffer emit, matches kernel dump format) ----
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 #[non_exhaustive]
 pub enum AfSpecInet {
+    /// This is used for parsing kernel dump
     DevConf(InetDevConf),
+    /// This is used for sending request to kernel for making changes.
+    DevConfRequest(InetDevConf),
     Other(DefaultNla),
 }
 
@@ -40,6 +81,7 @@ impl Nla for AfSpecInet {
     fn value_len(&self) -> usize {
         match *self {
             Self::DevConf(ref c) => c.buffer_len(),
+            Self::DevConfRequest(ref c) => devconf_nested_value_len(c),
             Self::Other(ref nla) => nla.value_len(),
         }
     }
@@ -47,6 +89,7 @@ impl Nla for AfSpecInet {
     fn emit_value(&self, buffer: &mut [u8]) {
         match *self {
             Self::DevConf(ref c) => c.emit(buffer),
+            Self::DevConfRequest(ref c) => emit_devconf_nested(buffer, c),
             Self::Other(ref nla) => nla.emit_value(buffer),
         }
     }
@@ -54,6 +97,7 @@ impl Nla for AfSpecInet {
     fn kind(&self) -> u16 {
         match *self {
             Self::DevConf(_) => IFLA_INET_CONF,
+            Self::DevConfRequest(_) => IFLA_INET_CONF | NLA_F_NESTED,
             Self::Other(ref nla) => nla.kind(),
         }
     }
@@ -79,6 +123,84 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
         })
     }
 }
+
+fn devconf_nested_value_len(conf: &InetDevConf) -> usize {
+    let mut len = 0;
+    let entries = devconf_entries(conf);
+    for &(kind, val) in &entries {
+        if val == 0 {
+            continue;
+        }
+        let nla = DefaultNla::new(kind, (val as u32).to_ne_bytes().to_vec());
+        len += nla.buffer_len();
+    }
+    len
+}
+
+fn emit_devconf_nested(buffer: &mut [u8], conf: &InetDevConf) {
+    let entries = devconf_entries(conf);
+    let mut offset = 0;
+    for &(kind, val) in &entries {
+        if val == 0 {
+            continue;
+        }
+        let nla = DefaultNla::new(kind, (val as u32).to_ne_bytes().to_vec());
+        nla.emit(&mut buffer[offset..offset + nla.buffer_len()]);
+        offset += nla.buffer_len();
+    }
+}
+
+fn devconf_entries(conf: &InetDevConf) -> [(u16, i32); IPV4_DEVCONF_MAX] {
+    [
+        (IPV4_DEVCONF_FORWARDING, conf.forwarding),
+        (IPV4_DEVCONF_MC_FORWARDING, conf.mc_forwarding),
+        (IPV4_DEVCONF_PROXY_ARP, conf.proxy_arp),
+        (IPV4_DEVCONF_ACCEPT_REDIRECTS, conf.accept_redirects),
+        (IPV4_DEVCONF_SECURE_REDIRECTS, conf.secure_redirects),
+        (IPV4_DEVCONF_SEND_REDIRECTS, conf.send_redirects),
+        (IPV4_DEVCONF_SHARED_MEDIA, conf.shared_media),
+        (IPV4_DEVCONF_RP_FILTER, conf.rp_filter),
+        (IPV4_DEVCONF_ACCEPT_SOURCE_ROUTE, conf.accept_source_route),
+        (IPV4_DEVCONF_BOOTP_RELAY, conf.bootp_relay),
+        (IPV4_DEVCONF_LOG_MARTIANS, conf.log_martians),
+        (IPV4_DEVCONF_TAG, conf.tag),
+        (IPV4_DEVCONF_ARPFILTER, conf.arpfilter),
+        (IPV4_DEVCONF_MEDIUM_ID, conf.medium_id),
+        (IPV4_DEVCONF_NOXFRM, conf.noxfrm),
+        (IPV4_DEVCONF_NOPOLICY, conf.nopolicy),
+        (IPV4_DEVCONF_FORCE_IGMP_VERSION, conf.force_igmp_version),
+        (IPV4_DEVCONF_ARP_ANNOUNCE, conf.arp_announce),
+        (IPV4_DEVCONF_ARP_IGNORE, conf.arp_ignore),
+        (IPV4_DEVCONF_PROMOTE_SECONDARIES, conf.promote_secondaries),
+        (IPV4_DEVCONF_ARP_ACCEPT, conf.arp_accept),
+        (IPV4_DEVCONF_ARP_NOTIFY, conf.arp_notify),
+        (IPV4_DEVCONF_ACCEPT_LOCAL, conf.accept_local),
+        (IPV4_DEVCONF_SRC_VMARK, conf.src_vmark),
+        (IPV4_DEVCONF_PROXY_ARP_PVLAN, conf.proxy_arp_pvlan),
+        (IPV4_DEVCONF_ROUTE_LOCALNET, conf.route_localnet),
+        (
+            IPV4_DEVCONF_IGMPV2_UNSOLICITED_REPORT_INTERVAL,
+            conf.igmpv2_unsolicited_report_interval,
+        ),
+        (
+            IPV4_DEVCONF_IGMPV3_UNSOLICITED_REPORT_INTERVAL,
+            conf.igmpv3_unsolicited_report_interval,
+        ),
+        (
+            IPV4_DEVCONF_IGNORE_ROUTES_WITH_LINKDOWN,
+            conf.ignore_routes_with_linkdown,
+        ),
+        (
+            IPV4_DEVCONF_DROP_UNICAST_IN_L2_MULTICAST,
+            conf.drop_unicast_in_l2_multicast,
+        ),
+        (IPV4_DEVCONF_DROP_GRATUITOUS_ARP, conf.drop_gratuitous_arp),
+        (IPV4_DEVCONF_BC_FORWARDING, conf.bc_forwarding),
+        (IPV4_DEVCONF_ARP_EVICT_NOCARRIER, conf.arp_evict_nocarrier),
+    ]
+}
+
+// ---- InetDevConf (flat buffer, matches kernel dump format) ----
 
 buffer!(InetDevConfBuffer(DEV_CONF_LEN) {
     forwarding: (i32, 0..4),
