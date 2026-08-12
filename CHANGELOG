@@ -1,4 +1,47 @@
 # Changelog
+## [0.32.0] - 2026-08-12
+### Breaking changes
+ - vxlan: Changed InfoVxlanAttr::Gbp, Gpe, TtlInherit and RemCsumNoPartial.
+   (14f0a27)
+
+### New features
+ - route: Add ipproto, sport, dport, flowlabel, nhid support. (d403b86)
+ - route: impl Dispaly for RouteNextHopFlags. (363cc63)
+ - link: Add AfSpecInet::DevConfRequest for applying support. (c16d0dc)
+ - link: Add InfoKind for Wireguard. (dfe01c1)
+ - link: Add support of VTI and VTI6. (c0121b9)
+ - link: Add InfoTeamPort. (e3f20d3)
+ - link: Add support of rmnet. (d76669e)
+ - link: Add LinkInfo:Pfcp. (112260c)
+ - link: Fix WirelessEvent parsing of short payloads. (e6baac6)
+ - link: Add InfoGre variants for ERSPAN. (45fc07a)
+ - route: Fix RouteRealm parsing of short payloads. (364c592)
+ - link: add support of DSA interface type. (899a0aa)
+ - link: Add support of CAN interface type. (2b53a32)
+ - link: Add more bond port netlink attributes. (65d1afd)
+ - link: Add batadv link info support. (3268f28)
+ - Use EthernetProtocol from netlink-packet-core 0.8.2. (a72a56b)
+ - link: add Team variant to InfoKind enum. (a15ce19)
+ - link: add WWAN support. (5cb71cb)
+ - link: add VirtWifi variant to InfoKind enum. (c4bb0ce)
+ - link: add support for GTP netlink attributes. (b422119)
+ - stats: Add support for RTM_NEWSTATS/RTM_GETSTATS. (4ecf0ab)
+ - link: use 802.1Q for VlanProtocol::Ieee8021Q display. (d66448f)
+ - link: Add numeric fallbacks to FromStr for bond enums. (2d94e81)
+ - link: Add Display and FromStr for BondPortState and MiiStatus. (5a9bd7c)
+ - link: Add Display and FromStr for GeneveDf. (378896a)
+ - link: Add Display and FromStr for MacVlanMode. (6feb5b3)
+ - link: Add Display and FromStr for IpVlanMode. (fbd93e6)
+ - link: Add FromStr and Display for State. (9c0e94f)
+ - link: Add support for vcan InfoKind. (6a1174f)
+ - link: Add support for netdevsim InfoKind. (dfa54c1)
+ - link: Add support of AMT(Automatic Multicast Tunneling). (339c13b)
+ - link: add Display + FromStr impls for netkit enums. (93ce416)
+
+### Bug fixes
+ - Remove all `use xxx:*` import. (2a2dc6a)
+ - Fix: IFLA_IPTUN_FLOWINFO must use big-endian byte order. (71f85ca)
+
 ## [0.31.0] - 2026-06-10
 ### Breaking changes
  - link: InfoIpTunnel::CollectMetadata(bool) -> CollectMetadata. (c91e440)
