@@ -24,6 +24,7 @@ mod mac_vlan;
 mod macsec;
 mod netkit;
 mod rmnet;
+mod team_port;
 mod tun;
 mod veth;
 mod vlan;
@@ -83,6 +84,7 @@ pub use self::{
     macsec::{InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate},
     netkit::{InfoNetkit, NetkitMode, NetkitPolicy, NetkitScrub},
     rmnet::{InfoRmNet, InfoRmNetFlags, RmNetFlags},
+    team_port::InfoTeamPort,
     tun::InfoTun,
     veth::InfoVeth,
     vlan::{InfoVlan, VlanFlags, VlanQosMapping},
