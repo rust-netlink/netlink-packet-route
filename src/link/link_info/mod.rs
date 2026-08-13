@@ -52,7 +52,7 @@ pub use self::{
     },
     bridge::{
         BridgeId, BridgeIdBuffer, BridgeMulticastRouterType,
-        BridgeQuerierState, BridgeStpState, InfoBridge,
+        BridgeQuerierState, BridgeStpMode, BridgeStpState, InfoBridge,
     },
     bridge_boolopt::{BridgeBooleanOptionFlags, BridgeBooleanOptions},
     bridge_port::{BridgePortState, InfoBridgePort},

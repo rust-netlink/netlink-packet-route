@@ -60,6 +60,7 @@ const IFLA_BR_MULTI_BOOLOPT: u16 = 46;
 const IFLA_BR_MCAST_QUERIER_STATE: u16 = 47;
 const IFLA_BR_FDB_N_LEARNED: u16 = 48;
 const IFLA_BR_FDB_MAX_LEARNED: u16 = 49;
+const IFLA_BR_STP_MODE: u16 = 50;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -112,6 +113,7 @@ pub enum InfoBridge {
     MulticastQuerierState(Vec<BridgeQuerierState>),
     FdbNLearned(u32),
     FdbMaxLearned(u32),
+    StpMode(BridgeStpMode),
     Other(DefaultNla),
 }
 
@@ -149,6 +151,7 @@ impl Nla for InfoBridge {
             Self::VlanProtocol(_) => 2,
 
             Self::StpState(_) => 4,
+            Self::StpMode(_) => 4,
 
             Self::RootId(_) | Self::BridgeId(_) => 8,
 
@@ -213,6 +216,8 @@ impl Nla for InfoBridge {
             Self::StpState(value) => {
                 emit_u32(buffer, u32::from(*value)).unwrap()
             }
+
+            Self::StpMode(value) => emit_u32(buffer, (*value).into()).unwrap(),
 
             Self::Priority(value)
             | Self::GroupFwdMask(value)
@@ -315,6 +320,7 @@ impl Nla for InfoBridge {
             }
             Self::FdbNLearned(_) => IFLA_BR_FDB_N_LEARNED,
             Self::FdbMaxLearned(_) => IFLA_BR_FDB_MAX_LEARNED,
+            Self::StpMode(_) => IFLA_BR_STP_MODE,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -544,6 +550,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                 parse_u32(payload)
                     .context("invalid IFLA_BR_FDB_MAX_LEARNED value")?,
             ),
+            IFLA_BR_STP_MODE => Self::StpMode(
+                parse_u32(payload)
+                    .context("invalid IFLA_BR_STP_MODE value")?
+                    .into(),
+            ),
             _ => Self::Other(DefaultNla::parse(buf).context(
                 "invalid link info bridge NLA value (unknown type)",
             )?),
@@ -762,6 +773,67 @@ impl std::str::FromStr for BridgeStpState {
             "user_stp" => Ok(Self::UserStp),
             _ => s.parse::<u32>().map(Self::from).map_err(|_| {
                 DecodeError::from(format!("unknown bridge STP state: {s}"))
+            }),
+        }
+    }
+}
+
+const BR_STP_MODE_AUTO: u32 = 0;
+const BR_STP_MODE_USER: u32 = 1;
+const BR_STP_MODE_KERNEL: u32 = 2;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum BridgeStpMode {
+    Auto,
+    User,
+    Kernel,
+    Other(u32),
+}
+
+impl From<u32> for BridgeStpMode {
+    fn from(d: u32) -> Self {
+        match d {
+            BR_STP_MODE_AUTO => Self::Auto,
+            BR_STP_MODE_USER => Self::User,
+            BR_STP_MODE_KERNEL => Self::Kernel,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BridgeStpMode> for u32 {
+    fn from(v: BridgeStpMode) -> u32 {
+        match v {
+            BridgeStpMode::Auto => BR_STP_MODE_AUTO,
+            BridgeStpMode::User => BR_STP_MODE_USER,
+            BridgeStpMode::Kernel => BR_STP_MODE_KERNEL,
+            BridgeStpMode::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for BridgeStpMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Auto => f.write_str("auto"),
+            Self::User => f.write_str("user"),
+            Self::Kernel => f.write_str("kernel"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+impl std::str::FromStr for BridgeStpMode {
+    type Err = DecodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "auto" => Ok(Self::Auto),
+            "user" => Ok(Self::User),
+            "kernel" => Ok(Self::Kernel),
+            _ => s.parse::<u32>().map(Self::from).map_err(|_| {
+                DecodeError::from(format!("unknown bridge STP mode: {s}"))
             }),
         }
     }
