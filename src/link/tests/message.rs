@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{Emitable, ParseableParametrized};
+use netlink_packet_core::{Emitable, NlasIterator, ParseableParametrized};
 
 use crate::{
     link::{
         link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
-        LinkMessage, LinkMessageBuffer, LinkMode, State,
+        LinkMessage, LinkMode, State,
     },
     AddressFamily,
 };
@@ -40,48 +40,41 @@ static LINK_MSG: [u8; 96] = [
 
 #[test]
 fn link_message_packet_header_read() {
-    let packet = LinkMessageBuffer::new(&LINK_MSG[0..16]);
-    assert_eq!(packet.interface_family(), AddressFamily::Unspec.into());
-    assert_eq!(packet.reserved_1(), 0);
-    assert_eq!(packet.link_layer_type(), LinkLayerType::Loopback.into());
-    assert_eq!(packet.link_index(), 1);
+    let header = LinkHeader::parse(&LINK_MSG[0..16]).unwrap();
+    assert_eq!(header.interface_family, AddressFamily::Unspec);
+    assert_eq!(header.link_layer_type, LinkLayerType::Loopback);
+    assert_eq!(header.index, 1);
     assert_eq!(
-        packet.flags(),
-        (LinkFlags::Loopback
+        header.flags,
+        LinkFlags::Loopback
             | LinkFlags::LowerUp
             | LinkFlags::Running
-            | LinkFlags::Up)
-            .bits()
+            | LinkFlags::Up
     );
-    assert_eq!(packet.change_mask(), 0);
+    assert_eq!(header.change_mask, LinkFlags::empty());
 }
 
 #[test]
 fn link_message_packet_header_build() {
     let mut buf = vec![0xff; 16];
-    {
-        let mut packet = LinkMessageBuffer::new(&mut buf);
-        packet.set_interface_family(AddressFamily::Unspec.into());
-        packet.set_reserved_1(0);
-        packet.set_link_layer_type(LinkLayerType::Loopback.into());
-        packet.set_link_index(1);
-        packet.set_flags(
-            (LinkFlags::Loopback
-                | LinkFlags::LowerUp
-                | LinkFlags::Running
-                | LinkFlags::Up)
-                .bits(),
-        );
-        packet.set_change_mask(0);
-    }
+    let header = LinkHeader {
+        interface_family: AddressFamily::Unspec,
+        link_layer_type: LinkLayerType::Loopback,
+        index: 1,
+        flags: LinkFlags::Loopback
+            | LinkFlags::LowerUp
+            | LinkFlags::Running
+            | LinkFlags::Up,
+        change_mask: LinkFlags::empty(),
+    };
+    header.emit(&mut buf);
     assert_eq!(&buf[..], &LINK_MSG[0..16]);
 }
 
 #[test]
 fn link_mssage_packet_attributes_read() {
-    let packet = LinkMessageBuffer::new(&LINK_MSG[..]);
-    assert_eq!(packet.attributes().count(), 10);
-    let mut attributes = packet.attributes();
+    assert_eq!(NlasIterator::new(&LINK_MSG[16..]).count(), 10);
+    let mut attributes = NlasIterator::new(&LINK_MSG[16..]);
 
     // device name L=7,T=3,V=lo
     let nla = attributes.next().unwrap().unwrap();
@@ -212,7 +205,7 @@ fn link_type_mctp() {
         0x41, 0x00, 0x01, 0x00, // flags: UP|RUNNING|LOWERUP
         0x00, 0x00, 0x00, 0x00, // reserved 2
     ];
-    let packet = LinkMessageBuffer::new(&LINK_MSG_MCTP);
-    assert_eq!(packet.interface_family(), AddressFamily::Unspec.into());
-    assert_eq!(packet.link_layer_type(), LinkLayerType::Mctp.into());
+    let header = LinkHeader::parse(&LINK_MSG_MCTP).unwrap();
+    assert_eq!(header.interface_family, AddressFamily::Unspec);
+    assert_eq!(header.link_layer_type, LinkLayerType::Mctp);
 }

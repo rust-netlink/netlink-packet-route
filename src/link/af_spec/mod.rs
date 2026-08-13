@@ -24,7 +24,7 @@ pub use self::{
         BridgeVlanInfoFlags, BridgeVlanTunnelInfo,
     },
     in6_addr_gen_mode::In6AddrGenMode,
-    inet::{AfSpecInet, InetDevConf},
+    inet::{AfSpecInet, InetDevConf, InetDevConfBuffer},
     inet6::AfSpecInet6,
     inet6_cache::{Inet6CacheInfo, Inet6CacheInfoBuffer},
     inet6_devconf::{Inet6DevConf, Inet6DevConfBuffer},

@@ -16,6 +16,7 @@ bitflags = "2"
 libc = "0.2.66"
 log = { version = "0.4.20", features = ["std"] }
 netlink-packet-core = { version = "0.8.2" }
+zerocopy = { version = "0.8", features = ["derive"] }
 
 [[example]]
 name = "dump_packet_links"

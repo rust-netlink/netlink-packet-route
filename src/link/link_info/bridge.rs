@@ -8,6 +8,10 @@ use netlink_packet_core::{
     Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
     NLA_F_NESTED,
 };
+use zerocopy::{
+    byteorder::big_endian::U16, FromBytes, Immutable, IntoBytes, KnownLayout,
+    Unaligned,
+};
 
 use crate::link::{BridgeBooleanOptions, VlanProtocol};
 
@@ -438,11 +442,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
                     .context("invalid IFLA_BR_GROUP_FWD_MASK value")?,
             ),
             IFLA_BR_ROOT_ID => Self::RootId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload))
+                BridgeId::parse(payload)
                     .context("invalid IFLA_BR_ROOT_ID value")?,
             ),
             IFLA_BR_BRIDGE_ID => Self::BridgeId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload))
+                BridgeId::parse(payload)
                     .context("invalid IFLA_BR_BRIDGE_ID value")?,
             ),
             IFLA_BR_GROUP_ADDR => Self::GroupAddr(
@@ -562,41 +566,65 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
     }
 }
 
-const BRIDGE_ID_LEN: usize = 8;
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct BridgeId {
     pub priority: u16,
     pub address: [u8; 6],
 }
 
-buffer!(BridgeIdBuffer(BRIDGE_ID_LEN) {
-    priority: (u16, 0..2),
-    address: (slice, 2..BRIDGE_ID_LEN)
-});
+// Wire format of a bridge ID: 2-byte big-endian priority followed by the
+// 6-byte MAC address.
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct BridgeIdBuffer {
+    priority: U16,
+    address: [u8; 6],
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<BridgeIdBuffer<&T>> for BridgeId {
-    fn parse(buf: &BridgeIdBuffer<&T>) -> Result<Self, DecodeError> {
-        // Priority is encoded in big endian. From kernel's
-        // net/bridge/br_netlink.c br_fill_info():
-        // u16 priority = (br->bridge_id.prio[0] << 8) | br->bridge_id.prio[1];
-        Ok(Self {
-            priority: u16::from_be(buf.priority()),
-            address: parse_mac(buf.address())
-                .context("invalid MAC address in BridgeId buffer")?,
-        })
+impl BridgeId {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        BridgeIdBuffer::ref_from_bytes(payload)
+            .map(|raw| Self::from(raw.clone()))
+            .map_err(|_| DecodeError::from("invalid BridgeId buffer"))
+    }
+}
+
+impl From<BridgeIdBuffer> for BridgeId {
+    fn from(raw: BridgeIdBuffer) -> Self {
+        Self {
+            priority: raw.priority.get(),
+            address: raw.address,
+        }
+    }
+}
+
+impl From<&BridgeId> for BridgeIdBuffer {
+    fn from(bridge_id: &BridgeId) -> Self {
+        Self {
+            priority: U16::new(bridge_id.priority),
+            address: bridge_id.address,
+        }
     }
 }
 
 impl Emitable for BridgeId {
     fn buffer_len(&self) -> usize {
-        BRIDGE_ID_LEN
+        std::mem::size_of::<BridgeIdBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = BridgeIdBuffer::new(buffer);
-        buffer.set_priority(self.priority.to_be());
-        buffer.address_mut().copy_from_slice(&self.address[..]);
+        let raw = BridgeIdBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
 

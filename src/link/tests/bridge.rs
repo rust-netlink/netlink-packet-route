@@ -16,9 +16,8 @@ use crate::{
         BridgeVlanTunnelInfo, In6AddrGenMode, Inet6CacheInfo, Inet6DevConf,
         Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
         InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader,
-        LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode,
-        LinkProtoInfoBridge, LinkXdp, Map, State, Stats, Stats64, VlanProtocol,
-        XdpAttached,
+        LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkProtoInfoBridge,
+        LinkXdp, Map, State, Stats, Stats64, VlanProtocol, XdpAttached,
     },
     AddressFamily,
 };
@@ -427,10 +426,7 @@ fn test_parse_link_bridge_no_extention_mask() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -782,10 +778,7 @@ fn test_parse_link_bridge_stp_mode() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -820,10 +813,7 @@ fn test_parse_link_bridge_port_neigh_forward_grat() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -961,10 +951,7 @@ fn test_bridge_port_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -1093,10 +1080,7 @@ fn test_bridge_boolean_options() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -1138,10 +1122,7 @@ fn test_bridge_boolean_options_fdb_local_vlan_0() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -1618,10 +1599,7 @@ fn test_bridge_netns_immutable() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

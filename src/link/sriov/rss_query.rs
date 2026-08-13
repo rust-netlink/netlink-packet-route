@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_RSS_QUERY_EN_LEN: usize = 8;
 
@@ -17,19 +18,45 @@ impl VfInfoRssQueryEn {
     }
 }
 
-buffer!(VfInfoRssQueryEnBuffer(VF_INFO_RSS_QUERY_EN_LEN) {
-    vf_id: (u32, 0..4),
-    setting: (u32, 4..8),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct VfInfoRssQueryEnBuffer {
+    vf_id: u32,
+    setting: u32,
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRssQueryEnBuffer<&T>>
-    for VfInfoRssQueryEn
-{
-    fn parse(buf: &VfInfoRssQueryEnBuffer<&T>) -> Result<Self, DecodeError> {
+impl VfInfoRssQueryEn {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = VfInfoRssQueryEnBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    VF_INFO_RSS_QUERY_EN_LEN,
+                )
+            })?;
         Ok(Self::new(
-            buf.vf_id(),
-            buf.setting() > 0 && buf.setting() != u32::MAX,
+            raw.vf_id,
+            raw.setting > 0 && raw.setting != u32::MAX,
         ))
+    }
+}
+
+impl From<&VfInfoRssQueryEn> for VfInfoRssQueryEnBuffer {
+    fn from(rss_query: &VfInfoRssQueryEn) -> Self {
+        Self {
+            vf_id: rss_query.vf_id,
+            setting: rss_query.enabled as u32,
+        }
     }
 }
 
@@ -39,8 +66,7 @@ impl Emitable for VfInfoRssQueryEn {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = VfInfoRssQueryEnBuffer::new(buffer);
-        buffer.set_vf_id(self.vf_id);
-        buffer.set_setting(self.enabled as u32);
+        let raw = VfInfoRssQueryEnBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

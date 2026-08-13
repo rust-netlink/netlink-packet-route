@@ -11,7 +11,7 @@ use crate::{
     link::{
         InfoData, InfoIpTunnel, InfoKind, Ip6TunnelFlags, LinkAttribute,
         LinkFlags, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer, TunnelEncapFlags, TunnelEncapType,
+        TunnelEncapFlags, TunnelEncapType,
     },
     AddressFamily, IpProtocol,
 };
@@ -69,10 +69,7 @@ fn test_iptunnel_ipip_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -140,10 +137,7 @@ fn test_iptunnel_ipip6_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -211,10 +205,7 @@ fn test_iptunnel_ip6ip6_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -278,10 +269,7 @@ fn test_iptunnel_sit_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

@@ -4,7 +4,7 @@ use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
-use super::super::{LinkMessage, LinkMessageBuffer};
+use super::super::LinkMessage;
 
 const VXCAN_INFO_PEER: u16 = 1;
 
@@ -47,9 +47,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxcan {
         Ok(match buf.kind() {
             VXCAN_INFO_PEER => {
                 let err = "failed to parse vxcan link info";
-                let buffer =
-                    LinkMessageBuffer::new_checked(&payload).context(err)?;
-                Self::Peer(LinkMessage::parse(&buffer).context(err)?)
+                Self::Peer(LinkMessage::parse(payload).context(err)?)
             }
             kind => Self::Other(
                 DefaultNla::parse(buf)

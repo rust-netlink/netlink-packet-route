@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 #[non_exhaustive]
@@ -13,21 +14,51 @@ pub struct Inet6CacheInfo {
 
 const LINK_INET6_CACHE_INFO_LEN: usize = 16;
 
-buffer!(Inet6CacheInfoBuffer(LINK_INET6_CACHE_INFO_LEN) {
-    max_reasm_len: (i32, 0..4),
-    tstamp: (i32, 4..8),
-    reachable_time: (i32, 8..12),
-    retrans_time: (i32, 12..16),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct Inet6CacheInfoBuffer {
+    max_reasm_len: i32,
+    tstamp: i32,
+    reachable_time: i32,
+    retrans_time: i32,
+}
 
-impl<T: AsRef<[u8]>> Parseable<Inet6CacheInfoBuffer<T>> for Inet6CacheInfo {
-    fn parse(buf: &Inet6CacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+impl Inet6CacheInfo {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            Inet6CacheInfoBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    LINK_INET6_CACHE_INFO_LEN,
+                )
+            })?;
         Ok(Self {
-            max_reasm_len: buf.max_reasm_len(),
-            tstamp: buf.tstamp(),
-            reachable_time: buf.reachable_time(),
-            retrans_time: buf.retrans_time(),
+            max_reasm_len: raw.max_reasm_len,
+            tstamp: raw.tstamp,
+            reachable_time: raw.reachable_time,
+            retrans_time: raw.retrans_time,
         })
+    }
+}
+
+impl From<&Inet6CacheInfo> for Inet6CacheInfoBuffer {
+    fn from(cache_info: &Inet6CacheInfo) -> Self {
+        Self {
+            max_reasm_len: cache_info.max_reasm_len,
+            tstamp: cache_info.tstamp,
+            reachable_time: cache_info.reachable_time,
+            retrans_time: cache_info.retrans_time,
+        }
     }
 }
 
@@ -37,10 +68,7 @@ impl Emitable for Inet6CacheInfo {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = Inet6CacheInfoBuffer::new(buffer);
-        buffer.set_max_reasm_len(self.max_reasm_len);
-        buffer.set_tstamp(self.tstamp);
-        buffer.set_reachable_time(self.reachable_time);
-        buffer.set_retrans_time(self.retrans_time);
+        let raw = Inet6CacheInfoBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

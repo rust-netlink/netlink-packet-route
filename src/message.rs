@@ -7,7 +7,7 @@ use netlink_packet_core::{
 
 use crate::{
     address::{AddressHeader, AddressMessage, AddressMessageBuffer},
-    link::{LinkMessage, LinkMessageBuffer},
+    link::LinkMessage,
     neighbour::{NeighbourMessage, NeighbourMessageBuffer},
     neighbour_table::{NeighbourTableMessage, NeighbourTableMessageBuffer},
     nsid::{NsidMessage, NsidMessageBuffer},
@@ -89,23 +89,18 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
         let message = match message_type {
             // Link messages
             RTM_NEWLINK | RTM_GETLINK | RTM_DELLINK | RTM_SETLINK => {
-                let msg = match LinkMessageBuffer::new_checked(&buf.inner()) {
-                    Ok(buf) => LinkMessage::parse(&buf)
-                        .context("invalid link message")?,
-                    // HACK: iproute2 sends invalid RTM_GETLINK message, where
-                    // the header is limited to the
-                    // interface family (1 byte) and 3 bytes of padding.
-                    Err(e) => {
-                        if buf.inner().len() == 4 && message_type == RTM_GETLINK
-                        {
-                            let mut msg = LinkMessage::default();
-                            msg.header.interface_family = buf.inner()[0].into();
-                            msg
-                        } else {
-                            return Err(e);
-                        }
-                    }
-                };
+                // HACK: iproute2 sends invalid RTM_GETLINK message, where
+                // the header is limited to the interface family (1 byte) and
+                // 3 bytes of padding.
+                let msg =
+                    if buf.inner().len() == 4 && message_type == RTM_GETLINK {
+                        let mut msg = LinkMessage::default();
+                        msg.header.interface_family = buf.inner()[0].into();
+                        msg
+                    } else {
+                        LinkMessage::parse(buf.inner())
+                            .context("invalid link message")?
+                    };
                 match message_type {
                     RTM_NEWLINK => RouteNetlinkMessage::NewLink(msg),
                     RTM_GETLINK => RouteNetlinkMessage::GetLink(msg),

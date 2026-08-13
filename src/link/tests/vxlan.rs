@@ -12,8 +12,8 @@ use crate::{
         af_spec::In6AddrGenMode, link_flag::LinkFlags, AfSpecInet, AfSpecInet6,
         AfSpecUnspec, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags,
         InetDevConf, InfoData, InfoKind, InfoVxlan, LinkAttribute, LinkHeader,
-        LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode,
-        LinkXdp, Map, State, VxlanDf, XdpAttached,
+        LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkXdp, Map, State,
+        VxlanDf, XdpAttached,
     },
     AddressFamily,
 };
@@ -314,10 +314,7 @@ fn test_parsing_link_vxlan() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -435,10 +432,7 @@ fn test_parsing_link_vxlan_ipv6() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -488,10 +482,7 @@ fn test_create_vxlan_with_mcroute() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

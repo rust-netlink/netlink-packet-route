@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, Emitable, ErrorContext, Parseable, ParseableParametrized,
+    DecodeError, Emitable, ErrorContext, NlasIterator, Parseable,
+    ParseableParametrized,
 };
 
 use crate::{
-    link::{LinkAttribute, LinkHeader, LinkMessageBuffer},
+    link::{header::LINK_HEADER_LEN, LinkAttribute, LinkHeader},
     AddressFamily,
 };
 
@@ -29,30 +30,27 @@ impl Emitable for LinkMessage {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<LinkMessageBuffer<&'a T>>
-    for LinkMessage
-{
-    fn parse(buf: &LinkMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl Parseable<[u8]> for LinkMessage {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         let header = LinkHeader::parse(buf)
             .context("failed to parse link message header")?;
         let interface_family = header.interface_family;
-        let attributes =
-            Vec::<LinkAttribute>::parse_with_param(buf, interface_family)
-                .context("failed to parse link message NLAs")?;
+        let attributes = Vec::<LinkAttribute>::parse_with_param(
+            &buf[LINK_HEADER_LEN..],
+            interface_family,
+        )
+        .context("failed to parse link message NLAs")?;
         Ok(LinkMessage { header, attributes })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a>
-    ParseableParametrized<LinkMessageBuffer<&'a T>, AddressFamily>
-    for Vec<LinkAttribute>
-{
+impl ParseableParametrized<[u8], AddressFamily> for Vec<LinkAttribute> {
     fn parse_with_param(
-        buf: &LinkMessageBuffer<&'a T>,
+        buf: &[u8],
         family: AddressFamily,
     ) -> Result<Self, DecodeError> {
         let mut attributes = vec![];
-        for nla_buf in buf.attributes() {
+        for nla_buf in NlasIterator::new(buf) {
             attributes
                 .push(LinkAttribute::parse_with_param(&nla_buf?, family)?);
         }

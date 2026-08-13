@@ -36,7 +36,7 @@ pub use self::{
         BridgeVlanTunnelInfo, Icmp6Stats, Icmp6StatsBuffer, In6AddrGenMode,
         Inet6CacheInfo, Inet6CacheInfoBuffer, Inet6DevConf, Inet6DevConfBuffer,
         Inet6IfaceFlags, Inet6Stats, Inet6StatsBuffer, InetDevConf,
-        MctpPhysBinding,
+        InetDevConfBuffer, MctpPhysBinding,
     },
     attribute::LinkAttribute,
     devlink_port::DevlinkPort,

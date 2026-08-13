@@ -9,8 +9,7 @@ use crate::{
         BondPrimaryReselect, BondXmitHashPolicy, ChurnState, InfoBond,
         InfoBondPort, InfoData, InfoKind, InfoPortData, InfoPortKind,
         LacpState, LinkAttribute, LinkFlags, LinkHeader, LinkInfo,
-        LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, Map,
-        MiiStatus, State,
+        LinkLayerType, LinkMessage, LinkMode, Map, MiiStatus, State,
     },
     AddressFamily, RouteNetlinkMessage,
 };
@@ -91,10 +90,7 @@ fn test_bond_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -146,10 +142,7 @@ fn test_bond_port_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -258,10 +251,7 @@ fn test_parsing_link_bond_port_ad() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

@@ -1,30 +1,32 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::link_flag::LinkFlags;
 use crate::{link::LinkLayerType, AddressFamily};
 
-const LINK_HEADER_LEN: usize = 16;
+pub(crate) const LINK_HEADER_LEN: usize = 16;
 
-buffer!(LinkMessageBuffer(LINK_HEADER_LEN) {
-    interface_family: (u8, 0),
-    reserved_1: (u8, 1),
-    link_layer_type: (u16, 2..4),
-    link_index: (u32, 4..8),
-    flags: (u32, 8..12),
-    change_mask: (u32, 12..LINK_HEADER_LEN),
-    payload: (slice, LINK_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> LinkMessageBuffer<&'a T> {
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct LinkMessageBuffer {
+    interface_family: u8,
+    reserved_1: u8,
+    link_layer_type: u16,
+    link_index: u32,
+    flags: u32,
+    change_mask: u32,
 }
 
 /// High level representation of `RTM_GETLINK`, `RTM_SETLINK`, `RTM_NEWLINK` and
@@ -73,26 +75,37 @@ impl Emitable for LinkHeader {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = LinkMessageBuffer::new(buffer);
-        packet.set_interface_family(u8::from(self.interface_family));
-        // The kernel expects the reserved byte to always be zero.
-        // Zero it in case the callers didn't give us a zeroed buffer.
-        packet.set_reserved_1(0);
-        packet.set_link_index(self.index);
-        packet.set_change_mask(self.change_mask.bits());
-        packet.set_link_layer_type(u16::from(self.link_layer_type));
-        packet.set_flags(self.flags.bits());
+        let raw = LinkMessageBuffer::from(self);
+        buffer[..LINK_HEADER_LEN].copy_from_slice(raw.as_bytes());
     }
 }
 
-impl<T: AsRef<[u8]>> Parseable<LinkMessageBuffer<T>> for LinkHeader {
-    fn parse(buf: &LinkMessageBuffer<T>) -> Result<Self, DecodeError> {
+impl LinkHeader {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            LinkMessageBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), LINK_HEADER_LEN)
+            })?;
         Ok(Self {
-            interface_family: buf.interface_family().into(),
-            link_layer_type: buf.link_layer_type().into(),
-            index: buf.link_index(),
-            change_mask: LinkFlags::from_bits_retain(buf.change_mask()),
-            flags: LinkFlags::from_bits_retain(buf.flags()),
+            interface_family: raw.interface_family.into(),
+            link_layer_type: raw.link_layer_type.into(),
+            index: raw.link_index,
+            change_mask: LinkFlags::from_bits_retain(raw.change_mask),
+            flags: LinkFlags::from_bits_retain(raw.flags),
         })
+    }
+}
+
+impl From<&LinkHeader> for LinkMessageBuffer {
+    fn from(header: &LinkHeader) -> Self {
+        Self {
+            interface_family: u8::from(header.interface_family),
+            // The kernel expects the reserved byte to always be zero.
+            reserved_1: 0,
+            link_layer_type: u16::from(header.link_layer_type),
+            link_index: header.index,
+            flags: header.flags.bits(),
+            change_mask: header.change_mask.bits(),
+        }
     }
 }

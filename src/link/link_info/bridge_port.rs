@@ -5,7 +5,7 @@ use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
-use crate::link::{BridgeId, BridgeIdBuffer, BridgeMulticastRouterType};
+use crate::link::{BridgeId, BridgeMulticastRouterType};
 
 const IFLA_BRPORT_STATE: u16 = 1;
 const IFLA_BRPORT_PRIORITY: u16 = 2;
@@ -340,16 +340,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     format!("invalid IFLA_BRPORT_PROXYARP_WIFI {payload:?}")
                 })? > 0,
             ),
-            IFLA_BRPORT_ROOT_ID => Self::RootId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).context(
-                    format!("invalid IFLA_BRPORT_ROOT_ID {payload:?}"),
-                )?,
-            ),
-            IFLA_BRPORT_BRIDGE_ID => Self::BridgeId(
-                BridgeId::parse(&BridgeIdBuffer::new(payload)).context(
-                    format!("invalid IFLA_BRPORT_BRIDGE_ID {payload:?}"),
-                )?,
-            ),
+            IFLA_BRPORT_ROOT_ID => {
+                Self::RootId(BridgeId::parse(payload).context(format!(
+                    "invalid IFLA_BRPORT_ROOT_ID {payload:?}"
+                ))?)
+            }
+            IFLA_BRPORT_BRIDGE_ID => {
+                Self::BridgeId(BridgeId::parse(payload).context(format!(
+                    "invalid IFLA_BRPORT_BRIDGE_ID {payload:?}"
+                ))?)
+            }
             IFLA_BRPORT_DESIGNATED_PORT => {
                 InfoBridgePort::DesignatedPort(parse_u16(payload).context({
                     format!("invalid IFLA_BRPORT_DESIGNATED_PORT {payload:?}")

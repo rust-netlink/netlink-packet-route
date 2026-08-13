@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_BROADCAST_LEN: usize = 32;
 
@@ -22,15 +23,40 @@ impl VfInfoBroadcast {
     }
 }
 
-buffer!(VfInfoBroadcastBuffer(VF_INFO_BROADCAST_LEN) {
-    addr: (slice, 0..VF_INFO_BROADCAST_LEN),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct VfInfoBroadcastBuffer {
+    addr: [u8; VF_INFO_BROADCAST_LEN],
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoBroadcastBuffer<&T>>
-    for VfInfoBroadcast
-{
-    fn parse(buf: &VfInfoBroadcastBuffer<&T>) -> Result<Self, DecodeError> {
-        Ok(Self::new(buf.addr()))
+impl VfInfoBroadcast {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = VfInfoBroadcastBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    VF_INFO_BROADCAST_LEN,
+                )
+            })?;
+        Ok(Self::new(&raw.addr))
+    }
+}
+
+impl From<&VfInfoBroadcast> for VfInfoBroadcastBuffer {
+    fn from(broadcast: &VfInfoBroadcast) -> Self {
+        Self {
+            addr: broadcast.addr,
+        }
     }
 }
 
@@ -40,7 +66,7 @@ impl Emitable for VfInfoBroadcast {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = VfInfoBroadcastBuffer::new(buffer);
-        buffer.addr_mut().copy_from_slice(&self.addr);
+        let raw = VfInfoBroadcastBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

@@ -1,17 +1,31 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const LINK_MAP_LEN: usize = 32;
 
-buffer!(MapBuffer(LINK_MAP_LEN) {
-    memory_start: (u64, 0..8),
-    memory_end: (u64, 8..16),
-    base_address: (u64, 16..24),
-    irq: (u16, 24..26),
-    dma: (u8, 26),
-    port: (u8, 27),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct MapBuffer {
+    memory_start: u64,
+    memory_end: u64,
+    base_address: u64,
+    irq: u16,
+    dma: u8,
+    port: u8,
+    _padding: [u8; 4],
+}
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
@@ -24,16 +38,33 @@ pub struct Map {
     pub port: u8,
 }
 
-impl<T: AsRef<[u8]>> Parseable<MapBuffer<T>> for Map {
-    fn parse(buf: &MapBuffer<T>) -> Result<Self, DecodeError> {
+impl Map {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = MapBuffer::ref_from_prefix(payload).map_err(|_| {
+            DecodeError::buffer_too_small(payload.len(), LINK_MAP_LEN)
+        })?;
         Ok(Self {
-            memory_start: buf.memory_start(),
-            memory_end: buf.memory_end(),
-            base_address: buf.base_address(),
-            irq: buf.irq(),
-            dma: buf.dma(),
-            port: buf.port(),
+            memory_start: raw.memory_start,
+            memory_end: raw.memory_end,
+            base_address: raw.base_address,
+            irq: raw.irq,
+            dma: raw.dma,
+            port: raw.port,
         })
+    }
+}
+
+impl From<&Map> for MapBuffer {
+    fn from(map: &Map) -> Self {
+        Self {
+            memory_start: map.memory_start,
+            memory_end: map.memory_end,
+            base_address: map.base_address,
+            irq: map.irq,
+            dma: map.dma,
+            port: map.port,
+            _padding: [0; 4],
+        }
     }
 }
 
@@ -43,12 +74,7 @@ impl Emitable for Map {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = MapBuffer::new(buffer);
-        buffer.set_memory_start(self.memory_start);
-        buffer.set_memory_end(self.memory_end);
-        buffer.set_base_address(self.base_address);
-        buffer.set_irq(self.irq);
-        buffer.set_dma(self.dma);
-        buffer.set_port(self.port);
+        let raw = MapBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

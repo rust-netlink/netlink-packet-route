@@ -5,8 +5,8 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     link::{
         link_flag::LinkFlags, AfSpecMctp, AfSpecUnspec, LinkAttribute,
-        LinkHeader, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode,
-        LinkXdp, Map, MctpPhysBinding, State, Stats, Stats64, XdpAttached,
+        LinkHeader, LinkLayerType, LinkMessage, LinkMode, LinkXdp, Map,
+        MctpPhysBinding, State, Stats, Stats64, XdpAttached,
     },
     AddressFamily,
 };
@@ -184,10 +184,7 @@ fn test_empty_af_spec() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -230,10 +227,7 @@ fn test_af_spec_mctp_net() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -276,10 +270,7 @@ fn test_af_spec_mctp_binding() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

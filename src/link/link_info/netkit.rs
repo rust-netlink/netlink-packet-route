@@ -5,7 +5,7 @@ use netlink_packet_core::{
     DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
-use super::super::{LinkMessage, LinkMessageBuffer};
+use super::super::LinkMessage;
 
 const NETKIT_L2: u32 = 0;
 const NETKIT_L3: u32 = 1;
@@ -254,9 +254,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoNetkit {
         Ok(match buf.kind() {
             IFLA_NETKIT_PEER_INFO => {
                 let err = "failed to parse netkit peer info";
-                let buffer =
-                    LinkMessageBuffer::new_checked(&payload).context(err)?;
-                Self::Peer(LinkMessage::parse(&buffer).context(err)?)
+                Self::Peer(LinkMessage::parse(payload).context(err)?)
             }
             IFLA_NETKIT_PRIMARY => {
                 let value = parse_u8(payload)? != 0;

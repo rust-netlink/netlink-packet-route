@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
     NlasIterator, Parseable, NLA_F_NESTED,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::super::buffer_tool::expand_buffer_if_small;
 
@@ -12,7 +15,6 @@ pub(crate) const IFLA_INET_CONF: u16 = 1;
 // This number might change when kernel add more IPV4_DEV_CONF
 const __IPV4_DEVCONF_MAX: usize = 34;
 const IPV4_DEVCONF_MAX: usize = __IPV4_DEVCONF_MAX - 1;
-pub(crate) const DEV_CONF_LEN: usize = IPV4_DEVCONF_MAX * 4;
 
 // IPV4_DEVCONF_* enum values from linux/ip.h (1-based)
 const IPV4_DEVCONF_FORWARDING: u16 = 1;
@@ -107,16 +109,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_INET_CONF => {
-                Self::DevConf(InetDevConf::parse(&InetDevConfBuffer::new(
-                    expand_buffer_if_small(
-                        payload,
-                        DEV_CONF_LEN,
-                        "IFLA_INET_CONF",
-                    )
-                    .as_slice(),
-                ))?)
-            }
+            IFLA_INET_CONF => Self::DevConf(InetDevConf::parse(
+                expand_buffer_if_small(
+                    payload,
+                    size_of::<InetDevConfBuffer>(),
+                    "IFLA_INET_CONF",
+                )
+                .as_slice(),
+            )?),
             kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "Unknown NLA type {kind} for IFLA_AF_SPEC(inet)"
             ))?),
@@ -202,41 +202,53 @@ fn devconf_entries(conf: &InetDevConf) -> [(u16, i32); IPV4_DEVCONF_MAX] {
 
 // ---- InetDevConf (flat buffer, matches kernel dump format) ----
 
-buffer!(InetDevConfBuffer(DEV_CONF_LEN) {
-    forwarding: (i32, 0..4),
-    mc_forwarding: (i32, 4..8),
-    proxy_arp: (i32, 8..12),
-    accept_redirects: (i32, 12..16),
-    secure_redirects: (i32, 16..20),
-    send_redirects: (i32, 20..24),
-    shared_media: (i32, 24..28),
-    rp_filter: (i32, 28..32),
-    accept_source_route: (i32, 32..36),
-    bootp_relay: (i32, 36..40),
-    log_martians: (i32, 40..44),
-    tag: (i32, 44..48),
-    arpfilter: (i32, 48..52),
-    medium_id: (i32, 52..56),
-    noxfrm: (i32, 56..60),
-    nopolicy: (i32, 60..64),
-    force_igmp_version: (i32, 64..68),
-    arp_announce: (i32, 68..72),
-    arp_ignore: (i32, 72..76),
-    promote_secondaries: (i32, 76..80),
-    arp_accept: (i32, 80..84),
-    arp_notify: (i32, 84..88),
-    accept_local: (i32, 88..92),
-    src_vmark: (i32, 92..96),
-    proxy_arp_pvlan: (i32, 96..100),
-    route_localnet: (i32, 100..104),
-    igmpv2_unsolicited_report_interval: (i32, 104..108),
-    igmpv3_unsolicited_report_interval: (i32, 108..112),
-    ignore_routes_with_linkdown: (i32, 112..116),
-    drop_unicast_in_l2_multicast: (i32, 116..120),
-    drop_gratuitous_arp: (i32, 120..124),
-    bc_forwarding: (i32, 124..128),
-    arp_evict_nocarrier: (i32, 128..132),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct InetDevConfBuffer {
+    forwarding: i32,
+    mc_forwarding: i32,
+    proxy_arp: i32,
+    accept_redirects: i32,
+    secure_redirects: i32,
+    send_redirects: i32,
+    shared_media: i32,
+    rp_filter: i32,
+    accept_source_route: i32,
+    bootp_relay: i32,
+    log_martians: i32,
+    tag: i32,
+    arpfilter: i32,
+    medium_id: i32,
+    noxfrm: i32,
+    nopolicy: i32,
+    force_igmp_version: i32,
+    arp_announce: i32,
+    arp_ignore: i32,
+    promote_secondaries: i32,
+    arp_accept: i32,
+    arp_notify: i32,
+    accept_local: i32,
+    src_vmark: i32,
+    proxy_arp_pvlan: i32,
+    route_localnet: i32,
+    igmpv2_unsolicited_report_interval: i32,
+    igmpv3_unsolicited_report_interval: i32,
+    ignore_routes_with_linkdown: i32,
+    drop_unicast_in_l2_multicast: i32,
+    drop_gratuitous_arp: i32,
+    bc_forwarding: i32,
+    arp_evict_nocarrier: i32,
+}
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
 #[non_exhaustive]
@@ -276,94 +288,104 @@ pub struct InetDevConf {
     pub arp_evict_nocarrier: i32,
 }
 
-impl<T: AsRef<[u8]>> Parseable<InetDevConfBuffer<T>> for InetDevConf {
-    fn parse(buf: &InetDevConfBuffer<T>) -> Result<Self, DecodeError> {
+impl InetDevConf {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            InetDevConfBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<InetDevConfBuffer>(),
+                )
+            })?;
         Ok(Self {
-            forwarding: buf.forwarding(),
-            mc_forwarding: buf.mc_forwarding(),
-            proxy_arp: buf.proxy_arp(),
-            accept_redirects: buf.accept_redirects(),
-            secure_redirects: buf.secure_redirects(),
-            send_redirects: buf.send_redirects(),
-            shared_media: buf.shared_media(),
-            rp_filter: buf.rp_filter(),
-            accept_source_route: buf.accept_source_route(),
-            bootp_relay: buf.bootp_relay(),
-            log_martians: buf.log_martians(),
-            tag: buf.tag(),
-            arpfilter: buf.arpfilter(),
-            medium_id: buf.medium_id(),
-            noxfrm: buf.noxfrm(),
-            nopolicy: buf.nopolicy(),
-            force_igmp_version: buf.force_igmp_version(),
-            arp_announce: buf.arp_announce(),
-            arp_ignore: buf.arp_ignore(),
-            promote_secondaries: buf.promote_secondaries(),
-            arp_accept: buf.arp_accept(),
-            arp_notify: buf.arp_notify(),
-            accept_local: buf.accept_local(),
-            src_vmark: buf.src_vmark(),
-            proxy_arp_pvlan: buf.proxy_arp_pvlan(),
-            route_localnet: buf.route_localnet(),
-            igmpv2_unsolicited_report_interval: buf
-                .igmpv2_unsolicited_report_interval(),
-            igmpv3_unsolicited_report_interval: buf
-                .igmpv3_unsolicited_report_interval(),
-            ignore_routes_with_linkdown: buf.ignore_routes_with_linkdown(),
-            drop_unicast_in_l2_multicast: buf.drop_unicast_in_l2_multicast(),
-            drop_gratuitous_arp: buf.drop_gratuitous_arp(),
-            bc_forwarding: buf.bc_forwarding(),
-            arp_evict_nocarrier: buf.arp_evict_nocarrier(),
+            forwarding: raw.forwarding,
+            mc_forwarding: raw.mc_forwarding,
+            proxy_arp: raw.proxy_arp,
+            accept_redirects: raw.accept_redirects,
+            secure_redirects: raw.secure_redirects,
+            send_redirects: raw.send_redirects,
+            shared_media: raw.shared_media,
+            rp_filter: raw.rp_filter,
+            accept_source_route: raw.accept_source_route,
+            bootp_relay: raw.bootp_relay,
+            log_martians: raw.log_martians,
+            tag: raw.tag,
+            arpfilter: raw.arpfilter,
+            medium_id: raw.medium_id,
+            noxfrm: raw.noxfrm,
+            nopolicy: raw.nopolicy,
+            force_igmp_version: raw.force_igmp_version,
+            arp_announce: raw.arp_announce,
+            arp_ignore: raw.arp_ignore,
+            promote_secondaries: raw.promote_secondaries,
+            arp_accept: raw.arp_accept,
+            arp_notify: raw.arp_notify,
+            accept_local: raw.accept_local,
+            src_vmark: raw.src_vmark,
+            proxy_arp_pvlan: raw.proxy_arp_pvlan,
+            route_localnet: raw.route_localnet,
+            igmpv2_unsolicited_report_interval: raw
+                .igmpv2_unsolicited_report_interval,
+            igmpv3_unsolicited_report_interval: raw
+                .igmpv3_unsolicited_report_interval,
+            ignore_routes_with_linkdown: raw.ignore_routes_with_linkdown,
+            drop_unicast_in_l2_multicast: raw.drop_unicast_in_l2_multicast,
+            drop_gratuitous_arp: raw.drop_gratuitous_arp,
+            bc_forwarding: raw.bc_forwarding,
+            arp_evict_nocarrier: raw.arp_evict_nocarrier,
         })
+    }
+}
+
+impl From<&InetDevConf> for InetDevConfBuffer {
+    fn from(value: &InetDevConf) -> Self {
+        Self {
+            forwarding: value.forwarding,
+            mc_forwarding: value.mc_forwarding,
+            proxy_arp: value.proxy_arp,
+            accept_redirects: value.accept_redirects,
+            secure_redirects: value.secure_redirects,
+            send_redirects: value.send_redirects,
+            shared_media: value.shared_media,
+            rp_filter: value.rp_filter,
+            accept_source_route: value.accept_source_route,
+            bootp_relay: value.bootp_relay,
+            log_martians: value.log_martians,
+            tag: value.tag,
+            arpfilter: value.arpfilter,
+            medium_id: value.medium_id,
+            noxfrm: value.noxfrm,
+            nopolicy: value.nopolicy,
+            force_igmp_version: value.force_igmp_version,
+            arp_announce: value.arp_announce,
+            arp_ignore: value.arp_ignore,
+            promote_secondaries: value.promote_secondaries,
+            arp_accept: value.arp_accept,
+            arp_notify: value.arp_notify,
+            accept_local: value.accept_local,
+            src_vmark: value.src_vmark,
+            proxy_arp_pvlan: value.proxy_arp_pvlan,
+            route_localnet: value.route_localnet,
+            igmpv2_unsolicited_report_interval: value
+                .igmpv2_unsolicited_report_interval,
+            igmpv3_unsolicited_report_interval: value
+                .igmpv3_unsolicited_report_interval,
+            ignore_routes_with_linkdown: value.ignore_routes_with_linkdown,
+            drop_unicast_in_l2_multicast: value.drop_unicast_in_l2_multicast,
+            drop_gratuitous_arp: value.drop_gratuitous_arp,
+            bc_forwarding: value.bc_forwarding,
+            arp_evict_nocarrier: value.arp_evict_nocarrier,
+        }
     }
 }
 
 impl Emitable for InetDevConf {
     fn buffer_len(&self) -> usize {
-        DEV_CONF_LEN
+        size_of::<InetDevConfBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = InetDevConfBuffer::new(buffer);
-        buffer.set_forwarding(self.forwarding);
-        buffer.set_mc_forwarding(self.mc_forwarding);
-        buffer.set_proxy_arp(self.proxy_arp);
-        buffer.set_accept_redirects(self.accept_redirects);
-        buffer.set_secure_redirects(self.secure_redirects);
-        buffer.set_send_redirects(self.send_redirects);
-        buffer.set_shared_media(self.shared_media);
-        buffer.set_rp_filter(self.rp_filter);
-        buffer.set_accept_source_route(self.accept_source_route);
-        buffer.set_bootp_relay(self.bootp_relay);
-        buffer.set_log_martians(self.log_martians);
-        buffer.set_tag(self.tag);
-        buffer.set_arpfilter(self.arpfilter);
-        buffer.set_medium_id(self.medium_id);
-        buffer.set_noxfrm(self.noxfrm);
-        buffer.set_nopolicy(self.nopolicy);
-        buffer.set_force_igmp_version(self.force_igmp_version);
-        buffer.set_arp_announce(self.arp_announce);
-        buffer.set_arp_ignore(self.arp_ignore);
-        buffer.set_promote_secondaries(self.promote_secondaries);
-        buffer.set_arp_accept(self.arp_accept);
-        buffer.set_arp_notify(self.arp_notify);
-        buffer.set_accept_local(self.accept_local);
-        buffer.set_src_vmark(self.src_vmark);
-        buffer.set_proxy_arp_pvlan(self.proxy_arp_pvlan);
-        buffer.set_route_localnet(self.route_localnet);
-        buffer.set_igmpv2_unsolicited_report_interval(
-            self.igmpv2_unsolicited_report_interval,
-        );
-        buffer.set_igmpv3_unsolicited_report_interval(
-            self.igmpv3_unsolicited_report_interval,
-        );
-        buffer
-            .set_ignore_routes_with_linkdown(self.ignore_routes_with_linkdown);
-        buffer.set_drop_unicast_in_l2_multicast(
-            self.drop_unicast_in_l2_multicast,
-        );
-        buffer.set_drop_gratuitous_arp(self.drop_gratuitous_arp);
-        buffer.set_bc_forwarding(self.bc_forwarding);
-        buffer.set_arp_evict_nocarrier(self.arp_evict_nocarrier);
+        let raw = InetDevConfBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

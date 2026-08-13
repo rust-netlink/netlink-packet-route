@@ -3,6 +3,7 @@
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::link::VlanProtocol;
 
@@ -42,11 +43,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfVlan {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            IFLA_VF_VLAN_INFO => Self::Info(
-                VfVlanInfo::parse(&VfVlanInfoBuffer::new(payload)).context(
-                    format!("invalid IFLA_VF_VLAN_INFO {payload:?}"),
-                )?,
-            ),
+            IFLA_VF_VLAN_INFO => {
+                Self::Info(VfVlanInfo::parse(payload).context(format!(
+                    "invalid IFLA_VF_VLAN_INFO {payload:?}"
+                ))?)
+            }
             kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "failed to parse {kind} as DefaultNla: {payload:?}"
             ))?),
@@ -81,21 +82,50 @@ impl VfVlanInfo {
     }
 }
 
-buffer!(VfVlanInfoBuffer(VF_VLAN_INFO_LEN) {
-    vf_id: (u32, 0..4),
-    vlan_id: (u32, 4..8),
-    qos: (u32, 8..12),
-    protocol: (u16, 12..14),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct VfVlanInfoBuffer {
+    vf_id: u32,
+    vlan_id: u32,
+    qos: u32,
+    protocol: u16,
+    _padding: [u8; 2],
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<VfVlanInfoBuffer<&T>> for VfVlanInfo {
-    fn parse(buf: &VfVlanInfoBuffer<&T>) -> Result<Self, DecodeError> {
+impl VfVlanInfo {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            VfVlanInfoBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), VF_VLAN_INFO_LEN)
+            })?;
         Ok(Self {
-            vf_id: buf.vf_id(),
-            vlan_id: buf.vlan_id(),
-            qos: buf.qos(),
-            protocol: u16::from_be(buf.protocol()).into(),
+            vf_id: raw.vf_id,
+            vlan_id: raw.vlan_id,
+            qos: raw.qos,
+            protocol: u16::from_be(raw.protocol).into(),
         })
+    }
+}
+
+impl From<&VfVlanInfo> for VfVlanInfoBuffer {
+    fn from(vlan_info: &VfVlanInfo) -> Self {
+        Self {
+            vf_id: vlan_info.vf_id,
+            vlan_id: vlan_info.vlan_id,
+            qos: vlan_info.qos,
+            protocol: u16::from(vlan_info.protocol).to_be(),
+            _padding: [0; 2],
+        }
     }
 }
 
@@ -105,10 +135,7 @@ impl Emitable for VfVlanInfo {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = VfVlanInfoBuffer::new(buffer);
-        buffer.set_vf_id(self.vf_id);
-        buffer.set_vlan_id(self.vlan_id);
-        buffer.set_qos(self.qos);
-        buffer.set_protocol(u16::from(self.protocol).to_be());
+        let raw = VfVlanInfoBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

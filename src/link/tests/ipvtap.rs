@@ -6,7 +6,7 @@ use crate::{
     link::{
         link_flag::LinkFlags, InfoData, InfoIpVtap, InfoKind, IpVtapFlags,
         IpVtapMode, LinkAttribute, LinkHeader, LinkInfo, LinkLayerType,
-        LinkMessage, LinkMessageBuffer,
+        LinkMessage,
     },
     AddressFamily,
 };
@@ -38,10 +38,7 @@ fn test_ipvtap_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
