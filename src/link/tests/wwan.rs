@@ -10,8 +10,7 @@ use crate::{
         AfSpecUnspec, In6AddrGenMode, Inet6CacheInfo, Inet6DevConf,
         Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoWwan,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer, LinkMode, LinkXdp, Map, MctpPhysBinding, State,
-        XdpAttached,
+        LinkMode, LinkXdp, Map, MctpPhysBinding, State, XdpAttached,
     },
     AddressFamily,
 };
@@ -263,10 +262,7 @@ fn test_parsing_link_wwan_show() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -306,10 +302,7 @@ fn test_parsing_link_wwan_add() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

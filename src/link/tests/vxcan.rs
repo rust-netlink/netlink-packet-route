@@ -6,7 +6,7 @@ use crate::{
     link::{
         link_flag::LinkFlags, link_state::State, InfoData, InfoKind, InfoVxcan,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer, LinkMode,
+        LinkMode,
     },
     AddressFamily,
 };
@@ -77,10 +77,7 @@ fn test_vxcan_get_link_info() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -150,10 +147,7 @@ fn test_create_vxcan() {
         ..Default::default()
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

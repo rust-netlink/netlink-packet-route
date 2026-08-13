@@ -11,7 +11,6 @@ use crate::{
     link::{
         link_flag::LinkFlags, GeneveDf, InfoData, InfoGeneve, InfoKind,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer,
     },
     AddressFamily,
 };
@@ -58,10 +57,7 @@ fn test_geneve_link_info() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -113,10 +109,7 @@ fn test_geneve_link_local() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -174,10 +167,7 @@ fn test_geneve_link_local6() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

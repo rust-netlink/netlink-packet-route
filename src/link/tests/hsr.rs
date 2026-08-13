@@ -6,7 +6,6 @@ use crate::{
     link::{
         link_flag::LinkFlags, HsrProtocol, InfoData, InfoHsr, InfoKind,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer,
     },
     AddressFamily,
 };
@@ -47,10 +46,7 @@ fn test_parsing_link_hsr() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -98,10 +94,7 @@ fn test_parsing_interlink_hsr() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

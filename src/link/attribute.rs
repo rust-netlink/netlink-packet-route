@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use std::os::unix::io::RawFd;
+use std::{mem::size_of, os::unix::io::RawFd};
 
 use netlink_packet_core::{
     emit_i32, emit_u32, parse_i32, parse_string, parse_u32, parse_u8,
@@ -29,13 +29,11 @@ use super::{
     link_info::VecLinkInfo,
     proto_info::VecLinkProtoInfoInet6,
     sriov::{VecLinkVfInfo, VecLinkVfPort},
-    stats::LINK_STATS_LEN,
-    stats64::LINK_STATS64_LEN,
     xdp::VecLinkXdp,
     AfSpecBridge, AfSpecUnspec, LinkEvent, LinkExtentMask, LinkInfo, LinkMode,
     LinkPhysId, LinkProtoInfoBridge, LinkProtoInfoInet6,
-    LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkXdp, Map, MapBuffer,
-    Prop, State, Stats, Stats64, Stats64Buffer, StatsBuffer, WirelessEvent,
+    LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkXdp, Map, Prop, State,
+    Stats, Stats64, Stats64Buffer, StatsBuffer, WirelessEvent,
 };
 use crate::AddressFamily;
 
@@ -249,8 +247,8 @@ impl Nla for LinkAttribute {
             | Self::GroIpv4MaxSize(_) => 4,
 
             Self::OperState(_) => 1,
-            Self::Stats(_) => LINK_STATS_LEN,
-            Self::Stats64(_) => LINK_STATS64_LEN,
+            Self::Stats(_) => size_of::<StatsBuffer>(),
+            Self::Stats64(_) => size_of::<Stats64Buffer>(),
             Self::Map(nla) => nla.buffer_len(),
             Self::LinkInfo(nlas) => nlas.as_slice().buffer_len(),
             Self::Xdp(nlas) => nlas.as_slice().buffer_len(),
@@ -662,38 +660,29 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_MAP => {
                 let err =
                     |payload| format!("Invalid IFLA_MAP value {payload:?}");
-                Self::Map(
-                    super::Map::parse(
-                        &MapBuffer::new_checked(payload)
-                            .context(err(payload))?,
-                    )
-                    .context(err(payload))?,
-                )
+                Self::Map(super::Map::parse(payload).context(err(payload))?)
             }
             IFLA_STATS => Self::Stats(
-                super::Stats::parse(&StatsBuffer::new(
+                super::Stats::parse(
                     expand_buffer_if_small(
                         payload,
-                        LINK_STATS_LEN,
+                        size_of::<StatsBuffer>(),
                         "IFLA_STATS",
                     )
                     .as_slice(),
-                ))
+                )
                 .context(format!("Invalid IFLA_STATS value {payload:?}"))?,
             ),
             IFLA_STATS64 => {
                 let payload = expand_buffer_if_small(
                     payload,
-                    LINK_STATS64_LEN,
+                    size_of::<Stats64Buffer>(),
                     "IFLA_STATS64",
                 );
                 Self::Stats64(
-                    super::Stats64::parse(&Stats64Buffer::new(
-                        payload.as_slice(),
-                    ))
-                    .context(format!(
-                        "Invalid IFLA_STATS64 value {payload:?}"
-                    ))?,
+                    super::Stats64::parse(payload.as_slice()).context(
+                        format!("Invalid IFLA_STATS64 value {payload:?}"),
+                    )?,
                 )
             }
             IFLA_AF_SPEC => match interface_family {

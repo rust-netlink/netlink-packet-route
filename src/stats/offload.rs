@@ -5,7 +5,7 @@ use netlink_packet_core::{
     Parseable, NLA_F_NESTED,
 };
 
-use crate::link::{Stats64, Stats64Buffer};
+use crate::link::Stats64;
 
 const IFLA_OFFLOAD_XSTATS_CPU_HIT: u16 = 1;
 const IFLA_OFFLOAD_XSTATS_HW_S_INFO: u16 = 2;
@@ -65,11 +65,7 @@ pub(crate) fn parse_offload_xstats_inner(
         let val = nla.value();
         result.push(match kind {
             IFLA_OFFLOAD_XSTATS_CPU_HIT => OffloadXstat::CpuHit(
-                Stats64::parse(
-                    &Stats64Buffer::new_checked(val)
-                        .context("invalid cpu hit stats")?,
-                )
-                .context("invalid cpu hit stats")?,
+                Stats64::parse(val).context("invalid cpu hit stats")?,
             ),
             IFLA_OFFLOAD_XSTATS_HW_S_INFO => OffloadXstat::HwStatsInfo(
                 HwStatsInfo::parse(val).context("invalid hw stats info")?,

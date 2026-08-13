@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_LINK_STATE_LEN: usize = 8;
 
@@ -17,16 +18,42 @@ impl VfInfoLinkState {
     }
 }
 
-buffer!(VfInfoLinkStateBuffer(VF_INFO_LINK_STATE_LEN) {
-    vf_id: (u32, 0..4),
-    state: (u32, 4..8),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct VfInfoLinkStateBuffer {
+    vf_id: u32,
+    state: u32,
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoLinkStateBuffer<&T>>
-    for VfInfoLinkState
-{
-    fn parse(buf: &VfInfoLinkStateBuffer<&T>) -> Result<Self, DecodeError> {
-        Ok(Self::new(buf.vf_id(), buf.state().into()))
+impl VfInfoLinkState {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = VfInfoLinkStateBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    VF_INFO_LINK_STATE_LEN,
+                )
+            })?;
+        Ok(Self::new(raw.vf_id, raw.state.into()))
+    }
+}
+
+impl From<&VfInfoLinkState> for VfInfoLinkStateBuffer {
+    fn from(link_state: &VfInfoLinkState) -> Self {
+        Self {
+            vf_id: link_state.vf_id,
+            state: link_state.state.into(),
+        }
     }
 }
 
@@ -36,9 +63,8 @@ impl Emitable for VfInfoLinkState {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = VfInfoLinkStateBuffer::new(buffer);
-        buffer.set_vf_id(self.vf_id);
-        buffer.set_state(self.state.into());
+        let raw = VfInfoLinkStateBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
 

@@ -7,7 +7,6 @@ use netlink_packet_core::{DefaultNla, Emitable, Parseable};
 use crate::link::{
     ErSpanDir, GreEncapFlags, GreEncapType, GreIOFlags, InfoData, InfoGre,
     InfoGre6, InfoKind, LinkAttribute, LinkInfo, LinkMessage,
-    LinkMessageBuffer,
 };
 
 #[test]
@@ -50,10 +49,7 @@ fn test_create_gre6_external() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -98,10 +94,7 @@ fn test_create_gre6tap_external() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -232,10 +225,7 @@ fn test_create_gre6() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -361,10 +351,7 @@ fn test_create_gre6_with_link() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -493,10 +480,7 @@ fn test_create_gre6tap() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -539,10 +523,7 @@ fn test_create_gre_external() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -586,10 +567,7 @@ fn test_create_gretap_external() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -699,10 +677,7 @@ fn test_create_gre() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -812,10 +787,7 @@ fn test_create_gre_with_link() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -926,10 +898,7 @@ fn test_create_gretap() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -1046,10 +1015,7 @@ fn test_create_erspan_v1() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -1172,10 +1138,7 @@ fn test_create_erspan_v2() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -1302,10 +1265,7 @@ fn test_create_ip6erspan_v1() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
@@ -1438,10 +1398,7 @@ fn test_create_ip6erspan_v2() {
         ],
         ..Default::default()
     };
-    assert_eq!(
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap(),
-        expected
-    );
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
     assert_eq!(buf, raw);

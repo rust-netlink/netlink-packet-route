@@ -8,7 +8,6 @@ use crate::{
     link::{
         link_flag::LinkFlags, AmtMode, InfoAmt, InfoData, InfoKind,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer,
     },
     AddressFamily,
 };
@@ -73,10 +72,7 @@ fn test_parsing_link_amt_gateway() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -134,10 +130,7 @@ fn test_parsing_link_amt_relay() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -189,10 +182,7 @@ fn test_parsing_link_amt_minimal() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

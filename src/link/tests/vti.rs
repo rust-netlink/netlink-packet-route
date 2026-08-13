@@ -10,7 +10,7 @@ use crate::{
         AfSpecUnspec, DevlinkPort, DpllPin, Inet6CacheInfo, Inet6DevConf,
         Inet6IfaceFlags, InetDevConf, InfoData, InfoKind, InfoVti,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer, LinkMode, LinkXdp, Map, State, XdpAttached,
+        LinkMode, LinkXdp, Map, State, XdpAttached,
     },
     AddressFamily,
 };
@@ -211,10 +211,7 @@ fn test_parsing_link_vti() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
@@ -438,10 +435,7 @@ fn test_parsing_link_vti6() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);

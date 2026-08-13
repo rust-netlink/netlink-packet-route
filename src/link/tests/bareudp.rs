@@ -5,7 +5,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     link::{
         link_flag::LinkFlags, InfoBareUdp, InfoData, InfoKind, LinkAttribute,
-        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+        LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
     },
     AddressFamily, EthernetProtocol,
 };
@@ -62,10 +62,7 @@ fn test_parsing_link_bareudp_basic() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

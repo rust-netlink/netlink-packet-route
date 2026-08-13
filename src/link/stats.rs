@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
 
-pub(crate) const LINK_STATS_LEN: usize = 96;
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
@@ -55,94 +56,120 @@ pub struct Stats {
     pub rx_nohandler: u32,
 }
 
-buffer!(StatsBuffer(LINK_STATS_LEN) {
-    rx_packets: (u32, 0..4),
-    tx_packets: (u32, 4..8),
-    rx_bytes: (u32, 8..12),
-    tx_bytes: (u32, 12..16),
-    rx_errors: (u32, 16..20),
-    tx_errors: (u32, 20..24),
-    rx_dropped: (u32, 24..28),
-    tx_dropped: (u32, 28..32),
-    multicast: (u32, 32..36),
-    collisions: (u32, 36..40),
-    rx_length_errors: (u32, 40..44),
-    rx_over_errors: (u32, 44..48),
-    rx_crc_errors: (u32, 48..52),
-    rx_frame_errors: (u32, 52..56),
-    rx_fifo_errors: (u32, 56..60),
-    rx_missed_errors: (u32, 60..64),
-    tx_aborted_errors: (u32, 64..68),
-    tx_carrier_errors: (u32, 68..72),
-    tx_fifo_errors: (u32, 72..76),
-    tx_heartbeat_errors: (u32, 76..80),
-    tx_window_errors: (u32, 80..84),
-    rx_compressed: (u32, 84..88),
-    tx_compressed: (u32, 88..92),
-    rx_nohandler: (u32, 92..96),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct StatsBuffer {
+    rx_packets: u32,
+    tx_packets: u32,
+    rx_bytes: u32,
+    tx_bytes: u32,
+    rx_errors: u32,
+    tx_errors: u32,
+    rx_dropped: u32,
+    tx_dropped: u32,
+    multicast: u32,
+    collisions: u32,
+    rx_length_errors: u32,
+    rx_over_errors: u32,
+    rx_crc_errors: u32,
+    rx_frame_errors: u32,
+    rx_fifo_errors: u32,
+    rx_missed_errors: u32,
+    tx_aborted_errors: u32,
+    tx_carrier_errors: u32,
+    tx_fifo_errors: u32,
+    tx_heartbeat_errors: u32,
+    tx_window_errors: u32,
+    rx_compressed: u32,
+    tx_compressed: u32,
+    rx_nohandler: u32,
+}
 
-impl<T: AsRef<[u8]>> Parseable<StatsBuffer<T>> for Stats {
-    fn parse(buf: &StatsBuffer<T>) -> Result<Self, DecodeError> {
+impl Stats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = StatsBuffer::ref_from_prefix(payload).map_err(|_| {
+            DecodeError::buffer_too_small(
+                payload.len(),
+                size_of::<StatsBuffer>(),
+            )
+        })?;
         Ok(Self {
-            rx_packets: buf.rx_packets(),
-            tx_packets: buf.tx_packets(),
-            rx_bytes: buf.rx_bytes(),
-            tx_bytes: buf.tx_bytes(),
-            rx_errors: buf.rx_errors(),
-            tx_errors: buf.tx_errors(),
-            rx_dropped: buf.rx_dropped(),
-            tx_dropped: buf.tx_dropped(),
-            multicast: buf.multicast(),
-            collisions: buf.collisions(),
-            rx_length_errors: buf.rx_length_errors(),
-            rx_over_errors: buf.rx_over_errors(),
-            rx_crc_errors: buf.rx_crc_errors(),
-            rx_frame_errors: buf.rx_frame_errors(),
-            rx_fifo_errors: buf.rx_fifo_errors(),
-            rx_missed_errors: buf.rx_missed_errors(),
-            tx_aborted_errors: buf.tx_aborted_errors(),
-            tx_carrier_errors: buf.tx_carrier_errors(),
-            tx_fifo_errors: buf.tx_fifo_errors(),
-            tx_heartbeat_errors: buf.tx_heartbeat_errors(),
-            tx_window_errors: buf.tx_window_errors(),
-            rx_compressed: buf.rx_compressed(),
-            tx_compressed: buf.tx_compressed(),
-            rx_nohandler: buf.rx_nohandler(),
+            rx_packets: raw.rx_packets,
+            tx_packets: raw.tx_packets,
+            rx_bytes: raw.rx_bytes,
+            tx_bytes: raw.tx_bytes,
+            rx_errors: raw.rx_errors,
+            tx_errors: raw.tx_errors,
+            rx_dropped: raw.rx_dropped,
+            tx_dropped: raw.tx_dropped,
+            multicast: raw.multicast,
+            collisions: raw.collisions,
+            rx_length_errors: raw.rx_length_errors,
+            rx_over_errors: raw.rx_over_errors,
+            rx_crc_errors: raw.rx_crc_errors,
+            rx_frame_errors: raw.rx_frame_errors,
+            rx_fifo_errors: raw.rx_fifo_errors,
+            rx_missed_errors: raw.rx_missed_errors,
+            tx_aborted_errors: raw.tx_aborted_errors,
+            tx_carrier_errors: raw.tx_carrier_errors,
+            tx_fifo_errors: raw.tx_fifo_errors,
+            tx_heartbeat_errors: raw.tx_heartbeat_errors,
+            tx_window_errors: raw.tx_window_errors,
+            rx_compressed: raw.rx_compressed,
+            tx_compressed: raw.tx_compressed,
+            rx_nohandler: raw.rx_nohandler,
         })
+    }
+}
+
+impl From<&Stats> for StatsBuffer {
+    fn from(value: &Stats) -> Self {
+        Self {
+            rx_packets: value.rx_packets,
+            tx_packets: value.tx_packets,
+            rx_bytes: value.rx_bytes,
+            tx_bytes: value.tx_bytes,
+            rx_errors: value.rx_errors,
+            tx_errors: value.tx_errors,
+            rx_dropped: value.rx_dropped,
+            tx_dropped: value.tx_dropped,
+            multicast: value.multicast,
+            collisions: value.collisions,
+            rx_length_errors: value.rx_length_errors,
+            rx_over_errors: value.rx_over_errors,
+            rx_crc_errors: value.rx_crc_errors,
+            rx_frame_errors: value.rx_frame_errors,
+            rx_fifo_errors: value.rx_fifo_errors,
+            rx_missed_errors: value.rx_missed_errors,
+            tx_aborted_errors: value.tx_aborted_errors,
+            tx_carrier_errors: value.tx_carrier_errors,
+            tx_fifo_errors: value.tx_fifo_errors,
+            tx_heartbeat_errors: value.tx_heartbeat_errors,
+            tx_window_errors: value.tx_window_errors,
+            rx_compressed: value.rx_compressed,
+            tx_compressed: value.tx_compressed,
+            rx_nohandler: value.rx_nohandler,
+        }
     }
 }
 
 impl Emitable for Stats {
     fn buffer_len(&self) -> usize {
-        LINK_STATS_LEN
+        size_of::<StatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = StatsBuffer::new(buffer);
-        buffer.set_rx_packets(self.rx_packets);
-        buffer.set_tx_packets(self.tx_packets);
-        buffer.set_rx_bytes(self.rx_bytes);
-        buffer.set_tx_bytes(self.tx_bytes);
-        buffer.set_rx_errors(self.rx_errors);
-        buffer.set_tx_errors(self.tx_errors);
-        buffer.set_rx_dropped(self.rx_dropped);
-        buffer.set_tx_dropped(self.tx_dropped);
-        buffer.set_multicast(self.multicast);
-        buffer.set_collisions(self.collisions);
-        buffer.set_rx_length_errors(self.rx_length_errors);
-        buffer.set_rx_over_errors(self.rx_over_errors);
-        buffer.set_rx_crc_errors(self.rx_crc_errors);
-        buffer.set_rx_frame_errors(self.rx_frame_errors);
-        buffer.set_rx_fifo_errors(self.rx_fifo_errors);
-        buffer.set_rx_missed_errors(self.rx_missed_errors);
-        buffer.set_tx_aborted_errors(self.tx_aborted_errors);
-        buffer.set_tx_carrier_errors(self.tx_carrier_errors);
-        buffer.set_tx_fifo_errors(self.tx_fifo_errors);
-        buffer.set_tx_heartbeat_errors(self.tx_heartbeat_errors);
-        buffer.set_tx_window_errors(self.tx_window_errors);
-        buffer.set_rx_compressed(self.rx_compressed);
-        buffer.set_tx_compressed(self.tx_compressed);
-        buffer.set_rx_nohandler(self.rx_nohandler);
+        let raw = StatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

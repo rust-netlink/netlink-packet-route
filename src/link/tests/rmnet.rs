@@ -10,8 +10,7 @@ use crate::{
         In6AddrGenMode, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags,
         InetDevConf, InfoData, InfoKind, InfoRmNet, InfoRmNetFlags,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer, LinkMode, LinkXdp, Map, RmNetFlags, State,
-        XdpAttached,
+        LinkMode, LinkXdp, Map, RmNetFlags, State, XdpAttached,
     },
     AddressFamily,
 };
@@ -262,10 +261,7 @@ fn test_parsing_link_rmnet() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

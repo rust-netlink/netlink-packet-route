@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
 
-pub(crate) const ICMP6_STATS_LEN: usize = 56;
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
 #[non_exhaustive]
@@ -16,43 +17,70 @@ pub struct Icmp6Stats {
     pub rate_limit_host: i64,
 }
 
-buffer!(Icmp6StatsBuffer(ICMP6_STATS_LEN) {
-    num: (i64, 0..8),
-    in_msgs: (i64, 8..16),
-    in_errors: (i64, 16..24),
-    out_msgs: (i64, 24..32),
-    out_errors: (i64, 32..40),
-    csum_errors: (i64, 40..48),
-    rate_limit_host: (i64, 48..56),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct Icmp6StatsBuffer {
+    num: i64,
+    in_msgs: i64,
+    in_errors: i64,
+    out_msgs: i64,
+    out_errors: i64,
+    csum_errors: i64,
+    rate_limit_host: i64,
+}
 
-impl<T: AsRef<[u8]>> Parseable<Icmp6StatsBuffer<T>> for Icmp6Stats {
-    fn parse(buf: &Icmp6StatsBuffer<T>) -> Result<Self, DecodeError> {
+impl Icmp6Stats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            Icmp6StatsBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<Icmp6StatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            num: buf.num(),
-            in_msgs: buf.in_msgs(),
-            in_errors: buf.in_errors(),
-            out_msgs: buf.out_msgs(),
-            out_errors: buf.out_errors(),
-            csum_errors: buf.csum_errors(),
-            rate_limit_host: buf.rate_limit_host(),
+            num: raw.num,
+            in_msgs: raw.in_msgs,
+            in_errors: raw.in_errors,
+            out_msgs: raw.out_msgs,
+            out_errors: raw.out_errors,
+            csum_errors: raw.csum_errors,
+            rate_limit_host: raw.rate_limit_host,
         })
+    }
+}
+
+impl From<&Icmp6Stats> for Icmp6StatsBuffer {
+    fn from(stats: &Icmp6Stats) -> Self {
+        Self {
+            num: stats.num,
+            in_msgs: stats.in_msgs,
+            in_errors: stats.in_errors,
+            out_msgs: stats.out_msgs,
+            out_errors: stats.out_errors,
+            csum_errors: stats.csum_errors,
+            rate_limit_host: stats.rate_limit_host,
+        }
     }
 }
 
 impl Emitable for Icmp6Stats {
     fn buffer_len(&self) -> usize {
-        ICMP6_STATS_LEN
+        size_of::<Icmp6StatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = Icmp6StatsBuffer::new(buffer);
-        buffer.set_num(self.num);
-        buffer.set_in_msgs(self.in_msgs);
-        buffer.set_in_errors(self.in_errors);
-        buffer.set_out_msgs(self.out_msgs);
-        buffer.set_out_errors(self.out_errors);
-        buffer.set_csum_errors(self.csum_errors);
-        buffer.set_rate_limit_host(self.rate_limit_host);
+        let raw = Icmp6StatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

@@ -9,7 +9,7 @@ use super::{
     offload::{parse_offload_xstats_inner, OffloadXstat},
     xstats::{LinkXstatGroup, VecLinkXstats},
 };
-use crate::link::{Stats64, Stats64Buffer};
+use crate::link::Stats64;
 
 pub(crate) const IFLA_STATS_LINK_64: u16 = 1;
 pub(crate) const IFLA_STATS_LINK_XSTATS: u16 = 2;
@@ -72,11 +72,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_STATS_LINK_64 => Self::Link64(
-                Stats64::parse(
-                    &Stats64Buffer::new_checked(payload)
-                        .context("invalid IFLA_STATS_LINK_64 value")?,
-                )
-                .context("invalid IFLA_STATS_LINK_64 value")?,
+                Stats64::parse(payload)
+                    .context("invalid IFLA_STATS_LINK_64 value")?,
             ),
             IFLA_STATS_LINK_XSTATS => {
                 let err = "invalid IFLA_STATS_LINK_XSTATS value";

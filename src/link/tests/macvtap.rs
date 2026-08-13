@@ -7,9 +7,9 @@ use crate::{
         link_flag::LinkFlags, AfSpecInet, AfSpecInet6, AfSpecUnspec,
         Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoData,
         InfoKind, InfoMacVtap, LinkAttribute, LinkHeader, LinkInfo,
-        LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp,
-        MacVtapFlags, MacVtapMacAddressMode, MacVtapMode, Map, State, Stats,
-        Stats64, XdpAttached,
+        LinkLayerType, LinkMessage, LinkMode, LinkXdp, MacVtapFlags,
+        MacVtapMacAddressMode, MacVtapMode, Map, State, Stats, Stats64,
+        XdpAttached,
     },
     AddressFamily,
 };
@@ -334,10 +334,7 @@ fn test_macvtap_link_info() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -379,10 +376,7 @@ fn test_macvtap_modify_mac_addr_mode() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

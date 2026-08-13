@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_TX_RATE_LEN: usize = 8;
 
@@ -17,19 +18,45 @@ impl VfInfoTxRate {
     }
 }
 
-buffer!(VfInfoTxRateBuffer(VF_INFO_TX_RATE_LEN) {
-    vf_id: (u32, 0..4),
-    rate: (u32, 4..8),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct VfInfoTxRateBuffer {
+    vf_id: u32,
+    rate: u32,
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoTxRateBuffer<&T>>
-    for VfInfoTxRate
-{
-    fn parse(buf: &VfInfoTxRateBuffer<&T>) -> Result<Self, DecodeError> {
+impl VfInfoTxRate {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            VfInfoTxRateBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    VF_INFO_TX_RATE_LEN,
+                )
+            })?;
         Ok(Self {
-            vf_id: buf.vf_id(),
-            rate: buf.rate(),
+            vf_id: raw.vf_id,
+            rate: raw.rate,
         })
+    }
+}
+
+impl From<&VfInfoTxRate> for VfInfoTxRateBuffer {
+    fn from(rate: &VfInfoTxRate) -> Self {
+        Self {
+            vf_id: rate.vf_id,
+            rate: rate.rate,
+        }
     }
 }
 
@@ -39,8 +66,7 @@ impl Emitable for VfInfoTxRate {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = VfInfoTxRateBuffer::new(buffer);
-        buffer.set_vf_id(self.vf_id);
-        buffer.set_rate(self.rate);
+        let raw = VfInfoTxRateBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

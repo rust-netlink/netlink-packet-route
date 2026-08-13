@@ -1,21 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::Ipv6Addr;
+use std::{mem::size_of, net::Ipv6Addr};
 
 use netlink_packet_core::{
     emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
     ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
-use super::{
-    super::{
-        buffer_tool::expand_buffer_if_small, Icmp6Stats, Icmp6StatsBuffer,
-        Inet6CacheInfo, Inet6CacheInfoBuffer, Inet6DevConf, Inet6DevConfBuffer,
-        Inet6IfaceFlags, Inet6Stats, Inet6StatsBuffer,
-    },
-    inet6_devconf::LINK_INET6_DEV_CONF_LEN,
-    inet6_icmp::ICMP6_STATS_LEN,
-    inet6_stats::INET6_STATS_LEN,
+use super::super::{
+    buffer_tool::expand_buffer_if_small, Icmp6Stats, Icmp6StatsBuffer,
+    Inet6CacheInfo, Inet6DevConf, Inet6DevConfBuffer, Inet6IfaceFlags,
+    Inet6Stats, Inet6StatsBuffer,
 };
 use crate::{ip::parse_ipv6_addr, link::af_spec::In6AddrGenMode};
 
@@ -111,47 +106,46 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
             IFLA_INET6_FLAGS => Self::Flags(Inet6IfaceFlags::from_bits_retain(
                 parse_u32(payload).context("invalid IFLA_INET6_FLAGS value")?,
             )),
-            IFLA_INET6_CACHEINFO => Self::CacheInfo(
-                Inet6CacheInfo::parse(&Inet6CacheInfoBuffer::new(payload))
-                    .context(format!(
-                        "invalid IFLA_INET6_CACHEINFO value {payload:?}"
-                    ))?,
-            ),
+            IFLA_INET6_CACHEINFO => {
+                Self::CacheInfo(Inet6CacheInfo::parse(payload).context(
+                    format!("invalid IFLA_INET6_CACHEINFO value {payload:?}"),
+                )?)
+            }
             IFLA_INET6_CONF => Self::DevConf(
-                Inet6DevConf::parse(&Inet6DevConfBuffer::new(
+                Inet6DevConf::parse(
                     expand_buffer_if_small(
                         payload,
-                        LINK_INET6_DEV_CONF_LEN,
+                        size_of::<Inet6DevConfBuffer>(),
                         "IFLA_INET6_CONF",
                     )
                     .as_slice(),
-                ))
+                )
                 .context(format!(
                     "invalid IFLA_INET6_CONF value {payload:?}"
                 ))?,
             ),
             IFLA_INET6_STATS => Self::Stats(
-                Inet6Stats::parse(&Inet6StatsBuffer::new(
+                Inet6Stats::parse(
                     expand_buffer_if_small(
                         payload,
-                        INET6_STATS_LEN,
+                        size_of::<Inet6StatsBuffer>(),
                         "IFLA_INET6_STATS",
                     )
                     .as_slice(),
-                ))
+                )
                 .context(format!(
                     "invalid IFLA_INET6_STATS value {payload:?}"
                 ))?,
             ),
             IFLA_INET6_ICMP6STATS => Self::Icmp6Stats(
-                super::super::Icmp6Stats::parse(&Icmp6StatsBuffer::new(
+                Icmp6Stats::parse(
                     expand_buffer_if_small(
                         payload,
-                        ICMP6_STATS_LEN,
+                        size_of::<Icmp6StatsBuffer>(),
                         "IFLA_INET6_ICMP6STATS",
                     )
                     .as_slice(),
-                ))
+                )
                 .context(format!(
                     "invalid IFLA_INET6_ICMP6STATS value {payload:?}"
                 ))?,

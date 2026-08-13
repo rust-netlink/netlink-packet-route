@@ -9,8 +9,7 @@ use crate::{
         AfSpecInet, AfSpecInet6, AfSpecMctp, AfSpecUnspec, In6AddrGenMode,
         Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoKind,
         LinkAttribute, LinkFlags, LinkHeader, LinkInfo, LinkLayerType,
-        LinkMessage, LinkMessageBuffer, LinkMode, LinkXdp, Map, State,
-        XdpAttached,
+        LinkMessage, LinkMode, LinkXdp, Map, State, XdpAttached,
     },
     AddressFamily,
 };
@@ -261,10 +260,7 @@ fn test_parsing_link_wireguard() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);

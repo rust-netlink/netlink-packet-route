@@ -5,7 +5,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     link::{
         link_flag::LinkFlags, InfoData, InfoKind, InfoVeth, LinkAttribute,
-        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
+        LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
     },
     AddressFamily,
 };
@@ -43,10 +43,7 @@ fn test_veth_get_link_info() {
         )])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -111,10 +108,7 @@ fn test_crate_veth() {
         ..Default::default()
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

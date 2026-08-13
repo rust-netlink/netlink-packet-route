@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const MAX_ADDR_LEN: usize = 32;
 
@@ -28,14 +29,39 @@ impl VfInfoMac {
     }
 }
 
-buffer!(VfInfoMacBuffer(VF_INFO_MAC_LEN) {
-    vf_id: (u32, 0..4),
-    mac: (slice, 4..VF_INFO_MAC_LEN),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct VfInfoMacBuffer {
+    vf_id: u32,
+    mac: [u8; MAX_ADDR_LEN],
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoMacBuffer<&T>> for VfInfoMac {
-    fn parse(buf: &VfInfoMacBuffer<&T>) -> Result<Self, DecodeError> {
-        Ok(Self::new(buf.vf_id(), buf.mac()))
+impl VfInfoMac {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            VfInfoMacBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), VF_INFO_MAC_LEN)
+            })?;
+        Ok(Self::new(raw.vf_id, &raw.mac))
+    }
+}
+
+impl From<&VfInfoMac> for VfInfoMacBuffer {
+    fn from(mac: &VfInfoMac) -> Self {
+        Self {
+            vf_id: mac.vf_id,
+            mac: mac.mac,
+        }
     }
 }
 
@@ -45,8 +71,7 @@ impl Emitable for VfInfoMac {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = VfInfoMacBuffer::new(buffer);
-        buffer.set_vf_id(self.vf_id);
-        buffer.mac_mut().copy_from_slice(&self.mac);
+        let raw = VfInfoMacBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{Nla, NLA_F_NESTED};
 
-use crate::link::{AfSpecInet, InetDevConf};
+use crate::link::{AfSpecInet, InetDevConf, InetDevConfBuffer};
 
 const IFLA_INET_CONF: u16 = 1;
-const DEV_CONF_LEN: usize = 132;
 
 #[test]
 fn test_devconf_request_emit_forwarding_on() {
@@ -65,7 +66,7 @@ fn test_devconf_flat_emit_forwarding_on() {
     req.emit_value(&mut buf);
 
     // Flat buffer: 132 bytes, first 4 bytes = forwarding=1
-    assert_eq!(val_len, DEV_CONF_LEN);
+    assert_eq!(val_len, size_of::<InetDevConfBuffer>());
     assert_eq!(&buf[0..4], &[0x01, 0x00, 0x00, 0x00]);
 }
 

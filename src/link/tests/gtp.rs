@@ -6,7 +6,6 @@ use crate::{
     link::{
         link_flag::LinkFlags, GtpRole, InfoData, InfoGtp, InfoKind,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMessageBuffer,
     },
     AddressFamily,
 };
@@ -45,10 +44,7 @@ fn test_parsing_link_gtp() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

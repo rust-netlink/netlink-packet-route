@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_RATE_LEN: usize = 12;
 
@@ -22,19 +23,45 @@ impl VfInfoRate {
     }
 }
 
-buffer!(VfInfoRateBuffer(VF_INFO_RATE_LEN) {
-    vf_id: (u32, 0..4),
-    min_tx_rate: (u32, 4..8),
-    max_tx_rate: (u32, 8..12)
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct VfInfoRateBuffer {
+    vf_id: u32,
+    min_tx_rate: u32,
+    max_tx_rate: u32,
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<VfInfoRateBuffer<&T>> for VfInfoRate {
-    fn parse(buf: &VfInfoRateBuffer<&T>) -> Result<Self, DecodeError> {
+impl VfInfoRate {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            VfInfoRateBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), VF_INFO_RATE_LEN)
+            })?;
         Ok(Self {
-            vf_id: buf.vf_id(),
-            min_tx_rate: buf.min_tx_rate(),
-            max_tx_rate: buf.max_tx_rate(),
+            vf_id: raw.vf_id,
+            min_tx_rate: raw.min_tx_rate,
+            max_tx_rate: raw.max_tx_rate,
         })
+    }
+}
+
+impl From<&VfInfoRate> for VfInfoRateBuffer {
+    fn from(rate: &VfInfoRate) -> Self {
+        Self {
+            vf_id: rate.vf_id,
+            min_tx_rate: rate.min_tx_rate,
+            max_tx_rate: rate.max_tx_rate,
+        }
     }
 }
 
@@ -44,9 +71,7 @@ impl Emitable for VfInfoRate {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = VfInfoRateBuffer::new(buffer);
-        buffer.set_vf_id(self.vf_id);
-        buffer.set_min_tx_rate(self.min_tx_rate);
-        buffer.set_max_tx_rate(self.max_tx_rate);
+        let raw = VfInfoRateBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

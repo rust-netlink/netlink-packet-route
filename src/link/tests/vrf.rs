@@ -10,8 +10,8 @@ use crate::{
         AfSpecInet, AfSpecInet6, AfSpecUnspec, Icmp6Stats, Inet6CacheInfo,
         Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, InfoData,
         InfoKind, InfoPortData, InfoPortKind, InfoVrf, LinkAttribute,
-        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer,
-        LinkMode, LinkXdp, Map, State, Stats, Stats64, XdpAttached,
+        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkXdp,
+        Map, State, Stats, Stats64, XdpAttached,
     },
     AddressFamily,
 };
@@ -43,10 +43,7 @@ fn test_parsing_link_vrf() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -350,7 +347,7 @@ fn test_link_info_with_ifla_vrf_port_table() {
             ]),
         ],
     };
-    let link = LinkMessage::parse(&LinkMessageBuffer::new(&data)).unwrap();
+    let link = LinkMessage::parse(&data).unwrap();
     assert_eq!(expected, link);
     let _buf = vec![0; data.len()];
     // FIXME: the packet we write is not a perfect match with the

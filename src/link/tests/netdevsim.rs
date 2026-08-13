@@ -9,8 +9,7 @@ use crate::{
         AfSpecInet, AfSpecInet6, AfSpecUnspec, DevlinkPort, In6AddrGenMode,
         Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf,
         LinkAttribute, LinkFlags, LinkHeader, LinkLayerType, LinkMessage,
-        LinkMessageBuffer, LinkMode, LinkPhysId, LinkXdp, Map, State,
-        XdpAttached,
+        LinkMode, LinkPhysId, LinkXdp, Map, State, XdpAttached,
     },
     AddressFamily,
 };
@@ -287,10 +286,7 @@ fn test_show_netdevsim() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
