@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{DefaultNla, Emitable, Nla, NlaBuffer, Parseable};
 
 use crate::{
     tc::{
@@ -418,4 +418,27 @@ fn tc_action_message_parse_back_example_value() {
     )
     .unwrap();
     assert_eq!(orig, parsed);
+}
+
+#[test]
+fn tc_action_root_time_delta_native_byte_order() {
+    // TCA_ROOT_TIME_DELTA is an NLA_U32 attribute: the kernel reads it with
+    // nla_get_u32(), i.e. in native byte order. The payload must therefore be
+    // the native-endian bytes of the value, not big-endian.
+    let value = 0x12345678u32;
+    let attr = RootTimeDelta(value);
+
+    let mut payload = vec![0u8; attr.value_len()];
+    attr.emit_value(&mut payload);
+    assert_eq!(payload, value.to_ne_bytes());
+
+    let mut raw = Vec::new();
+    raw.extend_from_slice(&8u16.to_ne_bytes());
+    raw.extend_from_slice(&attr.kind().to_ne_bytes());
+    raw.extend_from_slice(&value.to_ne_bytes());
+    let buf = NlaBuffer::new_checked(&raw).unwrap();
+    assert_eq!(
+        TcActionMessageAttribute::parse(&buf).unwrap(),
+        RootTimeDelta(value)
+    );
 }
