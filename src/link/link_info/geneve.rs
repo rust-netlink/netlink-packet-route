@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, emit_u32_be, parse_u16_be, parse_u32, parse_u32_be,
-    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    emit_u16_be, emit_u32, emit_u32_be, parse_ip, parse_u16_be, parse_u32,
+    parse_u32_be, parse_u8, DecodeError, DefaultNla, ErrorContext, Nla,
+    NlaBuffer, Parseable,
 };
 
 const IFLA_GENEVE_ID: u16 = 1;
@@ -21,6 +22,8 @@ const IFLA_GENEVE_LABEL: u16 = 11;
 const IFLA_GENEVE_TTL_INHERIT: u16 = 12;
 const IFLA_GENEVE_DF: u16 = 13;
 const IFLA_GENEVE_INNER_PROTO_INHERIT: u16 = 14;
+const IFLA_GENEVE_LOCAL: u16 = 17;
+const IFLA_GENEVE_LOCAL6: u16 = 18;
 
 const GENEVE_DF_UNSET: u8 = 0;
 const GENEVE_DF_SET: u8 = 1;
@@ -91,6 +94,8 @@ pub enum InfoGeneve {
     Id(u32),
     Remote(Ipv4Addr),
     Remote6(Ipv6Addr),
+    Local(Ipv4Addr),
+    Local6(Ipv6Addr),
     Ttl(u8),
     Tos(u8),
     Port(u16),
@@ -108,8 +113,10 @@ pub enum InfoGeneve {
 impl Nla for InfoGeneve {
     fn value_len(&self) -> usize {
         match self {
-            Self::Id(_) | Self::Remote(_) | Self::Label(_) => 4,
-            Self::Remote6(_) => 16,
+            Self::Id(_) | Self::Remote(_) | Self::Local(_) | Self::Label(_) => {
+                4
+            }
+            Self::Remote6(_) | Self::Local6(_) => 16,
             Self::Ttl(_)
             | Self::Tos(_)
             | Self::UdpCsum(_)
@@ -128,6 +135,8 @@ impl Nla for InfoGeneve {
             Self::Id(value) => emit_u32(buffer, *value).unwrap(),
             Self::Remote(value) => buffer.copy_from_slice(&value.octets()),
             Self::Remote6(value) => buffer.copy_from_slice(&value.octets()),
+            Self::Local(value) => buffer.copy_from_slice(&value.octets()),
+            Self::Local6(value) => buffer.copy_from_slice(&value.octets()),
             Self::Ttl(value) | Self::Tos(value) => buffer[0] = *value,
             Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
             Self::CollectMetadata | Self::InnerProtoInherit => (),
@@ -146,6 +155,8 @@ impl Nla for InfoGeneve {
             Self::Id(_) => IFLA_GENEVE_ID,
             Self::Remote(_) => IFLA_GENEVE_REMOTE,
             Self::Remote6(_) => IFLA_GENEVE_REMOTE6,
+            Self::Local(_) => IFLA_GENEVE_LOCAL,
+            Self::Local6(_) => IFLA_GENEVE_LOCAL6,
             Self::Ttl(_) => IFLA_GENEVE_TTL,
             Self::Tos(_) => IFLA_GENEVE_TOS,
             Self::Port(_) => IFLA_GENEVE_PORT,
@@ -169,30 +180,62 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
             IFLA_GENEVE_ID => Self::Id(
                 parse_u32(payload).context("invalid IFLA_GENEVE_ID value")?,
             ),
-            IFLA_GENEVE_REMOTE => {
-                if payload.len() == 4 {
-                    let mut data = [0u8; 4];
-                    data.copy_from_slice(&payload[0..4]);
-                    Self::Remote(Ipv4Addr::from(data))
-                } else {
+            IFLA_GENEVE_REMOTE => match parse_ip(payload) {
+                Ok(IpAddr::V4(addr)) => Self::Remote(addr),
+                Ok(v) => {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFLA_GENEVE_REMOTE, got unexpected length of \
-                         IPv4 address payload {payload:?}"
-                    )));
+                        "Invalid IFLA_GENEVE_REMOTE, expecting IPv4 address, \
+                         but got {v}"
+                    )))
                 }
-            }
-            IFLA_GENEVE_REMOTE6 => {
-                if payload.len() == 16 {
-                    let mut data = [0u8; 16];
-                    data.copy_from_slice(&payload[0..16]);
-                    Self::Remote6(Ipv6Addr::from(data))
-                } else {
+                Err(e) => {
                     return Err(DecodeError::from(format!(
-                        "Invalid IFLA_GENEVE_REMOTE6, got unexpected length \
-                         of IPv6 address payload {payload:?}"
-                    )));
+                        "Invalid IFLA_GENEVE_REMOTE {e}"
+                    )))
                 }
-            }
+            },
+            IFLA_GENEVE_REMOTE6 => match parse_ip(payload) {
+                Ok(IpAddr::V6(addr)) => Self::Remote6(addr),
+                Ok(v) => {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_GENEVE_REMOTE6, expecting IPv6 address, \
+                         but got {v}"
+                    )))
+                }
+                Err(e) => {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_GENEVE_REMOTE6 {e}"
+                    )))
+                }
+            },
+            IFLA_GENEVE_LOCAL => match parse_ip(payload) {
+                Ok(IpAddr::V4(addr)) => Self::Local(addr),
+                Ok(v) => {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_GENEVE_LOCAL, expecting IPv4 address, \
+                         but got {v}"
+                    )))
+                }
+                Err(e) => {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_GENEVE_LOCAL {e}"
+                    )))
+                }
+            },
+            IFLA_GENEVE_LOCAL6 => match parse_ip(payload) {
+                Ok(IpAddr::V6(addr)) => Self::Local6(addr),
+                Ok(v) => {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_GENEVE_LOCAL6, expecting IPv6 address, \
+                         but got {v}"
+                    )))
+                }
+                Err(e) => {
+                    return Err(DecodeError::from(format!(
+                        "Invalid IFLA_GENEVE_LOCAL6 {e}"
+                    )))
+                }
+            },
             IFLA_GENEVE_TTL => Self::Ttl(
                 parse_u8(payload).context("invalid IFLA_GENEVE_TTL value")?,
             ),
