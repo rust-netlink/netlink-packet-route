@@ -358,7 +358,9 @@ impl Nla for LinkAttribute {
             Self::PhysPortId(_) => IFLA_PHYS_PORT_ID,
             Self::PhysSwitchId(_) => IFLA_PHYS_SWITCH_ID,
             Self::LinkInfo(_) => IFLA_LINKINFO,
-            Self::ProtoInfoBridge(_) | Self::ProtoInfoInet6(_) => IFLA_PROTINFO,
+            Self::ProtoInfoBridge(_) | Self::ProtoInfoInet6(_) => {
+                IFLA_PROTINFO | NLA_F_NESTED
+            }
             Self::ProtoInfoUnknown(attr) => attr.kind(),
             Self::Xdp(_) => IFLA_XDP,
             Self::Event(_) => IFLA_EVENT,

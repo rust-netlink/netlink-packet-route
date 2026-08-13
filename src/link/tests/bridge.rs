@@ -17,7 +17,8 @@ use crate::{
         Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
         InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader,
         LinkInfo, LinkLayerType, LinkMessage, LinkMessageBuffer, LinkMode,
-        LinkXdp, Map, State, Stats, Stats64, VlanProtocol, XdpAttached,
+        LinkProtoInfoBridge, LinkXdp, Map, State, Stats, Stats64, VlanProtocol,
+        XdpAttached,
     },
     AddressFamily,
 };
@@ -779,6 +780,44 @@ fn test_parse_link_bridge_stp_mode() {
             LinkAttribute::DevlinkPort(vec![]),
             LinkAttribute::DpllPin(vec![]),
         ],
+    };
+
+    assert_eq!(
+        expected,
+        LinkMessage::parse(&LinkMessageBuffer::new(&raw)).unwrap()
+    );
+
+    let mut buf = vec![0; expected.buffer_len()];
+
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_parse_link_bridge_port_neigh_forward_grat() {
+    // nlmon capture (netlink message header removed) of the iproute2 request
+    // message of command:
+    // `bridge link set dev vethp0 neigh_forward_grat on`
+    // The running kernel (7.1) does not emit IFLA_BRPORT_NEIGH_FORWARD_GRAT
+    // in its response yet, so this test uses the request message.
+    let raw: Vec<u8> = vec![
+        0x07, 0x00, 0x00, 0x00, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x0c, 0x80, 0x05, 0x00, 0x2d, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Bridge,
+            index: 14,
+            link_layer_type: LinkLayerType::Netrom,
+            flags: LinkFlags::empty(),
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![LinkAttribute::ProtoInfoBridge(vec![
+            LinkProtoInfoBridge::NeighForwardGrat(true),
+        ])],
     };
 
     assert_eq!(

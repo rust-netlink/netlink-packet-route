@@ -52,6 +52,7 @@ const IFLA_BRPORT_MCAST_N_GROUPS: u16 = 41;
 const IFLA_BRPORT_MCAST_MAX_GROUPS: u16 = 42;
 const IFLA_BRPORT_NEIGH_VLAN_SUPPRESS: u16 = 43;
 const IFLA_BRPORT_BACKUP_NHID: u16 = 44;
+const IFLA_BRPORT_NEIGH_FORWARD_GRAT: u16 = 45;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -98,6 +99,7 @@ pub enum InfoBridgePort {
     MulticastMaxGroups(u32),
     NeighVlanSuppress(bool),
     BackupNextHopId(u32),
+    NeighForwardGrat(bool),
     Other(DefaultNla),
 }
 
@@ -127,7 +129,8 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::MrpInOpen(_)
             | InfoBridgePort::Locked(_)
             | InfoBridgePort::Mab(_)
-            | InfoBridgePort::NeighVlanSuppress(_) => 1,
+            | InfoBridgePort::NeighVlanSuppress(_)
+            | InfoBridgePort::NeighForwardGrat(_) => 1,
             InfoBridgePort::Priority(_)
             | InfoBridgePort::DesignatedPort(_)
             | InfoBridgePort::DesignatedCost(_)
@@ -173,7 +176,8 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::MrpInOpen(value)
             | InfoBridgePort::Locked(value)
             | InfoBridgePort::Mab(value)
-            | InfoBridgePort::NeighVlanSuppress(value) => {
+            | InfoBridgePort::NeighVlanSuppress(value)
+            | InfoBridgePort::NeighForwardGrat(value) => {
                 buffer[0] = if *value { 1 } else { 0 }
             }
             InfoBridgePort::Priority(value)
@@ -264,6 +268,9 @@ impl Nla for InfoBridgePort {
                 IFLA_BRPORT_NEIGH_VLAN_SUPPRESS
             }
             InfoBridgePort::BackupNextHopId(_) => IFLA_BRPORT_BACKUP_NHID,
+            InfoBridgePort::NeighForwardGrat(_) => {
+                IFLA_BRPORT_NEIGH_FORWARD_GRAT
+            }
             InfoBridgePort::Other(nla) => nla.kind(),
         }
     }
@@ -512,6 +519,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     format!("invalid IFLA_BRPORT_BACKUP_NHID {payload:?}"),
                 )?)
             }
+            IFLA_BRPORT_NEIGH_FORWARD_GRAT => InfoBridgePort::NeighForwardGrat(
+                parse_u8(payload).context({
+                    format!(
+                        "invalid IFLA_BRPORT_NEIGH_FORWARD_GRAT {payload:?}"
+                    )
+                })? > 0,
+            ),
             kind => InfoBridgePort::Other(DefaultNla::parse(buf).context({
                 format!(
                     "failed to parse bridge port NLA of type '{kind}' into \
