@@ -116,6 +116,7 @@ fn test_create_gre6() {
     //   ikey 42 okey 42 \
     //   local fc00::1 remote fc00::2 \
     //   ttl 64 encaplimit 2 flowlabel 42 \
+    //   fwmark 0x1234 \
     //   encap-sport 4242 encap-dport 4242
     // ```
     let raw: Vec<u8> = vec![
@@ -176,7 +177,7 @@ fn test_create_gre6() {
         0x00, 0x00, 0x00, 0x00, // 0
         0x08, 0x00, // length 8
         0x14, 0x00, // IFLA_GRE_FWMARK 20
-        0x00, 0x00, 0x00, 0x00, //
+        0x34, 0x12, 0x00, 0x00, // 0x1234
         0x05, 0x00, // length 5
         0x16, 0x00, // IFLA_GRE_ERSPAN_VER 22
         0x01, // 1
@@ -219,7 +220,7 @@ fn test_create_gre6() {
                     InfoGre6::EncapLimit(2),
                     InfoGre6::FlowLabel(0x42),
                     InfoGre6::Other(DefaultNla::new(13, vec![0; 4])),
-                    InfoGre6::FwMask(0),
+                    InfoGre6::FwMask(0x1234),
                     InfoGre6::ErSpanVer(1),
                     InfoGre6::EncapType(GreEncapType::default()),
                     // enabled by default for IPv6

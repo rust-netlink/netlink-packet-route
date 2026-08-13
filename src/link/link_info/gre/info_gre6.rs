@@ -93,7 +93,7 @@ impl Nla for InfoGre6 {
                 emit_u16_be(buffer, *port).unwrap()
             }
             Self::CollectMetadata => {}
-            Self::FwMask(fw_mask) => emit_u32_be(buffer, *fw_mask).unwrap(),
+            Self::FwMask(fw_mask) => emit_u32(buffer, *fw_mask).unwrap(),
             Self::Tos(value) => buffer[0] = *value,
             Self::ErSpanIndex(idx) => emit_u32(buffer, *idx).unwrap(),
             Self::ErSpanVer(v) => buffer[0] = *v,
@@ -191,8 +191,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre6 {
             ),
             IFLA_GRE_COLLECT_METADATA => Self::CollectMetadata,
             IFLA_GRE_FWMARK => Self::FwMask(
-                parse_u32_be(payload)
-                    .context("invalid IFLA_GRE_FWMARK value")?,
+                parse_u32(payload).context("invalid IFLA_GRE_FWMARK value")?,
             ),
             IFLA_GRE_TOS => Self::Tos(
                 parse_u8(payload).context("invalid IFLA_GRE_TOS value")?,
