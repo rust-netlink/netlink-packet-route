@@ -73,13 +73,7 @@ pub use netlink_packet_core::EthernetProtocol;
     target_os = "android",
 )))]
 pub use self::address_family_fallback::AddressFamily;
-pub use self::{
-    ip::IpProtocol,
-    message::{RouteNetlinkMessage, RouteNetlinkMessageBuffer},
-};
-
-#[macro_use]
-extern crate netlink_packet_core;
+pub use self::{ip::IpProtocol, message::RouteNetlinkMessage};
 
 #[cfg(test)]
 #[macro_use]

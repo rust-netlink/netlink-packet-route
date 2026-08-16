@@ -3,10 +3,11 @@
 use std::net::Ipv6Addr;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
-use super::cache_info::{CacheInfo, CacheInfoBuffer};
+use super::cache_info::CacheInfo;
 
 const PREFIX_ADDRESS: u16 = 1;
 const PREFIX_CACHEINFO: u16 = 2;
@@ -60,12 +61,24 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     )))
                 }
             }
-            PREFIX_CACHEINFO => Ok(Self::CacheInfo(
-                CacheInfo::parse(&CacheInfoBuffer::new(payload)).context(
+            PREFIX_CACHEINFO => {
+                Ok(Self::CacheInfo(CacheInfo::parse(payload).context(
                     format!("Invalid PREFIX_CACHEINFO: {payload:?}"),
-                )?,
-            )),
+                )?))
+            }
             _ => Ok(Self::Other(DefaultNla::parse(buf)?)),
         }
+    }
+}
+
+pub(crate) struct VecPrefixAttribute(pub(crate) Vec<PrefixAttribute>);
+
+impl Parseable<[u8]> for VecPrefixAttribute {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        let mut nlas = vec![];
+        for nla_buf in NlasIterator::new(buf) {
+            nlas.push(PrefixAttribute::parse(&nla_buf?)?);
+        }
+        Ok(Self(nlas))
     }
 }

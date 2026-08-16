@@ -6,7 +6,7 @@ use crate::{
     route::{RouteProtocol, RouteRealm},
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
-        RuleMessageBuffer, RulePortRange,
+        RulePortRange,
     },
     AddressFamily, IpProtocol,
 };
@@ -57,10 +57,7 @@ fn test_ipv4_tcp_sport_dport_realm() {
             }),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -116,10 +113,7 @@ fn test_ipv4_udp_sport_range_dport_range_reals_src_dst() {
             }),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

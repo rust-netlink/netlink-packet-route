@@ -8,7 +8,6 @@ use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
-        RuleMessageBuffer,
     },
     AddressFamily, IpProtocol,
 };
@@ -55,10 +54,7 @@ fn test_ipv4_iif_oif_prohibit() {
             ),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -103,10 +99,7 @@ fn test_ipv6_iif_oif_ipproto() {
             RuleAttribute::IpProtocol(IpProtocol::Icmp),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

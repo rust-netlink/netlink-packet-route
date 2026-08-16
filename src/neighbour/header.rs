@@ -1,29 +1,32 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{flags::NeighbourFlags, NeighbourState};
 use crate::{route::RouteType, AddressFamily};
 
-const NEIGHBOUR_HEADER_LEN: usize = 12;
+pub(crate) const NEIGHBOUR_HEADER_LEN: usize = 12;
 
-buffer!(NeighbourMessageBuffer(NEIGHBOUR_HEADER_LEN) {
-    family: (u8, 0),
-    ifindex: (u32, 4..8),
-    state: (u16, 8..10),
-    flags: (u8, 10),
-    kind: (u8, 11),
-    payload:(slice, NEIGHBOUR_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> NeighbourMessageBuffer<&'a T> {
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct NeighbourMessageBuffer {
+    family: u8,
+    _pad: [u8; 3],
+    ifindex: u32,
+    state: u16,
+    flags: u8,
+    kind: u8,
 }
 
 /// Neighbour headers have the following structure:
@@ -55,15 +58,35 @@ pub struct NeighbourHeader {
     pub kind: RouteType,
 }
 
-impl<T: AsRef<[u8]>> Parseable<NeighbourMessageBuffer<T>> for NeighbourHeader {
-    fn parse(buf: &NeighbourMessageBuffer<T>) -> Result<Self, DecodeError> {
+impl NeighbourHeader {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = NeighbourMessageBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    NEIGHBOUR_HEADER_LEN,
+                )
+            })?;
         Ok(Self {
-            family: buf.family().into(),
-            ifindex: buf.ifindex(),
-            state: buf.state().into(),
-            flags: NeighbourFlags::from_bits_retain(buf.flags()),
-            kind: buf.kind().into(),
+            family: raw.family.into(),
+            ifindex: raw.ifindex,
+            state: raw.state.into(),
+            flags: NeighbourFlags::from_bits_retain(raw.flags),
+            kind: raw.kind.into(),
         })
+    }
+}
+
+impl From<&NeighbourHeader> for NeighbourMessageBuffer {
+    fn from(header: &NeighbourHeader) -> Self {
+        Self {
+            family: header.family.into(),
+            _pad: [0; 3],
+            ifindex: header.ifindex,
+            state: header.state.into(),
+            flags: header.flags.bits(),
+            kind: header.kind.into(),
+        }
     }
 }
 
@@ -73,11 +96,7 @@ impl Emitable for NeighbourHeader {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = NeighbourMessageBuffer::new(buffer);
-        packet.set_family(self.family.into());
-        packet.set_ifindex(self.ifindex);
-        packet.set_state(self.state.into());
-        packet.set_flags(self.flags.bits());
-        packet.set_kind(self.kind.into());
+        let raw = NeighbourMessageBuffer::from(self);
+        buffer[..NEIGHBOUR_HEADER_LEN].copy_from_slice(raw.as_bytes());
     }
 }

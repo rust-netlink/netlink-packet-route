@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
 
-const NEIGHBOUR_TABLE_HEADER_LEN: usize = 4;
+pub(crate) const NEIGHBOUR_TABLE_HEADER_LEN: usize = 4;
 
-buffer!(NeighbourTableMessageBuffer(NEIGHBOUR_TABLE_HEADER_LEN) {
-    family: (u8, 0),
-    payload: (slice, NEIGHBOUR_TABLE_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> NeighbourTableMessageBuffer<&'a T> {
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct NeighbourTableMessageBuffer {
+    family: u8,
+    _pad: [u8; 3],
 }
 
 // kernel code is `struct rtgenmsg`
@@ -27,15 +30,27 @@ pub struct NeighbourTableHeader {
     pub family: AddressFamily,
 }
 
-impl<T: AsRef<[u8]>> Parseable<NeighbourTableMessageBuffer<T>>
-    for NeighbourTableHeader
-{
-    fn parse(
-        buf: &NeighbourTableMessageBuffer<T>,
-    ) -> Result<Self, DecodeError> {
+impl NeighbourTableHeader {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = NeighbourTableMessageBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    NEIGHBOUR_TABLE_HEADER_LEN,
+                )
+            })?;
         Ok(Self {
-            family: buf.family().into(),
+            family: raw.family.into(),
         })
+    }
+}
+
+impl From<&NeighbourTableHeader> for NeighbourTableMessageBuffer {
+    fn from(header: &NeighbourTableHeader) -> Self {
+        Self {
+            family: header.family.into(),
+            _pad: [0; 3],
+        }
     }
 }
 
@@ -45,7 +60,7 @@ impl Emitable for NeighbourTableHeader {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = NeighbourTableMessageBuffer::new(buffer);
-        packet.set_family(self.family.into());
+        let raw = NeighbourTableMessageBuffer::from(self);
+        buffer[..NEIGHBOUR_TABLE_HEADER_LEN].copy_from_slice(raw.as_bytes());
     }
 }

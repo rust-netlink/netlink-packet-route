@@ -2,7 +2,10 @@
 
 use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
 
-use crate::stats::{StatsAttribute, StatsHeader, StatsMessageBuffer};
+use crate::stats::{
+    attribute::VecStatsAttribute, header::STATS_HEADER_LEN, StatsAttribute,
+    StatsHeader,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -11,28 +14,15 @@ pub struct StatsMessage {
     pub attributes: Vec<StatsAttribute>,
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<StatsMessageBuffer<&'a T>>
-    for StatsMessage
-{
-    fn parse(buf: &StatsMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl Parseable<[u8]> for StatsMessage {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         Ok(Self {
             header: StatsHeader::parse(buf)
                 .context("failed to parse stats message header")?,
-            attributes: Vec::<StatsAttribute>::parse(buf)
-                .context("failed to parse stats message NLAs")?,
+            attributes: VecStatsAttribute::parse(&buf[STATS_HEADER_LEN..])
+                .context("failed to parse stats message NLAs")?
+                .0,
         })
-    }
-}
-
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<StatsMessageBuffer<&'a T>>
-    for Vec<StatsAttribute>
-{
-    fn parse(buf: &StatsMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut attributes = vec![];
-        for nla_buf in buf.attributes() {
-            attributes.push(StatsAttribute::parse(&nla_buf?)?);
-        }
-        Ok(attributes)
     }
 }
 

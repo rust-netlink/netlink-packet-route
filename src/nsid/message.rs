@@ -2,7 +2,10 @@
 
 use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
 
-use crate::nsid::{NsidAttribute, NsidHeader, NsidMessageBuffer};
+use super::{
+    attribute::VecNsidAttribute, header::NSID_HEADER_LEN, NsidAttribute,
+    NsidHeader,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -11,28 +14,15 @@ pub struct NsidMessage {
     pub attributes: Vec<NsidAttribute>,
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NsidMessageBuffer<&'a T>>
-    for NsidMessage
-{
-    fn parse(buf: &NsidMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl Parseable<[u8]> for NsidMessage {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         Ok(Self {
             header: NsidHeader::parse(buf)
                 .context("failed to parse nsid message header")?,
-            attributes: Vec::<NsidAttribute>::parse(buf)
-                .context("failed to parse nsid message NLAs")?,
+            attributes: VecNsidAttribute::parse(&buf[NSID_HEADER_LEN..])
+                .context("failed to parse nsid message NLAs")?
+                .0,
         })
-    }
-}
-
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NsidMessageBuffer<&'a T>>
-    for Vec<NsidAttribute>
-{
-    fn parse(buf: &NsidMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut attributes = vec![];
-        for nla_buf in buf.attributes() {
-            attributes.push(NsidAttribute::parse(&nla_buf?)?);
-        }
-        Ok(attributes)
     }
 }
 

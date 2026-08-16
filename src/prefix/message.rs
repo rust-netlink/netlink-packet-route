@@ -3,8 +3,8 @@
 use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
 
 use super::{
-    attribute::PrefixAttribute,
-    header::{PrefixHeader, PrefixMessageBuffer},
+    attribute::{PrefixAttribute, VecPrefixAttribute},
+    header::{PrefixHeader, PREFIX_HEADER_LEN},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -26,39 +26,14 @@ impl Emitable for PrefixMessage {
     }
 }
 
-impl<T: AsRef<[u8]>> Parseable<PrefixMessageBuffer<T>> for PrefixHeader {
-    fn parse(buf: &PrefixMessageBuffer<T>) -> Result<Self, DecodeError> {
-        Ok(Self {
-            prefix_family: buf.prefix_family(),
-            ifindex: buf.ifindex(),
-            prefix_type: buf.prefix_type(),
-            prefix_len: buf.prefix_len(),
-            flags: buf.flags(),
-        })
-    }
-}
-
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
-    for PrefixMessage
-{
-    fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl Parseable<[u8]> for PrefixMessage {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         Ok(Self {
             header: PrefixHeader::parse(buf)
                 .context("failed to parse prefix message header")?,
-            attributes: Vec::<PrefixAttribute>::parse(buf)
-                .context("failed to parse prefix message attributes")?,
+            attributes: VecPrefixAttribute::parse(&buf[PREFIX_HEADER_LEN..])
+                .context("failed to parse prefix message attributes")?
+                .0,
         })
-    }
-}
-
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<PrefixMessageBuffer<&'a T>>
-    for Vec<PrefixAttribute>
-{
-    fn parse(buf: &PrefixMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        for nla_buf in buf.nlas() {
-            nlas.push(PrefixAttribute::parse(&nla_buf?)?);
-        }
-        Ok(nlas)
     }
 }

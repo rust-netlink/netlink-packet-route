@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
@@ -11,38 +14,61 @@ pub struct NeighbourCacheInfo {
     pub refcnt: u32,
 }
 
-const NEIGHBOUR_CACHE_INFO_LEN: usize = 16;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct NeighbourCacheInfoBuffer {
+    confirmed: u32,
+    used: u32,
+    updated: u32,
+    refcnt: u32,
+}
 
-buffer!(NeighbourCacheInfoBuffer(NEIGHBOUR_CACHE_INFO_LEN) {
-    confirmed: (u32, 0..4),
-    used: (u32, 4..8),
-    updated: (u32, 8..12),
-    refcnt: (u32, 12..16),
-});
-
-impl<T: AsRef<[u8]>> Parseable<NeighbourCacheInfoBuffer<T>>
-    for NeighbourCacheInfo
-{
-    fn parse(buf: &NeighbourCacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+impl NeighbourCacheInfo {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = NeighbourCacheInfoBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<NeighbourCacheInfoBuffer>(),
+                )
+            })?;
         Ok(Self {
-            confirmed: buf.confirmed(),
-            used: buf.used(),
-            updated: buf.updated(),
-            refcnt: buf.refcnt(),
+            confirmed: raw.confirmed,
+            used: raw.used,
+            updated: raw.updated,
+            refcnt: raw.refcnt,
         })
+    }
+}
+
+impl From<&NeighbourCacheInfo> for NeighbourCacheInfoBuffer {
+    fn from(value: &NeighbourCacheInfo) -> Self {
+        Self {
+            confirmed: value.confirmed,
+            used: value.used,
+            updated: value.updated,
+            refcnt: value.refcnt,
+        }
     }
 }
 
 impl Emitable for NeighbourCacheInfo {
     fn buffer_len(&self) -> usize {
-        NEIGHBOUR_CACHE_INFO_LEN
+        size_of::<NeighbourCacheInfoBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = NeighbourCacheInfoBuffer::new(buffer);
-        buffer.set_confirmed(self.confirmed);
-        buffer.set_used(self.used);
-        buffer.set_updated(self.updated);
-        buffer.set_refcnt(self.refcnt);
+        let raw = NeighbourCacheInfoBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

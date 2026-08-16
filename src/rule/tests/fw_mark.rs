@@ -6,7 +6,6 @@ use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
-        RuleMessageBuffer,
     },
     AddressFamily,
 };
@@ -44,10 +43,7 @@ fn test_ipv4_fwmark_suppress_prefixlength() {
             RuleAttribute::FwMask(0xffffffff),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -91,10 +87,7 @@ fn test_ipv6_fwmark_suppress_ifgroup() {
             RuleAttribute::SuppressIfGroup(89),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

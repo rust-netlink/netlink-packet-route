@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
@@ -16,53 +19,76 @@ pub struct NeighbourTableConfig {
     pub proxy_qlen: u32,
 }
 
-pub const CONFIG_LEN: usize = 32;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct NeighbourTableConfigBuffer {
+    key_len: u16,
+    entry_size: u16,
+    entries: u32,
+    last_flush: u32,
+    last_rand: u32,
+    hash_rand: u32,
+    hash_mask: u32,
+    hash_chain_gc: u32,
+    proxy_qlen: u32,
+}
 
-buffer!(NeighbourTableConfigBuffer(CONFIG_LEN) {
-    key_len: (u16, 0..2),
-    entry_size: (u16, 2..4),
-    entries: (u32, 4..8),
-    last_flush: (u32, 8..12),
-    last_rand: (u32, 12..16),
-    hash_rand: (u32, 16..20),
-    hash_mask: (u32, 20..24),
-    hash_chain_gc: (u32, 24..28),
-    proxy_qlen: (u32, 28..32),
-});
-
-impl<T: AsRef<[u8]>> Parseable<NeighbourTableConfigBuffer<T>>
-    for NeighbourTableConfig
-{
-    fn parse(buf: &NeighbourTableConfigBuffer<T>) -> Result<Self, DecodeError> {
+impl NeighbourTableConfig {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = NeighbourTableConfigBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<NeighbourTableConfigBuffer>(),
+                )
+            })?;
         Ok(Self {
-            key_len: buf.key_len(),
-            entry_size: buf.entry_size(),
-            entries: buf.entries(),
-            last_flush: buf.last_flush(),
-            last_rand: buf.last_rand(),
-            hash_rand: buf.hash_rand(),
-            hash_mask: buf.hash_mask(),
-            hash_chain_gc: buf.hash_chain_gc(),
-            proxy_qlen: buf.proxy_qlen(),
+            key_len: raw.key_len,
+            entry_size: raw.entry_size,
+            entries: raw.entries,
+            last_flush: raw.last_flush,
+            last_rand: raw.last_rand,
+            hash_rand: raw.hash_rand,
+            hash_mask: raw.hash_mask,
+            hash_chain_gc: raw.hash_chain_gc,
+            proxy_qlen: raw.proxy_qlen,
         })
+    }
+}
+
+impl From<&NeighbourTableConfig> for NeighbourTableConfigBuffer {
+    fn from(value: &NeighbourTableConfig) -> Self {
+        Self {
+            key_len: value.key_len,
+            entry_size: value.entry_size,
+            entries: value.entries,
+            last_flush: value.last_flush,
+            last_rand: value.last_rand,
+            hash_rand: value.hash_rand,
+            hash_mask: value.hash_mask,
+            hash_chain_gc: value.hash_chain_gc,
+            proxy_qlen: value.proxy_qlen,
+        }
     }
 }
 
 impl Emitable for NeighbourTableConfig {
     fn buffer_len(&self) -> usize {
-        CONFIG_LEN
+        size_of::<NeighbourTableConfigBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = NeighbourTableConfigBuffer::new(buffer);
-        buffer.set_key_len(self.key_len);
-        buffer.set_entry_size(self.entry_size);
-        buffer.set_entries(self.entries);
-        buffer.set_last_flush(self.last_flush);
-        buffer.set_last_rand(self.last_rand);
-        buffer.set_hash_rand(self.hash_rand);
-        buffer.set_hash_mask(self.hash_mask);
-        buffer.set_hash_chain_gc(self.hash_chain_gc);
-        buffer.set_proxy_qlen(self.proxy_qlen);
+        let raw = NeighbourTableConfigBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

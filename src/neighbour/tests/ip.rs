@@ -10,8 +10,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     neighbour::{
         flags::NeighbourFlags, NeighbourAttribute, NeighbourCacheInfo,
-        NeighbourExtFlags, NeighbourHeader, NeighbourMessage,
-        NeighbourMessageBuffer, NeighbourState,
+        NeighbourExtFlags, NeighbourHeader, NeighbourMessage, NeighbourState,
     },
     route::{RouteProtocol, RouteType},
     AddressFamily,
@@ -54,10 +53,7 @@ fn test_ipv4_neighbour_show() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, NeighbourMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -106,10 +102,7 @@ fn test_ipv6_neighbour_show() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, NeighbourMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -160,10 +153,7 @@ fn test_ipv4_neighbour_protocol_show() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, NeighbourMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -196,10 +186,7 @@ fn test_ipv4_neighbour_add_ext_flags() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, NeighbourMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -243,10 +230,7 @@ fn test_ipv4_neighbour_show_ext_flags() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, NeighbourMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

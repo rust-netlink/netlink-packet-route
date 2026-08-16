@@ -1,32 +1,34 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{super::AddressFamily, flags::RuleFlags, RuleAction};
 
-const RULE_HEADER_LEN: usize = 12;
+pub(crate) const RULE_HEADER_LEN: usize = 12;
 
-buffer!(RuleMessageBuffer(RULE_HEADER_LEN) {
-    family: (u8, 0),
-    dst_len: (u8, 1),
-    src_len: (u8, 2),
-    tos: (u8, 3),
-    table: (u8, 4),
-    reserve_1: (u8, 5),
-    reserve_2: (u8, 6),
-    action: (u8, 7),
-    flags: (u32, 8..RULE_HEADER_LEN),
-    payload: (slice, RULE_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> RuleMessageBuffer<&'a T> {
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct RuleMessageBuffer {
+    family: u8,
+    dst_len: u8,
+    src_len: u8,
+    tos: u8,
+    table: u8,
+    reserve_1: u8,
+    reserve_2: u8,
+    action: u8,
+    flags: u32,
 }
 
 // Linux kernel code `struct fib_rule_hdr`
@@ -47,29 +49,41 @@ impl Emitable for RuleHeader {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = RuleMessageBuffer::new(buffer);
-        packet.set_family(self.family.into());
-        packet.set_dst_len(self.dst_len);
-        packet.set_src_len(self.src_len);
-        packet.set_table(self.table);
-        packet.set_tos(self.tos);
-        packet.set_action(self.action.into());
-        packet.set_flags(self.flags.bits());
+        let raw = RuleMessageBuffer::from(self);
+        buffer[..RULE_HEADER_LEN].copy_from_slice(raw.as_bytes());
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RuleMessageBuffer<&'a T>>
-    for RuleHeader
-{
-    fn parse(buf: &RuleMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl RuleHeader {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            RuleMessageBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), RULE_HEADER_LEN)
+            })?;
         Ok(RuleHeader {
-            family: buf.family().into(),
-            dst_len: buf.dst_len(),
-            src_len: buf.src_len(),
-            tos: buf.tos(),
-            table: buf.table(),
-            action: buf.action().into(),
-            flags: RuleFlags::from_bits_retain(buf.flags()),
+            family: raw.family.into(),
+            dst_len: raw.dst_len,
+            src_len: raw.src_len,
+            tos: raw.tos,
+            table: raw.table,
+            action: raw.action.into(),
+            flags: RuleFlags::from_bits_retain(raw.flags),
         })
+    }
+}
+
+impl From<&RuleHeader> for RuleMessageBuffer {
+    fn from(header: &RuleHeader) -> Self {
+        Self {
+            family: header.family.into(),
+            dst_len: header.dst_len,
+            src_len: header.src_len,
+            tos: header.tos,
+            table: header.table,
+            reserve_1: 0,
+            reserve_2: 0,
+            action: header.action.into(),
+            flags: header.flags.bits(),
+        }
     }
 }

@@ -7,7 +7,7 @@ use netlink_packet_core::{
 use crate::{
     stats::{
         AfSpecStats, HwStatsInfo, OffloadXstat, StatsAttribute,
-        StatsFilterMask, StatsHeader, StatsMessage, StatsMessageBuffer,
+        StatsFilterMask, StatsHeader, StatsMessage,
     },
     AddressFamily, RouteNetlinkMessage,
 };
@@ -66,10 +66,7 @@ fn test_parsing_combined_stats() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        StatsMessage::parse(&StatsMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
@@ -159,7 +156,7 @@ fn test_parsing_unknown_stats_attribute() {
         v
     };
 
-    let parsed = StatsMessage::parse(&StatsMessageBuffer::new(&raw)).unwrap();
+    let parsed = StatsMessage::parse(&raw).unwrap();
     assert_eq!(parsed.attributes.len(), 1);
     match &parsed.attributes[0] {
         StatsAttribute::Other(nla) => {

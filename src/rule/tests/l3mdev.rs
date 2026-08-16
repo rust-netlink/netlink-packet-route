@@ -6,7 +6,7 @@ use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
-        RuleMessageBuffer, RuleUidRange,
+        RuleUidRange,
     },
     AddressFamily,
 };
@@ -43,10 +43,7 @@ fn test_ipv4_l3mdev() {
             RuleAttribute::L3MDev(true),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -92,10 +89,7 @@ fn test_ipv6_l3mdev_uid() {
             }),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
