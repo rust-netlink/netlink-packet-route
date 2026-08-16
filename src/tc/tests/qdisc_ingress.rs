@@ -4,8 +4,8 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     tc::{
-        TcAttribute, TcHandle, TcHeader, TcMessage, TcMessageBuffer, TcStats,
-        TcStats2, TcStatsBasic, TcStatsQueue,
+        TcAttribute, TcHandle, TcHeader, TcMessage, TcStats, TcStats2,
+        TcStatsBasic, TcStatsQueue,
     },
     AddressFamily,
 };
@@ -83,10 +83,7 @@ fn test_get_qdisc_ingress() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

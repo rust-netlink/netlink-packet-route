@@ -3,15 +3,17 @@
 /// Nat action
 ///
 /// The nat action maps one IP prefix to another
+use std::mem::size_of;
 use std::net::Ipv4Addr;
 
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, Nla, NlaBuffer, Parseable,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{
     nat_flag::TcNatFlags, TcActionGeneric, TcActionGenericBuffer, Tcf,
-    TcfBuffer, TC_TCF_BUF_LEN,
+    TcfBuffer,
 };
 
 const TCA_NAT_PARMS: u16 = 1;
@@ -41,7 +43,7 @@ pub enum TcActionNatOption {
 impl Nla for TcActionNatOption {
     fn value_len(&self) -> usize {
         match self {
-            Self::Tm(_) => TC_TCF_BUF_LEN,
+            Self::Tm(_) => size_of::<TcfBuffer>(),
             Self::Parms(v) => v.buffer_len(),
             Self::Other(attr) => attr.value_len(),
         }
@@ -69,18 +71,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_NAT_TM => {
-                Self::Tm(Tcf::parse(&TcfBuffer::new_checked(payload)?)?)
-            }
-            TCA_NAT_PARMS => {
-                Self::Parms(TcNat::parse(&TcNatBuffer::new_checked(payload)?)?)
-            }
+            TCA_NAT_TM => Self::Tm(Tcf::parse(payload)?),
+            TCA_NAT_PARMS => Self::Parms(TcNat::parse(payload)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
-
-const TC_NAT_BUF_LEN: usize = TcActionGeneric::BUF_LEN + 16;
 
 /// Network address translation action.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -110,54 +106,65 @@ impl Default for TcNat {
     }
 }
 
-buffer!(TcNatBuffer(TC_NAT_BUF_LEN) {
-    generic: (slice, 0..TcActionGeneric::BUF_LEN),
-    old_addr: (slice, TcActionGeneric::BUF_LEN..(TcActionGeneric::BUF_LEN+4)),
-    new_addr: (slice, (TcActionGeneric::BUF_LEN+4)..(TcActionGeneric::BUF_LEN+8)),
-    mask: (slice, (TcActionGeneric::BUF_LEN+8)..(TcActionGeneric::BUF_LEN+12)),
-    flags: (u32, (TcActionGeneric::BUF_LEN+12)..TC_NAT_BUF_LEN),
-});
-
-impl Emitable for TcNat {
-    fn buffer_len(&self) -> usize {
-        TC_NAT_BUF_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcNatBuffer::new(buffer);
-        self.generic.emit(packet.generic_mut());
-        packet
-            .old_addr_mut()
-            .copy_from_slice(&self.old_addr.octets());
-        packet
-            .new_addr_mut()
-            .copy_from_slice(&self.new_addr.octets());
-        packet.mask_mut().copy_from_slice(&self.mask.octets());
-        packet.set_flags(self.flags.bits());
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcNatBuffer {
+    generic: TcActionGenericBuffer,
+    old_addr: [u8; 4],
+    new_addr: [u8; 4],
+    mask: [u8; 4],
+    flags: u32,
 }
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<TcNatBuffer<&T>> for TcNat {
-    fn parse(buf: &TcNatBuffer<&T>) -> Result<Self, DecodeError> {
+impl TcNat {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = TcNatBuffer::ref_from_prefix(payload).map_err(|_| {
+            DecodeError::buffer_too_small(
+                payload.len(),
+                size_of::<TcNatBuffer>(),
+            )
+        })?;
         Ok(Self {
-            generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
-                buf.generic(),
-            ))?,
-            old_addr: parse_ipv4(buf.old_addr())?,
-            new_addr: parse_ipv4(buf.new_addr())?,
-            mask: parse_ipv4(buf.mask())?,
-            flags: TcNatFlags::from_bits_retain(buf.flags()),
+            generic: TcActionGeneric::parse(
+                &payload[..size_of::<TcActionGenericBuffer>()],
+            )?,
+            old_addr: Ipv4Addr::from(raw.old_addr),
+            new_addr: Ipv4Addr::from(raw.new_addr),
+            mask: Ipv4Addr::from(raw.mask),
+            flags: TcNatFlags::from_bits_retain(raw.flags),
         })
     }
 }
 
-fn parse_ipv4(data: &[u8]) -> Result<Ipv4Addr, DecodeError> {
-    if data.len() != 4 {
-        Err(DecodeError::from(format!(
-            "Invalid length of IPv4 Address, expecting 4 bytes, but got \
-             {data:?}"
-        )))
-    } else {
-        Ok(Ipv4Addr::new(data[0], data[1], data[2], data[3]))
+impl From<&TcNat> for TcNatBuffer {
+    fn from(nat: &TcNat) -> Self {
+        Self {
+            generic: TcActionGenericBuffer::from(&nat.generic),
+            old_addr: nat.old_addr.octets(),
+            new_addr: nat.new_addr.octets(),
+            mask: nat.mask.octets(),
+            flags: nat.flags.bits(),
+        }
+    }
+}
+
+impl Emitable for TcNat {
+    fn buffer_len(&self) -> usize {
+        size_of::<TcNatBuffer>()
+    }
+
+    fn emit(&self, buffer: &mut [u8]) {
+        let raw = TcNatBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

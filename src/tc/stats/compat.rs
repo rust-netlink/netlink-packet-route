@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 /// Generic queue statistics
 #[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
@@ -23,49 +26,77 @@ pub struct TcStats {
     pub backlog: u32,
 }
 
-// real size is 36, but kernel is align to 64bits(8 bytes)
-const STATS_LEN: usize = 40;
+// The real size is 36, but kernel aligns to 64 bits (8 bytes), hence the
+// trailing padding.
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcStatsBuffer {
+    bytes: u64,
+    packets: u32,
+    drops: u32,
+    overlimits: u32,
+    bps: u32,
+    pps: u32,
+    qlen: u32,
+    backlog: u32,
+    _padding: [u8; 4],
+}
 
-buffer!(TcStatsBuffer(STATS_LEN) {
-    bytes: (u64, 0..8),
-    packets: (u32, 8..12),
-    drops: (u32, 12..16),
-    overlimits: (u32, 16..20),
-    bps: (u32, 20..24),
-    pps: (u32, 24..28),
-    qlen: (u32, 28..32),
-    backlog: (u32, 32..36),
-});
-
-impl<T: AsRef<[u8]>> Parseable<TcStatsBuffer<T>> for TcStats {
-    fn parse(buf: &TcStatsBuffer<T>) -> Result<Self, DecodeError> {
+impl TcStats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            TcStatsBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcStatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            bytes: buf.bytes(),
-            packets: buf.packets(),
-            drops: buf.drops(),
-            overlimits: buf.overlimits(),
-            bps: buf.bps(),
-            pps: buf.pps(),
-            qlen: buf.qlen(),
-            backlog: buf.backlog(),
+            bytes: raw.bytes,
+            packets: raw.packets,
+            drops: raw.drops,
+            overlimits: raw.overlimits,
+            bps: raw.bps,
+            pps: raw.pps,
+            qlen: raw.qlen,
+            backlog: raw.backlog,
         })
+    }
+}
+
+impl From<&TcStats> for TcStatsBuffer {
+    fn from(value: &TcStats) -> Self {
+        Self {
+            bytes: value.bytes,
+            packets: value.packets,
+            drops: value.drops,
+            overlimits: value.overlimits,
+            bps: value.bps,
+            pps: value.pps,
+            qlen: value.qlen,
+            backlog: value.backlog,
+            _padding: [0; 4],
+        }
     }
 }
 
 impl Emitable for TcStats {
     fn buffer_len(&self) -> usize {
-        STATS_LEN
+        size_of::<TcStatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = TcStatsBuffer::new(buffer);
-        buffer.set_bytes(self.bytes);
-        buffer.set_packets(self.packets);
-        buffer.set_drops(self.drops);
-        buffer.set_overlimits(self.overlimits);
-        buffer.set_bps(self.bps);
-        buffer.set_pps(self.pps);
-        buffer.set_qlen(self.qlen);
-        buffer.set_backlog(self.backlog);
+        let raw = TcStatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

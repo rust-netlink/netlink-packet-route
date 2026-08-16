@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{
     emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
     ErrorContext, Nla, NlaBuffer, Parseable,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -12,9 +15,6 @@ pub struct TcQdiscFqCodel {}
 impl TcQdiscFqCodel {
     pub(crate) const KIND: &'static str = "fq_codel";
 }
-
-const TC_FQ_CODEL_QD_STATS_LEN: usize = 36;
-const TC_FQ_CODEL_CL_STATS_LEN: usize = 24;
 
 const TCA_FQ_CODEL_XSTATS_QDISC: u32 = 0;
 const TCA_FQ_CODEL_XSTATS_CLASS: u32 = 1;
@@ -42,14 +42,10 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for TcFqCodelXstats {
 
         match buf_type {
             TCA_FQ_CODEL_XSTATS_QDISC => {
-                Ok(Self::Qdisc(TcFqCodelQdStats::parse(
-                    &TcFqCodelQdStatsBuffer::new(&buf.as_ref()[4..]),
-                )?))
+                Ok(Self::Qdisc(TcFqCodelQdStats::parse(&buf.as_ref()[4..])?))
             }
             TCA_FQ_CODEL_XSTATS_CLASS => {
-                Ok(Self::Class(TcFqCodelClStats::parse(
-                    &TcFqCodelClStatsBuffer::new(&buf.as_ref()[4..]),
-                )?))
+                Ok(Self::Class(TcFqCodelClStats::parse(&buf.as_ref()[4..])?))
             }
             _ => Ok(Self::Other(buf.as_ref().to_vec())),
         }
@@ -60,10 +56,10 @@ impl Emitable for TcFqCodelXstats {
     fn buffer_len(&self) -> usize {
         match self {
             Self::Qdisc(_) => {
-                TC_FQ_CODEL_QD_STATS_LEN + std::mem::size_of::<u32>()
+                size_of::<TcFqCodelQdStatsBuffer>() + size_of::<u32>()
             }
             Self::Class(_) => {
-                TC_FQ_CODEL_CL_STATS_LEN + std::mem::size_of::<u32>()
+                size_of::<TcFqCodelClStatsBuffer>() + size_of::<u32>()
             }
             Self::Other(v) => v.len(),
         }
@@ -100,50 +96,78 @@ pub struct TcFqCodelQdStats {
     pub drop_overmemory: u32,
 }
 
-buffer!(TcFqCodelQdStatsBuffer(TC_FQ_CODEL_QD_STATS_LEN) {
-    maxpacket: (u32, 0..4),
-    drop_overlimit: (u32, 4..8),
-    ecn_mark: (u32, 8..12),
-    new_flow_count: (u32, 12..16),
-    new_flows_len: (u32, 16..20),
-    old_flows_len: (u32, 20..24),
-    ce_mark: (u32, 24..28),
-    memory_usage: (u32, 28..32),
-    drop_overmemory: (u32,32..36),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcFqCodelQdStatsBuffer {
+    maxpacket: u32,
+    drop_overlimit: u32,
+    ecn_mark: u32,
+    new_flow_count: u32,
+    new_flows_len: u32,
+    old_flows_len: u32,
+    ce_mark: u32,
+    memory_usage: u32,
+    drop_overmemory: u32,
+}
 
-impl<T: AsRef<[u8]>> Parseable<TcFqCodelQdStatsBuffer<T>> for TcFqCodelQdStats {
-    fn parse(buf: &TcFqCodelQdStatsBuffer<T>) -> Result<Self, DecodeError> {
+impl TcFqCodelQdStats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = TcFqCodelQdStatsBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcFqCodelQdStatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            maxpacket: buf.maxpacket(),
-            drop_overlimit: buf.drop_overlimit(),
-            ecn_mark: buf.ecn_mark(),
-            new_flow_count: buf.new_flow_count(),
-            new_flows_len: buf.new_flows_len(),
-            old_flows_len: buf.old_flows_len(),
-            ce_mark: buf.ce_mark(),
-            memory_usage: buf.memory_usage(),
-            drop_overmemory: buf.drop_overmemory(),
+            maxpacket: raw.maxpacket,
+            drop_overlimit: raw.drop_overlimit,
+            ecn_mark: raw.ecn_mark,
+            new_flow_count: raw.new_flow_count,
+            new_flows_len: raw.new_flows_len,
+            old_flows_len: raw.old_flows_len,
+            ce_mark: raw.ce_mark,
+            memory_usage: raw.memory_usage,
+            drop_overmemory: raw.drop_overmemory,
         })
+    }
+}
+
+impl From<&TcFqCodelQdStats> for TcFqCodelQdStatsBuffer {
+    fn from(value: &TcFqCodelQdStats) -> Self {
+        Self {
+            maxpacket: value.maxpacket,
+            drop_overlimit: value.drop_overlimit,
+            ecn_mark: value.ecn_mark,
+            new_flow_count: value.new_flow_count,
+            new_flows_len: value.new_flows_len,
+            old_flows_len: value.old_flows_len,
+            ce_mark: value.ce_mark,
+            memory_usage: value.memory_usage,
+            drop_overmemory: value.drop_overmemory,
+        }
     }
 }
 
 impl Emitable for TcFqCodelQdStats {
     fn buffer_len(&self) -> usize {
-        TC_FQ_CODEL_QD_STATS_LEN + std::mem::size_of::<u32>()
+        size_of::<TcFqCodelQdStatsBuffer>() + size_of::<u32>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = TcFqCodelQdStatsBuffer::new(buffer);
-        buffer.set_maxpacket(self.maxpacket);
-        buffer.set_drop_overlimit(self.drop_overlimit);
-        buffer.set_ecn_mark(self.ecn_mark);
-        buffer.set_new_flow_count(self.new_flow_count);
-        buffer.set_new_flows_len(self.new_flows_len);
-        buffer.set_old_flows_len(self.old_flows_len);
-        buffer.set_ce_mark(self.ce_mark);
-        buffer.set_memory_usage(self.memory_usage);
-        buffer.set_drop_overmemory(self.drop_overmemory);
+        let raw = TcFqCodelQdStatsBuffer::from(self);
+        buffer[..size_of::<TcFqCodelQdStatsBuffer>()]
+            .copy_from_slice(raw.as_bytes());
     }
 }
 
@@ -158,41 +182,69 @@ pub struct TcFqCodelClStats {
     drop_next: i32,
 }
 
-buffer!(TcFqCodelClStatsBuffer(TC_FQ_CODEL_CL_STATS_LEN) {
-    deficit: (i32, 0..4),
-    ldelay: (u32,4..8),
-    count: (u32, 8..12),
-    lastcount: (u32, 12..16),
-    dropping: (u32, 16..20),
-    drop_next: (i32, 20..24),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcFqCodelClStatsBuffer {
+    deficit: i32,
+    ldelay: u32,
+    count: u32,
+    lastcount: u32,
+    dropping: u32,
+    drop_next: i32,
+}
 
-impl<T: AsRef<[u8]>> Parseable<TcFqCodelClStatsBuffer<T>> for TcFqCodelClStats {
-    fn parse(buf: &TcFqCodelClStatsBuffer<T>) -> Result<Self, DecodeError> {
+impl TcFqCodelClStats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = TcFqCodelClStatsBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcFqCodelClStatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            deficit: buf.deficit(),
-            ldelay: buf.ldelay(),
-            count: buf.count(),
-            lastcount: buf.lastcount(),
-            dropping: buf.dropping(),
-            drop_next: buf.drop_next(),
+            deficit: raw.deficit,
+            ldelay: raw.ldelay,
+            count: raw.count,
+            lastcount: raw.lastcount,
+            dropping: raw.dropping,
+            drop_next: raw.drop_next,
         })
+    }
+}
+
+impl From<&TcFqCodelClStats> for TcFqCodelClStatsBuffer {
+    fn from(value: &TcFqCodelClStats) -> Self {
+        Self {
+            deficit: value.deficit,
+            ldelay: value.ldelay,
+            count: value.count,
+            lastcount: value.lastcount,
+            dropping: value.dropping,
+            drop_next: value.drop_next,
+        }
     }
 }
 
 impl Emitable for TcFqCodelClStats {
     fn buffer_len(&self) -> usize {
-        TC_FQ_CODEL_CL_STATS_LEN + std::mem::size_of::<u32>()
+        size_of::<TcFqCodelClStatsBuffer>() + size_of::<u32>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = TcFqCodelClStatsBuffer::new(buffer);
-        buffer.set_deficit(self.deficit);
-        buffer.set_ldelay(self.ldelay);
-        buffer.set_count(self.count);
-        buffer.set_lastcount(self.lastcount);
-        buffer.set_dropping(self.dropping);
-        buffer.set_drop_next(self.drop_next);
+        let raw = TcFqCodelClStatsBuffer::from(self);
+        buffer[..size_of::<TcFqCodelClStatsBuffer>()]
+            .copy_from_slice(raw.as_bytes());
     }
 }
 

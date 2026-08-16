@@ -3,10 +3,9 @@
 use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::tc::{
-    TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
-    TcActionMirrorOption, TcActionOption, TcActionType, TcMirror,
-    TcMirrorActionType, TcMirrorBuffer, TcStats2, TcStatsBasic, TcStatsQueue,
-    Tcf,
+    TcAction, TcActionAttribute, TcActionGeneric, TcActionMirrorOption,
+    TcActionOption, TcActionType, TcMirror, TcMirrorActionType, TcStats2,
+    TcStatsBasic, TcStatsQueue, Tcf,
 };
 
 #[test]
@@ -20,10 +19,7 @@ fn tc_action_generic_parse_back() {
     };
     let mut buffer = vec![0; orig.buffer_len()];
     orig.emit(&mut buffer);
-    let parsed = TcActionGeneric::parse(
-        &TcActionGenericBuffer::new_checked(buffer).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcActionGeneric::parse(&buffer).unwrap();
     assert_eq!(orig, parsed);
 }
 
@@ -36,10 +32,7 @@ fn tc_mirror_default_parse_back() {
     };
     let mut buffer = vec![0; orig.buffer_len()];
     orig.emit(&mut buffer);
-    let parsed = TcMirror::parse(
-        &TcMirrorBuffer::new_checked(buffer.as_slice()).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcMirror::parse(buffer.as_slice()).unwrap();
     assert_eq!(orig, parsed);
 }
 
@@ -58,10 +51,7 @@ fn tc_mirror_example_parse_back() {
     };
     let mut buffer = vec![0; orig.buffer_len()];
     orig.emit(&mut buffer);
-    let parsed = TcMirror::parse(
-        &TcMirrorBuffer::new_checked(buffer.as_slice()).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcMirror::parse(buffer.as_slice()).unwrap();
     assert_eq!(orig, parsed);
 }
 

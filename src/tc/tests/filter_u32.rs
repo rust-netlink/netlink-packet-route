@@ -8,8 +8,7 @@ use crate::{
     tc::{
         filters::{TcU32OptionFlags, TcU32SelectorFlags},
         TcAttribute, TcFilterU32Option, TcHandle, TcHeader, TcMessage,
-        TcMessageBuffer, TcOption, TcU32Key, TcU32Selector,
-        TcU32SelectorBuffer,
+        TcOption, TcU32Key, TcU32Selector, TcU32SelectorBuffer,
     },
     AddressFamily,
 };
@@ -102,10 +101,7 @@ fn test_get_filter_u32() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -131,5 +127,5 @@ fn test_tcu32_selector_invalid_nkeys() {
         0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
     ];
-    assert!(TcU32SelectorBuffer::new_checked(buffer).is_err());
+    assert!(TcU32SelectorBuffer::new_checked(&buffer).is_err());
 }

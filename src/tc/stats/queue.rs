@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 /// Queuing statistics
 #[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
@@ -18,39 +21,64 @@ pub struct TcStatsQueue {
     pub overlimits: u32,
 }
 
-const STATS_QUEUE_LEN: usize = 20;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcStatsQueueBuffer {
+    qlen: u32,
+    backlog: u32,
+    drops: u32,
+    requeues: u32,
+    overlimits: u32,
+}
 
-buffer!(TcStatsQueueBuffer( STATS_QUEUE_LEN) {
-    qlen: (u32, 0..4),
-    backlog: (u32, 4..8),
-    drops: (u32, 8..12),
-    requeues: (u32, 12..16),
-    overlimits: (u32, 16..20),
-});
-
-impl<T: AsRef<[u8]>> Parseable<TcStatsQueueBuffer<T>> for TcStatsQueue {
-    fn parse(buf: &TcStatsQueueBuffer<T>) -> Result<Self, DecodeError> {
+impl TcStatsQueue {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            TcStatsQueueBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcStatsQueueBuffer>(),
+                )
+            })?;
         Ok(Self {
-            qlen: buf.qlen(),
-            backlog: buf.backlog(),
-            drops: buf.drops(),
-            requeues: buf.requeues(),
-            overlimits: buf.overlimits(),
+            qlen: raw.qlen,
+            backlog: raw.backlog,
+            drops: raw.drops,
+            requeues: raw.requeues,
+            overlimits: raw.overlimits,
         })
+    }
+}
+
+impl From<&TcStatsQueue> for TcStatsQueueBuffer {
+    fn from(value: &TcStatsQueue) -> Self {
+        Self {
+            qlen: value.qlen,
+            backlog: value.backlog,
+            drops: value.drops,
+            requeues: value.requeues,
+            overlimits: value.overlimits,
+        }
     }
 }
 
 impl Emitable for TcStatsQueue {
     fn buffer_len(&self) -> usize {
-        STATS_QUEUE_LEN
+        size_of::<TcStatsQueueBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = TcStatsQueueBuffer::new(buffer);
-        buffer.set_qlen(self.qlen);
-        buffer.set_backlog(self.backlog);
-        buffer.set_drops(self.drops);
-        buffer.set_requeues(self.requeues);
-        buffer.set_overlimits(self.overlimits);
+        let raw = TcStatsQueueBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

@@ -6,9 +6,7 @@ use netlink_packet_core::{
     ParseableParametrized,
 };
 
-use super::{
-    TcOption, TcStats, TcStats2, TcStatsBuffer, TcXstats, VecTcOption,
-};
+use super::{TcOption, TcStats, TcStats2, TcXstats, VecTcOption};
 
 const TCA_KIND: u16 = 1;
 const TCA_OPTIONS: u16 = 2;
@@ -121,11 +119,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, &str>
                     .0,
             ),
             TCA_STATS => TcAttribute::Stats(
-                TcStats::parse(
-                    &TcStatsBuffer::new_checked(payload)
-                        .context("invalid TCA_STATS")?,
-                )
-                .context("failed to parse TCA_STATS")?,
+                TcStats::parse(payload).context("failed to parse TCA_STATS")?,
             ),
             TCA_XSTATS => TcAttribute::Xstats(
                 TcXstats::parse_with_param(buf, kind)
@@ -155,5 +149,24 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, &str>
                 DefaultNla::parse(buf).context("failed to parse tc nla")?,
             ),
         })
+    }
+}
+
+pub(crate) struct VecTcAttribute(pub(crate) Vec<TcAttribute>);
+
+impl Parseable<[u8]> for VecTcAttribute {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        let mut attributes = vec![];
+        let mut kind = String::new();
+
+        for nla_buf in NlasIterator::new(buf) {
+            let attribute =
+                TcAttribute::parse_with_param(&nla_buf?, kind.as_str())?;
+            if let TcAttribute::Kind(s) = &attribute {
+                kind = s.to_string();
+            }
+            attributes.push(attribute)
+        }
+        Ok(Self(attributes))
     }
 }

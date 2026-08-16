@@ -8,7 +8,7 @@ use crate::{
     tc::{
         actions::{
             message::{TcActionMessage, TcActionMessageAttribute::Actions},
-            TcActionMessageBuffer, TcActionMessageHeader,
+            TcActionMessageHeader,
         },
         TcAction,
         TcActionAttribute::{InHwCount, Kind, Options, Stats},
@@ -66,10 +66,7 @@ fn tc_action_message_nat_example1() -> TcActionMessage {
 #[test]
 fn parse_tc_action_nat_example1() {
     let buf = TC_ACTION_NAT_EXAMPLE1;
-    let parsed = TcActionMessage::parse(
-        &TcActionMessageBuffer::new_checked(&buf).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcActionMessage::parse(buf).unwrap();
     assert_eq!(parsed, tc_action_message_nat_example1());
 }
 
@@ -125,10 +122,7 @@ fn tc_action_message_nat_example2() -> TcActionMessage {
 #[test]
 fn parse_tc_action_nat_example2() {
     let buf = TC_ACTION_NAT_EXAMPLE2;
-    let parsed = TcActionMessage::parse(
-        &TcActionMessageBuffer::new_checked(&buf).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcActionMessage::parse(buf).unwrap();
     assert_eq!(parsed, tc_action_message_nat_example2());
 }
 
@@ -184,10 +178,7 @@ fn tc_action_message_nat_example3() -> TcActionMessage {
 #[test]
 fn parse_tc_action_nat_example3() {
     let buf = TC_ACTION_NAT_EXAMPLE3;
-    let parsed = TcActionMessage::parse(
-        &TcActionMessageBuffer::new_checked(&buf).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcActionMessage::parse(buf).unwrap();
     assert_eq!(parsed, tc_action_message_nat_example3());
 }
 
@@ -339,10 +330,7 @@ fn test_get_filter_nat() {
         }])],
     };
 
-    assert_eq!(
-        expected,
-        TcActionMessage::parse(&TcActionMessageBuffer::new(&RAW)).unwrap()
-    );
+    assert_eq!(expected, TcActionMessage::parse(RAW).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

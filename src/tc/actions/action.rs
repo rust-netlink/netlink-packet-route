@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{
     emit_u32, parse_string, parse_u32, DecodeError, DefaultNla, Emitable,
     ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
     ParseableParametrized, NLA_F_NESTED,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{
     TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
@@ -419,41 +422,65 @@ pub struct TcActionGeneric {
 }
 
 impl TcActionGeneric {
-    pub(crate) const BUF_LEN: usize = 20;
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = TcActionGenericBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcActionGenericBuffer>(),
+                )
+            })?;
+        Ok(Self {
+            index: raw.index,
+            capab: raw.capab,
+            action: raw.action.into(),
+            refcnt: raw.refcnt,
+            bindcnt: raw.bindcnt,
+        })
+    }
 }
 
-buffer!(TcActionGenericBuffer(TcActionGeneric::BUF_LEN) {
-    index: (u32, 0..4),
-    capab: (u32, 4..8),
-    action: (i32, 8..12),
-    refcnt: (i32, 12..16),
-    bindcnt: (i32, 16..20),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    Copy,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcActionGenericBuffer {
+    index: u32,
+    capab: u32,
+    action: i32,
+    refcnt: i32,
+    bindcnt: i32,
+}
+
+impl From<&TcActionGeneric> for TcActionGenericBuffer {
+    fn from(action: &TcActionGeneric) -> Self {
+        Self {
+            index: action.index,
+            capab: action.capab,
+            action: action.action.into(),
+            refcnt: action.refcnt,
+            bindcnt: action.bindcnt,
+        }
+    }
+}
 
 impl Emitable for TcActionGeneric {
     fn buffer_len(&self) -> usize {
-        Self::BUF_LEN
+        size_of::<TcActionGenericBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcActionGenericBuffer::new(buffer);
-        packet.set_index(self.index);
-        packet.set_capab(self.capab);
-        packet.set_action(self.action.into());
-        packet.set_refcnt(self.refcnt);
-        packet.set_bindcnt(self.bindcnt);
-    }
-}
-
-impl<T: AsRef<[u8]>> Parseable<TcActionGenericBuffer<T>> for TcActionGeneric {
-    fn parse(buf: &TcActionGenericBuffer<T>) -> Result<Self, DecodeError> {
-        Ok(Self {
-            index: buf.index(),
-            capab: buf.capab(),
-            action: buf.action().into(),
-            refcnt: buf.refcnt(),
-            bindcnt: buf.bindcnt(),
-        })
+        let raw = TcActionGenericBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
 
@@ -556,8 +583,6 @@ impl From<TcActionType> for i32 {
     }
 }
 
-pub const TC_TCF_BUF_LEN: usize = 32;
-
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Tcf {
     pub install: u64,
@@ -567,34 +592,57 @@ pub struct Tcf {
 }
 
 // kernel struct `tcf_t`
-buffer!(TcfBuffer(TC_TCF_BUF_LEN) {
-    install: (u64, 0..8),
-    lastuse: (u64, 8..16),
-    expires: (u64, 16..24),
-    firstuse: (u64, 24..32),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcfBuffer {
+    install: u64,
+    lastuse: u64,
+    expires: u64,
+    firstuse: u64,
+}
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<TcfBuffer<&T>> for Tcf {
-    fn parse(buf: &TcfBuffer<&T>) -> Result<Self, DecodeError> {
+impl Tcf {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = TcfBuffer::ref_from_prefix(payload).map_err(|_| {
+            DecodeError::buffer_too_small(payload.len(), size_of::<TcfBuffer>())
+        })?;
         Ok(Self {
-            install: buf.install(),
-            lastuse: buf.lastuse(),
-            expires: buf.expires(),
-            firstuse: buf.firstuse(),
+            install: raw.install,
+            lastuse: raw.lastuse,
+            expires: raw.expires,
+            firstuse: raw.firstuse,
         })
+    }
+}
+
+impl From<&Tcf> for TcfBuffer {
+    fn from(tcf: &Tcf) -> Self {
+        Self {
+            install: tcf.install,
+            lastuse: tcf.lastuse,
+            expires: tcf.expires,
+            firstuse: tcf.firstuse,
+        }
     }
 }
 
 impl Emitable for Tcf {
     fn buffer_len(&self) -> usize {
-        TC_TCF_BUF_LEN
+        size_of::<TcfBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcfBuffer::new(buffer);
-        packet.set_install(self.install);
-        packet.set_lastuse(self.lastuse);
-        packet.set_expires(self.expires);
-        packet.set_firstuse(self.firstuse);
+        let raw = TcfBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

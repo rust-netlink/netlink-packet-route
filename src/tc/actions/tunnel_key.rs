@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::{
+    mem::size_of,
+    net::{Ipv4Addr, Ipv6Addr},
+};
 
 use netlink_packet_core::{
     emit_u16_be, emit_u32_be, parse_u16_be, parse_u32_be, parse_u8,
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
-use super::{
-    TcActionGeneric, TcActionGenericBuffer, Tcf, TcfBuffer, TC_TCF_BUF_LEN,
-};
+use super::{TcActionGeneric, TcActionGenericBuffer, Tcf, TcfBuffer};
 /// set tunnel key
 ///
 /// The set_tunnel action allows to set tunnel encap applied
@@ -58,8 +60,8 @@ pub enum TcActionTunnelKeyOption {
 impl Nla for TcActionTunnelKeyOption {
     fn value_len(&self) -> usize {
         match self {
-            Self::Tm(_) => TC_TCF_BUF_LEN,
-            Self::Parms(_) => TC_TUNNEL_KEY_BUF_LEN,
+            Self::Tm(_) => size_of::<TcfBuffer>(),
+            Self::Parms(_) => size_of::<TcTunnelKeyBuffer>(),
             Self::EncIpv4Src(_) | Self::EncIpv4Dst(_) => 4,
             Self::EncIpv6Src(_) | Self::EncIpv6Dst(_) => 16,
             Self::EncKeyId(_) => 4,
@@ -112,12 +114,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_TUNNEL_KEY_TM => {
-                Self::Tm(Tcf::parse(&TcfBuffer::new_checked(payload)?)?)
-            }
-            TCA_TUNNEL_KEY_PARMS => Self::Parms(TcTunnelKey::parse(
-                &TcTunnelKeyBuffer::new_checked(payload)?,
-            )?),
+            TCA_TUNNEL_KEY_TM => Self::Tm(Tcf::parse(payload)?),
+            TCA_TUNNEL_KEY_PARMS => Self::Parms(TcTunnelKey::parse(payload)?),
             TCA_TUNNEL_KEY_ENC_IPV4_SRC => Self::EncIpv4Src(
                 parse_ipv4_addr(payload)
                     .context("failed to parse TCA_TUNNEL_KEY_ENC_IPV4_SRC")?,
@@ -160,8 +158,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     }
 }
 
-const TC_TUNNEL_KEY_BUF_LEN: usize = TcActionGeneric::BUF_LEN + 4;
-
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct TcTunnelKey {
     pub generic: TcActionGeneric,
@@ -169,30 +165,57 @@ pub struct TcTunnelKey {
 }
 
 // kernel struct `tc_tunnel_key`
-buffer!(TcTunnelKeyBuffer(TC_TUNNEL_KEY_BUF_LEN) {
-    generic: (slice, 0..20),
-    t_action: (i32, 20..24),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcTunnelKeyBuffer {
+    generic: TcActionGenericBuffer,
+    t_action: i32,
+}
 
-impl Emitable for TcTunnelKey {
-    fn buffer_len(&self) -> usize {
-        TC_TUNNEL_KEY_BUF_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcTunnelKeyBuffer::new(buffer);
-        self.generic.emit(packet.generic_mut());
-        packet.set_t_action(self.t_action);
+impl TcTunnelKey {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            TcTunnelKeyBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcTunnelKeyBuffer>(),
+                )
+            })?;
+        Ok(Self {
+            generic: TcActionGeneric::parse(
+                &payload[..size_of::<TcActionGenericBuffer>()],
+            )?,
+            t_action: raw.t_action,
+        })
     }
 }
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<TcTunnelKeyBuffer<&T>> for TcTunnelKey {
-    fn parse(buf: &TcTunnelKeyBuffer<&T>) -> Result<Self, DecodeError> {
-        Ok(Self {
-            generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
-                buf.generic(),
-            ))?,
-            t_action: buf.t_action(),
-        })
+impl From<&TcTunnelKey> for TcTunnelKeyBuffer {
+    fn from(key: &TcTunnelKey) -> Self {
+        Self {
+            generic: TcActionGenericBuffer::from(&key.generic),
+            t_action: key.t_action,
+        }
+    }
+}
+
+impl Emitable for TcTunnelKey {
+    fn buffer_len(&self) -> usize {
+        size_of::<TcTunnelKeyBuffer>()
+    }
+
+    fn emit(&self, buffer: &mut [u8]) {
+        let raw = TcTunnelKeyBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
