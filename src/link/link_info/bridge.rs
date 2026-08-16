@@ -593,9 +593,14 @@ pub struct BridgeIdBuffer {
 
 impl BridgeId {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        BridgeIdBuffer::ref_from_bytes(payload)
-            .map(|raw| Self::from(raw.clone()))
-            .map_err(|_| DecodeError::from("invalid BridgeId buffer"))
+        let (raw, _) =
+            BridgeIdBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    std::mem::size_of::<BridgeIdBuffer>(),
+                )
+            })?;
+        Ok(Self::from(raw.clone()))
     }
 }
 
