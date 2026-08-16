@@ -74,15 +74,15 @@ fn test_get_filter_u32() {
                     keys: vec![
                         TcU32Key {
                             mask: 0xffffffff,
-                            val: u32::from_ne_bytes(
+                            val: u32::from_be_bytes(
                                 Ipv4Addr::new(192, 168, 190, 7).octets(),
                             ),
                             off: 16,
                             offmask: 0,
                         },
                         TcU32Key {
-                            mask: 0xffff0000,
-                            val: u32::from_be(36000),
+                            mask: 0x0000ffff,
+                            val: 36000,
                             off: 20,
                             offmask: 0,
                         },

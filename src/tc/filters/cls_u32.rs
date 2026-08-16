@@ -299,6 +299,9 @@ pub struct TcU32Key {
     pub offmask: i32,
 }
 
+// Wire format of a `struct tc_u32_key`: `mask` and `val` are `__be32`
+// (always big-endian on the wire), while `off` and `offmask` are plain
+// native `int`.
 #[derive(
     Debug,
     PartialEq,
@@ -321,8 +324,8 @@ pub struct TcU32KeyBuffer {
 impl From<&TcU32Key> for TcU32KeyBuffer {
     fn from(key: &TcU32Key) -> Self {
         Self {
-            mask: key.mask,
-            val: key.val,
+            mask: key.mask.to_be(),
+            val: key.val.to_be(),
             off: key.off,
             offmask: key.offmask,
         }
@@ -349,8 +352,8 @@ impl TcU32Key {
                 )
             })?;
         Ok(Self {
-            mask: raw.mask,
-            val: raw.val,
+            mask: u32::from_be(raw.mask),
+            val: u32::from_be(raw.val),
             off: raw.off,
             offmask: raw.offmask,
         })
