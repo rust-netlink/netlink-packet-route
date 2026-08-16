@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
     Parseable, NLA_F_NESTED,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 /// Parsed bridge xstat value.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -30,25 +33,16 @@ pub(crate) fn parse_bridge_xstats(
         let val = nla.value();
         result.push(match kind {
             BRIDGE_XSTATS_MCAST => BridgeXstat::Mcast(
-                BridgeMcastStats::parse(
-                    &BridgeMcastStatsBuffer::new_checked(val)
-                        .context("invalid bridge mcast stats")?,
-                )
-                .context("invalid bridge mcast stats")?,
+                BridgeMcastStats::parse(val)
+                    .context("invalid bridge mcast stats")?,
             ),
             BRIDGE_XSTATS_STP => BridgeXstat::Stp(
-                BridgeStpXstats::parse(
-                    &BridgeStpXstatsBuffer::new_checked(val)
-                        .context("invalid bridge stp stats")?,
-                )
-                .context("invalid bridge stp stats")?,
+                BridgeStpXstats::parse(val)
+                    .context("invalid bridge stp stats")?,
             ),
             BRIDGE_XSTATS_VLAN => BridgeXstat::Vlan(
-                BridgeVlanXstats::parse(
-                    &BridgeVlanXstatsBuffer::new_checked(val)
-                        .context("invalid bridge vlan stats")?,
-                )
-                .context("invalid bridge vlan stats")?,
+                BridgeVlanXstats::parse(val)
+                    .context("invalid bridge vlan stats")?,
             ),
             _ => BridgeXstat::Other(DefaultNla::parse(&nla)?),
         });
@@ -121,115 +115,140 @@ pub struct BridgeMcastStats {
     pub mcast_packets_tx: u64,
 }
 
-const BRIDGE_MCAST_STATS_LEN: usize = 240;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct BridgeMcastStatsBuffer {
+    igmp_v1queries_rx: u64,
+    igmp_v1queries_tx: u64,
+    igmp_v2queries_rx: u64,
+    igmp_v2queries_tx: u64,
+    igmp_v3queries_rx: u64,
+    igmp_v3queries_tx: u64,
+    igmp_leaves_rx: u64,
+    igmp_leaves_tx: u64,
+    igmp_v1reports_rx: u64,
+    igmp_v1reports_tx: u64,
+    igmp_v2reports_rx: u64,
+    igmp_v2reports_tx: u64,
+    igmp_v3reports_rx: u64,
+    igmp_v3reports_tx: u64,
+    igmp_parse_errors: u64,
+    mld_v1queries_rx: u64,
+    mld_v1queries_tx: u64,
+    mld_v2queries_rx: u64,
+    mld_v2queries_tx: u64,
+    mld_leaves_rx: u64,
+    mld_leaves_tx: u64,
+    mld_v1reports_rx: u64,
+    mld_v1reports_tx: u64,
+    mld_v2reports_rx: u64,
+    mld_v2reports_tx: u64,
+    mld_parse_errors: u64,
+    mcast_bytes_rx: u64,
+    mcast_bytes_tx: u64,
+    mcast_packets_rx: u64,
+    mcast_packets_tx: u64,
+}
 
-buffer!(BridgeMcastStatsBuffer(BRIDGE_MCAST_STATS_LEN) {
-    igmp_v1queries_rx: (u64, 0..8),
-    igmp_v1queries_tx: (u64, 8..16),
-    igmp_v2queries_rx: (u64, 16..24),
-    igmp_v2queries_tx: (u64, 24..32),
-    igmp_v3queries_rx: (u64, 32..40),
-    igmp_v3queries_tx: (u64, 40..48),
-    igmp_leaves_rx: (u64, 48..56),
-    igmp_leaves_tx: (u64, 56..64),
-    igmp_v1reports_rx: (u64, 64..72),
-    igmp_v1reports_tx: (u64, 72..80),
-    igmp_v2reports_rx: (u64, 80..88),
-    igmp_v2reports_tx: (u64, 88..96),
-    igmp_v3reports_rx: (u64, 96..104),
-    igmp_v3reports_tx: (u64, 104..112),
-    igmp_parse_errors: (u64, 112..120),
-    mld_v1queries_rx: (u64, 120..128),
-    mld_v1queries_tx: (u64, 128..136),
-    mld_v2queries_rx: (u64, 136..144),
-    mld_v2queries_tx: (u64, 144..152),
-    mld_leaves_rx: (u64, 152..160),
-    mld_leaves_tx: (u64, 160..168),
-    mld_v1reports_rx: (u64, 168..176),
-    mld_v1reports_tx: (u64, 176..184),
-    mld_v2reports_rx: (u64, 184..192),
-    mld_v2reports_tx: (u64, 192..200),
-    mld_parse_errors: (u64, 200..208),
-    mcast_bytes_rx: (u64, 208..216),
-    mcast_bytes_tx: (u64, 216..224),
-    mcast_packets_rx: (u64, 224..232),
-    mcast_packets_tx: (u64, 232..240),
-});
-
-impl<T: AsRef<[u8]>> Parseable<BridgeMcastStatsBuffer<T>> for BridgeMcastStats {
-    fn parse(buf: &BridgeMcastStatsBuffer<T>) -> Result<Self, DecodeError> {
+impl BridgeMcastStats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = BridgeMcastStatsBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<BridgeMcastStatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            igmp_v1queries_rx: buf.igmp_v1queries_rx(),
-            igmp_v1queries_tx: buf.igmp_v1queries_tx(),
-            igmp_v2queries_rx: buf.igmp_v2queries_rx(),
-            igmp_v2queries_tx: buf.igmp_v2queries_tx(),
-            igmp_v3queries_rx: buf.igmp_v3queries_rx(),
-            igmp_v3queries_tx: buf.igmp_v3queries_tx(),
-            igmp_leaves_rx: buf.igmp_leaves_rx(),
-            igmp_leaves_tx: buf.igmp_leaves_tx(),
-            igmp_v1reports_rx: buf.igmp_v1reports_rx(),
-            igmp_v1reports_tx: buf.igmp_v1reports_tx(),
-            igmp_v2reports_rx: buf.igmp_v2reports_rx(),
-            igmp_v2reports_tx: buf.igmp_v2reports_tx(),
-            igmp_v3reports_rx: buf.igmp_v3reports_rx(),
-            igmp_v3reports_tx: buf.igmp_v3reports_tx(),
-            igmp_parse_errors: buf.igmp_parse_errors(),
-            mld_v1queries_rx: buf.mld_v1queries_rx(),
-            mld_v1queries_tx: buf.mld_v1queries_tx(),
-            mld_v2queries_rx: buf.mld_v2queries_rx(),
-            mld_v2queries_tx: buf.mld_v2queries_tx(),
-            mld_leaves_rx: buf.mld_leaves_rx(),
-            mld_leaves_tx: buf.mld_leaves_tx(),
-            mld_v1reports_rx: buf.mld_v1reports_rx(),
-            mld_v1reports_tx: buf.mld_v1reports_tx(),
-            mld_v2reports_rx: buf.mld_v2reports_rx(),
-            mld_v2reports_tx: buf.mld_v2reports_tx(),
-            mld_parse_errors: buf.mld_parse_errors(),
-            mcast_bytes_rx: buf.mcast_bytes_rx(),
-            mcast_bytes_tx: buf.mcast_bytes_tx(),
-            mcast_packets_rx: buf.mcast_packets_rx(),
-            mcast_packets_tx: buf.mcast_packets_tx(),
+            igmp_v1queries_rx: raw.igmp_v1queries_rx,
+            igmp_v1queries_tx: raw.igmp_v1queries_tx,
+            igmp_v2queries_rx: raw.igmp_v2queries_rx,
+            igmp_v2queries_tx: raw.igmp_v2queries_tx,
+            igmp_v3queries_rx: raw.igmp_v3queries_rx,
+            igmp_v3queries_tx: raw.igmp_v3queries_tx,
+            igmp_leaves_rx: raw.igmp_leaves_rx,
+            igmp_leaves_tx: raw.igmp_leaves_tx,
+            igmp_v1reports_rx: raw.igmp_v1reports_rx,
+            igmp_v1reports_tx: raw.igmp_v1reports_tx,
+            igmp_v2reports_rx: raw.igmp_v2reports_rx,
+            igmp_v2reports_tx: raw.igmp_v2reports_tx,
+            igmp_v3reports_rx: raw.igmp_v3reports_rx,
+            igmp_v3reports_tx: raw.igmp_v3reports_tx,
+            igmp_parse_errors: raw.igmp_parse_errors,
+            mld_v1queries_rx: raw.mld_v1queries_rx,
+            mld_v1queries_tx: raw.mld_v1queries_tx,
+            mld_v2queries_rx: raw.mld_v2queries_rx,
+            mld_v2queries_tx: raw.mld_v2queries_tx,
+            mld_leaves_rx: raw.mld_leaves_rx,
+            mld_leaves_tx: raw.mld_leaves_tx,
+            mld_v1reports_rx: raw.mld_v1reports_rx,
+            mld_v1reports_tx: raw.mld_v1reports_tx,
+            mld_v2reports_rx: raw.mld_v2reports_rx,
+            mld_v2reports_tx: raw.mld_v2reports_tx,
+            mld_parse_errors: raw.mld_parse_errors,
+            mcast_bytes_rx: raw.mcast_bytes_rx,
+            mcast_bytes_tx: raw.mcast_bytes_tx,
+            mcast_packets_rx: raw.mcast_packets_rx,
+            mcast_packets_tx: raw.mcast_packets_tx,
         })
+    }
+}
+
+impl From<&BridgeMcastStats> for BridgeMcastStatsBuffer {
+    fn from(value: &BridgeMcastStats) -> Self {
+        Self {
+            igmp_v1queries_rx: value.igmp_v1queries_rx,
+            igmp_v1queries_tx: value.igmp_v1queries_tx,
+            igmp_v2queries_rx: value.igmp_v2queries_rx,
+            igmp_v2queries_tx: value.igmp_v2queries_tx,
+            igmp_v3queries_rx: value.igmp_v3queries_rx,
+            igmp_v3queries_tx: value.igmp_v3queries_tx,
+            igmp_leaves_rx: value.igmp_leaves_rx,
+            igmp_leaves_tx: value.igmp_leaves_tx,
+            igmp_v1reports_rx: value.igmp_v1reports_rx,
+            igmp_v1reports_tx: value.igmp_v1reports_tx,
+            igmp_v2reports_rx: value.igmp_v2reports_rx,
+            igmp_v2reports_tx: value.igmp_v2reports_tx,
+            igmp_v3reports_rx: value.igmp_v3reports_rx,
+            igmp_v3reports_tx: value.igmp_v3reports_tx,
+            igmp_parse_errors: value.igmp_parse_errors,
+            mld_v1queries_rx: value.mld_v1queries_rx,
+            mld_v1queries_tx: value.mld_v1queries_tx,
+            mld_v2queries_rx: value.mld_v2queries_rx,
+            mld_v2queries_tx: value.mld_v2queries_tx,
+            mld_leaves_rx: value.mld_leaves_rx,
+            mld_leaves_tx: value.mld_leaves_tx,
+            mld_v1reports_rx: value.mld_v1reports_rx,
+            mld_v1reports_tx: value.mld_v1reports_tx,
+            mld_v2reports_rx: value.mld_v2reports_rx,
+            mld_v2reports_tx: value.mld_v2reports_tx,
+            mld_parse_errors: value.mld_parse_errors,
+            mcast_bytes_rx: value.mcast_bytes_rx,
+            mcast_bytes_tx: value.mcast_bytes_tx,
+            mcast_packets_rx: value.mcast_packets_rx,
+            mcast_packets_tx: value.mcast_packets_tx,
+        }
     }
 }
 
 impl Emitable for BridgeMcastStats {
     fn buffer_len(&self) -> usize {
-        BRIDGE_MCAST_STATS_LEN
+        size_of::<BridgeMcastStatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buf = BridgeMcastStatsBuffer::new(buffer);
-        buf.set_igmp_v1queries_rx(self.igmp_v1queries_rx);
-        buf.set_igmp_v1queries_tx(self.igmp_v1queries_tx);
-        buf.set_igmp_v2queries_rx(self.igmp_v2queries_rx);
-        buf.set_igmp_v2queries_tx(self.igmp_v2queries_tx);
-        buf.set_igmp_v3queries_rx(self.igmp_v3queries_rx);
-        buf.set_igmp_v3queries_tx(self.igmp_v3queries_tx);
-        buf.set_igmp_leaves_rx(self.igmp_leaves_rx);
-        buf.set_igmp_leaves_tx(self.igmp_leaves_tx);
-        buf.set_igmp_v1reports_rx(self.igmp_v1reports_rx);
-        buf.set_igmp_v1reports_tx(self.igmp_v1reports_tx);
-        buf.set_igmp_v2reports_rx(self.igmp_v2reports_rx);
-        buf.set_igmp_v2reports_tx(self.igmp_v2reports_tx);
-        buf.set_igmp_v3reports_rx(self.igmp_v3reports_rx);
-        buf.set_igmp_v3reports_tx(self.igmp_v3reports_tx);
-        buf.set_igmp_parse_errors(self.igmp_parse_errors);
-        buf.set_mld_v1queries_rx(self.mld_v1queries_rx);
-        buf.set_mld_v1queries_tx(self.mld_v1queries_tx);
-        buf.set_mld_v2queries_rx(self.mld_v2queries_rx);
-        buf.set_mld_v2queries_tx(self.mld_v2queries_tx);
-        buf.set_mld_leaves_rx(self.mld_leaves_rx);
-        buf.set_mld_leaves_tx(self.mld_leaves_tx);
-        buf.set_mld_v1reports_rx(self.mld_v1reports_rx);
-        buf.set_mld_v1reports_tx(self.mld_v1reports_tx);
-        buf.set_mld_v2reports_rx(self.mld_v2reports_rx);
-        buf.set_mld_v2reports_tx(self.mld_v2reports_tx);
-        buf.set_mld_parse_errors(self.mld_parse_errors);
-        buf.set_mcast_bytes_rx(self.mcast_bytes_rx);
-        buf.set_mcast_bytes_tx(self.mcast_bytes_tx);
-        buf.set_mcast_packets_rx(self.mcast_packets_rx);
-        buf.set_mcast_packets_tx(self.mcast_packets_tx);
+        let raw = BridgeMcastStatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
 
@@ -245,43 +264,68 @@ pub struct BridgeStpXstats {
     pub tx_tcn: u64,
 }
 
-const BRIDGE_STP_XSTATS_LEN: usize = 48;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct BridgeStpXstatsBuffer {
+    transition_blk: u64,
+    transition_fwd: u64,
+    rx_bpdu: u64,
+    tx_bpdu: u64,
+    rx_tcn: u64,
+    tx_tcn: u64,
+}
 
-buffer!(BridgeStpXstatsBuffer(BRIDGE_STP_XSTATS_LEN) {
-    transition_blk: (u64, 0..8),
-    transition_fwd: (u64, 8..16),
-    rx_bpdu: (u64, 16..24),
-    tx_bpdu: (u64, 24..32),
-    rx_tcn: (u64, 32..40),
-    tx_tcn: (u64, 40..48),
-});
-
-impl<T: AsRef<[u8]>> Parseable<BridgeStpXstatsBuffer<T>> for BridgeStpXstats {
-    fn parse(buf: &BridgeStpXstatsBuffer<T>) -> Result<Self, DecodeError> {
+impl BridgeStpXstats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = BridgeStpXstatsBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<BridgeStpXstatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            transition_blk: buf.transition_blk(),
-            transition_fwd: buf.transition_fwd(),
-            rx_bpdu: buf.rx_bpdu(),
-            tx_bpdu: buf.tx_bpdu(),
-            rx_tcn: buf.rx_tcn(),
-            tx_tcn: buf.tx_tcn(),
+            transition_blk: raw.transition_blk,
+            transition_fwd: raw.transition_fwd,
+            rx_bpdu: raw.rx_bpdu,
+            tx_bpdu: raw.tx_bpdu,
+            rx_tcn: raw.rx_tcn,
+            tx_tcn: raw.tx_tcn,
         })
+    }
+}
+
+impl From<&BridgeStpXstats> for BridgeStpXstatsBuffer {
+    fn from(value: &BridgeStpXstats) -> Self {
+        Self {
+            transition_blk: value.transition_blk,
+            transition_fwd: value.transition_fwd,
+            rx_bpdu: value.rx_bpdu,
+            tx_bpdu: value.tx_bpdu,
+            rx_tcn: value.rx_tcn,
+            tx_tcn: value.tx_tcn,
+        }
     }
 }
 
 impl Emitable for BridgeStpXstats {
     fn buffer_len(&self) -> usize {
-        BRIDGE_STP_XSTATS_LEN
+        size_of::<BridgeStpXstatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buf = BridgeStpXstatsBuffer::new(buffer);
-        buf.set_transition_blk(self.transition_blk);
-        buf.set_transition_fwd(self.transition_fwd);
-        buf.set_rx_bpdu(self.rx_bpdu);
-        buf.set_tx_bpdu(self.tx_bpdu);
-        buf.set_rx_tcn(self.rx_tcn);
-        buf.set_tx_tcn(self.tx_tcn);
+        let raw = BridgeStpXstatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
 
@@ -297,44 +341,69 @@ pub struct BridgeVlanXstats {
     pub flags: u16,
 }
 
-const BRIDGE_VLAN_XSTATS_LEN: usize = 40;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct BridgeVlanXstatsBuffer {
+    rx_bytes: u64,
+    rx_packets: u64,
+    tx_bytes: u64,
+    tx_packets: u64,
+    vid: u16,
+    flags: u16,
+    pad2: u32,
+}
 
-buffer!(BridgeVlanXstatsBuffer(BRIDGE_VLAN_XSTATS_LEN) {
-    rx_bytes: (u64, 0..8),
-    rx_packets: (u64, 8..16),
-    tx_bytes: (u64, 16..24),
-    tx_packets: (u64, 24..32),
-    vid: (u16, 32..34),
-    flags: (u16, 34..36),
-    pad2: (u32, 36..40),
-});
-
-impl<T: AsRef<[u8]>> Parseable<BridgeVlanXstatsBuffer<T>> for BridgeVlanXstats {
-    fn parse(buf: &BridgeVlanXstatsBuffer<T>) -> Result<Self, DecodeError> {
+impl BridgeVlanXstats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = BridgeVlanXstatsBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<BridgeVlanXstatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            rx_bytes: buf.rx_bytes(),
-            rx_packets: buf.rx_packets(),
-            tx_bytes: buf.tx_bytes(),
-            tx_packets: buf.tx_packets(),
-            vid: buf.vid(),
-            flags: buf.flags(),
+            rx_bytes: raw.rx_bytes,
+            rx_packets: raw.rx_packets,
+            tx_bytes: raw.tx_bytes,
+            tx_packets: raw.tx_packets,
+            vid: raw.vid,
+            flags: raw.flags,
         })
+    }
+}
+
+impl From<&BridgeVlanXstats> for BridgeVlanXstatsBuffer {
+    fn from(value: &BridgeVlanXstats) -> Self {
+        Self {
+            rx_bytes: value.rx_bytes,
+            rx_packets: value.rx_packets,
+            tx_bytes: value.tx_bytes,
+            tx_packets: value.tx_packets,
+            vid: value.vid,
+            flags: value.flags,
+            pad2: 0,
+        }
     }
 }
 
 impl Emitable for BridgeVlanXstats {
     fn buffer_len(&self) -> usize {
-        BRIDGE_VLAN_XSTATS_LEN
+        size_of::<BridgeVlanXstatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buf = BridgeVlanXstatsBuffer::new(buffer);
-        buf.set_rx_bytes(self.rx_bytes);
-        buf.set_rx_packets(self.rx_packets);
-        buf.set_tx_bytes(self.tx_bytes);
-        buf.set_tx_packets(self.tx_packets);
-        buf.set_vid(self.vid);
-        buf.set_flags(self.flags);
-        buf.set_pad2(0);
+        let raw = BridgeVlanXstatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

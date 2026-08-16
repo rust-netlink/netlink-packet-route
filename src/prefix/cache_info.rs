@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
@@ -9,30 +12,55 @@ pub struct CacheInfo {
     pub valid_time: u32,
 }
 
-const CACHE_INFO_LEN: usize = 8;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct CacheInfoBuffer {
+    preferred_time: u32,
+    valid_time: u32,
+}
 
-buffer!(CacheInfoBuffer(CACHE_INFO_LEN) {
-    preferred_time: (u32, 0..4),
-    valid_time: (u32, 4..8),
-});
-
-impl<T: AsRef<[u8]>> Parseable<CacheInfoBuffer<T>> for CacheInfo {
-    fn parse(buf: &CacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+impl CacheInfo {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            CacheInfoBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<CacheInfoBuffer>(),
+                )
+            })?;
         Ok(CacheInfo {
-            preferred_time: buf.preferred_time(),
-            valid_time: buf.valid_time(),
+            preferred_time: raw.preferred_time,
+            valid_time: raw.valid_time,
         })
+    }
+}
+
+impl From<&CacheInfo> for CacheInfoBuffer {
+    fn from(value: &CacheInfo) -> Self {
+        Self {
+            preferred_time: value.preferred_time,
+            valid_time: value.valid_time,
+        }
     }
 }
 
 impl Emitable for CacheInfo {
     fn buffer_len(&self) -> usize {
-        CACHE_INFO_LEN
+        size_of::<CacheInfoBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = CacheInfoBuffer::new(buffer);
-        buffer.set_preferred_time(self.preferred_time);
-        buffer.set_valid_time(self.valid_time);
+        let raw = CacheInfoBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

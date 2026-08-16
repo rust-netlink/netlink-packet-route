@@ -6,10 +6,7 @@ use netlink_packet_core::{
     ParseableParametrized,
 };
 
-use super::{
-    NeighbourAddress, NeighbourCacheInfo, NeighbourCacheInfoBuffer,
-    NeighbourExtFlags,
-};
+use super::{NeighbourAddress, NeighbourCacheInfo, NeighbourExtFlags};
 use crate::{route::RouteProtocol, AddressFamily};
 
 const NDA_DST: u16 = 1;
@@ -123,14 +120,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context(format!("invalid NDA_DST value {payload:?}"))?,
             ),
             NDA_LLADDR => Self::LinkLayerAddress(payload.to_vec()),
-            NDA_CACHEINFO => Self::CacheInfo(
-                NeighbourCacheInfo::parse(
-                    &NeighbourCacheInfoBuffer::new_checked(payload).context(
-                        format!("invalid NDA_CACHEINFO value {payload:?}"),
-                    )?,
-                )
-                .context(format!("invalid NDA_CACHEINFO value {payload:?}"))?,
-            ),
+            NDA_CACHEINFO => {
+                Self::CacheInfo(NeighbourCacheInfo::parse(payload).context(
+                    format!("invalid NDA_CACHEINFO value {payload:?}"),
+                )?)
+            }
             NDA_PROBES => Self::Probes(
                 parse_u32(payload)
                     .context(format!("invalid NDA_PROBES value {payload:?}"))?,

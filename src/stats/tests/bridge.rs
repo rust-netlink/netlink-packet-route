@@ -6,7 +6,7 @@ use crate::{
     stats::{
         AfSpecStats, BridgeMcastStats, BridgeStpXstats, BridgeVlanXstats,
         BridgeXstat, HwStatsInfo, LinkXstatGroup, OffloadXstat, StatsAttribute,
-        StatsFilterMask, StatsHeader, StatsMessage, StatsMessageBuffer,
+        StatsFilterMask, StatsHeader, StatsMessage,
     },
     AddressFamily,
 };
@@ -65,10 +65,7 @@ fn test_parsing_bridge_xstats() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        StatsMessage::parse(&StatsMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
@@ -172,10 +169,7 @@ fn test_parsing_bridge_port_xstats() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        StatsMessage::parse(&StatsMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);

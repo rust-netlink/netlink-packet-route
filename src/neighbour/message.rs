@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, Emitable, ErrorContext, Parseable, ParseableParametrized,
+    DecodeError, Emitable, ErrorContext, NlasIterator, Parseable,
+    ParseableParametrized,
 };
 
 use super::{
-    super::AddressFamily, NeighbourAttribute, NeighbourHeader,
-    NeighbourMessageBuffer,
+    header::NEIGHBOUR_HEADER_LEN, NeighbourAttribute, NeighbourHeader,
 };
+use crate::AddressFamily;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -29,38 +30,29 @@ impl Emitable for NeighbourMessage {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourMessageBuffer<&'a T>>
-    for NeighbourMessage
-{
-    fn parse(buf: &NeighbourMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl Parseable<[u8]> for NeighbourMessage {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         let header = NeighbourHeader::parse(buf)
             .context("failed to parse neighbour message header")?;
         let address_family = header.family;
-        Ok(NeighbourMessage {
-            header,
-            attributes: Vec::<NeighbourAttribute>::parse_with_param(
-                buf,
-                address_family,
-            )
-            .context("failed to parse neighbour message NLAs")?,
-        })
+        let attributes = Vec::<NeighbourAttribute>::parse_with_param(
+            &buf[NEIGHBOUR_HEADER_LEN..],
+            address_family,
+        )
+        .context("failed to parse neighbour message NLAs")?;
+        Ok(NeighbourMessage { header, attributes })
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a>
-    ParseableParametrized<NeighbourMessageBuffer<&'a T>, AddressFamily>
-    for Vec<NeighbourAttribute>
-{
+impl ParseableParametrized<[u8], AddressFamily> for Vec<NeighbourAttribute> {
     fn parse_with_param(
-        buf: &NeighbourMessageBuffer<&'a T>,
-        address_family: AddressFamily,
+        buf: &[u8],
+        family: AddressFamily,
     ) -> Result<Self, DecodeError> {
         let mut attributes = vec![];
-        for nla_buf in buf.attributes() {
-            attributes.push(NeighbourAttribute::parse_with_param(
-                &nla_buf?,
-                address_family,
-            )?);
+        for nla_buf in NlasIterator::new(buf) {
+            attributes
+                .push(NeighbourAttribute::parse_with_param(&nla_buf?, family)?);
         }
         Ok(attributes)
     }

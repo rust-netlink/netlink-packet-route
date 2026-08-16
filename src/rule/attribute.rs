@@ -4,7 +4,7 @@ use std::net::IpAddr;
 
 use netlink_packet_core::{
     emit_u32, parse_string, parse_u32, parse_u8, DecodeError, DefaultNla,
-    Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use crate::{
@@ -223,5 +223,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?,
             ),
         })
+    }
+}
+
+pub(crate) struct VecRuleAttribute(pub(crate) Vec<RuleAttribute>);
+
+impl Parseable<[u8]> for VecRuleAttribute {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        let mut attributes = vec![];
+        for nla_buf in NlasIterator::new(buf) {
+            attributes.push(RuleAttribute::parse(&nla_buf?)?);
+        }
+        Ok(Self(attributes))
     }
 }

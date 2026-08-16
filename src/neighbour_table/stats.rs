@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
@@ -18,58 +21,82 @@ pub struct NeighbourTableStats {
     pub table_fulls: u64,
 }
 
-pub const STATS_LEN: usize = 88;
-buffer!(NeighbourTableStatsBuffer(STATS_LEN) {
-    allocs: (u64, 0..8),
-    destroys: (u64, 8..16),
-    hash_grows: (u64, 16..24),
-    res_failed: (u64, 24..32),
-    lookups: (u64, 32..40),
-    hits: (u64, 40..48),
-    multicast_probes_received: (u64, 48..56),
-    unicast_probes_received: (u64, 56..64),
-    periodic_gc_runs: (u64, 64..72),
-    forced_gc_runs: (u64, 72..80),
-    table_fulls: (u64, 80..88),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct NeighbourTableStatsBuffer {
+    allocs: u64,
+    destroys: u64,
+    hash_grows: u64,
+    res_failed: u64,
+    lookups: u64,
+    hits: u64,
+    multicast_probes_received: u64,
+    unicast_probes_received: u64,
+    periodic_gc_runs: u64,
+    forced_gc_runs: u64,
+    table_fulls: u64,
+}
 
-impl<T: AsRef<[u8]>> Parseable<NeighbourTableStatsBuffer<T>>
-    for NeighbourTableStats
-{
-    fn parse(buf: &NeighbourTableStatsBuffer<T>) -> Result<Self, DecodeError> {
+impl NeighbourTableStats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = NeighbourTableStatsBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<NeighbourTableStatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            allocs: buf.allocs(),
-            destroys: buf.destroys(),
-            hash_grows: buf.hash_grows(),
-            res_failed: buf.res_failed(),
-            lookups: buf.lookups(),
-            hits: buf.hits(),
-            multicast_probes_received: buf.multicast_probes_received(),
-            unicast_probes_received: buf.unicast_probes_received(),
-            periodic_gc_runs: buf.periodic_gc_runs(),
-            forced_gc_runs: buf.forced_gc_runs(),
-            table_fulls: buf.table_fulls(),
+            allocs: raw.allocs,
+            destroys: raw.destroys,
+            hash_grows: raw.hash_grows,
+            res_failed: raw.res_failed,
+            lookups: raw.lookups,
+            hits: raw.hits,
+            multicast_probes_received: raw.multicast_probes_received,
+            unicast_probes_received: raw.unicast_probes_received,
+            periodic_gc_runs: raw.periodic_gc_runs,
+            forced_gc_runs: raw.forced_gc_runs,
+            table_fulls: raw.table_fulls,
         })
+    }
+}
+
+impl From<&NeighbourTableStats> for NeighbourTableStatsBuffer {
+    fn from(value: &NeighbourTableStats) -> Self {
+        Self {
+            allocs: value.allocs,
+            destroys: value.destroys,
+            hash_grows: value.hash_grows,
+            res_failed: value.res_failed,
+            lookups: value.lookups,
+            hits: value.hits,
+            multicast_probes_received: value.multicast_probes_received,
+            unicast_probes_received: value.unicast_probes_received,
+            periodic_gc_runs: value.periodic_gc_runs,
+            forced_gc_runs: value.forced_gc_runs,
+            table_fulls: value.table_fulls,
+        }
     }
 }
 
 impl Emitable for NeighbourTableStats {
     fn buffer_len(&self) -> usize {
-        STATS_LEN
+        size_of::<NeighbourTableStatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = NeighbourTableStatsBuffer::new(buffer);
-        buffer.set_allocs(self.allocs);
-        buffer.set_destroys(self.destroys);
-        buffer.set_hash_grows(self.hash_grows);
-        buffer.set_res_failed(self.res_failed);
-        buffer.set_lookups(self.lookups);
-        buffer.set_hits(self.hits);
-        buffer.set_multicast_probes_received(self.multicast_probes_received);
-        buffer.set_unicast_probes_received(self.unicast_probes_received);
-        buffer.set_periodic_gc_runs(self.periodic_gc_runs);
-        buffer.set_forced_gc_runs(self.forced_gc_runs);
-        buffer.set_table_fulls(self.table_fulls);
+        let raw = NeighbourTableStatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

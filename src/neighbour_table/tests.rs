@@ -5,8 +5,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     neighbour_table::{
         NeighbourTableAttribute, NeighbourTableConfig, NeighbourTableHeader,
-        NeighbourTableMessage, NeighbourTableMessageBuffer,
-        NeighbourTableParameter, NeighbourTableStats,
+        NeighbourTableMessage, NeighbourTableParameter, NeighbourTableStats,
     },
     AddressFamily,
 };
@@ -66,11 +65,7 @@ fn test_ipv4_neighbour_table() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourTableMessage::parse(&NeighbourTableMessageBuffer::new(&raw))
-            .unwrap()
-    );
+    assert_eq!(expected, NeighbourTableMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -171,11 +166,7 @@ fn test_ipv4_neighbour_table_stats_config() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourTableMessage::parse(&NeighbourTableMessageBuffer::new(&raw))
-            .unwrap()
-    );
+    assert_eq!(expected, NeighbourTableMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

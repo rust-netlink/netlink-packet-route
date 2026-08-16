@@ -5,7 +5,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     neighbour::{
         flags::NeighbourFlags, NeighbourAttribute, NeighbourHeader,
-        NeighbourMessage, NeighbourMessageBuffer, NeighbourState,
+        NeighbourMessage, NeighbourState,
     },
     route::RouteType,
     AddressFamily,
@@ -33,10 +33,7 @@ fn test_bridge_neighbour_show() {
         ])],
     };
 
-    assert_eq!(
-        expected,
-        NeighbourMessage::parse(&NeighbourMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, NeighbourMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

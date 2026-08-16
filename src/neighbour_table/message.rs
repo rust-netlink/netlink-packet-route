@@ -3,7 +3,8 @@
 use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
 
 use super::{
-    NeighbourTableAttribute, NeighbourTableHeader, NeighbourTableMessageBuffer,
+    attribute::VecNeighbourTableAttribute, header::NEIGHBOUR_TABLE_HEADER_LEN,
+    NeighbourTableAttribute, NeighbourTableHeader,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -26,31 +27,16 @@ impl Emitable for NeighbourTableMessage {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
-    for NeighbourTableMessage
-{
-    fn parse(
-        buf: &NeighbourTableMessageBuffer<&'a T>,
-    ) -> Result<Self, DecodeError> {
+impl Parseable<[u8]> for NeighbourTableMessage {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         Ok(NeighbourTableMessage {
             header: NeighbourTableHeader::parse(buf)
                 .context("failed to parse neighbour table message header")?,
-            attributes: Vec::<NeighbourTableAttribute>::parse(buf)
-                .context("failed to parse neighbour table message NLAs")?,
+            attributes: VecNeighbourTableAttribute::parse(
+                &buf[NEIGHBOUR_TABLE_HEADER_LEN..],
+            )
+            .context("failed to parse neighbour table message NLAs")?
+            .0,
         })
-    }
-}
-
-impl<'a, T: AsRef<[u8]> + 'a> Parseable<NeighbourTableMessageBuffer<&'a T>>
-    for Vec<NeighbourTableAttribute>
-{
-    fn parse(
-        buf: &NeighbourTableMessageBuffer<&'a T>,
-    ) -> Result<Self, DecodeError> {
-        let mut attributes = vec![];
-        for nla_buf in buf.attributes() {
-            attributes.push(NeighbourTableAttribute::parse(&nla_buf?)?);
-        }
-        Ok(attributes)
     }
 }

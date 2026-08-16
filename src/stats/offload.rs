@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
     Parseable, NLA_F_NESTED,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::link::Stats64;
 
@@ -71,11 +74,7 @@ pub(crate) fn parse_offload_xstats_inner(
                 HwStatsInfo::parse(val).context("invalid hw stats info")?,
             ),
             IFLA_OFFLOAD_XSTATS_L3_STATS => OffloadXstat::L3Stats(
-                HwStats64::parse(
-                    &HwStats64Buffer::new_checked(val)
-                        .context("invalid l3 stats")?,
-                )
-                .context("invalid l3 stats")?,
+                HwStats64::parse(val).context("invalid l3 stats")?,
             ),
             _ => OffloadXstat::Other(DefaultNla::parse(&nla)?),
         });
@@ -103,52 +102,77 @@ pub struct HwStats64 {
     pub multicast: u64,
 }
 
-const HW_STATS64_LEN: usize = 72;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct HwStats64Buffer {
+    rx_packets: u64,
+    tx_packets: u64,
+    rx_bytes: u64,
+    tx_bytes: u64,
+    rx_errors: u64,
+    tx_errors: u64,
+    rx_dropped: u64,
+    tx_dropped: u64,
+    multicast: u64,
+}
 
-buffer!(HwStats64Buffer(HW_STATS64_LEN) {
-    rx_packets: (u64, 0..8),
-    tx_packets: (u64, 8..16),
-    rx_bytes: (u64, 16..24),
-    tx_bytes: (u64, 24..32),
-    rx_errors: (u64, 32..40),
-    tx_errors: (u64, 40..48),
-    rx_dropped: (u64, 48..56),
-    tx_dropped: (u64, 56..64),
-    multicast: (u64, 64..72),
-});
-
-impl<T: AsRef<[u8]>> Parseable<HwStats64Buffer<T>> for HwStats64 {
-    fn parse(buf: &HwStats64Buffer<T>) -> Result<Self, DecodeError> {
+impl HwStats64 {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            HwStats64Buffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<HwStats64Buffer>(),
+                )
+            })?;
         Ok(Self {
-            rx_packets: buf.rx_packets(),
-            tx_packets: buf.tx_packets(),
-            rx_bytes: buf.rx_bytes(),
-            tx_bytes: buf.tx_bytes(),
-            rx_errors: buf.rx_errors(),
-            tx_errors: buf.tx_errors(),
-            rx_dropped: buf.rx_dropped(),
-            tx_dropped: buf.tx_dropped(),
-            multicast: buf.multicast(),
+            rx_packets: raw.rx_packets,
+            tx_packets: raw.tx_packets,
+            rx_bytes: raw.rx_bytes,
+            tx_bytes: raw.tx_bytes,
+            rx_errors: raw.rx_errors,
+            tx_errors: raw.tx_errors,
+            rx_dropped: raw.rx_dropped,
+            tx_dropped: raw.tx_dropped,
+            multicast: raw.multicast,
         })
+    }
+}
+
+impl From<&HwStats64> for HwStats64Buffer {
+    fn from(value: &HwStats64) -> Self {
+        Self {
+            rx_packets: value.rx_packets,
+            tx_packets: value.tx_packets,
+            rx_bytes: value.rx_bytes,
+            tx_bytes: value.tx_bytes,
+            rx_errors: value.rx_errors,
+            tx_errors: value.tx_errors,
+            rx_dropped: value.rx_dropped,
+            tx_dropped: value.tx_dropped,
+            multicast: value.multicast,
+        }
     }
 }
 
 impl Emitable for HwStats64 {
     fn buffer_len(&self) -> usize {
-        HW_STATS64_LEN
+        size_of::<HwStats64Buffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buf = HwStats64Buffer::new(buffer);
-        buf.set_rx_packets(self.rx_packets);
-        buf.set_tx_packets(self.tx_packets);
-        buf.set_rx_bytes(self.rx_bytes);
-        buf.set_tx_bytes(self.tx_bytes);
-        buf.set_rx_errors(self.rx_errors);
-        buf.set_tx_errors(self.tx_errors);
-        buf.set_rx_dropped(self.rx_dropped);
-        buf.set_tx_dropped(self.tx_dropped);
-        buf.set_multicast(self.multicast);
+        let raw = HwStats64Buffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
 

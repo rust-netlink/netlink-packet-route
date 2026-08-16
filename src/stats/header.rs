@@ -1,28 +1,30 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
 
-const STATS_HEADER_LEN: usize = 12;
+pub(crate) const STATS_HEADER_LEN: usize = 12;
 
-buffer!(StatsMessageBuffer(STATS_HEADER_LEN) {
-    family: (u8, 0),
-    pad1: (u8, 1),
-    pad2: (u16, 2..4),
-    ifindex: (u32, 4..8),
-    filter_mask: (u32, 8..STATS_HEADER_LEN),
-    payload: (slice, STATS_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> StatsMessageBuffer<&'a T> {
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct StatsMessageBuffer {
+    family: u8,
+    pad1: u8,
+    pad2: u16,
+    ifindex: u32,
+    filter_mask: u32,
 }
 
 // The kernel uses IFLA_STATS_FILTER_BIT(attr) = 1 << (attr - 1)
@@ -59,27 +61,39 @@ pub struct StatsHeader {
     pub filter_mask: StatsFilterMask,
 }
 
+impl StatsHeader {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            StatsMessageBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), STATS_HEADER_LEN)
+            })?;
+        Ok(StatsHeader {
+            family: raw.family.into(),
+            ifindex: raw.ifindex,
+            filter_mask: StatsFilterMask::from_bits_retain(raw.filter_mask),
+        })
+    }
+}
+
+impl From<&StatsHeader> for StatsMessageBuffer {
+    fn from(header: &StatsHeader) -> Self {
+        Self {
+            family: header.family.into(),
+            pad1: 0,
+            pad2: 0,
+            ifindex: header.ifindex,
+            filter_mask: header.filter_mask.bits(),
+        }
+    }
+}
+
 impl Emitable for StatsHeader {
     fn buffer_len(&self) -> usize {
         STATS_HEADER_LEN
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = StatsMessageBuffer::new(buffer);
-        packet.set_family(self.family.into());
-        packet.set_pad1(0);
-        packet.set_pad2(0);
-        packet.set_ifindex(self.ifindex);
-        packet.set_filter_mask(self.filter_mask.bits());
-    }
-}
-
-impl<T: AsRef<[u8]>> Parseable<StatsMessageBuffer<T>> for StatsHeader {
-    fn parse(buf: &StatsMessageBuffer<T>) -> Result<Self, DecodeError> {
-        Ok(StatsHeader {
-            family: buf.family().into(),
-            ifindex: buf.ifindex(),
-            filter_mask: StatsFilterMask::from_bits_retain(buf.filter_mask()),
-        })
+        let raw = StatsMessageBuffer::from(self);
+        buffer[..STATS_HEADER_LEN].copy_from_slice(raw.as_bytes());
     }
 }

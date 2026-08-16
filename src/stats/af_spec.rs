@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
     Parseable, NLA_F_NESTED,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const AF_MPLS: u16 = 28;
 const MPLS_STATS_LINK: u16 = 1;
@@ -23,52 +26,77 @@ pub struct MplsLinkStats {
     pub rx_noroute: u64,
 }
 
-const MPLS_LINK_STATS_LEN: usize = 72;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct MplsLinkStatsBuffer {
+    rx_packets: u64,
+    tx_packets: u64,
+    rx_bytes: u64,
+    tx_bytes: u64,
+    rx_errors: u64,
+    tx_errors: u64,
+    rx_dropped: u64,
+    tx_dropped: u64,
+    rx_noroute: u64,
+}
 
-buffer!(MplsLinkStatsBuffer(MPLS_LINK_STATS_LEN) {
-    rx_packets: (u64, 0..8),
-    tx_packets: (u64, 8..16),
-    rx_bytes: (u64, 16..24),
-    tx_bytes: (u64, 24..32),
-    rx_errors: (u64, 32..40),
-    tx_errors: (u64, 40..48),
-    rx_dropped: (u64, 48..56),
-    tx_dropped: (u64, 56..64),
-    rx_noroute: (u64, 64..72),
-});
-
-impl<T: AsRef<[u8]>> Parseable<MplsLinkStatsBuffer<T>> for MplsLinkStats {
-    fn parse(buf: &MplsLinkStatsBuffer<T>) -> Result<Self, DecodeError> {
+impl MplsLinkStats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            MplsLinkStatsBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<MplsLinkStatsBuffer>(),
+                )
+            })?;
         Ok(Self {
-            rx_packets: buf.rx_packets(),
-            tx_packets: buf.tx_packets(),
-            rx_bytes: buf.rx_bytes(),
-            tx_bytes: buf.tx_bytes(),
-            rx_errors: buf.rx_errors(),
-            tx_errors: buf.tx_errors(),
-            rx_dropped: buf.rx_dropped(),
-            tx_dropped: buf.tx_dropped(),
-            rx_noroute: buf.rx_noroute(),
+            rx_packets: raw.rx_packets,
+            tx_packets: raw.tx_packets,
+            rx_bytes: raw.rx_bytes,
+            tx_bytes: raw.tx_bytes,
+            rx_errors: raw.rx_errors,
+            tx_errors: raw.tx_errors,
+            rx_dropped: raw.rx_dropped,
+            tx_dropped: raw.tx_dropped,
+            rx_noroute: raw.rx_noroute,
         })
+    }
+}
+
+impl From<&MplsLinkStats> for MplsLinkStatsBuffer {
+    fn from(value: &MplsLinkStats) -> Self {
+        Self {
+            rx_packets: value.rx_packets,
+            tx_packets: value.tx_packets,
+            rx_bytes: value.rx_bytes,
+            tx_bytes: value.tx_bytes,
+            rx_errors: value.rx_errors,
+            tx_errors: value.tx_errors,
+            rx_dropped: value.rx_dropped,
+            tx_dropped: value.tx_dropped,
+            rx_noroute: value.rx_noroute,
+        }
     }
 }
 
 impl Nla for MplsLinkStats {
     fn value_len(&self) -> usize {
-        MPLS_LINK_STATS_LEN
+        size_of::<MplsLinkStatsBuffer>()
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        let mut buf = MplsLinkStatsBuffer::new(buffer);
-        buf.set_rx_packets(self.rx_packets);
-        buf.set_tx_packets(self.tx_packets);
-        buf.set_rx_bytes(self.rx_bytes);
-        buf.set_tx_bytes(self.tx_bytes);
-        buf.set_rx_errors(self.rx_errors);
-        buf.set_tx_errors(self.tx_errors);
-        buf.set_rx_dropped(self.rx_dropped);
-        buf.set_tx_dropped(self.tx_dropped);
-        buf.set_rx_noroute(self.rx_noroute);
+        let raw = MplsLinkStatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 
     fn kind(&self) -> u16 {
@@ -143,12 +171,8 @@ fn parse_mpls_stats(payload: &[u8]) -> Result<MplsLinkStats, DecodeError> {
         let nla = nla.context("invalid NLA in MPLS stats")?;
         let kind = nla.kind() & !NLA_F_NESTED;
         if kind == MPLS_STATS_LINK {
-            let val = nla.value();
-            return MplsLinkStats::parse(
-                &MplsLinkStatsBuffer::new_checked(val)
-                    .context("invalid MPLS link stats")?,
-            )
-            .context("invalid MPLS link stats");
+            return MplsLinkStats::parse(nla.value())
+                .context("invalid MPLS link stats");
         }
     }
     Ok(MplsLinkStats::default())

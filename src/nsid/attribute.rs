@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     emit_i32, emit_u32, parse_i32, parse_u32, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const NETNSA_NSID: u16 = 1;
@@ -83,5 +83,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context(format!("unknown NLA type {kind}"))?,
             ),
         })
+    }
+}
+
+pub(crate) struct VecNsidAttribute(pub(crate) Vec<NsidAttribute>);
+
+impl Parseable<[u8]> for VecNsidAttribute {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        let mut attributes = vec![];
+        for nla_buf in NlasIterator::new(buf) {
+            attributes.push(NsidAttribute::parse(&nla_buf?)?);
+        }
+        Ok(Self(attributes))
     }
 }

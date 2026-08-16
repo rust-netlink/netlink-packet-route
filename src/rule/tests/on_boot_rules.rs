@@ -6,7 +6,6 @@ use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
-        RuleMessageBuffer,
     },
     AddressFamily,
 };
@@ -39,10 +38,7 @@ fn test_ipv4_rule() {
             RuleAttribute::Priority(32766),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -79,10 +75,7 @@ fn test_ipv6_rule() {
             RuleAttribute::Priority(32766),
         ],
     };
-    assert_eq!(
-        expected,
-        RuleMessage::parse(&RuleMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

@@ -2,13 +2,13 @@
 
 use netlink_packet_core::{
     emit_u32, emit_u64, parse_string, parse_u32, parse_u64, DecodeError,
-    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable,
 };
 
 use super::{
     param::VecNeighbourTableParameter, NeighbourTableConfig,
-    NeighbourTableConfigBuffer, NeighbourTableParameter, NeighbourTableStats,
-    NeighbourTableStatsBuffer,
+    NeighbourTableParameter, NeighbourTableStats,
 };
 
 const NDTA_NAME: u16 = 1;
@@ -92,18 +92,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 parse_string(payload).context("invalid NDTA_NAME value")?,
             ),
             NDTA_CONFIG => Self::Config(
-                NeighbourTableConfig::parse(
-                    &NeighbourTableConfigBuffer::new_checked(payload)
-                        .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
-                )
-                .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
+                NeighbourTableConfig::parse(payload)
+                    .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
             ),
             NDTA_STATS => Self::Stats(
-                NeighbourTableStats::parse(
-                    &NeighbourTableStatsBuffer::new_checked(payload)
-                        .context(format!("invalid NDTA_STATS {payload:?}"))?,
-                )
-                .context(format!("invalid NDTA_STATS {payload:?}"))?,
+                NeighbourTableStats::parse(payload)
+                    .context(format!("invalid NDTA_STATS {payload:?}"))?,
             ),
             NDTA_PARMS => {
                 let err = |payload| format!("invalid NDTA_PARMS {payload:?}");
@@ -133,5 +127,19 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context(format!("unknown NLA type {kind}"))?,
             ),
         })
+    }
+}
+
+pub(crate) struct VecNeighbourTableAttribute(
+    pub(crate) Vec<NeighbourTableAttribute>,
+);
+
+impl Parseable<[u8]> for VecNeighbourTableAttribute {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        let mut attributes = vec![];
+        for nla_buf in NlasIterator::new(buf) {
+            attributes.push(NeighbourTableAttribute::parse(&nla_buf?)?);
+        }
+        Ok(Self(attributes))
     }
 }

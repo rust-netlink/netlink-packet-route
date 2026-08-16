@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 use super::{
@@ -105,5 +106,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context(format!("unknown IFLA_STATS type {kind}"))?,
             ),
         })
+    }
+}
+
+pub(crate) struct VecStatsAttribute(pub(crate) Vec<StatsAttribute>);
+
+impl Parseable<[u8]> for VecStatsAttribute {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        let mut attributes = vec![];
+        for nla_buf in NlasIterator::new(buf) {
+            attributes.push(StatsAttribute::parse(&nla_buf?)?);
+        }
+        Ok(Self(attributes))
     }
 }
