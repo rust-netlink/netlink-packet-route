@@ -1,32 +1,34 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{super::AddressFamily, flags::RouteFlags};
 
-const ROUTE_HEADER_LEN: usize = 12;
+pub(crate) const ROUTE_HEADER_LEN: usize = 12;
 
-buffer!(RouteMessageBuffer(ROUTE_HEADER_LEN) {
-    address_family: (u8, 0),
-    destination_prefix_length: (u8, 1),
-    source_prefix_length: (u8, 2),
-    tos: (u8, 3),
-    table: (u8, 4),
-    protocol: (u8, 5),
-    scope: (u8, 6),
-    kind: (u8, 7),
-    flags: (u32, 8..ROUTE_HEADER_LEN),
-    payload: (slice, ROUTE_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> RouteMessageBuffer<&'a T> {
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct RouteMessageBuffer {
+    address_family: u8,
+    destination_prefix_length: u8,
+    source_prefix_length: u8,
+    tos: u8,
+    table: u8,
+    protocol: u8,
+    scope: u8,
+    kind: u8,
+    flags: u32,
 }
 
 /// High level representation of `RTM_GETROUTE`, `RTM_ADDROUTE`, `RTM_DELROUTE`
@@ -59,20 +61,22 @@ impl RouteHeader {
     pub const RT_TABLE_UNSPEC: u8 = 0;
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteMessageBuffer<&'a T>>
-    for RouteHeader
-{
-    fn parse(buf: &RouteMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl RouteHeader {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            RouteMessageBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), ROUTE_HEADER_LEN)
+            })?;
         Ok(RouteHeader {
-            address_family: buf.address_family().into(),
-            destination_prefix_length: buf.destination_prefix_length(),
-            source_prefix_length: buf.source_prefix_length(),
-            tos: buf.tos(),
-            table: buf.table(),
-            protocol: buf.protocol().into(),
-            scope: buf.scope().into(),
-            kind: buf.kind().into(),
-            flags: RouteFlags::from_bits_retain(buf.flags()),
+            address_family: raw.address_family.into(),
+            destination_prefix_length: raw.destination_prefix_length,
+            source_prefix_length: raw.source_prefix_length,
+            tos: raw.tos,
+            table: raw.table,
+            protocol: raw.protocol.into(),
+            scope: raw.scope.into(),
+            kind: raw.kind.into(),
+            flags: RouteFlags::from_bits_retain(raw.flags),
         })
     }
 }
@@ -83,16 +87,24 @@ impl Emitable for RouteHeader {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = RouteMessageBuffer::new(buffer);
-        buffer.set_address_family(self.address_family.into());
-        buffer.set_destination_prefix_length(self.destination_prefix_length);
-        buffer.set_source_prefix_length(self.source_prefix_length);
-        buffer.set_tos(self.tos);
-        buffer.set_table(self.table);
-        buffer.set_protocol(self.protocol.into());
-        buffer.set_scope(self.scope.into());
-        buffer.set_kind(self.kind.into());
-        buffer.set_flags(self.flags.bits());
+        let raw = RouteMessageBuffer::from(self);
+        buffer[..ROUTE_HEADER_LEN].copy_from_slice(raw.as_bytes());
+    }
+}
+
+impl From<&RouteHeader> for RouteMessageBuffer {
+    fn from(header: &RouteHeader) -> Self {
+        Self {
+            address_family: header.address_family.into(),
+            destination_prefix_length: header.destination_prefix_length,
+            source_prefix_length: header.source_prefix_length,
+            tos: header.tos,
+            table: header.table,
+            protocol: header.protocol.into(),
+            scope: header.scope.into(),
+            kind: header.kind.into(),
+            flags: header.flags.bits(),
+        }
     }
 }
 

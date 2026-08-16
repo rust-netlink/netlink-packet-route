@@ -7,7 +7,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     route::{
         flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
-        RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
+        RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -44,10 +44,7 @@ fn test_ipv6_route_expires() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

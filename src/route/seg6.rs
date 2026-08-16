@@ -5,6 +5,7 @@ use std::net::{IpAddr, Ipv6Addr};
 use netlink_packet_core::{
     DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::ip::{emit_ip_addr, parse_ipv6_addr};
 
@@ -85,24 +86,30 @@ impl Nla for RouteSeg6IpTunnel {
 
 const SEG6_HEADER_LEN: usize = 12;
 
-buffer!(Seg6MessageBuffer(SEG6_HEADER_LEN) {
-    mode: (u32, 0..4),
-    nexthdr: (u8, 4),
-    hdrlen: (u8, 5),
-    seg_type: (u8, 6),
-    segments_left: (u8, 7),
-    first_segment: (u8, 8),
-    flags: (u8, 9),
-    tag: (u16, 10..12),
-    segments: (slice, SEG6_HEADER_LEN..),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct Seg6MessageBuffer {
+    mode: u32,
+    nexthdr: u8,
+    hdrlen: u8,
+    seg_type: u8,
+    segments_left: u8,
+    first_segment: u8,
+    flags: u8,
+    tag: u16,
+}
 
 const SEG6_SEGMENT_LEN: usize = 16;
-
-buffer!(Seg6SegmentBuffer(SEG6_SEGMENT_LEN) {
-    segment: (slice, 0..SEG6_SEGMENT_LEN),
-    rest: (slice, SEG6_SEGMENT_LEN..)
-});
 
 /// Netlink attributes for `RTA_ENCAP` with `RTA_ENCAP_TYPE` set to
 /// `LWTUNNEL_ENCAP_SEG6`.
@@ -118,9 +125,8 @@ pub struct Seg6Header {
 impl Seg6Header {
     fn push_segments(buf: &mut [u8], mut segments: Vec<Ipv6Addr>) {
         if let Some(segment) = segments.pop() {
-            let mut segment_buffer = Seg6SegmentBuffer::new(buf);
-            emit_ip_addr(&IpAddr::V6(segment), segment_buffer.segment_mut());
-            Self::push_segments(segment_buffer.rest_mut(), segments);
+            emit_ip_addr(&IpAddr::V6(segment), &mut buf[..SEG6_SEGMENT_LEN]);
+            Self::push_segments(&mut buf[SEG6_SEGMENT_LEN..], segments);
         }
     }
 
@@ -130,10 +136,9 @@ impl Seg6Header {
     ) -> Result<(), DecodeError> {
         // are there any remaining segments ?
         if buf.len() >= SEG6_SEGMENT_LEN {
-            let segment_buffer = Seg6SegmentBuffer::new(buf);
-            let segment = parse_ipv6_addr(segment_buffer.segment())?;
+            let segment = parse_ipv6_addr(&buf[..SEG6_SEGMENT_LEN])?;
             segments.push(segment);
-            Self::get_segments(segment_buffer.rest(), segments)?;
+            Self::get_segments(&buf[SEG6_SEGMENT_LEN..], segments)?;
         }
         Ok(())
     }
@@ -166,8 +171,6 @@ impl Nla for Seg6Header {
         // iproute2/iproute2
         //      ip/iproute_lwtunnel.c parse_encap_seg6()
 
-        let mut seg6_header = Seg6MessageBuffer::new(buffer);
-
         let mut number_segments = self.segments.len();
         if matches!(self.mode, Seg6Mode::Inline) {
             number_segments += 1 // last segment (::) added
@@ -175,14 +178,17 @@ impl Nla for Seg6Header {
 
         let srhlen = 8 + 16 * number_segments;
 
-        seg6_header.set_mode(self.mode.into());
-        seg6_header.set_nexthdr(0);
-        seg6_header.set_hdrlen(((srhlen >> 3) - 1) as u8);
-        seg6_header.set_seg_type(4);
-        seg6_header.set_segments_left((number_segments - 1) as u8);
-        seg6_header.set_first_segment((number_segments - 1) as u8);
-        seg6_header.set_flags(0);
-        seg6_header.set_tag(0);
+        let raw = Seg6MessageBuffer {
+            mode: self.mode.into(),
+            nexthdr: 0,
+            hdrlen: ((srhlen >> 3) - 1) as u8,
+            seg_type: 4,
+            segments_left: (number_segments - 1) as u8,
+            first_segment: (number_segments - 1) as u8,
+            flags: 0,
+            tag: 0,
+        };
+        buffer[..SEG6_HEADER_LEN].copy_from_slice(raw.as_bytes());
 
         let mut segments = self.segments.clone();
 
@@ -191,7 +197,7 @@ impl Nla for Seg6Header {
             segments.push("::".parse().expect("Impossible error"))
         }
 
-        Seg6Header::push_segments(seg6_header.segments_mut(), segments);
+        Seg6Header::push_segments(&mut buffer[SEG6_HEADER_LEN..], segments);
     }
 }
 
@@ -204,25 +210,28 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             SEG6_IPTUNNEL_SRH => {
-                let seg6_header = Seg6MessageBuffer::new(payload);
+                let (raw, segments_buf) = Seg6MessageBuffer::ref_from_prefix(
+                    payload,
+                )
+                .map_err(|_| {
+                    DecodeError::buffer_too_small(
+                        payload.len(),
+                        SEG6_HEADER_LEN,
+                    )
+                })?;
 
                 let mut segments: Vec<Ipv6Addr> = vec![];
-                Seg6Header::get_segments(
-                    seg6_header.segments(),
-                    &mut segments,
-                )?;
+                Seg6Header::get_segments(segments_buf, &mut segments)?;
 
                 let mut segments: Vec<Ipv6Addr> =
                     segments.into_iter().rev().collect();
 
-                if matches!(seg6_header.mode().into(), Seg6Mode::Inline) {
+                let mode = Seg6Mode::from(raw.mode);
+                if matches!(mode, Seg6Mode::Inline) {
                     segments.pop(); // remove last inline segment
                 }
 
-                RouteSeg6IpTunnel::Seg6(Seg6Header {
-                    mode: seg6_header.mode().into(),
-                    segments,
-                })
+                RouteSeg6IpTunnel::Seg6(Seg6Header { mode, segments })
             }
             _ => Self::Other(
                 DefaultNla::parse(buf)

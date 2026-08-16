@@ -2,7 +2,8 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::{
     ip::{parse_ipv4_addr, parse_ipv6_addr, IPV4_ADDR_LEN, IPV6_ADDR_LEN},
@@ -25,24 +26,35 @@ pub enum RouteVia {
 
 const RTVIA_LEN: usize = 2;
 
-buffer!(RouteViaBuffer(RTVIA_LEN) {
-    address_family: (u16, 0..2),
-    address: (slice, RTVIA_LEN..),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct RouteViaBuffer {
+    address_family: u16,
+}
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<RouteViaBuffer<&'a T>>
-    for RouteVia
-{
-    fn parse(buf: &RouteViaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let address_family: AddressFamily = (buf.address_family() as u8).into();
+impl RouteVia {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, address) =
+            RouteViaBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), RTVIA_LEN)
+            })?;
+        let address_family: AddressFamily = (raw.address_family as u8).into();
         Ok(match address_family {
-            AddressFamily::Inet => Self::Inet(parse_ipv4_addr(buf.address())?),
-            AddressFamily::Inet6 => {
-                Self::Inet6(parse_ipv6_addr(buf.address())?)
-            }
+            AddressFamily::Inet => Self::Inet(parse_ipv4_addr(address)?),
+            AddressFamily::Inet6 => Self::Inet6(parse_ipv6_addr(address)?),
             #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
-            AddressFamily::Packet => Self::Packet(buf.address().to_vec()),
-            _ => Self::Other((address_family, buf.address().to_vec())),
+            AddressFamily::Packet => Self::Packet(address.to_vec()),
+            _ => Self::Other((address_family, address.to_vec())),
         })
     }
 }
@@ -59,7 +71,6 @@ impl Emitable for RouteVia {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = RouteViaBuffer::new(buffer);
         let (address_family, addr) = match self {
             Self::Inet(ip) => (AddressFamily::Inet, ip.octets().to_vec()),
             Self::Inet6(ip) => (AddressFamily::Inet6, ip.octets().to_vec()),
@@ -67,8 +78,11 @@ impl Emitable for RouteVia {
             Self::Packet(a) => (AddressFamily::Packet, a.to_vec()),
             Self::Other((f, a)) => (*f, a.to_vec()),
         };
-        buffer.set_address_family(u8::from(address_family).into());
-        buffer.address_mut().copy_from_slice(addr.as_slice());
+        let raw = RouteViaBuffer {
+            address_family: u16::from(u8::from(address_family)),
+        };
+        buffer[..RTVIA_LEN].copy_from_slice(raw.as_bytes());
+        buffer[RTVIA_LEN..].copy_from_slice(addr.as_slice());
     }
 }
 

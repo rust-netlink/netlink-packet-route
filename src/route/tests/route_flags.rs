@@ -7,8 +7,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     route::{
         flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
-        RouteMessageBuffer, RouteNextHopBuffer, RouteProtocol, RouteScope,
-        RouteType,
+        RouteNextHopBuffer, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -44,10 +43,7 @@ fn test_ipv6_add_route_onlink() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -65,7 +61,7 @@ fn test_next_hop_max_buffer_len() {
     // |-----|-----|-----|-----|-----|-----|-----|-----|-------|
     // |  length   |flags|hops |    Interface Index    |Payload|
     let buffer = [0xff, 0xff, 0, 0, 0, 0, 0, 0];
-    assert!(RouteNextHopBuffer::new_checked(buffer).is_err());
+    assert!(RouteNextHopBuffer::new_checked(&buffer).is_err());
 }
 
 #[test]
@@ -77,5 +73,5 @@ fn test_invalid_next_hop() {
         0, 0, 0, 0, // interface index
         0, 0, 0, 0, 0, 0, 0, 0, // payload
     ];
-    assert!(RouteNextHopBuffer::new_checked(buffer).is_err());
+    assert!(RouteNextHopBuffer::new_checked(&buffer).is_err());
 }

@@ -8,8 +8,8 @@ use crate::{
     route::{
         seg6::{RouteSeg6IpTunnel, Seg6Mode},
         RouteAttribute, RouteFlags, RouteHeader, RouteLwEnCapType,
-        RouteLwTunnelEncap, RouteMessage, RouteMessageBuffer, RouteProtocol,
-        RouteScope, RouteType, Seg6Header,
+        RouteLwTunnelEncap, RouteMessage, RouteProtocol, RouteScope, RouteType,
+        Seg6Header,
     },
     AddressFamily,
 };
@@ -65,10 +65,7 @@ fn test_encap() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -129,10 +126,7 @@ fn test_inline() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

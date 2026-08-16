@@ -3,16 +3,16 @@
 use netlink_packet_core::{
     emit_u32, emit_u64, parse_u16, parse_u16_be, parse_u32, parse_u64,
     parse_u8, DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    Parseable, ParseableParametrized,
+    NlasIterator, Parseable, ParseableParametrized,
 };
 
 use super::{
     super::AddressFamily, lwtunnel::VecRouteLwTunnelEncap,
-    metrics::VecRouteMetric, mpls::VecMplsLabel, MplsLabel, RouteAddress,
-    RouteCacheInfo, RouteCacheInfoBuffer, RouteLwEnCapType, RouteLwTunnelEncap,
-    RouteMetric, RouteMfcStats, RouteMfcStatsBuffer, RouteMplsTtlPropagation,
-    RouteNextHop, RouteNextHopBuffer, RoutePreference, RouteRealm, RouteType,
-    RouteVia, RouteViaBuffer,
+    metrics::VecRouteMetric, mpls::VecMplsLabel,
+    next_hops::parse_multipath_next_hops, MplsLabel, RouteAddress,
+    RouteCacheInfo, RouteLwEnCapType, RouteLwTunnelEncap, RouteMetric,
+    RouteMfcStats, RouteMplsTtlPropagation, RouteNextHop, RoutePreference,
+    RouteRealm, RouteType, RouteVia,
 };
 
 const RTA_DST: u16 = 1;
@@ -242,12 +242,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 Self::PrefSource(RouteAddress::parse(address_family, payload)?)
             }
             RTA_VIA => Self::Via(
-                RouteVia::parse(
-                    &RouteViaBuffer::new_checked(payload).context(format!(
-                        "Invalid RTA_VIA value {payload:?}"
-                    ))?,
-                )
-                .context(format!("Invalid RTA_VIA value {payload:?}"))?,
+                RouteVia::parse(payload)
+                    .context(format!("Invalid RTA_VIA value {payload:?}"))?,
             ),
             RTA_NEWDST => Self::NewDestination(
                 VecMplsLabel::parse(payload)
@@ -304,44 +300,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             ),
 
             RTA_CACHEINFO => Self::CacheInfo(
-                RouteCacheInfo::parse(
-                    &RouteCacheInfoBuffer::new_checked(payload)
-                        .context("invalid RTA_CACHEINFO value")?,
-                )
-                .context("invalid RTA_CACHEINFO value")?,
+                RouteCacheInfo::parse(payload)
+                    .context("invalid RTA_CACHEINFO value")?,
             ),
             RTA_MFC_STATS => Self::MfcStats(
-                RouteMfcStats::parse(
-                    &RouteMfcStatsBuffer::new_checked(payload)
-                        .context("invalid RTA_MFC_STATS value")?,
-                )
-                .context("invalid RTA_MFC_STATS value")?,
+                RouteMfcStats::parse(payload)
+                    .context("invalid RTA_MFC_STATS value")?,
             ),
             RTA_METRICS => Self::Metrics(
                 VecRouteMetric::parse(payload)
                     .context("invalid RTA_METRICS value")?
                     .0,
             ),
-            RTA_MULTIPATH => {
-                let mut next_hops = vec![];
-                let mut buf = payload;
-                loop {
-                    let nh_buf = RouteNextHopBuffer::new_checked(&buf)
-                        .context("invalid RTA_MULTIPATH value")?;
-                    let len = nh_buf.length() as usize;
-                    let nh = RouteNextHop::parse_with_param(
-                        &nh_buf,
-                        (address_family, route_type, encap_type),
-                    )
-                    .context("invalid RTA_MULTIPATH value")?;
-                    next_hops.push(nh);
-                    if buf.len() == len {
-                        break;
-                    }
-                    buf = &buf[len..];
-                }
-                Self::MultiPath(next_hops)
-            }
+            RTA_MULTIPATH => Self::MultiPath(
+                parse_multipath_next_hops(
+                    payload,
+                    (address_family, route_type, encap_type),
+                )
+                .context("invalid RTA_MULTIPATH value")?,
+            ),
             RTA_IP_PROTO => Self::IpProto(
                 parse_u8(payload).context("invalid RTA_IP_PROTO value")?,
             ),
@@ -361,5 +338,67 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?,
             ),
         })
+    }
+}
+
+pub(crate) struct VecRouteAttribute(pub(crate) Vec<RouteAttribute>);
+
+impl ParseableParametrized<[u8], (AddressFamily, RouteType)>
+    for VecRouteAttribute
+{
+    fn parse_with_param(
+        buf: &[u8],
+        (address_family, route_type): (AddressFamily, RouteType),
+    ) -> Result<Self, DecodeError> {
+        let mut encap_type = RouteLwEnCapType::None;
+        // The RTA_ENCAP_TYPE is provided __after__ RTA_ENCAP, we should find
+        // RTA_ENCAP_TYPE first.
+        for nla_buf in NlasIterator::new(buf) {
+            let nla = match nla_buf {
+                Ok(n) => n,
+                Err(_) => continue,
+            };
+            if nla.kind() == RTA_ENCAP_TYPE {
+                if let Ok(RouteAttribute::EncapType(v)) =
+                    RouteAttribute::parse_with_param(
+                        &nla,
+                        (address_family, route_type, encap_type),
+                    )
+                {
+                    encap_type = v;
+                    break;
+                }
+            }
+        }
+        let mut attributes = vec![];
+        for nla_buf in NlasIterator::new(buf) {
+            attributes.push(RouteAttribute::parse_with_param(
+                &nla_buf?,
+                (address_family, route_type, encap_type),
+            )?);
+        }
+        Ok(Self(attributes))
+    }
+}
+
+impl ParseableParametrized<[u8], (AddressFamily, RouteType, RouteLwEnCapType)>
+    for VecRouteAttribute
+{
+    fn parse_with_param(
+        buf: &[u8],
+        (address_family, route_type, encap_type): (
+            AddressFamily,
+            RouteType,
+            RouteLwEnCapType,
+        ),
+    ) -> Result<Self, DecodeError> {
+        let mut nlas = vec![];
+        for nla_buf in NlasIterator::new(buf) {
+            nlas.push(RouteAttribute::parse_with_param(
+                &nla_buf?,
+                (address_family, route_type, encap_type),
+            )?);
+        }
+        Ok(Self(nlas))
     }
 }

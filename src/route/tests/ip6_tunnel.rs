@@ -11,7 +11,7 @@ use crate::{
     route::{
         lwtunnel::RouteIp6TunnelFlags, RouteAttribute, RouteFlags, RouteHeader,
         RouteIp6Tunnel, RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage,
-        RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
+        RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -76,10 +76,7 @@ fn test_ip6_tunnel() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

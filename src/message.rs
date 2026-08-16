@@ -12,7 +12,7 @@ use crate::{
     neighbour_table::{NeighbourTableMessage, NeighbourTableMessageBuffer},
     nsid::{NsidMessage, NsidMessageBuffer},
     prefix::{PrefixMessage, PrefixMessageBuffer},
-    route::{RouteHeader, RouteMessage, RouteMessageBuffer},
+    route::{RouteHeader, RouteMessage},
     rule::{RuleMessage, RuleMessageBuffer},
     stats::{StatsMessage, StatsMessageBuffer},
     tc::{TcActionMessage, TcActionMessageBuffer, TcMessage, TcMessageBuffer},
@@ -181,34 +181,27 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
 
             // Route messages
             RTM_NEWROUTE | RTM_GETROUTE | RTM_DELROUTE => {
-                let msg = match RouteMessageBuffer::new_checked(&buf.inner()) {
-                    Ok(buf) => RouteMessage::parse(&buf)
-                        .context("invalid route message")?,
-                    // HACK: iproute2 sends invalid RTM_GETROUTE message, where
-                    // the header is limited to the
-                    // interface family (1 byte) and 3 bytes of padding.
-                    Err(e) => {
-                        // Not only does iproute2 sends invalid messages, it's
-                        // also inconsistent in
-                        // doing so: for link and address messages, the length
-                        // advertised in the
-                        // netlink header includes the 3 bytes of padding but it
-                        // does not seem to be the case
-                        // for the route message, hence the buf.length() == 1
-                        // check.
-                        if (buf.inner().len() == 4 || buf.inner().len() == 1)
-                            && message_type == RTM_GETROUTE
-                        {
-                            let mut msg = RouteMessage {
-                                header: RouteHeader::default(),
-                                attributes: vec![],
-                            };
-                            msg.header.address_family = buf.inner()[0].into();
-                            msg
-                        } else {
-                            return Err(e);
-                        }
-                    }
+                // HACK: iproute2 sends invalid RTM_GETROUTE message, where
+                // the header is limited to the interface family (1 byte) and
+                // 3 bytes of padding.
+                //
+                // Not only does iproute2 sends invalid messages, it's also
+                // inconsistent in doing so: for link and address messages, the
+                // length advertised in the netlink header includes the 3 bytes
+                // of padding but it does not seem to be the case for the route
+                // message, hence the buf.length() == 1 check.
+                let msg = if (buf.inner().len() == 4 || buf.inner().len() == 1)
+                    && message_type == RTM_GETROUTE
+                {
+                    let mut msg = RouteMessage {
+                        header: RouteHeader::default(),
+                        attributes: vec![],
+                    };
+                    msg.header.address_family = buf.inner()[0].into();
+                    msg
+                } else {
+                    RouteMessage::parse(buf.inner())
+                        .context("invalid route message")?
                 };
                 match message_type {
                     RTM_NEWROUTE => RouteNetlinkMessage::NewRoute(msg),

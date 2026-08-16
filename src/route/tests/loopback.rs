@@ -7,8 +7,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     route::{
         flags::RouteFlags, RouteAttribute, RouteCacheInfo, RouteHeader,
-        RouteMessage, RouteMessageBuffer, RoutePreference, RouteProtocol,
-        RouteScope, RouteType,
+        RouteMessage, RoutePreference, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -46,10 +45,7 @@ fn test_ipv4_route_loopback() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -91,10 +87,7 @@ fn test_ipv4_route_loopback_broadcast() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -150,10 +143,7 @@ fn test_ipv6_route_loopback() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
