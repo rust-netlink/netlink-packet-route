@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Emitable;
 
-use crate::{
-    tc::actions::{TcActionMessageBuffer, TcActionMessageHeader},
-    AddressFamily,
-};
+use crate::{tc::actions::TcActionMessageHeader, AddressFamily};
 
 #[test]
 fn tc_action_message_header_parse_back_all_known_families() {
@@ -62,10 +59,7 @@ fn tc_action_message_header_parse_back_all_known_families() {
         let orig = TcActionMessageHeader { family };
         let mut buffer = vec![0; orig.buffer_len()];
         orig.emit(&mut buffer);
-        let parsed = TcActionMessageHeader::parse(
-            &TcActionMessageBuffer::new_checked(&buffer).unwrap(),
-        )
-        .unwrap();
+        let parsed = TcActionMessageHeader::parse(&buffer).unwrap();
         assert_eq!(orig, parsed);
     }
 }
@@ -77,9 +71,6 @@ fn tc_action_message_header_parse_back_other() {
     };
     let mut buffer = vec![0; orig.buffer_len()];
     orig.emit(&mut buffer);
-    let parsed = TcActionMessageHeader::parse(
-        &TcActionMessageBuffer::new_checked(&buffer).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcActionMessageHeader::parse(&buffer).unwrap();
     assert_eq!(orig, parsed);
 }

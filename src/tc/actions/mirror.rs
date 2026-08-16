@@ -6,13 +6,14 @@
 /// redirecting (stealing) the packet it receives. Mirroring is what
 /// is sometimes referred to as Switch Port Analyzer (SPAN) and is
 /// commonly used to analyze and/or debug flows.
+use std::mem::size_of;
+
 use netlink_packet_core::{
     DecodeError, DefaultNla, Emitable, Nla, NlaBuffer, Parseable,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
-use super::{
-    TcActionGeneric, TcActionGenericBuffer, Tcf, TcfBuffer, TC_TCF_BUF_LEN,
-};
+use super::{TcActionGeneric, TcActionGenericBuffer, Tcf, TcfBuffer};
 
 /// Traffic control action used to mirror or redirect packets.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -41,8 +42,8 @@ pub enum TcActionMirrorOption {
 impl Nla for TcActionMirrorOption {
     fn value_len(&self) -> usize {
         match self {
-            Self::Tm(_) => TC_TCF_BUF_LEN,
-            Self::Parms(_) => TC_MIRRED_BUF_LEN,
+            Self::Tm(_) => size_of::<TcfBuffer>(),
+            Self::Parms(_) => size_of::<TcMirrorBuffer>(),
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -69,18 +70,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
-            TCA_MIRRED_TM => {
-                Self::Tm(Tcf::parse(&TcfBuffer::new_checked(payload)?)?)
-            }
-            TCA_MIRRED_PARMS => Self::Parms(TcMirror::parse(
-                &TcMirrorBuffer::new_checked(payload)?,
-            )?),
+            TCA_MIRRED_TM => Self::Tm(Tcf::parse(payload)?),
+            TCA_MIRRED_PARMS => Self::Parms(TcMirror::parse(payload)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
 }
-
-const TC_MIRRED_BUF_LEN: usize = TcActionGeneric::BUF_LEN + 8;
 
 /// Parameters for the mirred action.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -95,34 +90,61 @@ pub struct TcMirror {
 }
 
 // kernel struct `tc_mirred`
-buffer!(TcMirrorBuffer(TC_MIRRED_BUF_LEN) {
-    generic: (slice, 0..20),
-    eaction: (i32, 20..24),
-    ifindex: (u32, 24..28),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcMirrorBuffer {
+    generic: TcActionGenericBuffer,
+    eaction: i32,
+    ifindex: u32,
+}
 
-impl Emitable for TcMirror {
-    fn buffer_len(&self) -> usize {
-        TC_MIRRED_BUF_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcMirrorBuffer::new(buffer);
-        self.generic.emit(packet.generic_mut());
-        packet.set_eaction(self.eaction.into());
-        packet.set_ifindex(self.ifindex);
+impl TcMirror {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            TcMirrorBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcMirrorBuffer>(),
+                )
+            })?;
+        Ok(Self {
+            generic: TcActionGeneric::parse(
+                &payload[..size_of::<TcActionGenericBuffer>()],
+            )?,
+            eaction: raw.eaction.into(),
+            ifindex: raw.ifindex,
+        })
     }
 }
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<TcMirrorBuffer<&T>> for TcMirror {
-    fn parse(buf: &TcMirrorBuffer<&T>) -> Result<Self, DecodeError> {
-        Ok(Self {
-            generic: TcActionGeneric::parse(&TcActionGenericBuffer::new(
-                buf.generic(),
-            ))?,
-            eaction: buf.eaction().into(),
-            ifindex: buf.ifindex(),
-        })
+impl From<&TcMirror> for TcMirrorBuffer {
+    fn from(mirror: &TcMirror) -> Self {
+        Self {
+            generic: TcActionGenericBuffer::from(&mirror.generic),
+            eaction: mirror.eaction.into(),
+            ifindex: mirror.ifindex,
+        }
+    }
+}
+
+impl Emitable for TcMirror {
+    fn buffer_len(&self) -> usize {
+        size_of::<TcMirrorBuffer>()
+    }
+
+    fn emit(&self, buffer: &mut [u8]) {
+        let raw = TcMirrorBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }
 

@@ -5,10 +5,7 @@ use netlink_packet_core::{
     ParseableParametrized,
 };
 
-use super::{
-    TcStatsBasic, TcStatsBasicBuffer, TcStatsQueue, TcStatsQueueBuffer,
-    TcXstats,
-};
+use super::{TcStatsBasic, TcStatsQueue, TcXstats};
 
 const TCA_STATS_BASIC: u16 = 1;
 // const TCA_STATS_RATE_EST: u16 = 2; // TODO
@@ -71,15 +68,9 @@ where
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_STATS_APP => Self::App(TcXstats::parse_with_param(buf, kind)?),
-            TCA_STATS_BASIC => Self::Basic(TcStatsBasic::parse(
-                &TcStatsBasicBuffer::new(payload),
-            )?),
-            TCA_STATS_QUEUE => Self::Queue(TcStatsQueue::parse(
-                &TcStatsQueueBuffer::new(payload),
-            )?),
-            TCA_STATS_BASIC_HW => Self::BasicHw(TcStatsBasic::parse(
-                &TcStatsBasicBuffer::new(payload),
-            )?),
+            TCA_STATS_BASIC => Self::Basic(TcStatsBasic::parse(payload)?),
+            TCA_STATS_QUEUE => Self::Queue(TcStatsQueue::parse(payload)?),
+            TCA_STATS_BASIC_HW => Self::BasicHw(TcStatsBasic::parse(payload)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }

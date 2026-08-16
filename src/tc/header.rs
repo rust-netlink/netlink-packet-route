@@ -1,30 +1,32 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
 
-const TC_HEADER_LEN: usize = 20;
+pub(crate) const TC_HEADER_LEN: usize = 20;
 
-buffer!(TcMessageBuffer(TC_HEADER_LEN) {
-    family: (u8, 0),
-    pad1: (u8, 1),
-    pad2: (u16, 2..4),
-    index: (i32, 4..8),
-    handle: (u32, 8..12),
-    parent: (u32, 12..16),
-    info: (u32, 16..TC_HEADER_LEN),
-    payload: (slice, TC_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> TcMessageBuffer<&'a T> {
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcMessageBuffer {
+    family: u8,
+    pad1: u8,
+    pad2: u16,
+    index: i32,
+    handle: u32,
+    parent: u32,
+    info: u32,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -41,6 +43,34 @@ pub struct TcHeader {
 
 impl TcHeader {
     pub const TCM_IFINDEX_MAGIC_BLOCK: u32 = 0xFFFFFFFF;
+
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            TcMessageBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), TC_HEADER_LEN)
+            })?;
+        Ok(Self {
+            family: raw.family.into(),
+            index: raw.index,
+            handle: raw.handle.into(),
+            parent: raw.parent.into(),
+            info: raw.info,
+        })
+    }
+}
+
+impl From<&TcHeader> for TcMessageBuffer {
+    fn from(header: &TcHeader) -> Self {
+        Self {
+            family: header.family.into(),
+            pad1: 0,
+            pad2: 0,
+            index: header.index,
+            handle: header.handle.into(),
+            parent: header.parent.into(),
+            info: header.info,
+        }
+    }
 }
 
 impl Emitable for TcHeader {
@@ -49,24 +79,8 @@ impl Emitable for TcHeader {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcMessageBuffer::new(buffer);
-        packet.set_family(self.family.into());
-        packet.set_index(self.index);
-        packet.set_handle(self.handle.into());
-        packet.set_parent(self.parent.into());
-        packet.set_info(self.info);
-    }
-}
-
-impl<T: AsRef<[u8]>> Parseable<TcMessageBuffer<T>> for TcHeader {
-    fn parse(buf: &TcMessageBuffer<T>) -> Result<Self, DecodeError> {
-        Ok(Self {
-            family: buf.family().into(),
-            index: buf.index(),
-            handle: buf.handle().into(),
-            parent: buf.parent().into(),
-            info: buf.info(),
-        })
+        let raw = TcMessageBuffer::from(self);
+        buffer[..TC_HEADER_LEN].copy_from_slice(raw.as_bytes());
     }
 }
 

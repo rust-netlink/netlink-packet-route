@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::ErrorContext;
 /// U32 filter
 ///
@@ -12,12 +14,10 @@ use netlink_packet_core::{
     emit_u32, parse_u32, DecodeError, Emitable, Parseable,
     {DefaultNla, Nla, NlaBuffer, NlasIterator},
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::u32_flags::{TcU32OptionFlags, TcU32SelectorFlags};
 use crate::tc::{TcAction, TcHandle};
-
-const TC_U32_SEL_BUF_LEN: usize = 16;
-const TC_U32_KEY_BUF_LEN: usize = 16;
 
 const TCA_U32_CLASSID: u16 = 1;
 const TCA_U32_HASH: u16 = 2;
@@ -130,11 +130,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context("failed to parse TCA_U32_DIVISOR")?,
             ),
             TCA_U32_SEL => Self::Selector(
-                TcU32Selector::parse(
-                    &TcU32SelectorBuffer::new_checked(payload)
-                        .context("invalid TCA_U32_SEL")?,
-                )
-                .context("failed to parse TCA_U32_SEL")?,
+                TcU32Selector::parse(payload)
+                    .context("failed to parse TCA_U32_SEL")?,
             ),
             TCA_U32_POLICE => Self::Police(payload.to_vec()),
             TCA_U32_ACT => {
@@ -175,102 +172,119 @@ pub struct TcU32Selector {
     pub keys: Vec<TcU32Key>,
 }
 
-buffer!(TcU32SelectorBuffer {
-    flags: (u8, 0),
-    offshift: (u8, 1),
-    nkeys: (u8, 2),
-    //pad: (u8, 3),
-    offmask: (u16, 4..6),
-    off: (u16, 6..8),
-    offoff: (u16, 8..10),
-    hoff: (u16, 10..12),
-    hmask: (u32, 12..TC_U32_SEL_BUF_LEN),
-    keys: (slice, TC_U32_SEL_BUF_LEN..),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcU32SelectorBuffer {
+    flags: u8,
+    offshift: u8,
+    nkeys: u8,
+    _pad: u8,
+    offmask: u16,
+    off: u16,
+    offoff: u16,
+    hoff: u16,
+    hmask: u32,
+}
 
-impl<T: AsRef<[u8]>> TcU32SelectorBuffer<T> {
-    pub fn new_checked(buffer: T) -> Result<Self, DecodeError> {
-        let packet = Self::new(buffer);
-        packet.check_buffer_length()?;
-        Ok(packet)
-    }
-
-    fn check_buffer_length(&self) -> Result<(), DecodeError> {
-        let len = self.buffer.as_ref().len();
-        if len < TC_U32_SEL_BUF_LEN {
+impl TcU32SelectorBuffer {
+    pub fn new_checked(buffer: &[u8]) -> Result<&Self, DecodeError> {
+        let len = buffer.len();
+        let sel_len = size_of::<Self>();
+        if len < sel_len {
             return Err(format!(
-                "invalid TcU32SelectorBuffer: length {len} < \
-                 {TC_U32_SEL_BUF_LEN}"
+                "invalid TcU32SelectorBuffer: length {len} < {sel_len}"
             )
             .into());
         }
+        let raw = Self::ref_from_prefix(buffer)
+            .map_err(|_| DecodeError::buffer_too_small(len, sel_len))?
+            .0;
+        let nkeys = raw.nkeys;
         // Expect the buffer to be large enough to hold `nkeys`.
         let expected_len =
-            ((self.nkeys() as usize) * TC_U32_KEY_BUF_LEN) + TC_U32_SEL_BUF_LEN;
+            (nkeys as usize * size_of::<TcU32KeyBuffer>()) + sel_len;
         if len < expected_len {
             return Err(format!(
-                "invalid RouteNextHopBuffer: length {len} < {expected_len}",
+                "invalid TcU32SelectorBuffer: length {len} < {expected_len}",
             )
             .into());
         }
-        Ok(())
+        Ok(raw)
+    }
+}
+
+impl From<&TcU32Selector> for TcU32SelectorBuffer {
+    fn from(selector: &TcU32Selector) -> Self {
+        Self {
+            flags: selector.flags.bits(),
+            offshift: selector.offshift,
+            nkeys: selector.nkeys,
+            _pad: 0,
+            offmask: selector.offmask,
+            off: selector.off,
+            offoff: selector.offoff,
+            hoff: selector.hoff,
+            hmask: selector.hmask,
+        }
     }
 }
 
 impl Emitable for TcU32Selector {
     fn buffer_len(&self) -> usize {
-        TC_U32_SEL_BUF_LEN + (self.nkeys as usize * TC_U32_KEY_BUF_LEN)
+        size_of::<TcU32SelectorBuffer>()
+            + (self.nkeys as usize * size_of::<TcU32KeyBuffer>())
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcU32SelectorBuffer::new(buffer);
-        packet.set_flags(self.flags.bits());
-        packet.set_offshift(self.offshift);
-        packet.set_offmask(self.offmask);
-        packet.set_off(self.off);
-        packet.set_offoff(self.offoff);
-        packet.set_hoff(self.hoff);
-        packet.set_hmask(self.hmask);
-        packet.set_nkeys(self.nkeys);
-
-        let key_buf = packet.keys_mut();
+        let raw = TcU32SelectorBuffer::from(self);
+        let sel_len = size_of::<TcU32SelectorBuffer>();
+        let key_len = size_of::<TcU32KeyBuffer>();
+        buffer[..sel_len].copy_from_slice(raw.as_bytes());
         for (i, k) in self.keys.iter().enumerate() {
             k.emit(
-                &mut key_buf
-                    [(i * TC_U32_KEY_BUF_LEN)..((i + 1) * TC_U32_KEY_BUF_LEN)],
+                &mut buffer
+                    [(sel_len + i * key_len)..(sel_len + (i + 1) * key_len)],
             );
         }
     }
 }
 
-impl<T: AsRef<[u8]> + ?Sized> Parseable<TcU32SelectorBuffer<&T>>
-    for TcU32Selector
-{
-    fn parse(buf: &TcU32SelectorBuffer<&T>) -> Result<Self, DecodeError> {
-        let nkeys = buf.nkeys();
+impl TcU32Selector {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let raw = TcU32SelectorBuffer::new_checked(payload)?;
+        let nkeys = raw.nkeys;
+        let key_len = size_of::<TcU32KeyBuffer>();
+        let key_payload = &payload[size_of::<TcU32SelectorBuffer>()..];
         let mut keys = Vec::<TcU32Key>::with_capacity(nkeys.into());
-        let key_payload = buf.keys();
         for i in 0..nkeys {
             let i = i as usize;
-            let keybuf = TcU32KeyBuffer::new_checked(
-                &key_payload
-                    [(i * TC_U32_KEY_BUF_LEN)..(i + 1) * TC_U32_KEY_BUF_LEN],
-            )
-            .context("invalid u32 key")?;
             keys.push(
-                TcU32Key::parse(&keybuf).context("failed to parse u32 key")?,
+                TcU32Key::parse(
+                    &key_payload[(i * key_len)..((i + 1) * key_len)],
+                )
+                .context("failed to parse u32 key")?,
             );
         }
 
         Ok(Self {
-            flags: TcU32SelectorFlags::from_bits_retain(buf.flags()),
-            offshift: buf.offshift(),
+            flags: TcU32SelectorFlags::from_bits_retain(raw.flags),
+            offshift: raw.offshift,
             nkeys,
-            offmask: buf.offmask(),
-            off: buf.off(),
-            offoff: buf.offoff(),
-            hoff: buf.hoff(),
-            hmask: buf.hmask(),
+            offmask: raw.offmask,
+            off: raw.off,
+            offoff: raw.offoff,
+            hoff: raw.hoff,
+            hmask: raw.hmask,
             keys,
         })
     }
@@ -285,33 +299,60 @@ pub struct TcU32Key {
     pub offmask: i32,
 }
 
-buffer!(TcU32KeyBuffer(TC_U32_KEY_BUF_LEN) {
-    mask: (u32, 0..4),
-    val: (u32, 4..8),
-    off: (i32, 8..12),
-    offmask: (i32, 12..TC_U32_KEY_BUF_LEN),
-});
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcU32KeyBuffer {
+    mask: u32,
+    val: u32,
+    off: i32,
+    offmask: i32,
+}
 
-impl Emitable for TcU32Key {
-    fn buffer_len(&self) -> usize {
-        TC_U32_KEY_BUF_LEN
-    }
-    fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcU32KeyBuffer::new(buffer);
-        packet.set_mask(self.mask);
-        packet.set_val(self.val);
-        packet.set_off(self.off);
-        packet.set_offmask(self.offmask);
+impl From<&TcU32Key> for TcU32KeyBuffer {
+    fn from(key: &TcU32Key) -> Self {
+        Self {
+            mask: key.mask,
+            val: key.val,
+            off: key.off,
+            offmask: key.offmask,
+        }
     }
 }
 
-impl<T: AsRef<[u8]>> Parseable<TcU32KeyBuffer<T>> for TcU32Key {
-    fn parse(buf: &TcU32KeyBuffer<T>) -> Result<Self, DecodeError> {
+impl Emitable for TcU32Key {
+    fn buffer_len(&self) -> usize {
+        size_of::<TcU32KeyBuffer>()
+    }
+    fn emit(&self, buffer: &mut [u8]) {
+        let raw = TcU32KeyBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
+    }
+}
+
+impl TcU32Key {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            TcU32KeyBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcU32KeyBuffer>(),
+                )
+            })?;
         Ok(Self {
-            mask: buf.mask(),
-            val: buf.val(),
-            off: buf.off(),
-            offmask: buf.offmask(),
+            mask: raw.mask,
+            val: raw.val,
+            off: raw.off,
+            offmask: raw.offmask,
         })
     }
 }

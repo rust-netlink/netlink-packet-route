@@ -12,7 +12,7 @@ use crate::{
                 },
                 TcActionMessageFlags, TcActionMessageFlagsWithSelector,
             },
-            TcActionMessageBuffer, TcActionMessageHeader,
+            TcActionMessageHeader,
         },
         TcAction,
         TcActionAttribute::{Cookie, Index, Kind},
@@ -30,7 +30,7 @@ mod mirror {
                     TcActionMessage,
                     TcActionMessageAttribute::{Actions, RootCount},
                 },
-                TcActionMessageBuffer, TcActionMessageHeader,
+                TcActionMessageHeader,
             },
             TcAction,
             TcActionAttribute::{InHwCount, Kind, Options, Other, Stats},
@@ -144,10 +144,7 @@ mod mirror {
             }])],
         };
 
-        let parsed = TcActionMessage::parse(
-            &TcActionMessageBuffer::new_checked(&message::CREATE1).unwrap(),
-        )
-        .unwrap();
+        let parsed = TcActionMessage::parse(message::CREATE1).unwrap();
         assert_eq!(parsed, expected);
     }
 
@@ -177,10 +174,7 @@ mod mirror {
         };
 
         let buf = message::CREATE2;
-        let parsed = TcActionMessage::parse(
-            &TcActionMessageBuffer::new_checked(&buf).unwrap(),
-        )
-        .unwrap();
+        let parsed = TcActionMessage::parse(buf).unwrap();
         assert_eq!(parsed, expected);
     }
 
@@ -291,10 +285,7 @@ mod mirror {
                 ]),
             ],
         };
-        let parsed = TcActionMessage::parse(
-            &TcActionMessageBuffer::new_checked(&message::LIST).unwrap(),
-        )
-        .unwrap();
+        let parsed = TcActionMessage::parse(message::LIST).unwrap();
         assert_eq!(parsed, expected);
     }
 }
@@ -384,10 +375,7 @@ fn tc_action_message_parse_back_default() {
     let orig = TcActionMessage::default();
     let mut buffer = vec![0; orig.buffer_len()];
     orig.emit(&mut buffer);
-    let parsed = TcActionMessage::parse(
-        &TcActionMessageBuffer::new_checked(buffer.as_slice()).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcActionMessage::parse(buffer.as_slice()).unwrap();
     assert_eq!(orig, parsed);
 }
 
@@ -413,10 +401,7 @@ fn tc_action_message_parse_back_example_value() {
     };
     let mut buffer = vec![0; orig.buffer_len()];
     orig.emit(&mut buffer);
-    let parsed = TcActionMessage::parse(
-        &TcActionMessageBuffer::new_checked(buffer.as_slice()).unwrap(),
-    )
-    .unwrap();
+    let parsed = TcActionMessage::parse(buffer.as_slice()).unwrap();
     assert_eq!(orig, parsed);
 }
 

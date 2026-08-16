@@ -6,7 +6,7 @@ use netlink_packet_core::{
 };
 
 use crate::tc::{
-    actions::{TcActionMessageBuffer, TcActionMessageHeader},
+    actions::{header::TCA_HEADER_LEN, TcActionMessageHeader},
     TcAction,
 };
 
@@ -228,20 +228,15 @@ impl Nla for TcActionMessageAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a + ?Sized> Parseable<TcActionMessageBuffer<&'a T>>
-    for TcActionMessage
-{
-    fn parse(buf: &TcActionMessageBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let attrs: Result<Vec<_>, DecodeError> = buf
-            .attributes()
+impl Parseable<[u8]> for TcActionMessage {
+    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
+        let header = TcActionMessageHeader::parse(buf)
+            .context("failed to parse tc message header")?;
+        let attributes = NlasIterator::new(&buf[TCA_HEADER_LEN..])
             .map(|attr| TcActionMessageAttribute::parse(&attr?))
-            .collect::<Result<Vec<_>, _>>();
-
-        Ok(Self {
-            header: TcActionMessageHeader::parse(buf)
-                .context("failed to parse tc message header")?,
-            attributes: attrs?,
-        })
+            .collect::<Result<Vec<_>, _>>()
+            .context("failed to parse tc action message NLAs")?;
+        Ok(Self { header, attributes })
     }
 }
 

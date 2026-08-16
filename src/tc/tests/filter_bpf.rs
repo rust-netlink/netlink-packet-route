@@ -5,7 +5,7 @@ use netlink_packet_core::{Emitable, Parseable as _};
 use crate::{
     tc::{
         TcAttribute, TcBpfFlags, TcFilterBpfOption, TcHandle, TcHeader,
-        TcMessage, TcMessageBuffer, TcOption, TcU32OptionFlags,
+        TcMessage, TcOption, TcU32OptionFlags,
     },
     AddressFamily,
 };
@@ -105,10 +105,7 @@ fn test_get_filter_bpf() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);

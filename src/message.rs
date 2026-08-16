@@ -15,7 +15,7 @@ use crate::{
     route::{RouteHeader, RouteMessage},
     rule::{RuleMessage, RuleMessageBuffer},
     stats::{StatsMessage, StatsMessageBuffer},
-    tc::{TcActionMessage, TcActionMessageBuffer, TcMessage, TcMessageBuffer},
+    tc::{TcActionMessage, TcMessage},
 };
 
 const RTM_NEWLINK: u16 = 16;
@@ -237,10 +237,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             | RTM_DELTFILTER | RTM_GETTFILTER | RTM_NEWCHAIN | RTM_DELCHAIN
             | RTM_GETCHAIN => {
                 let err = "invalid tc message";
-                let msg = TcMessage::parse(
-                    &TcMessageBuffer::new_checked(&buf.inner()).context(err)?,
-                )
-                .context(err)?;
+                let msg = TcMessage::parse(buf.inner()).context(err)?;
                 match message_type {
                     RTM_NEWQDISC => {
                         RouteNetlinkMessage::NewQueueDiscipline(msg)
@@ -272,11 +269,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
 
             RTM_NEWACTION | RTM_DELACTION | RTM_GETACTION => {
                 let err = "invalid tc action message";
-                let msg = TcActionMessage::parse(
-                    &TcActionMessageBuffer::new_checked(&buf.inner())
-                        .context(err)?,
-                )
-                .context(err)?;
+                let msg = TcActionMessage::parse(buf.inner()).context(err)?;
                 match message_type {
                     RTM_NEWACTION => RouteNetlinkMessage::NewTrafficAction(msg),
                     RTM_DELACTION => RouteNetlinkMessage::DelTrafficAction(msg),

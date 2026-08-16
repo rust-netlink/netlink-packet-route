@@ -5,8 +5,8 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     tc::{
         TcAttribute, TcFqCodelQdStats, TcFqCodelXstats, TcHandle, TcHeader,
-        TcMessage, TcMessageBuffer, TcOption, TcQdiscFqCodelOption, TcStats,
-        TcStats2, TcStatsBasic, TcStatsQueue, TcXstats,
+        TcMessage, TcOption, TcQdiscFqCodelOption, TcStats, TcStats2,
+        TcStatsBasic, TcStatsQueue, TcXstats,
     },
     AddressFamily,
 };
@@ -186,10 +186,7 @@ fn test_get_qdisc_fq_codel() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

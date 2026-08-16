@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 /// Byte/Packet throughput statistics
 #[derive(Default, Debug, PartialEq, Eq, Clone, Copy)]
@@ -12,31 +15,59 @@ pub struct TcStatsBasic {
     pub packets: u32,
 }
 
-// real size is 12, but kernel is align to 64bits(8 bytes)
-const STATS_BASIC_LEN: usize = 16;
+// The real size is 12, but kernel aligns to 64 bits (8 bytes), hence the
+// trailing padding.
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcStatsBasicBuffer {
+    bytes: u64,
+    packets: u32,
+    _padding: [u8; 4],
+}
 
-buffer!(TcStatsBasicBuffer(STATS_BASIC_LEN) {
-    bytes: (u64, 0..8),
-    packets: (u32, 8..12),
-});
-
-impl<T: AsRef<[u8]>> Parseable<TcStatsBasicBuffer<T>> for TcStatsBasic {
-    fn parse(buf: &TcStatsBasicBuffer<T>) -> Result<Self, DecodeError> {
-        Ok(TcStatsBasic {
-            bytes: buf.bytes(),
-            packets: buf.packets(),
+impl TcStatsBasic {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            TcStatsBasicBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<TcStatsBasicBuffer>(),
+                )
+            })?;
+        Ok(Self {
+            bytes: raw.bytes,
+            packets: raw.packets,
         })
+    }
+}
+
+impl From<&TcStatsBasic> for TcStatsBasicBuffer {
+    fn from(value: &TcStatsBasic) -> Self {
+        Self {
+            bytes: value.bytes,
+            packets: value.packets,
+            _padding: [0; 4],
+        }
     }
 }
 
 impl Emitable for TcStatsBasic {
     fn buffer_len(&self) -> usize {
-        STATS_BASIC_LEN
+        size_of::<TcStatsBasicBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = TcStatsBasicBuffer::new(buffer);
-        buffer.set_bytes(self.bytes);
-        buffer.set_packets(self.packets);
+        let raw = TcStatsBasicBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

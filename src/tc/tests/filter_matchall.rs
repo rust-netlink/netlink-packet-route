@@ -6,9 +6,8 @@ use crate::{
     tc::{
         TcAction, TcActionAttribute, TcActionGeneric, TcActionMirrorOption,
         TcActionOption, TcActionType, TcAttribute, TcFilterMatchAllOption,
-        TcHandle, TcHeader, TcMessage, TcMessageBuffer, TcMirror,
-        TcMirrorActionType, TcOption, TcStats2, TcStatsBasic, TcStatsQueue,
-        Tcf,
+        TcHandle, TcHeader, TcMessage, TcMirror, TcMirrorActionType, TcOption,
+        TcStats2, TcStatsBasic, TcStatsQueue, Tcf,
     },
     AddressFamily,
 };
@@ -171,10 +170,7 @@ fn test_get_filter_matchall() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

@@ -9,8 +9,8 @@ use crate::{
         TcAction, TcActionAttribute, TcActionGeneric, TcActionMirrorOption,
         TcActionOption, TcActionType, TcAttribute, TcFilterFlowerMplsLseOption,
         TcFilterFlowerMplsOption, TcFilterFlowerOption, TcHandle, TcHeader,
-        TcMessage, TcMessageBuffer, TcMirror, TcMirrorActionType, TcOption,
-        TcStats2, TcStatsBasic, TcStatsQueue, Tcf,
+        TcMessage, TcMirror, TcMirrorActionType, TcOption, TcStats2,
+        TcStatsBasic, TcStatsQueue, Tcf,
     },
     AddressFamily,
 };
@@ -252,10 +252,7 @@ fn test_get_filter_flower_mac_ipv4() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -353,10 +350,7 @@ fn test_get_filter_flower_ipv6_ports() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -417,10 +411,7 @@ fn test_get_filter_flower_ipv4_tcp_portrange() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -477,10 +468,7 @@ fn test_get_filter_flower_ipv4_icmp() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -537,10 +525,7 @@ fn test_get_filter_flower_ipv6_icmp() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -611,10 +596,7 @@ fn test_get_filter_flower_ct() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -698,10 +680,7 @@ fn test_get_filter_flower_arp() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -760,10 +739,7 @@ fn test_get_filter_flower_vlan() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -818,10 +794,7 @@ fn test_get_filter_flower_mpls_uc_single() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -894,10 +867,7 @@ fn test_get_filter_flower_mpls_uc_lse() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -992,10 +962,7 @@ fn test_get_filter_flower_ipv4_enc() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -1094,10 +1061,7 @@ fn test_get_filter_flower_ipv6_enc() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        TcMessage::parse(&TcMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, NlasIterator, Parseable,
-};
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
 
-const TCA_HEADER_LEN: usize = 4;
+pub(crate) const TCA_HEADER_LEN: usize = 4;
 
-buffer!(TcActionMessageBuffer(TCA_HEADER_LEN) {
-    family: (u8, 0),
-    pad1: (u8, 1),
-    pad2: (u16, 2..TCA_HEADER_LEN),
-    payload: (slice, TCA_HEADER_LEN..),
-});
-
-impl<'a, T: AsRef<[u8]> + ?Sized> TcActionMessageBuffer<&'a T> {
-    /// Returns an iterator over the attributes of a `TcActionMessageBuffer`.
-    pub fn attributes(
-        &self,
-    ) -> impl Iterator<Item = Result<NlaBuffer<&'a [u8]>, DecodeError>> {
-        NlasIterator::new(self.payload())
-    }
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct TcActionMessageBuffer {
+    family: u8,
+    pad1: u8,
+    pad2: u16,
 }
 
 /// Header for a traffic control action message.
@@ -31,23 +32,35 @@ pub struct TcActionMessageHeader {
     pub family: AddressFamily,
 }
 
+impl TcActionMessageHeader {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) = TcActionMessageBuffer::ref_from_prefix(payload)
+            .map_err(|_| {
+                DecodeError::buffer_too_small(payload.len(), TCA_HEADER_LEN)
+            })?;
+        Ok(Self {
+            family: raw.family.into(),
+        })
+    }
+}
+
+impl From<&TcActionMessageHeader> for TcActionMessageBuffer {
+    fn from(header: &TcActionMessageHeader) -> Self {
+        Self {
+            family: header.family.into(),
+            pad1: 0,
+            pad2: 0,
+        }
+    }
+}
+
 impl Emitable for TcActionMessageHeader {
     fn buffer_len(&self) -> usize {
         TCA_HEADER_LEN
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut packet = TcActionMessageBuffer::new(buffer);
-        packet.set_family(self.family.into());
-    }
-}
-
-impl<T: AsRef<[u8]>> Parseable<TcActionMessageBuffer<T>>
-    for TcActionMessageHeader
-{
-    fn parse(buf: &TcActionMessageBuffer<T>) -> Result<Self, DecodeError> {
-        Ok(TcActionMessageHeader {
-            family: buf.family().into(),
-        })
+        let raw = TcActionMessageBuffer::from(self);
+        buffer[..TCA_HEADER_LEN].copy_from_slice(raw.as_bytes());
     }
 }
