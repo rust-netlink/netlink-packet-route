@@ -6,7 +6,7 @@ use netlink_packet_core::{
 };
 
 use crate::{
-    address::{AddressHeader, AddressMessage, AddressMessageBuffer},
+    address::{AddressHeader, AddressMessage},
     link::LinkMessage,
     neighbour::{NeighbourMessage, NeighbourMessageBuffer},
     neighbour_table::{NeighbourTableMessage, NeighbourTableMessageBuffer},
@@ -112,27 +112,21 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
 
             // Address messages
             RTM_NEWADDR | RTM_GETADDR | RTM_DELADDR => {
-                let msg = match AddressMessageBuffer::new_checked(&buf.inner())
-                {
-                    Ok(buf) => AddressMessage::parse(&buf)
-                        .context("invalid link message")?,
-                    // HACK: iproute2 sends invalid RTM_GETADDR message, where
-                    // the header is limited to the
-                    // interface family (1 byte) and 3 bytes of padding.
-                    Err(e) => {
-                        if buf.inner().len() == 4 && message_type == RTM_GETADDR
-                        {
-                            let mut msg = AddressMessage {
-                                header: AddressHeader::default(),
-                                attributes: vec![],
-                            };
-                            msg.header.family = buf.inner()[0].into();
-                            msg
-                        } else {
-                            return Err(e);
-                        }
-                    }
-                };
+                // HACK: iproute2 sends invalid RTM_GETADDR message, where
+                // the header is limited to the interface family (1 byte) and
+                // 3 bytes of padding.
+                let msg =
+                    if buf.inner().len() == 4 && message_type == RTM_GETADDR {
+                        let mut msg = AddressMessage {
+                            header: AddressHeader::default(),
+                            attributes: vec![],
+                        };
+                        msg.header.family = buf.inner()[0].into();
+                        msg
+                    } else {
+                        AddressMessage::parse(buf.inner())
+                            .context("invalid address message")?
+                    };
                 match message_type {
                     RTM_NEWADDR => RouteNetlinkMessage::NewAddress(msg),
                     RTM_GETADDR => RouteNetlinkMessage::GetAddress(msg),

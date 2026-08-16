@@ -10,8 +10,7 @@ use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 use crate::{
     address::{
         AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
-        AddressMessage, AddressMessageBuffer, AddressProtocol, AddressScope,
-        CacheInfo,
+        AddressMessage, AddressProtocol, AddressScope, CacheInfo,
     },
     AddressFamily,
 };
@@ -73,10 +72,7 @@ fn test_get_loopback_ipv6_addr() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        AddressMessage::parse(&AddressMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, AddressMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -119,10 +115,7 @@ fn test_get_ipv6_address_ra_protocol() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        AddressMessage::parse(&AddressMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, AddressMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
