@@ -7,7 +7,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     address::{
         AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
-        AddressMessage, AddressMessageBuffer, AddressScope, CacheInfo,
+        AddressMessage, AddressScope, CacheInfo,
     },
     AddressFamily,
 };
@@ -46,10 +46,7 @@ fn test_ipv4_get_loopback_address() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        AddressMessage::parse(&AddressMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, AddressMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
