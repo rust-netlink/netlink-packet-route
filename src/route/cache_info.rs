@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
@@ -15,48 +18,73 @@ pub struct RouteCacheInfo {
     pub ts_age: u32,
 }
 
-const CACHE_INFO_LEN: usize = 32;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct RouteCacheInfoBuffer {
+    clntref: u32,
+    last_use: u32,
+    expires: u32,
+    error: u32,
+    used: u32,
+    id: u32,
+    ts: u32,
+    ts_age: u32,
+}
 
-buffer!(RouteCacheInfoBuffer(CACHE_INFO_LEN) {
-    clntref: (u32, 0..4),
-    last_use: (u32, 4..8),
-    expires: (u32, 8..12),
-    error: (u32, 12..16),
-    used: (u32, 16..20),
-    id: (u32, 20..24),
-    ts: (u32, 24..28),
-    ts_age: (u32, 28..32),
-});
-
-impl<T: AsRef<[u8]>> Parseable<RouteCacheInfoBuffer<T>> for RouteCacheInfo {
-    fn parse(buf: &RouteCacheInfoBuffer<T>) -> Result<Self, DecodeError> {
+impl RouteCacheInfo {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            RouteCacheInfoBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<RouteCacheInfoBuffer>(),
+                )
+            })?;
         Ok(Self {
-            clntref: buf.clntref(),
-            last_use: buf.last_use(),
-            expires: buf.expires(),
-            error: buf.error(),
-            used: buf.used(),
-            id: buf.id(),
-            ts: buf.ts(),
-            ts_age: buf.ts_age(),
+            clntref: raw.clntref,
+            last_use: raw.last_use,
+            expires: raw.expires,
+            error: raw.error,
+            used: raw.used,
+            id: raw.id,
+            ts: raw.ts,
+            ts_age: raw.ts_age,
         })
+    }
+}
+
+impl From<&RouteCacheInfo> for RouteCacheInfoBuffer {
+    fn from(value: &RouteCacheInfo) -> Self {
+        Self {
+            clntref: value.clntref,
+            last_use: value.last_use,
+            expires: value.expires,
+            error: value.error,
+            used: value.used,
+            id: value.id,
+            ts: value.ts,
+            ts_age: value.ts_age,
+        }
     }
 }
 
 impl Emitable for RouteCacheInfo {
     fn buffer_len(&self) -> usize {
-        CACHE_INFO_LEN
+        size_of::<RouteCacheInfoBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = RouteCacheInfoBuffer::new(buffer);
-        buffer.set_clntref(self.clntref);
-        buffer.set_last_use(self.last_use);
-        buffer.set_expires(self.expires);
-        buffer.set_error(self.error);
-        buffer.set_used(self.used);
-        buffer.set_id(self.id);
-        buffer.set_ts(self.ts);
-        buffer.set_ts_age(self.ts_age);
+        let raw = RouteCacheInfoBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

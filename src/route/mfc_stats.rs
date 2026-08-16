@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use std::mem::size_of;
+
+use netlink_packet_core::{DecodeError, Emitable};
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[non_exhaustive]
@@ -10,35 +13,58 @@ pub struct RouteMfcStats {
     pub wrong_if: u64,
 }
 
-const MFC_STATS_LEN: usize = 24;
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct RouteMfcStatsBuffer {
+    packets: u64,
+    bytes: u64,
+    wrong_if: u64,
+}
 
-buffer!(RouteMfcStatsBuffer(MFC_STATS_LEN) {
-    packets: (u64, 0..8),
-    bytes: (u64, 8..16),
-    wrong_if: (u64, 16..24),
-});
-
-impl<T: AsRef<[u8]>> Parseable<RouteMfcStatsBuffer<T>> for RouteMfcStats {
-    fn parse(
-        buf: &RouteMfcStatsBuffer<T>,
-    ) -> Result<RouteMfcStats, DecodeError> {
-        Ok(RouteMfcStats {
-            packets: buf.packets(),
-            bytes: buf.bytes(),
-            wrong_if: buf.wrong_if(),
+impl RouteMfcStats {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        let (raw, _) =
+            RouteMfcStatsBuffer::ref_from_prefix(payload).map_err(|_| {
+                DecodeError::buffer_too_small(
+                    payload.len(),
+                    size_of::<RouteMfcStatsBuffer>(),
+                )
+            })?;
+        Ok(Self {
+            packets: raw.packets,
+            bytes: raw.bytes,
+            wrong_if: raw.wrong_if,
         })
+    }
+}
+
+impl From<&RouteMfcStats> for RouteMfcStatsBuffer {
+    fn from(value: &RouteMfcStats) -> Self {
+        Self {
+            packets: value.packets,
+            bytes: value.bytes,
+            wrong_if: value.wrong_if,
+        }
     }
 }
 
 impl Emitable for RouteMfcStats {
     fn buffer_len(&self) -> usize {
-        MFC_STATS_LEN
+        size_of::<RouteMfcStatsBuffer>()
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        let mut buffer = RouteMfcStatsBuffer::new(buffer);
-        buffer.set_packets(self.packets);
-        buffer.set_bytes(self.bytes);
-        buffer.set_wrong_if(self.wrong_if);
+        let raw = RouteMfcStatsBuffer::from(self);
+        buffer.copy_from_slice(raw.as_bytes());
     }
 }

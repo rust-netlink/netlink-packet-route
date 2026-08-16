@@ -11,9 +11,8 @@ use crate::{
     route::{
         flags::RouteFlags, MplsLabel, RouteAddress, RouteAttribute,
         RouteCacheInfo, RouteHeader, RouteLwEnCapType, RouteLwTunnelEncap,
-        RouteMessage, RouteMessageBuffer, RouteMplsIpTunnel,
-        RouteMplsTtlPropagation, RoutePreference, RouteProtocol, RouteScope,
-        RouteType,
+        RouteMessage, RouteMplsIpTunnel, RouteMplsTtlPropagation,
+        RoutePreference, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -75,10 +74,7 @@ fn test_mpls_route_to_ipv4() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -159,10 +155,7 @@ fn test_ipv6_to_mpls_route() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -216,10 +209,7 @@ fn test_mpls_route_to_ipv6() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -279,10 +269,7 @@ fn test_mpls_route_relable_new_dst() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 
@@ -345,10 +332,7 @@ fn test_mpls_ttl_propagate() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
 

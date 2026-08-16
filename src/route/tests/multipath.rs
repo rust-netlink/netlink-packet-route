@@ -7,8 +7,7 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     route::{
         flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
-        RouteMessageBuffer, RouteNextHop, RouteNextHopFlags, RouteProtocol,
-        RouteScope, RouteType,
+        RouteNextHop, RouteNextHopFlags, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -73,10 +72,7 @@ fn test_route_multipath_two_nexthops() {
         ],
     };
 
-    assert_eq!(
-        expected,
-        RouteMessage::parse(&RouteMessageBuffer::new(&raw)).unwrap()
-    );
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
     expected.emit(&mut buf);
