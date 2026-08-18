@@ -1,4 +1,26 @@
 # Changelog
+## [0.33.0] - 2026-08-18
+### Breaking changes
+ - API break: use zerocopy for remaining buffer parsing. (67e978e)
+ - API break: tc: use zerocopy for tc buffer parsing. (71b67ba)
+ - API break: address: use zerocopy for address buffer parsing. (5340783)
+ - API break: route: use zerocopy for route buffer parsing. (33d14da)
+ - API break: link: use zerocopy for link buffer parsing. (db91df4)
+
+### New features
+ - link: Add support of IFLA_GENEVE_LOCAL and IFLA_GENEVE_LOCAL6. (0a7dc85)
+ - link: Add support of IFLA_GENEVE_LOCAL and IFLA_GENEVE_LOCAL6. (0a7dc85)
+ - link: Add support of IFLA_BRPORT_NEIGH_FORWARD_GRAT. (f4ebb62)
+ - link: Add support of IFLA_BR_STP_MODE. (daef62e)
+ - link: Add support of IFLA_BRPORT_NEIGH_FORWARD_GRAT. (f4ebb62)
+ - link: Add support of IFLA_BR_STP_MODE. (daef62e)
+
+### Bug fixes
+ - link: Use ref_from_prefix for BridgeId::parse. (6af1cd0)
+ - tc: Fix byte order of TcU32Key mask/val. (52be735)
+ - tc: fix TCA_ROOT_TIME_DELTA byte order. (1f88869)
+ - link: Fix IFLA_GRE_FWMARK byte order. (09b732a)
+
 ## [0.32.1] - 2026-08-12
 ### Breaking changes
  - N/A
