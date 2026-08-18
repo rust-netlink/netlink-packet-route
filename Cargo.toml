@@ -15,7 +15,7 @@ description = "netlink packet types"
 bitflags = "2"
 libc = "0.2.66"
 log = { version = "0.4.20", features = ["std"] }
-netlink-packet-core = { version = "0.8.2" }
+netlink-packet-core = { version = "0.9.0" }
 zerocopy = { version = "0.8", features = ["derive"] }
 
 [[example]]
