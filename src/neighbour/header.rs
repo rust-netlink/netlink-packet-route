@@ -54,7 +54,7 @@ pub struct NeighbourHeader {
     /// of the `NTF_*` constants
     pub flags: NeighbourFlags,
     /// Neighbour cache entry type. It should be set to one of the
-    /// `NDA_*` constants.
+    /// `RTN_*` constants.
     pub kind: RouteType,
 }
 
