@@ -18,8 +18,87 @@ log = { version = "0.4.20", features = ["std"] }
 netlink-packet-core = { version = "0.9.0" }
 zerocopy = { version = "0.8", features = ["derive"] }
 
+[features]
+default = ["all"]
+
+# Support for every rtnetlink message family. This is the default, and matches
+# the behaviour of releases from before the message families became optional.
+all = [
+    "address",
+    "addrlabel",
+    "link",
+    "link-af-spec",
+    "link-info",
+    "link-sriov",
+    "neighbour",
+    "neighbour-table",
+    "nsid",
+    "prefix",
+    "route",
+    "rule",
+    "stats",
+    "tc",
+]
+
+# `RTM_*ADDR`: IP addresses, like `ip address`.
+address = []
+# `RTM_*ADDRLABEL`: IPv6 address selection labels.
+addrlabel = []
+# `RTM_*LINK`: network interfaces, like `ip link`.
+link = []
+# The `IFLA_AF_SPEC` link attribute: per-address-family link settings.
+link-af-spec = ["link"]
+# The `IFLA_LINKINFO` link attribute: the configuration of bond, bridge,
+# vxlan, wireguard, ... devices. This is the single largest part of the crate.
+link-info = ["link"]
+# The `IFLA_VFINFO_LIST`, `IFLA_VF_PORTS` and `IFLA_PORT_SELF` link
+# attributes: SR-IOV virtual functions.
+link-sriov = ["link"]
+# `RTM_*NEIGH`: neighbour (ARP/NDISC) entries, like `ip neighbour`.
+neighbour = ["route"]
+# `RTM_*NEIGHTBL`: neighbour tables, like `ip ntable`.
+neighbour-table = []
+# `RTM_*NSID`: network namespace ids, like `ip netns`.
+nsid = []
+# `RTM_NEWPREFIX`: IPv6 router advertisement prefixes.
+prefix = []
+# `RTM_*ROUTE`: routes, like `ip route`.
+route = []
+# `RTM_*RULE`: routing policy rules, like `ip rule`.
+rule = ["route"]
+# `RTM_*STATS`: extended interface statistics, like `ip -s link`.
+stats = ["link"]
+# `RTM_*QDISC`, `RTM_*TCLASS`, `RTM_*TFILTER`, `RTM_*ACTION` and
+# `RTM_*CHAIN`: traffic control, like `tc`.
+tc = []
+
+[[example]]
+name = "dump_neighbours"
+required-features = ["neighbour"]
+
+[[example]]
+name = "dump_neighbour_tables"
+required-features = ["neighbour-table"]
+
+[[example]]
+name = "dump_packet_link_bridge_vlan"
+required-features = ["link", "link-af-spec"]
+
 [[example]]
 name = "dump_packet_links"
+required-features = ["link"]
+
+[[example]]
+name = "dump_routes"
+required-features = ["route"]
+
+[[example]]
+name = "dump_rules"
+required-features = ["rule"]
+
+[[example]]
+name = "new_rule"
+required-features = ["rule"]
 
 [dev-dependencies]
 netlink-sys = { version = "0.9.0" }
