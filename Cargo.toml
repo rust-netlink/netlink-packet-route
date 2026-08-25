@@ -22,5 +22,5 @@ zerocopy = { version = "0.8", features = ["derive"] }
 name = "dump_packet_links"
 
 [dev-dependencies]
-netlink-sys = { version = "0.8.5" }
+netlink-sys = { version = "0.9.0" }
 pretty_assertions = "1.4.1"
