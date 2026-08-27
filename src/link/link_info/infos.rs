@@ -176,9 +176,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                     }
                 }
                 _kind => nlas.push(LinkInfo::Other(
-                    DefaultNla::parse(&nla).context(format!(
-                        "Unknown NLA type for IFLA_INFO_DATA {nla:?}"
-                    ))?,
+                    DefaultNla::parse(&nla).with_context(|| {
+                        format!("Unknown NLA type for IFLA_INFO_DATA {nla:?}")
+                    })?,
                 )),
             }
         }

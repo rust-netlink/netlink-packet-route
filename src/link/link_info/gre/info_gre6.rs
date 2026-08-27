@@ -212,10 +212,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre6 {
                 parse_u16(payload)
                     .context("invalid IFLA_GRE_ERSPAN_HWID value")?,
             ),
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind} for ip6gre"))?,
-            ),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for ip6gre")
+            })?),
         })
     }
 }

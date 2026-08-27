@@ -143,10 +143,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Bond3adStats {
                 parse_u64(payload)
                     .context("invalid BOND_3AD_STAT_MARKER_UNKNOWN_RX value")?,
             ),
-            _ => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {}", buf.kind()))?,
-            ),
+            _ => {
+                Self::Other(DefaultNla::parse(buf).with_context(|| {
+                    format!("unknown NLA type {}", buf.kind())
+                })?)
+            }
         })
     }
 }

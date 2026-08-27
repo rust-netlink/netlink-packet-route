@@ -157,9 +157,11 @@ impl InfoPortData {
             InfoPortKind::Other(_) => Ok(InfoPortData::Other(payload.to_vec())),
         };
 
-        port_data.context(format!(
-            "failed to parse IFLA_INFO_PORT_DATA (IFLA_INFO_PORT_KIND is \
+        port_data.with_context(|| {
+            format!(
+                "failed to parse IFLA_INFO_PORT_DATA (IFLA_INFO_PORT_KIND is \
              '{kind}')"
-        ))
+            )
+        })
     }
 }

@@ -78,9 +78,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
             IFLA_BRIDGE_VLAN_TUNNEL_INFO => {
                 let mut nlas = Vec::new();
                 for nla in NlasIterator::new(payload) {
-                    let nla = &nla.context(format!(
+                    let nla = &nla.with_context(|| {
+                        format!(
                         "Invalid IFLA_BRIDGE_VLAN_TUNNEL_INFO for {payload:?}"
-                    ))?;
+                    )
+                    })?;
                     let parsed = BridgeVlanTunnelInfo::parse(nla)?;
                     nlas.push(parsed);
                 }
@@ -88,7 +90,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
             }
             kind => Self::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("Unknown NLA type {kind}"))?,
+                    .with_context(|| format!("Unknown NLA type {kind}"))?,
             ),
         })
     }
@@ -171,13 +173,13 @@ impl TryFrom<&[u8]> for BridgeVlanInfo {
         if raw.len() == 4 {
             Ok(Self {
                 flags: BridgeVlanInfoFlags::from_bits_retain(
-                    parse_u16(&raw[0..2]).context(format!(
-                        "Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}"
-                    ))?,
+                    parse_u16(&raw[0..2]).with_context(|| {
+                        format!("Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}")
+                    })?,
                 ),
-                vid: parse_u16(&raw[2..4]).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}"
-                ))?,
+                vid: parse_u16(&raw[2..4]).with_context(|| {
+                    format!("Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}")
+                })?,
             })
         } else {
             Err(DecodeError::from(format!(
@@ -360,20 +362,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BRIDGE_VLAN_TUNNEL_ID => {
-                Self::Id(parse_u32(payload).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_TUNNEL_ID {payload:?}"
-                ))?)
+                Self::Id(parse_u32(payload).with_context(|| {
+                    format!("Invalid IFLA_BRIDGE_VLAN_TUNNEL_ID {payload:?}")
+                })?)
             }
             IFLA_BRIDGE_VLAN_TUNNEL_VID => {
-                Self::Vid(parse_u16(payload).context(format!(
-                    "Invalid IFLA_BRIDGE_VLAN_TUNNEL_VID {payload:?}"
-                ))?)
+                Self::Vid(parse_u16(payload).with_context(|| {
+                    format!("Invalid IFLA_BRIDGE_VLAN_TUNNEL_VID {payload:?}")
+                })?)
             }
             IFLA_BRIDGE_VLAN_TUNNEL_FLAGS => {
                 Self::Flags(BridgeVlanInfoFlags::from_bits_retain(
-                    parse_u16(payload).context(format!(
-                        "Invalid IFLA_BRIDGE_VLAN_TUNNEL_VID {payload:?}"
-                    ))?,
+                    parse_u16(payload).with_context(|| {
+                        format!(
+                            "Invalid IFLA_BRIDGE_VLAN_TUNNEL_VID {payload:?}"
+                        )
+                    })?,
                 ))
             }
             _ => {

@@ -50,7 +50,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Prop {
             ),
             kind => Prop::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("Unknown NLA type {kind}"))?,
+                    .with_context(|| format!("Unknown NLA type {kind}"))?,
             ),
         })
     }

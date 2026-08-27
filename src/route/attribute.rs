@@ -241,13 +241,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             RTA_PREFSRC => {
                 Self::PrefSource(RouteAddress::parse(address_family, payload)?)
             }
-            RTA_VIA => Self::Via(
-                RouteVia::parse(payload)
-                    .context(format!("Invalid RTA_VIA value {payload:?}"))?,
-            ),
+            RTA_VIA => {
+                Self::Via(RouteVia::parse(payload).with_context(|| {
+                    format!("Invalid RTA_VIA value {payload:?}")
+                })?)
+            }
             RTA_NEWDST => Self::NewDestination(
                 VecMplsLabel::parse(payload)
-                    .context(format!("Invalid RTA_NEWDST value {payload:?}"))?
+                    .with_context(|| {
+                        format!("Invalid RTA_NEWDST value {payload:?}")
+                    })?
                     .0,
             ),
 
@@ -257,24 +260,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             ),
             RTA_EXPIRES => {
                 if route_type == RouteType::Multicast {
-                    Self::MulticastExpires(parse_u64(payload).context(
-                        format!(
+                    Self::MulticastExpires(parse_u64(payload).with_context(
+                        || {
+                            format!(
                             "invalid RTA_EXPIRES (multicast) value {payload:?}"
-                        ),
+                        )
+                        },
                     )?)
                 } else {
-                    Self::Expires(parse_u32(payload).context(format!(
-                        "invalid RTA_EXPIRES value {payload:?}"
-                    ))?)
+                    Self::Expires(parse_u32(payload).with_context(|| {
+                        format!("invalid RTA_EXPIRES value {payload:?}")
+                    })?)
                 }
             }
-            RTA_UID => Self::Uid(
-                parse_u32(payload)
-                    .context(format!("invalid RTA_UID value {payload:?}"))?,
-            ),
+            RTA_UID => Self::Uid(parse_u32(payload).with_context(|| {
+                format!("invalid RTA_UID value {payload:?}")
+            })?),
             RTA_TTL_PROPAGATE => Self::TtlPropagate(
-                RouteMplsTtlPropagation::from(parse_u8(payload).context(
-                    format!("invalid RTA_TTL_PROPAGATE {payload:?}"),
+                RouteMplsTtlPropagation::from(parse_u8(payload).with_context(
+                    || format!("invalid RTA_TTL_PROPAGATE {payload:?}"),
                 )?),
             ),
             RTA_ENCAP_TYPE => Self::EncapType(RouteLwEnCapType::from(

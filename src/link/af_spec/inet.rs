@@ -117,9 +117,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
                 )
                 .as_slice(),
             )?),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "Unknown NLA type {kind} for IFLA_AF_SPEC(inet)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("Unknown NLA type {kind} for IFLA_AF_SPEC(inet)")
+            })?),
         })
     }
 }

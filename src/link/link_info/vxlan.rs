@@ -454,10 +454,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                     > 0,
             ),
             unknown_kind => {
-                Self::Other(DefaultNla::parse(buf).context(format!(
-                    "Failed to parse IFLA_INFO_DATA(vxlan) NLA type: \
+                Self::Other(DefaultNla::parse(buf).with_context(|| {
+                    format!(
+                        "Failed to parse IFLA_INFO_DATA(vxlan) NLA type: \
                      {unknown_kind} as DefaultNla"
-                ))?)
+                    )
+                })?)
             }
         })
     }

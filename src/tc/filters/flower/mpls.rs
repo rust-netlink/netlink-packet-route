@@ -6,9 +6,9 @@ use netlink_packet_core::{
 };
 
 macro_rules! nla_err {
-    // Match rule that takes an argument expression
-    ($message:expr) => {
-        &format!("failed to parse {} value", stringify!($message))
+    // Shorthand for an NLA parse error message; expands to a &'static str
+    ($message:ident) => {
+        concat!("failed to parse ", stringify!($message), " value")
     };
 }
 

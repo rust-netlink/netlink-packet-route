@@ -176,10 +176,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     )));
                 }
             }
-            IFA_CACHEINFO => Self::CacheInfo(
-                CacheInfo::parse(payload)
-                    .context(format!("Invalid IFA_CACHEINFO {payload:?}"))?,
-            ),
+            IFA_CACHEINFO => {
+                Self::CacheInfo(CacheInfo::parse(payload).with_context(
+                    || format!("Invalid IFA_CACHEINFO {payload:?}"),
+                )?)
+            }
             IFA_MULTICAST => {
                 if payload.len() == IPV6_ADDR_LEN {
                     let mut data = [0u8; IPV6_ADDR_LEN];
@@ -207,7 +208,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
+                    .with_context(|| format!("unknown NLA type {kind}"))?,
             ),
         })
     }

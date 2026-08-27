@@ -153,14 +153,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
 
         Ok(match buf.kind() {
-            FRA_DST => Self::Destination(
-                parse_ip_addr(payload)
-                    .context(format!("Invalid FRA_DST value {payload:?}"))?,
-            ),
-            FRA_SRC => Self::Source(
-                parse_ip_addr(payload)
-                    .context(format!("Invalid FRA_SRC value {payload:?}"))?,
-            ),
+            FRA_DST => Self::Destination(parse_ip_addr(payload).with_context(
+                || format!("Invalid FRA_DST value {payload:?}"),
+            )?),
+            FRA_SRC => {
+                Self::Source(parse_ip_addr(payload).with_context(|| {
+                    format!("Invalid FRA_SRC value {payload:?}")
+                })?)
+            }
             FRA_IIFNAME => Self::Iifname(
                 parse_string(payload).context("invalid FRA_IIFNAME value")?,
             ),

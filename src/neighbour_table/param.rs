@@ -134,88 +134,102 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let payload = buf.value();
         Ok(match buf.kind() {
             NDTPA_IFINDEX => {
-                Self::Ifindex(parse_u32(payload).context(format!(
-                    "invalid NDTPA_IFINDEX value {payload:?}"
-                ))?)
+                Self::Ifindex(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_IFINDEX value {payload:?}")
+                })?)
             }
             NDTPA_REFCNT => {
-                Self::ReferenceCount(parse_u32(payload).context(format!(
-                    "invalid NDTPA_REFCNT value {payload:?}"
-                ))?)
+                Self::ReferenceCount(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_REFCNT value {payload:?}")
+                })?)
             }
             NDTPA_REACHABLE_TIME => {
-                Self::ReachableTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_REACHABLE_TIME value {payload:?}"
-                ))?)
+                Self::ReachableTime(parse_u64(payload).with_context(|| {
+                    format!("invalid NDTPA_REACHABLE_TIME value {payload:?}")
+                })?)
             }
-            NDTPA_BASE_REACHABLE_TIME => {
-                Self::BaseReachableTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_BASE_REACHABLE_TIME value {payload:?}"
-                ))?)
-            }
+            NDTPA_BASE_REACHABLE_TIME => Self::BaseReachableTime(
+                parse_u64(payload).with_context(|| {
+                    format!(
+                        "invalid NDTPA_BASE_REACHABLE_TIME value {payload:?}"
+                    )
+                })?,
+            ),
             NDTPA_RETRANS_TIME => {
-                Self::RetransTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_RETRANS_TIME value {payload:?}"
-                ))?)
+                Self::RetransTime(parse_u64(payload).with_context(|| {
+                    format!("invalid NDTPA_RETRANS_TIME value {payload:?}")
+                })?)
             }
             NDTPA_GC_STALETIME => {
-                Self::GcStaletime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_GC_STALE_TIME value {payload:?}"
-                ))?)
+                Self::GcStaletime(parse_u64(payload).with_context(|| {
+                    format!("invalid NDTPA_GC_STALE_TIME value {payload:?}")
+                })?)
             }
             NDTPA_DELAY_PROBE_TIME => {
-                Self::DelayProbeTime(parse_u64(payload).context(format!(
-                    "invalid NDTPA_DELAY_PROBE_TIME value {payload:?}"
-                ))?)
+                Self::DelayProbeTime(parse_u64(payload).with_context(|| {
+                    format!("invalid NDTPA_DELAY_PROBE_TIME value {payload:?}")
+                })?)
             }
-            NDTPA_QUEUE_LEN => Self::QueueLen(parse_u32(payload).context(
-                format!("invalid NDTPA_QUEUE_LEN value {payload:?}"),
-            )?),
-            NDTPA_APP_PROBES => Self::AppProbes(parse_u32(payload).context(
-                format!("invalid NDTPA_APP_PROBES value {payload:?}"),
-            )?),
+            NDTPA_QUEUE_LEN => {
+                Self::QueueLen(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_QUEUE_LEN value {payload:?}")
+                })?)
+            }
+            NDTPA_APP_PROBES => {
+                Self::AppProbes(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_APP_PROBES value {payload:?}")
+                })?)
+            }
             NDTPA_UCAST_PROBES => {
-                Self::UcastProbes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_UCAST_PROBES value {payload:?}"
-                ))?)
+                Self::UcastProbes(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_UCAST_PROBES value {payload:?}")
+                })?)
             }
             NDTPA_MCAST_PROBES => {
-                Self::McastProbes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_MCAST_PROBES value {payload:?}"
-                ))?)
+                Self::McastProbes(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_MCAST_PROBES value {payload:?}")
+                })?)
             }
             NDTPA_ANYCAST_DELAY => {
-                Self::AnycastDelay(parse_u64(payload).context(format!(
-                    "invalid NDTPA_ANYCAST_DELAY value {payload:?}"
-                ))?)
+                Self::AnycastDelay(parse_u64(payload).with_context(|| {
+                    format!("invalid NDTPA_ANYCAST_DELAY value {payload:?}")
+                })?)
             }
-            NDTPA_PROXY_DELAY => Self::ProxyDelay(parse_u64(payload).context(
-                format!("invalid NDTPA_PROXY_DELAY value {payload:?}"),
-            )?),
-            NDTPA_PROXY_QLEN => Self::ProxyQlen(parse_u32(payload).context(
-                format!("invalid NDTPA_PROXY_QLEN value {payload:?}"),
-            )?),
-            NDTPA_LOCKTIME => Self::Locktime(parse_u64(payload).context(
-                format!("invalid NDTPA_LOCKTIME value {payload:?}"),
-            )?),
+            NDTPA_PROXY_DELAY => {
+                Self::ProxyDelay(parse_u64(payload).with_context(|| {
+                    format!("invalid NDTPA_PROXY_DELAY value {payload:?}")
+                })?)
+            }
+            NDTPA_PROXY_QLEN => {
+                Self::ProxyQlen(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_PROXY_QLEN value {payload:?}")
+                })?)
+            }
+            NDTPA_LOCKTIME => {
+                Self::Locktime(parse_u64(payload).with_context(|| {
+                    format!("invalid NDTPA_LOCKTIME value {payload:?}")
+                })?)
+            }
             NDTPA_QUEUE_LENBYTES => {
-                Self::QueueLenbytes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_QUEUE_LENBYTES value {payload:?}"
-                ))?)
+                Self::QueueLenbytes(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_QUEUE_LENBYTES value {payload:?}")
+                })?)
             }
             NDTPA_MCAST_REPROBES => {
-                Self::McastReprobes(parse_u32(payload).context(format!(
-                    "invalid NDTPA_MCAST_PROBES value {payload:?}"
-                ))?)
+                Self::McastReprobes(parse_u32(payload).with_context(|| {
+                    format!("invalid NDTPA_MCAST_PROBES value {payload:?}")
+                })?)
             }
             NDTPA_INTERVAL_PROBE_TIME_MS => Self::IntervalProbeTimeMs(
-                parse_u64(payload).context(format!(
+                parse_u64(payload).with_context(|| {
+                    format!(
                     "invalid NDTPA_INTERVAL_PROBE_TIME_MS value {payload:?}"
-                ))?,
+                )
+                })?,
             ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid NDTA_PARMS attribute {payload:?}"
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("invalid NDTA_PARMS attribute {payload:?}")
+            })?),
         })
     }
 }

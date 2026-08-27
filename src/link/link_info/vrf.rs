@@ -44,9 +44,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVrf {
             IFLA_VRF_TABLE => Self::TableId(
                 parse_u32(payload).context("invalid IFLA_VRF_TABLE value")?,
             ),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(vrf)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(vrf)")
+            })?),
         })
     }
 }

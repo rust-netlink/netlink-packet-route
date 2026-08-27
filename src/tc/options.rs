@@ -126,14 +126,16 @@ where
             | TcFilterBpf::KIND => {
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(buf.value()) {
-                    let nla = nla.context(format!(
-                        "Invalid TCA_OPTIONS for kind: {kind}",
-                    ))?;
+                    let nla = nla.with_context(|| {
+                        format!("Invalid TCA_OPTIONS for kind: {kind}",)
+                    })?;
                     nlas.push(
-                        TcOption::parse_with_param(&nla, kind).context(
-                            format!(
+                        TcOption::parse_with_param(&nla, kind).with_context(
+                            || {
+                                format!(
                                 "Failed to parse TCA_OPTIONS for kind: {kind}",
-                            ),
+                            )
+                            },
                         )?,
                     )
                 }
