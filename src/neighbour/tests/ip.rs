@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use std::{
-    net::{Ipv4Addr, Ipv6Addr},
-    str::FromStr,
-};
+#[cfg(target_os = "linux")]
+use std::net::Ipv6Addr;
+use std::{net::Ipv4Addr, str::FromStr};
 
 use netlink_packet_core::{Emitable, Parseable};
 
@@ -64,6 +63,7 @@ fn test_ipv4_neighbour_show() {
 
 // wireshark capture(netlink message header removed) of nlmon against command:
 //   ip -6 neighbour show
+#[cfg(target_os = "linux")]
 #[test]
 fn test_ipv6_neighbour_show() {
     let raw = vec![

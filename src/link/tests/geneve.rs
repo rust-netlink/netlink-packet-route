@@ -15,6 +15,7 @@ use crate::{
     AddressFamily,
 };
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_geneve_link_info() {
     let raw: Vec<u8> = vec![

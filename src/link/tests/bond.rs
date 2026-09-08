@@ -14,6 +14,7 @@ use crate::{
     AddressFamily, RouteNetlinkMessage,
 };
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_bond_link_info() {
     let raw: Vec<u8> = vec![
@@ -99,6 +100,7 @@ fn test_bond_link_info() {
     assert_eq!(buf, raw);
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_bond_port_link_info() {
     let raw: Vec<u8> = vec![
@@ -260,6 +262,7 @@ fn test_parsing_link_bond_port_ad() {
     assert_eq!(buf, raw);
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_bond_arp_validate() {
     let raw: Vec<u8> = vec![

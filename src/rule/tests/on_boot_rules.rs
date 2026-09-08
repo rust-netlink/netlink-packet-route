@@ -49,6 +49,7 @@ fn test_ipv4_rule() {
 
 // wireshark capture(netlink message header removed) of nlmon against command:
 //   ip -6 rule show
+#[cfg(target_os = "linux")]
 #[test]
 fn test_ipv6_rule() {
     let raw = vec![

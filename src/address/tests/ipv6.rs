@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+#[cfg(target_os = "linux")]
 use std::{
     net::{IpAddr, Ipv6Addr},
     str::FromStr,
@@ -7,10 +8,12 @@ use std::{
 
 use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
+use crate::address::{AddressAttribute, AddressFlags};
+#[cfg(target_os = "linux")]
 use crate::{
     address::{
-        AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
-        AddressMessage, AddressProtocol, AddressScope, CacheInfo,
+        AddressHeader, AddressHeaderFlags, AddressMessage, AddressProtocol,
+        AddressScope, CacheInfo,
     },
     AddressFamily,
 };
@@ -41,6 +44,8 @@ fn test_addr_flag_stable_privacy() {
 }
 
 #[test]
+// Fixture bytes use the Linux address-family / attribute numbering.
+#[cfg(target_os = "linux")]
 fn test_get_loopback_ipv6_addr() {
     let raw = vec![
         0x0a, 0x80, 0x80, 0xfe, 0x01, 0x00, 0x00, 0x00, 0x14, 0x00, 0x01, 0x00,
@@ -81,6 +86,7 @@ fn test_get_loopback_ipv6_addr() {
     assert_eq!(buf, raw);
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_get_ipv6_address_ra_protocol() {
     let raw = vec![

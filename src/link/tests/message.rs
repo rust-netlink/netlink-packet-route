@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{Emitable, NlasIterator, ParseableParametrized};
+#[cfg(target_os = "linux")]
+use netlink_packet_core::Emitable;
+use netlink_packet_core::{NlasIterator, ParseableParametrized};
 
+#[cfg(target_os = "linux")]
+use crate::link::{
+    link_flag::LinkFlags, LinkHeader, LinkLayerType, LinkMessage,
+};
 use crate::{
-    link::{
-        link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
-        LinkMessage, LinkMode, State,
-    },
+    link::{LinkAttribute, LinkMode, State},
     AddressFamily,
 };
 
@@ -38,6 +41,7 @@ static LINK_MSG: [u8; 96] = [
     0x00, // Maximum GSO size L=8,T=41,V=65536
 ];
 
+#[cfg(target_os = "linux")]
 #[test]
 fn link_message_packet_header_read() {
     let header = LinkHeader::parse(&LINK_MSG[0..16]).unwrap();
@@ -54,6 +58,7 @@ fn link_message_packet_header_read() {
     assert_eq!(header.change_mask, LinkFlags::empty());
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn link_message_packet_header_build() {
     let mut buf = vec![0xff; 16];
@@ -159,6 +164,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(parsed, LinkAttribute::NumTxQueues(1));
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn link_message_emit() {
     let header = LinkHeader {
@@ -195,6 +201,7 @@ fn link_message_emit() {
     assert_eq!(buf, &LINK_MSG[..96]);
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn link_type_mctp() {
     const LINK_MSG_MCTP: [u8; 16] = [

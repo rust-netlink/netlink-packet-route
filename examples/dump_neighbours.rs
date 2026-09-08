@@ -1,15 +1,22 @@
 // SPDX-License-Identifier: MIT
 
+#[cfg(target_os = "freebsd")]
+mod freebsd;
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 use netlink_packet_core::{
     NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 use netlink_packet_route::{
     neighbour::{NeighbourAddress, NeighbourAttribute, NeighbourMessage},
     AddressFamily, RouteNetlinkMessage,
 };
-use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
 
+#[cfg(target_os = "linux")]
 fn main() {
+    use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
+
     let mut socket = Socket::new(NETLINK_ROUTE).unwrap();
     let _port_number = socket.bind_auto().unwrap().port_number();
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
@@ -74,6 +81,80 @@ fn main() {
     }
 }
 
+#[cfg(target_os = "freebsd")]
+fn main() {
+    use std::io::Write;
+
+    let mut socket = freebsd::NetlinkSocket::new().unwrap();
+
+    let mut nl_hdr = NetlinkHeader::default();
+    nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
+
+    let mut req = NetlinkMessage::new(
+        nl_hdr,
+        NetlinkPayload::from(RouteNetlinkMessage::GetNeighbour(
+            NeighbourMessage::default(),
+        )),
+    );
+    // IMPORTANT: call `finalize()` to automatically set the
+    // `message_type` and `length` fields to the appropriate values in
+    // the netlink header.
+    req.finalize();
+
+    let mut buf = vec![0; req.header.length as usize];
+    req.serialize(&mut buf[..]);
+
+    println!(">>> {req:?}");
+    socket.write_all(&buf[..]).unwrap();
+
+    let mut receive_buffer = vec![0; 4096];
+    let mut offset = 0;
+
+    'outer: loop {
+        use std::io::Read;
+
+        let size = socket.read(&mut receive_buffer[..]).unwrap();
+
+        loop {
+            let bytes = &receive_buffer[offset..];
+            // Parse the message
+            let msg: NetlinkMessage<RouteNetlinkMessage> =
+                NetlinkMessage::deserialize(bytes).unwrap();
+
+            match msg.payload {
+                NetlinkPayload::Done(_) => break 'outer,
+                NetlinkPayload::InnerMessage(
+                    RouteNetlinkMessage::NewNeighbour(entry),
+                ) => {
+                    let address_family = entry.header.family;
+                    if address_family == AddressFamily::Inet
+                        || address_family == AddressFamily::Inet6
+                    {
+                        print_entry(entry);
+                    }
+                }
+                NetlinkPayload::Error(err) => {
+                    eprintln!("Received a netlink error message: {err:?}");
+                    return;
+                }
+                _ => {}
+            }
+
+            offset += msg.header.length as usize;
+            if offset == size || msg.header.length == 0 {
+                offset = 0;
+                break;
+            }
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
+fn main() {
+    println!("This example requires Linux or FreeBSD");
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 fn format_ip(addr: &NeighbourAddress) -> String {
     if let NeighbourAddress::Inet(ip) = addr {
         ip.to_string()
@@ -84,6 +165,7 @@ fn format_ip(addr: &NeighbourAddress) -> String {
     }
 }
 
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 fn format_mac(buf: &[u8]) -> String {
     if buf.len() == 6 {
         format!(
@@ -95,6 +177,7 @@ fn format_mac(buf: &[u8]) -> String {
     }
 }
 
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 fn print_entry(entry: NeighbourMessage) {
     let state = entry.header.state;
     if let (Some(dest), Some(lladdr)) = (

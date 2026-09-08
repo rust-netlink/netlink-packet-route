@@ -2,11 +2,12 @@
 
 use netlink_packet_core::{Emitable, Parseable};
 
+#[cfg(target_os = "linux")]
+use crate::rule::RuleUidRange;
 use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
-        RuleUidRange,
     },
     AddressFamily,
 };
@@ -57,6 +58,8 @@ fn test_ipv4_l3mdev() {
 // wireshark capture(netlink message header removed) of nlmon against command:
 //      ip -6 rule show priority 2999
 #[test]
+// Fixture bytes use the Linux address-family / attribute numbering.
+#[cfg(target_os = "linux")]
 fn test_ipv6_l3mdev_uid() {
     let raw = vec![
         0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,

@@ -2,11 +2,12 @@
 
 use netlink_packet_core::{Emitable, Parseable};
 
+#[cfg(target_os = "linux")]
+use crate::stats::{AfSpecStats, BridgeStpXstats, HwStatsInfo, OffloadXstat};
 use crate::{
     stats::{
-        AfSpecStats, BridgeMcastStats, BridgeStpXstats, BridgeVlanXstats,
-        BridgeXstat, HwStatsInfo, LinkXstatGroup, OffloadXstat, StatsAttribute,
-        StatsFilterMask, StatsHeader, StatsMessage,
+        BridgeMcastStats, BridgeVlanXstats, BridgeXstat, LinkXstatGroup,
+        StatsAttribute, StatsFilterMask, StatsHeader, StatsMessage,
     },
     AddressFamily,
 };
@@ -75,6 +76,8 @@ fn test_parsing_bridge_xstats() {
 // nlmon capture of kernel reply on `ip stats show dev vnet3` where vnet3
 // is a linux bridge port
 #[test]
+// Fixture bytes use the Linux address-family / attribute numbering.
+#[cfg(target_os = "linux")]
 fn test_parsing_bridge_port_xstats() {
     let raw: Vec<u8> = vec![
         0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x00,

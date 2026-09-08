@@ -72,8 +72,10 @@ fn test_parsing_offload_l3_stats() {
         v.extend_from_slice(&4u16.to_ne_bytes()); // type=4
         v.extend_from_slice(&l3_nla_len.to_ne_bytes());
         v.extend_from_slice(&3u16.to_ne_bytes()); // type=3
-                                                  // struct rtnl_hw_stats64 (72 bytes)
-                                                  // rx_packets=100, tx_packets=200, rest zero
+                                                  // struct rtnl_hw_stats64 (72
+                                                  // bytes)
+                                                  // rx_packets=100,
+                                                  // tx_packets=200, rest zero
         v.extend_from_slice(&100u64.to_ne_bytes());
         v.extend_from_slice(&200u64.to_ne_bytes());
         v.extend_from_slice(&[0u8; 56]); // remaining 7 fields

@@ -42,6 +42,7 @@ pub struct Stats64Buffer {
     rx_compressed: u64,
     tx_compressed: u64,
     rx_nohandler: u64,
+    #[cfg(not(target_os = "freebsd"))]
     rx_otherhost_dropped: u64,
 }
 
@@ -95,6 +96,7 @@ pub struct Stats64 {
     /// dropped, no handler found
     pub rx_nohandler: u64,
 
+    #[cfg(not(target_os = "freebsd"))]
     pub rx_otherhost_dropped: u64,
 }
 
@@ -132,6 +134,7 @@ impl Stats64 {
             rx_compressed: raw.rx_compressed,
             tx_compressed: raw.tx_compressed,
             rx_nohandler: raw.rx_nohandler,
+            #[cfg(not(target_os = "freebsd"))]
             rx_otherhost_dropped: raw.rx_otherhost_dropped,
         })
     }
@@ -164,6 +167,7 @@ impl From<&Stats64> for Stats64Buffer {
             rx_compressed: value.rx_compressed,
             tx_compressed: value.tx_compressed,
             rx_nohandler: value.rx_nohandler,
+            #[cfg(not(target_os = "freebsd"))]
             rx_otherhost_dropped: value.rx_otherhost_dropped,
         }
     }

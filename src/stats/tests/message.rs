@@ -4,16 +4,19 @@ use netlink_packet_core::{
     Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload, Nla, Parseable,
 };
 
+#[cfg(target_os = "linux")]
+use crate::stats::{HwStatsInfo, OffloadXstat};
 use crate::{
     stats::{
-        AfSpecStats, HwStatsInfo, OffloadXstat, StatsAttribute,
-        StatsFilterMask, StatsHeader, StatsMessage,
+        AfSpecStats, StatsAttribute, StatsFilterMask, StatsHeader, StatsMessage,
     },
     AddressFamily, RouteNetlinkMessage,
 };
 
 // nlmon of kernel reply on command `ip stat show dev enp3s0u2u1u4`
 #[test]
+// Fixture bytes use the Linux address-family / attribute numbering.
+#[cfg(target_os = "linux")]
 fn test_parsing_combined_stats() {
     let raw: Vec<u8> = vec![
         0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x00,

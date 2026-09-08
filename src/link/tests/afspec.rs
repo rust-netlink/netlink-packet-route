@@ -11,6 +11,7 @@ use crate::{
     AddressFamily,
 };
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_empty_af_spec() {
     let raw = vec![

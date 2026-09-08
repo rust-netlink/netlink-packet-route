@@ -22,5 +22,9 @@ zerocopy = { version = "0.8", features = ["derive"] }
 name = "dump_packet_links"
 
 [dev-dependencies]
-netlink-sys = { version = "0.9.0" }
 pretty_assertions = "1.4.1"
+
+# `netlink-sys` opens real Linux netlink sockets and does not build on
+# platforms whose libc does not expose Linux netlink types.
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+netlink-sys = { version = "0.9.0" }

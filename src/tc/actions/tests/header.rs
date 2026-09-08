@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+#![cfg(target_os = "linux")]
+
 use netlink_packet_core::Emitable;
 
 use crate::{tc::actions::TcActionMessageHeader, AddressFamily};

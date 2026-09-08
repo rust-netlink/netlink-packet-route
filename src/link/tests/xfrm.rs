@@ -10,6 +10,7 @@ use crate::{
     AddressFamily,
 };
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_parsing_link_xfrm() {
     let raw = vec![

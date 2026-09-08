@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::Ipv4Addr;
+#[cfg(target_os = "linux")]
+use std::net::Ipv6Addr;
 
 use netlink_packet_core::{Emitable, Parseable};
 
+#[cfg(target_os = "linux")]
+use crate::route::{RouteCacheInfo, RoutePreference};
 use crate::{
     route::{
-        flags::RouteFlags, RouteAttribute, RouteCacheInfo, RouteHeader,
-        RouteMessage, RoutePreference, RouteProtocol, RouteScope, RouteType,
+        flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
+        RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -96,6 +100,8 @@ fn test_ipv4_route_loopback_broadcast() {
     assert_eq!(buf, raw);
 }
 
+// Fixture bytes use the Linux address-family numbering.
+#[cfg(target_os = "linux")]
 #[test]
 // wireshark capture(netlink message header removed) of nlmon against command:
 //   ip -6 route show dev lo table local

@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DefaultNla, Emitable, Nla, NlaBuffer, Parseable};
+#[cfg(target_os = "linux")]
+use netlink_packet_core::DefaultNla;
+use netlink_packet_core::{Emitable, Nla, NlaBuffer, Parseable};
 
+use crate::tc::{
+    actions::message::{
+        TcActionMessage, TcActionMessageAttribute,
+        TcActionMessageAttribute::{Actions, RootTimeDelta},
+        TcActionMessageFlags, TcActionMessageFlagsWithSelector,
+    },
+    TcAction,
+    TcActionAttribute::{Cookie, Index, Kind},
+};
+#[cfg(target_os = "linux")]
 use crate::{
-    tc::{
-        actions::{
-            message::{
-                TcActionMessage, TcActionMessageAttribute,
-                TcActionMessageAttribute::{
-                    Actions, Flags, RootCount, RootExtWarnMsg, RootTimeDelta,
-                },
-                TcActionMessageFlags, TcActionMessageFlagsWithSelector,
-            },
-            TcActionMessageHeader,
-        },
-        TcAction,
-        TcActionAttribute::{Cookie, Index, Kind},
+    tc::actions::{
+        message::TcActionMessageAttribute::{Flags, RootCount, RootExtWarnMsg},
+        TcActionMessageHeader,
     },
     AddressFamily,
 };
@@ -380,6 +382,7 @@ fn tc_action_message_parse_back_default() {
 }
 
 #[test]
+#[cfg(target_os = "linux")]
 fn tc_action_message_parse_back_example_value() {
     let orig = TcActionMessage {
         header: TcActionMessageHeader {

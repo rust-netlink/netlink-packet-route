@@ -6,6 +6,8 @@ use netlink_packet_core::{
     NlasIterator, Parseable, ParseableParametrized,
 };
 
+#[cfg(target_os = "freebsd")]
+use super::freebsd::RtFlags;
 use super::{
     super::AddressFamily, lwtunnel::VecRouteLwTunnelEncap,
     metrics::VecRouteMetric, mpls::VecMplsLabel,
@@ -25,10 +27,17 @@ const RTA_PREFSRC: u16 = 7;
 const RTA_METRICS: u16 = 8;
 const RTA_MULTIPATH: u16 = 9;
 // const RTA_PROTOINFO: u16 = 10; // linux kernel said `no longer used`
+#[cfg(target_os = "freebsd")]
+const RTA_KNH_ID: u16 = 10; // FreeBSD specific, kernel nexthop index
 const RTA_FLOW: u16 = 11;
 const RTA_CACHEINFO: u16 = 12;
 // const RTA_SESSION: u16 = 13; // linux kernel said `no longer used`
-// const RTA_MP_ALGO: u16 = 14; // linux kernel said `no longer used`
+#[cfg(target_os = "freebsd")]
+const RTA_WEIGHT: u16 = 13; // FreeBSD specific, path weight
+                            // const RTA_MP_ALGO: u16 = 14; // linux kernel said
+                            // `no longer used`
+#[cfg(target_os = "freebsd")]
+const RTA_RTFLAGS: u16 = 14; // FreeBSD specific, path flags (RTF_)
 const RTA_TABLE: u16 = 15;
 const RTA_MARK: u16 = 16;
 const RTA_MFC_STATS: u16 = 17;
@@ -86,6 +95,12 @@ pub enum RouteAttribute {
     Dport(u16),
     Flowlabel(u32),
     NhId(u32),
+    #[cfg(target_os = "freebsd")]
+    RtFlags(RtFlags),
+    #[cfg(target_os = "freebsd")]
+    KernelNextHopId(u32),
+    #[cfg(target_os = "freebsd")]
+    PathWeight(u32),
     Other(DefaultNla),
 }
 
@@ -116,6 +131,10 @@ impl Nla for RouteAttribute {
             | Self::Priority(_)
             | Self::Table(_)
             | Self::Mark(_) => 4,
+            #[cfg(target_os = "freebsd")]
+            Self::RtFlags(_)
+            | Self::KernelNextHopId(_)
+            | Self::PathWeight(_) => 4,
             Self::MulticastExpires(_) => 8,
             Self::IpProto(_) => 1,
             Self::Sport(_) | Self::Dport(_) => 2,
@@ -155,6 +174,12 @@ impl Nla for RouteAttribute {
             | Self::Priority(value)
             | Self::Table(value)
             | Self::Mark(value) => emit_u32(buffer, *value).unwrap(),
+            #[cfg(target_os = "freebsd")]
+            Self::RtFlags(value) => emit_u32(buffer, value.bits()).unwrap(),
+            #[cfg(target_os = "freebsd")]
+            Self::KernelNextHopId(value) => emit_u32(buffer, *value).unwrap(),
+            #[cfg(target_os = "freebsd")]
+            Self::PathWeight(value) => emit_u32(buffer, *value).unwrap(),
             Self::Realm(v) => v.emit(buffer),
             Self::MulticastExpires(value) => emit_u64(buffer, *value).unwrap(),
             Self::IpProto(value) => buffer[0] = *value,
@@ -198,6 +223,12 @@ impl Nla for RouteAttribute {
             Self::Dport(_) => RTA_DPORT,
             Self::Flowlabel(_) => RTA_FLOWLABEL,
             Self::NhId(_) => RTA_NH_ID,
+            #[cfg(target_os = "freebsd")]
+            Self::RtFlags(_) => RTA_RTFLAGS,
+            #[cfg(target_os = "freebsd")]
+            Self::KernelNextHopId(_) => RTA_KNH_ID,
+            #[cfg(target_os = "freebsd")]
+            Self::PathWeight(_) => RTA_WEIGHT,
             Self::Other(ref attr) => attr.kind(),
         }
     }
@@ -333,6 +364,23 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             ),
             RTA_NH_ID => Self::NhId(
                 parse_u32(payload).context("invalid RTA_NH_ID value")?,
+            ),
+            #[cfg(target_os = "freebsd")]
+            RTA_RTFLAGS => Self::RtFlags(
+                RtFlags::from_bits(
+                    parse_u32(payload).context("invalid RTA_RTFLAGS value")?,
+                )
+                .ok_or_else(|| {
+                    DecodeError::from("invalid RTA_RTFLAGS (RtFlags) value")
+                })?,
+            ),
+            #[cfg(target_os = "freebsd")]
+            RTA_KNH_ID => Self::KernelNextHopId(
+                parse_u32(payload).context("invalid RTA_KNH_ID value")?,
+            ),
+            #[cfg(target_os = "freebsd")]
+            RTA_WEIGHT => Self::PathWeight(
+                parse_u32(payload).context("invalid RTA_WEIGHT value")?,
             ),
             _ => Self::Other(
                 DefaultNla::parse(buf).context("invalid NLA (unknown kind)")?,
