@@ -12,7 +12,10 @@ use netlink_packet_core::{
     NlasIterator, Parseable, ParseableParametrized,
 };
 
-use super::{RouteMplsIpTunnel, RouteSeg6IpTunnel, RouteSeg6LocalTunnel};
+use super::{
+    RouteMplsIpTunnel, RouteRplIpTunnel, RouteSeg6IpTunnel,
+    RouteSeg6LocalTunnel,
+};
 use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
 
 const LWTUNNEL_ENCAP_NONE: u16 = 0;
@@ -408,6 +411,7 @@ pub enum RouteLwTunnelEncap {
     Seg6(RouteSeg6IpTunnel),
     Ip(RouteIpTunnel),
     Ip6(RouteIp6Tunnel),
+    Rpl(RouteRplIpTunnel),
     Seg6Local(RouteSeg6LocalTunnel),
     Xfrm(RouteXfrmTunnel),
     Other(DefaultNla),
@@ -489,6 +493,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.value_len(),
             Self::Ip(v) => v.value_len(),
             Self::Ip6(v) => v.value_len(),
+            Self::Rpl(v) => v.value_len(),
             Self::Seg6Local(v) => v.value_len(),
             Self::Xfrm(v) => v.value_len(),
             Self::Other(v) => v.value_len(),
@@ -501,6 +506,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.emit_value(buffer),
             Self::Ip(v) => v.emit_value(buffer),
             Self::Ip6(v) => v.emit_value(buffer),
+            Self::Rpl(v) => v.emit_value(buffer),
             Self::Seg6Local(v) => v.emit_value(buffer),
             Self::Xfrm(v) => v.emit_value(buffer),
             Self::Other(v) => v.emit_value(buffer),
@@ -513,6 +519,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.kind(),
             Self::Ip(v) => v.kind(),
             Self::Ip6(v) => v.kind(),
+            Self::Rpl(v) => v.kind(),
             Self::Seg6Local(v) => v.kind(),
             Self::Xfrm(v) => v.kind(),
             Self::Other(v) => v.kind(),
@@ -538,6 +545,7 @@ where
             }
             RouteLwEnCapType::Ip => Self::Ip(RouteIpTunnel::parse(buf)?),
             RouteLwEnCapType::Ip6 => Self::Ip6(RouteIp6Tunnel::parse(buf)?),
+            RouteLwEnCapType::Rpl => Self::Rpl(RouteRplIpTunnel::parse(buf)?),
             RouteLwEnCapType::Seg6Local => {
                 Self::Seg6Local(RouteSeg6LocalTunnel::parse(buf)?)
             }

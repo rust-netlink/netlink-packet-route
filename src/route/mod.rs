@@ -13,6 +13,7 @@ mod mpls;
 mod next_hops;
 mod preference;
 mod realm;
+mod rpl;
 mod seg6;
 mod seg6local;
 mod via;
@@ -40,6 +41,7 @@ pub use self::{
     next_hops::{RouteNextHop, RouteNextHopBuffer, RouteNextHopFlags},
     preference::RoutePreference,
     realm::RouteRealm,
+    rpl::{RouteRplIpTunnel, RplSrh},
     seg6::{RouteSeg6IpTunnel, Seg6Header, Seg6Mode},
     seg6local::{RouteSeg6LocalTunnel, Seg6LocalAction, Seg6LocalSrh},
     via::{RouteVia, RouteViaBuffer},
