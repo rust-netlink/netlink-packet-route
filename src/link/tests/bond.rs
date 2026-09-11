@@ -478,3 +478,53 @@ fn test_bond_all_ports_active_display() {
     assert_eq!("delivered", BondAllPortActive::Delivered.to_string());
     assert_eq!("255", BondAllPortActive::Other(255).to_string());
 }
+
+// strace capture of the RTM_NEWLINK message (netlink message header removed)
+// sent by iproute2 against:
+//   ip link add name test-bond type bond mode 802.3ad lacp_strict on
+#[test]
+fn test_bond_lacp_strict() {
+    let raw: Vec<u8> = vec![
+        0x00, 0x00, 0x00, 0x00, // ifi_family=AF_UNSPEC, ifi_type=0
+        0x00, 0x00, 0x00, 0x00, // ifi_index=0
+        0x00, 0x00, 0x00, 0x00, // ifi_flags=0
+        0x00, 0x00, 0x00, 0x00, // ifi_change=0
+        0x0e, 0x00, 0x03, 0x00, // IFLA_IFNAME, len 14
+        b't', b'e', b's', b't', b'-', b'b', b'o', b'n', b'd', 0x00, 0x00, 0x00,
+        0x24, 0x00, 0x12, 0x00, // IFLA_LINKINFO, len 36
+        0x09, 0x00, 0x01, 0x00, // IFLA_INFO_KIND, len 9
+        b'b', b'o', b'n', b'd', 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x02,
+        0x00, // IFLA_INFO_DATA, len 20
+        0x05, 0x00, 0x01, 0x00, 0x04, 0x00, 0x00,
+        0x00, // IFLA_BOND_MODE=4
+        0x05, 0x00, 0x22, 0x00, 0x01, 0x00, 0x00, 0x00, // LACP_STRICT=1
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 0,
+            link_layer_type: LinkLayerType::Netrom,
+            flags: LinkFlags::empty(),
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![
+            LinkAttribute::IfName("test-bond".to_string()),
+            LinkAttribute::LinkInfo(vec![
+                LinkInfo::Kind(InfoKind::Bond),
+                LinkInfo::Data(InfoData::Bond(vec![
+                    InfoBond::Mode(BondMode::Ieee8023Ad),
+                    InfoBond::LacpStrict(true),
+                ])),
+            ]),
+        ],
+    };
+
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
+
+    let mut buf = vec![0; expected.buffer_len()];
+
+    expected.emit(&mut buf);
+
+    assert_eq!(buf, raw);
+}
