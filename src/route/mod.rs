@@ -30,6 +30,7 @@ pub use self::{
     },
     lwtunnel::{
         RouteIp6Tunnel, RouteIpTunnel, RouteLwEnCapType, RouteLwTunnelEncap,
+        RouteXfrmTunnel,
     },
     message::RouteMessage,
     metrics::RouteMetric,

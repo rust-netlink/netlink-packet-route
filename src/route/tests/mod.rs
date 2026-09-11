@@ -30,3 +30,5 @@ mod seg6;
 mod uid;
 #[cfg(test)]
 mod via;
+#[cfg(test)]
+mod xfrm_tunnel;
