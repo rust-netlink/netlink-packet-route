@@ -13,7 +13,7 @@ use netlink_packet_core::{
 };
 
 use super::{
-    RouteMplsIpTunnel, RouteRplIpTunnel, RouteSeg6IpTunnel,
+    RouteIoam6Tunnel, RouteMplsIpTunnel, RouteRplIpTunnel, RouteSeg6IpTunnel,
     RouteSeg6LocalTunnel,
 };
 use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
@@ -411,6 +411,7 @@ pub enum RouteLwTunnelEncap {
     Seg6(RouteSeg6IpTunnel),
     Ip(RouteIpTunnel),
     Ip6(RouteIp6Tunnel),
+    Ioam6(RouteIoam6Tunnel),
     Rpl(RouteRplIpTunnel),
     Seg6Local(RouteSeg6LocalTunnel),
     Xfrm(RouteXfrmTunnel),
@@ -493,6 +494,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.value_len(),
             Self::Ip(v) => v.value_len(),
             Self::Ip6(v) => v.value_len(),
+            Self::Ioam6(v) => v.value_len(),
             Self::Rpl(v) => v.value_len(),
             Self::Seg6Local(v) => v.value_len(),
             Self::Xfrm(v) => v.value_len(),
@@ -506,6 +508,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.emit_value(buffer),
             Self::Ip(v) => v.emit_value(buffer),
             Self::Ip6(v) => v.emit_value(buffer),
+            Self::Ioam6(v) => v.emit_value(buffer),
             Self::Rpl(v) => v.emit_value(buffer),
             Self::Seg6Local(v) => v.emit_value(buffer),
             Self::Xfrm(v) => v.emit_value(buffer),
@@ -519,6 +522,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.kind(),
             Self::Ip(v) => v.kind(),
             Self::Ip6(v) => v.kind(),
+            Self::Ioam6(v) => v.kind(),
             Self::Rpl(v) => v.kind(),
             Self::Seg6Local(v) => v.kind(),
             Self::Xfrm(v) => v.kind(),
@@ -545,6 +549,9 @@ where
             }
             RouteLwEnCapType::Ip => Self::Ip(RouteIpTunnel::parse(buf)?),
             RouteLwEnCapType::Ip6 => Self::Ip6(RouteIp6Tunnel::parse(buf)?),
+            RouteLwEnCapType::Ioam6 => {
+                Self::Ioam6(RouteIoam6Tunnel::parse(buf)?)
+            }
             RouteLwEnCapType::Rpl => Self::Rpl(RouteRplIpTunnel::parse(buf)?),
             RouteLwEnCapType::Seg6Local => {
                 Self::Seg6Local(RouteSeg6LocalTunnel::parse(buf)?)
