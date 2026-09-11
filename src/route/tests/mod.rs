@@ -25,6 +25,8 @@ mod route_flags;
 #[cfg(test)]
 mod route_get;
 #[cfg(test)]
+mod rpl;
+#[cfg(test)]
 mod seg6;
 #[cfg(test)]
 mod seg6local;
