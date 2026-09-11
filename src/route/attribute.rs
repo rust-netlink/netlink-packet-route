@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, emit_u64, parse_u16, parse_u16_be, parse_u32, parse_u64,
-    parse_u8, DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, ParseableParametrized,
+    emit_u32, emit_u32_be, emit_u64, parse_u16, parse_u16_be, parse_u32,
+    parse_u32_be, parse_u64, parse_u8, DecodeError, DefaultNla, Emitable,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ParseableParametrized,
 };
 
 use super::{
@@ -161,9 +162,10 @@ impl Nla for RouteAttribute {
             Self::Sport(value) | Self::Dport(value) => {
                 buffer[..2].copy_from_slice(&value.to_be_bytes())
             }
-            Self::Flowlabel(value) | Self::NhId(value) => {
-                emit_u32(buffer, *value).unwrap()
-            }
+            // RTA_FLOWLABEL is a NLA_BE32 attribute while RTA_NH_ID is a
+            // host endian one.
+            Self::Flowlabel(value) => emit_u32_be(buffer, *value).unwrap(),
+            Self::NhId(value) => emit_u32(buffer, *value).unwrap(),
             Self::Other(attr) => attr.emit_value(buffer),
         }
     }
@@ -329,7 +331,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 parse_u16_be(payload).context("invalid RTA_DPORT value")?,
             ),
             RTA_FLOWLABEL => Self::Flowlabel(
-                parse_u32(payload).context("invalid RTA_FLOWLABEL value")?,
+                parse_u32_be(payload).context("invalid RTA_FLOWLABEL value")?,
             ),
             RTA_NH_ID => Self::NhId(
                 parse_u32(payload).context("invalid RTA_NH_ID value")?,
