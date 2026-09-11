@@ -118,6 +118,7 @@ fn test_inline() {
                     segments: vec![
                         Ipv6Addr::from_str("fe80::1").unwrap(),
                         Ipv6Addr::from_str("fe80::2").unwrap(),
+                        Ipv6Addr::UNSPECIFIED,
                     ],
                 }),
             )]),

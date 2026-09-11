@@ -146,15 +146,7 @@ impl Seg6Header {
 
 impl Nla for Seg6Header {
     fn value_len(&self) -> usize {
-        let segments = match self.mode {
-            // in inline mode, seg6 add an additional segment (::) at the
-            // end of the segment list, thus must have one additional
-            // segment slot in the payload
-            Seg6Mode::Inline => self.segments.len() + 1,
-            Seg6Mode::Encap => self.segments.len(),
-            Seg6Mode::Other(_) => self.segments.len(),
-        };
-        12 + 16 * segments
+        12 + 16 * self.segments.len()
     }
 
     fn kind(&self) -> u16 {
@@ -171,10 +163,7 @@ impl Nla for Seg6Header {
         // iproute2/iproute2
         //      ip/iproute_lwtunnel.c parse_encap_seg6()
 
-        let mut number_segments = self.segments.len();
-        if matches!(self.mode, Seg6Mode::Inline) {
-            number_segments += 1 // last segment (::) added
-        }
+        let number_segments = self.segments.len();
 
         let srhlen = 8 + 16 * number_segments;
 
@@ -190,14 +179,10 @@ impl Nla for Seg6Header {
         };
         buffer[..SEG6_HEADER_LEN].copy_from_slice(raw.as_bytes());
 
-        let mut segments = self.segments.clone();
-
-        // Add the last segment (::) if working in inline mode
-        if matches!(self.mode, Seg6Mode::Inline) {
-            segments.push("::".parse().expect("Impossible error"))
-        }
-
-        Seg6Header::push_segments(&mut buffer[SEG6_HEADER_LEN..], segments);
+        Seg6Header::push_segments(
+            &mut buffer[SEG6_HEADER_LEN..],
+            self.segments.clone(),
+        );
     }
 }
 
@@ -223,15 +208,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 let mut segments: Vec<Ipv6Addr> = vec![];
                 Seg6Header::get_segments(segments_buf, &mut segments)?;
 
-                let mut segments: Vec<Ipv6Addr> =
+                let segments: Vec<Ipv6Addr> =
                     segments.into_iter().rev().collect();
 
-                let mode = Seg6Mode::from(raw.mode);
-                if matches!(mode, Seg6Mode::Inline) {
-                    segments.pop(); // remove last inline segment
-                }
-
-                RouteSeg6IpTunnel::Seg6(Seg6Header { mode, segments })
+                RouteSeg6IpTunnel::Seg6(Seg6Header {
+                    mode: Seg6Mode::from(raw.mode),
+                    segments,
+                })
             }
             _ => Self::Other(
                 DefaultNla::parse(buf)
