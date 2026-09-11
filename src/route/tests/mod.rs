@@ -21,6 +21,8 @@ mod realm;
 #[cfg(test)]
 mod route_flags;
 #[cfg(test)]
+mod route_get;
+#[cfg(test)]
 mod seg6;
 #[cfg(test)]
 mod uid;
