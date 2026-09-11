@@ -7,6 +7,8 @@ mod expires;
 #[cfg(test)]
 mod ip6_tunnel;
 #[cfg(test)]
+mod ip_tunnel;
+#[cfg(test)]
 mod loopback;
 #[cfg(test)]
 mod metrics;
