@@ -212,9 +212,15 @@ impl Nla for RouteAttribute {
 
     fn is_nested(&self) -> bool {
         if let Self::Encap(encap) = self {
-            encap
-                .iter()
-                .any(|e| matches!(e, RouteLwTunnelEncap::Seg6(_)))
+            // The kernel validates `LWTUNNEL_ENCAP_XFRM` with
+            // `nla_parse_nested()` which rejects a missing `NLA_F_NESTED`
+            // flag, `iproute2` always sets the flag on `RTA_ENCAP`.
+            encap.iter().any(|e| {
+                matches!(
+                    e,
+                    RouteLwTunnelEncap::Seg6(_) | RouteLwTunnelEncap::Xfrm(_)
+                )
+            })
         } else {
             false
         }

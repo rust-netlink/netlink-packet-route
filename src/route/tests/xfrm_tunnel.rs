@@ -60,5 +60,8 @@ fn test_xfrm_tunnel() {
 
     expected.emit(&mut buf);
 
-    assert_eq!(buf, raw);
+    // The capture above comes from a kernel dump which does not set
+    // `NLA_F_NESTED` on `RTA_ENCAP`, while `iproute2` and this crate do
+    // because the kernel requires the flag for `LWTUNNEL_ENCAP_XFRM`.
+    assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }
