@@ -83,6 +83,25 @@ fn test_mpls_route_to_ipv4() {
     assert_eq!(buf, raw);
 }
 
+#[test]
+fn test_mpls_ttl_propagation_wire_values() {
+    assert_eq!(u8::from(RouteMplsTtlPropagation::Disabled), 0);
+    assert_eq!(u8::from(RouteMplsTtlPropagation::Enabled), 1);
+    assert_eq!(u8::from(RouteMplsTtlPropagation::Other(2)), 2);
+    assert_eq!(
+        RouteMplsTtlPropagation::from(0),
+        RouteMplsTtlPropagation::Disabled
+    );
+    assert_eq!(
+        RouteMplsTtlPropagation::from(1),
+        RouteMplsTtlPropagation::Enabled
+    );
+    assert_eq!(
+        RouteMplsTtlPropagation::from(2),
+        RouteMplsTtlPropagation::Other(2)
+    );
+}
+
 // Setup:
 //      ip link add dummy1 type dummy
 //      ip link set dummy1 up
