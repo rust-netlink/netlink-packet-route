@@ -7,8 +7,8 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     route::{
         RouteAttribute, RouteFlags, RouteHeader, RouteIpTunnel,
-        RouteIpTunnelFlags, RouteLwEnCapType, RouteLwTunnelEncap,
-        RouteMessage, RouteProtocol, RouteScope, RouteType,
+        RouteIpTunnelFlags, RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage,
+        RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
