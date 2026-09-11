@@ -167,26 +167,25 @@ impl Emitable for VecMplsLabel {
     }
 }
 
-const MPLS_TTL_PROP_DEFAULT: u8 = 0;
+// `RTA_TTL_PROPAGATE` only carries 0 (disabled) or 1 (enabled) on the wire;
+// the kernel default is represented by the absence of the attribute.
+const MPLS_TTL_PROP_DISABLED: u8 = 0;
 const MPLS_TTL_PROP_ENABLED: u8 = 1;
-const MPLS_TTL_PROP_DISABLED: u8 = 2;
 
-#[derive(Debug, PartialEq, Eq, Clone, Default, Copy)]
+/// TTL propagation setting carried by `RTA_TTL_PROPAGATE`.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub enum RouteMplsTtlPropagation {
-    #[default]
-    Default,
-    Enabled,
     Disabled,
+    Enabled,
     Other(u8),
 }
 
 impl From<u8> for RouteMplsTtlPropagation {
     fn from(d: u8) -> Self {
         match d {
-            MPLS_TTL_PROP_DEFAULT => Self::Default,
-            MPLS_TTL_PROP_ENABLED => Self::Enabled,
             MPLS_TTL_PROP_DISABLED => Self::Disabled,
+            MPLS_TTL_PROP_ENABLED => Self::Enabled,
             _ => Self::Other(d),
         }
     }
@@ -195,9 +194,8 @@ impl From<u8> for RouteMplsTtlPropagation {
 impl From<RouteMplsTtlPropagation> for u8 {
     fn from(v: RouteMplsTtlPropagation) -> u8 {
         match v {
-            RouteMplsTtlPropagation::Default => MPLS_TTL_PROP_DEFAULT,
-            RouteMplsTtlPropagation::Enabled => MPLS_TTL_PROP_ENABLED,
             RouteMplsTtlPropagation::Disabled => MPLS_TTL_PROP_DISABLED,
+            RouteMplsTtlPropagation::Enabled => MPLS_TTL_PROP_ENABLED,
             RouteMplsTtlPropagation::Other(d) => d,
         }
     }
