@@ -5,6 +5,7 @@ mod attribute;
 mod cache_info;
 mod flags;
 mod header;
+mod ioam6;
 mod lwtunnel;
 mod message;
 pub(crate) mod metrics;
@@ -30,6 +31,7 @@ pub use self::{
     header::{
         RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
     },
+    ioam6::{Ioam6Mode, Ioam6TraceHdr, RouteIoam6Tunnel},
     lwtunnel::{
         RouteIp6Tunnel, RouteIp6TunnelFlags, RouteIpTunnel, RouteIpTunnelFlags,
         RouteLwEnCapType, RouteLwTunnelEncap, RouteXfrmTunnel,

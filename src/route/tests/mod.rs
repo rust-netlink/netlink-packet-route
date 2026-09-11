@@ -5,6 +5,8 @@ mod cache_info;
 #[cfg(test)]
 mod expires;
 #[cfg(test)]
+mod ioam6;
+#[cfg(test)]
 mod ip6_tunnel;
 #[cfg(test)]
 mod ip_tunnel;
