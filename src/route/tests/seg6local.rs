@@ -89,6 +89,9 @@ fn test_seg6local_end_dx4() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+
+    // The encapsulation type name is printed as iproute2 spells it.
+    assert_eq!(RouteLwEnCapType::Seg6Local.to_string(), "seg6local");
 }
 
 // Setup:

@@ -132,7 +132,7 @@ impl std::fmt::Display for RouteLwEnCapType {
             Self::Ip6 => write!(f, "ip6"),
             Self::Seg6 => write!(f, "seg6"),
             Self::Bpf => write!(f, "bpf"),
-            Self::Seg6Local => write!(f, "seg6_local"),
+            Self::Seg6Local => write!(f, "seg6local"),
             Self::Rpl => write!(f, "rpl"),
             Self::Ioam6 => write!(f, "ioam6"),
             Self::Xfrm => write!(f, "xfrm"),
