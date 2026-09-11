@@ -15,6 +15,8 @@ mod mpls;
 #[cfg(test)]
 mod multipath;
 #[cfg(test)]
+mod nh_id;
+#[cfg(test)]
 mod realm;
 #[cfg(test)]
 mod route_flags;
