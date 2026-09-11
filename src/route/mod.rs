@@ -14,6 +14,7 @@ mod next_hops;
 mod preference;
 mod realm;
 mod seg6;
+mod seg6local;
 mod via;
 
 #[cfg(test)]
@@ -29,9 +30,8 @@ pub use self::{
         RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
     },
     lwtunnel::{
-        RouteIp6Tunnel, RouteIp6TunnelFlags, RouteIpTunnel,
-        RouteIpTunnelFlags, RouteLwEnCapType, RouteLwTunnelEncap,
-        RouteXfrmTunnel,
+        RouteIp6Tunnel, RouteIp6TunnelFlags, RouteIpTunnel, RouteIpTunnelFlags,
+        RouteLwEnCapType, RouteLwTunnelEncap, RouteXfrmTunnel,
     },
     message::RouteMessage,
     metrics::RouteMetric,
@@ -41,5 +41,6 @@ pub use self::{
     preference::RoutePreference,
     realm::RouteRealm,
     seg6::{RouteSeg6IpTunnel, Seg6Header, Seg6Mode},
+    seg6local::{RouteSeg6LocalTunnel, Seg6LocalAction, Seg6LocalSrh},
     via::{RouteVia, RouteViaBuffer},
 };

@@ -27,6 +27,8 @@ mod route_get;
 #[cfg(test)]
 mod seg6;
 #[cfg(test)]
+mod seg6local;
+#[cfg(test)]
 mod uid;
 #[cfg(test)]
 mod via;
