@@ -29,7 +29,8 @@ pub use self::{
         RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
     },
     lwtunnel::{
-        RouteIp6Tunnel, RouteIpTunnel, RouteLwEnCapType, RouteLwTunnelEncap,
+        RouteIp6Tunnel, RouteIp6TunnelFlags, RouteIpTunnel,
+        RouteIpTunnelFlags, RouteLwEnCapType, RouteLwTunnelEncap,
         RouteXfrmTunnel,
     },
     message::RouteMessage,
