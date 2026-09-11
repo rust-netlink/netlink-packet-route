@@ -6,9 +6,9 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     route::{
-        lwtunnel::RouteIpTunnelFlags, RouteAttribute, RouteFlags, RouteHeader,
-        RouteIpTunnel, RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage,
-        RouteProtocol, RouteScope, RouteType,
+        RouteAttribute, RouteFlags, RouteHeader, RouteIpTunnel,
+        RouteIpTunnelFlags, RouteLwEnCapType, RouteLwTunnelEncap,
+        RouteMessage, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
