@@ -28,7 +28,9 @@ pub use self::{
     header::{
         RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
     },
-    lwtunnel::{RouteIp6Tunnel, RouteLwEnCapType, RouteLwTunnelEncap},
+    lwtunnel::{
+        RouteIp6Tunnel, RouteIpTunnel, RouteLwEnCapType, RouteLwTunnelEncap,
+    },
     message::RouteMessage,
     metrics::RouteMetric,
     mfc_stats::{RouteMfcStats, RouteMfcStatsBuffer},
