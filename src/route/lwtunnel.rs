@@ -7,8 +7,8 @@ use std::{
 };
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u64_be, parse_u16_be, parse_u64_be, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    emit_u16_be, emit_u32, emit_u64_be, parse_u16_be, parse_u32, parse_u64_be,
+    parse_u8, DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
     NlasIterator, Parseable, ParseableParametrized,
 };
 
@@ -48,6 +48,10 @@ const LWTUNNEL_IP6_FLAGS: u16 = 6;
 const IP_TUNNEL_CSUM_BIT: u16 = 1;
 const IP_TUNNEL_KEY_BIT: u16 = 4;
 const IP_TUNNEL_SEQ_BIT: u16 = 8;
+
+const LWT_XFRM_UNSPEC: u16 = 0;
+const LWT_XFRM_IF_ID: u16 = 1;
+const LWT_XFRM_LINK: u16 = 2;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 #[non_exhaustive]
@@ -404,7 +408,77 @@ pub enum RouteLwTunnelEncap {
     Seg6(RouteSeg6IpTunnel),
     Ip(RouteIpTunnel),
     Ip6(RouteIp6Tunnel),
+    Xfrm(RouteXfrmTunnel),
     Other(DefaultNla),
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
+pub enum RouteXfrmTunnel {
+    #[default]
+    Unspecified,
+    IfId(u32),
+    Link(u32),
+    Other(DefaultNla),
+}
+
+impl std::fmt::Display for RouteXfrmTunnel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unspecified => write!(f, "unspecified"),
+            Self::IfId(if_id) => write!(f, "if_id {if_id}"),
+            Self::Link(link) => write!(f, "link_dev {link}"),
+            Self::Other(other) => other.fmt(f),
+        }
+    }
+}
+
+impl Nla for RouteXfrmTunnel {
+    fn value_len(&self) -> usize {
+        match self {
+            Self::Unspecified => 0,
+            Self::IfId(_) | Self::Link(_) => size_of::<u32>(),
+            Self::Other(_) => size_of::<DefaultNla>(),
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        match self {
+            Self::Unspecified => LWT_XFRM_UNSPEC,
+            Self::IfId(_) => LWT_XFRM_IF_ID,
+            Self::Link(_) => LWT_XFRM_LINK,
+            Self::Other(other) => other.kind(),
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        match self {
+            Self::Unspecified => {}
+            Self::IfId(value) | Self::Link(value) => {
+                emit_u32(buffer, *value).unwrap()
+            }
+            Self::Other(other) => other.emit_value(buffer),
+        }
+    }
+}
+
+impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteXfrmTunnel
+where
+    T: AsRef<[u8]> + ?Sized,
+{
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            LWT_XFRM_UNSPEC => Self::Unspecified,
+            LWT_XFRM_IF_ID => Self::IfId(
+                parse_u32(payload).context("invalid LWT_XFRM_IF_ID value")?,
+            ),
+            LWT_XFRM_LINK => Self::Link(
+                parse_u32(payload).context("invalid LWT_XFRM_LINK value")?,
+            ),
+            _ => Self::Other(DefaultNla::parse(buf)?),
+        })
+    }
 }
 
 impl Nla for RouteLwTunnelEncap {
@@ -414,6 +488,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.value_len(),
             Self::Ip(v) => v.value_len(),
             Self::Ip6(v) => v.value_len(),
+            Self::Xfrm(v) => v.value_len(),
             Self::Other(v) => v.value_len(),
         }
     }
@@ -424,6 +499,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.emit_value(buffer),
             Self::Ip(v) => v.emit_value(buffer),
             Self::Ip6(v) => v.emit_value(buffer),
+            Self::Xfrm(v) => v.emit_value(buffer),
             Self::Other(v) => v.emit_value(buffer),
         }
     }
@@ -434,6 +510,7 @@ impl Nla for RouteLwTunnelEncap {
             Self::Seg6(v) => v.kind(),
             Self::Ip(v) => v.kind(),
             Self::Ip6(v) => v.kind(),
+            Self::Xfrm(v) => v.kind(),
             Self::Other(v) => v.kind(),
         }
     }
@@ -457,6 +534,7 @@ where
             }
             RouteLwEnCapType::Ip => Self::Ip(RouteIpTunnel::parse(buf)?),
             RouteLwEnCapType::Ip6 => Self::Ip6(RouteIp6Tunnel::parse(buf)?),
+            RouteLwEnCapType::Xfrm => Self::Xfrm(RouteXfrmTunnel::parse(buf)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
