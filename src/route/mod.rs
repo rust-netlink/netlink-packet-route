@@ -17,6 +17,7 @@ mod realm;
 mod rpl;
 mod seg6;
 mod seg6local;
+mod tunnel_opts;
 mod via;
 
 #[cfg(test)]
@@ -46,5 +47,6 @@ pub use self::{
     rpl::{RouteRplIpTunnel, RplSrh},
     seg6::{RouteSeg6IpTunnel, Seg6Header, Seg6Mode},
     seg6local::{RouteSeg6LocalTunnel, Seg6LocalAction, Seg6LocalSrh},
+    tunnel_opts::{RouteErspanOpt, RouteGeneveOpt, RouteLwTunnelOpt},
     via::{RouteVia, RouteViaBuffer},
 };

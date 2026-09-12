@@ -11,9 +11,9 @@ use super::{
     super::AddressFamily, lwtunnel::VecRouteLwTunnelEncap,
     metrics::VecRouteMetric, mpls::VecMplsLabel,
     next_hops::parse_multipath_next_hops, MplsLabel, RouteAddress,
-    RouteCacheInfo, RouteLwEnCapType, RouteLwTunnelEncap, RouteMetric,
-    RouteMfcStats, RouteMplsTtlPropagation, RouteNextHop, RoutePreference,
-    RouteRealm, RouteType, RouteVia,
+    RouteCacheInfo, RouteIp6Tunnel, RouteIpTunnel, RouteLwEnCapType,
+    RouteLwTunnelEncap, RouteMetric, RouteMfcStats, RouteMplsTtlPropagation,
+    RouteNextHop, RoutePreference, RouteRealm, RouteType, RouteVia,
 };
 
 const RTA_DST: u16 = 1;
@@ -222,6 +222,8 @@ impl Nla for RouteAttribute {
                         | RouteLwTunnelEncap::Xfrm(_)
                         | RouteLwTunnelEncap::Rpl(_)
                         | RouteLwTunnelEncap::Ioam6(_)
+                        | RouteLwTunnelEncap::Ip(RouteIpTunnel::Opts(_))
+                        | RouteLwTunnelEncap::Ip6(RouteIp6Tunnel::Opts(_))
                 )
             })
         } else {

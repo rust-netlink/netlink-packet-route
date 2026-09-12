@@ -33,6 +33,8 @@ mod seg6;
 #[cfg(test)]
 mod seg6local;
 #[cfg(test)]
+mod tunnel_opts;
+#[cfg(test)]
 mod uid;
 #[cfg(test)]
 mod via;
