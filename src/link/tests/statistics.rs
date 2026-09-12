@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+use std::mem::size_of;
+
 use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
@@ -733,4 +735,71 @@ fn test_parsing_link_statistics() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+}
+
+// Kernels older than 6.9 do not have the `rx_otherhost_dropped` field, so
+// they send an `IFLA_STATS64` payload shorter than `Stats64Buffer`. Such a
+// message must be decoded, with the missing trailing fields set to zero.
+#[test]
+fn test_parsing_link_statistics_short_stats64() {
+    let expected = LinkMessage {
+        header: LinkHeader {
+            index: 1,
+            ..Default::default()
+        },
+        attributes: vec![LinkAttribute::Stats64(Stats64 {
+            rx_packets: 120,
+            tx_packets: 53,
+            rx_bytes: 4242,
+            ..Default::default()
+        })],
+    };
+
+    let mut raw = vec![0u8; expected.buffer_len()];
+    expected.emit(&mut raw);
+
+    // Simulate a kernel without `rx_otherhost_dropped`: remove the last
+    // field of the `IFLA_STATS64` payload and fix the NLA length.
+    let header_len = expected.header.buffer_len();
+    raw.truncate(raw.len() - size_of::<u64>());
+    let nla_len = ((raw.len() - header_len) as u16).to_le_bytes();
+    raw[header_len..header_len + size_of::<u16>()].copy_from_slice(&nla_len);
+
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
+}
+
+#[test]
+fn test_parsing_short_stats64_payload() {
+    let expected = Stats64 {
+        rx_packets: 120,
+        tx_packets: 53,
+        rx_bytes: 4242,
+        ..Default::default()
+    };
+
+    let mut payload = vec![0u8; expected.buffer_len()];
+    expected.emit(&mut payload);
+
+    // Kernels older than 6.9 do not send `rx_otherhost_dropped`.
+    payload.truncate(payload.len() - size_of::<u64>());
+
+    assert_eq!(Stats64::parse(&payload).unwrap(), expected);
+}
+
+#[test]
+fn test_parsing_short_stats_payload() {
+    let expected = Stats {
+        rx_packets: 120,
+        tx_packets: 53,
+        rx_bytes: 4242,
+        ..Default::default()
+    };
+
+    let mut payload = vec![0u8; expected.buffer_len()];
+    expected.emit(&mut payload);
+
+    // Kernels without `rx_nohandler` send a shorter payload.
+    payload.truncate(payload.len() - size_of::<u32>());
+
+    assert_eq!(Stats::parse(&payload).unwrap(), expected);
 }
