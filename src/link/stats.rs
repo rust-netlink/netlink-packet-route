@@ -3,7 +3,9 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{DecodeError, Emitable};
-use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
+use zerocopy::{
+    FromBytes, FromZeros, Immutable, IntoBytes, KnownLayout, Unaligned,
+};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 #[non_exhaustive]
@@ -97,37 +99,39 @@ pub struct StatsBuffer {
 
 impl Stats {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        let (raw, _) = StatsBuffer::ref_from_prefix(payload).map_err(|_| {
-            DecodeError::buffer_too_small(
-                payload.len(),
-                size_of::<StatsBuffer>(),
-            )
-        })?;
+        // The payload length is the size of `struct rtnl_link_stats` of the
+        // kernel which sent the message: older kernels send a payload
+        // shorter than `StatsBuffer`. Zero fill the missing trailing fields
+        // like iproute2 does in `get_rtnl_link_stats_rta()`, instead of
+        // failing the whole message decoding.
+        let mut buffer = StatsBuffer::new_zeroed();
+        let len = payload.len().min(size_of::<StatsBuffer>());
+        buffer.as_mut_bytes()[..len].copy_from_slice(&payload[..len]);
         Ok(Self {
-            rx_packets: raw.rx_packets,
-            tx_packets: raw.tx_packets,
-            rx_bytes: raw.rx_bytes,
-            tx_bytes: raw.tx_bytes,
-            rx_errors: raw.rx_errors,
-            tx_errors: raw.tx_errors,
-            rx_dropped: raw.rx_dropped,
-            tx_dropped: raw.tx_dropped,
-            multicast: raw.multicast,
-            collisions: raw.collisions,
-            rx_length_errors: raw.rx_length_errors,
-            rx_over_errors: raw.rx_over_errors,
-            rx_crc_errors: raw.rx_crc_errors,
-            rx_frame_errors: raw.rx_frame_errors,
-            rx_fifo_errors: raw.rx_fifo_errors,
-            rx_missed_errors: raw.rx_missed_errors,
-            tx_aborted_errors: raw.tx_aborted_errors,
-            tx_carrier_errors: raw.tx_carrier_errors,
-            tx_fifo_errors: raw.tx_fifo_errors,
-            tx_heartbeat_errors: raw.tx_heartbeat_errors,
-            tx_window_errors: raw.tx_window_errors,
-            rx_compressed: raw.rx_compressed,
-            tx_compressed: raw.tx_compressed,
-            rx_nohandler: raw.rx_nohandler,
+            rx_packets: buffer.rx_packets,
+            tx_packets: buffer.tx_packets,
+            rx_bytes: buffer.rx_bytes,
+            tx_bytes: buffer.tx_bytes,
+            rx_errors: buffer.rx_errors,
+            tx_errors: buffer.tx_errors,
+            rx_dropped: buffer.rx_dropped,
+            tx_dropped: buffer.tx_dropped,
+            multicast: buffer.multicast,
+            collisions: buffer.collisions,
+            rx_length_errors: buffer.rx_length_errors,
+            rx_over_errors: buffer.rx_over_errors,
+            rx_crc_errors: buffer.rx_crc_errors,
+            rx_frame_errors: buffer.rx_frame_errors,
+            rx_fifo_errors: buffer.rx_fifo_errors,
+            rx_missed_errors: buffer.rx_missed_errors,
+            tx_aborted_errors: buffer.tx_aborted_errors,
+            tx_carrier_errors: buffer.tx_carrier_errors,
+            tx_fifo_errors: buffer.tx_fifo_errors,
+            tx_heartbeat_errors: buffer.tx_heartbeat_errors,
+            tx_window_errors: buffer.tx_window_errors,
+            rx_compressed: buffer.rx_compressed,
+            tx_compressed: buffer.tx_compressed,
+            rx_nohandler: buffer.rx_nohandler,
         })
     }
 }
