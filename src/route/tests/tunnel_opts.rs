@@ -9,7 +9,7 @@ use crate::{
         flags::RouteFlags, RouteAttribute, RouteErspanOpt, RouteGeneveOpt,
         RouteHeader, RouteIpTunnel, RouteIpTunnelFlags, RouteLwEnCapType,
         RouteLwTunnelEncap, RouteLwTunnelOpt, RouteMessage, RouteProtocol,
-        RouteScope, RouteType,
+        RouteScope, RouteType, RouteVxlanOpt,
     },
     AddressFamily,
 };
@@ -44,7 +44,7 @@ fn test_ip_tunnel_vxlan_opts_request() {
             RouteAttribute::Encap(vec![
                 RouteLwTunnelEncap::Ip(RouteIpTunnel::Id(300)),
                 RouteLwTunnelEncap::Ip(RouteIpTunnel::Opts(vec![
-                    RouteLwTunnelOpt::Vxlan(100),
+                    RouteLwTunnelOpt::Vxlan(vec![RouteVxlanOpt::Gbp(100)]),
                 ])),
             ]),
             RouteAttribute::EncapType(RouteLwEnCapType::Ip),
@@ -109,13 +109,12 @@ fn test_ip_tunnel_erspan_opts_request() {
 }
 
 fn erspan_opt() -> RouteLwTunnelOpt {
-    let opt = RouteErspanOpt {
-        ver: 1,
-        index: Some(2),
-        dir: Some(3),
-        hwid: Some(4),
-    };
-    RouteLwTunnelOpt::Erspan(opt)
+    RouteLwTunnelOpt::Erspan(vec![
+        RouteErspanOpt::Ver(1),
+        RouteErspanOpt::Index(2),
+        RouteErspanOpt::Dir(3),
+        RouteErspanOpt::Hwid(4),
+    ])
 }
 
 // strace capture(netlink message header removed) against command:
@@ -226,7 +225,7 @@ fn test_ip_tunnel_vxlan_opts_dump() {
                     RouteIpTunnelFlags::from_bits_retain(0x1000),
                 )),
                 RouteLwTunnelEncap::Ip(RouteIpTunnel::Opts(vec![
-                    RouteLwTunnelOpt::Vxlan(100),
+                    RouteLwTunnelOpt::Vxlan(vec![RouteVxlanOpt::Gbp(100)]),
                 ])),
             ]),
             RouteAttribute::EncapType(RouteLwEnCapType::Ip),
@@ -308,9 +307,8 @@ fn test_ip_tunnel_erspan_opts_dump() {
 }
 
 fn erspan_dump_opt() -> RouteLwTunnelOpt {
-    RouteLwTunnelOpt::Erspan(RouteErspanOpt {
-        ver: 1,
-        index: Some(2),
-        ..Default::default()
-    })
+    RouteLwTunnelOpt::Erspan(vec![
+        RouteErspanOpt::Ver(1),
+        RouteErspanOpt::Index(2),
+    ])
 }

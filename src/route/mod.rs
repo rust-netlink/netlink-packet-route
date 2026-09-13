@@ -47,6 +47,8 @@ pub use self::{
     rpl::{RouteRplIpTunnel, RplSrh},
     seg6::{RouteSeg6IpTunnel, Seg6Header, Seg6Mode},
     seg6local::{RouteSeg6LocalTunnel, Seg6LocalAction, Seg6LocalSrh},
-    tunnel_opts::{RouteErspanOpt, RouteGeneveOpt, RouteLwTunnelOpt},
+    tunnel_opts::{
+        RouteErspanOpt, RouteGeneveOpt, RouteLwTunnelOpt, RouteVxlanOpt,
+    },
     via::{RouteVia, RouteViaBuffer},
 };
