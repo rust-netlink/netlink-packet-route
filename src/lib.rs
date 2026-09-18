@@ -7,6 +7,7 @@
 //! This crate grouped Netlink route protocol into these modules:
 //!  * `link`: NIC interface, similar to `ip link` command.
 //!  * `address`: IP address, similar to `ip address` command.
+//!  * `addrlabel`: Address label, similar to `ip addrlabel` command.
 //!  * `route`: Route, similar to `ip route` command.
 //!  * `rule`: Route rule, similar to `ip rule` command.
 //!  * `tc`: Traffic control, similar to `tc` command.
@@ -24,6 +25,7 @@
 
 pub mod address;
 mod address_family;
+pub mod addrlabel;
 pub mod link;
 pub mod neighbour;
 pub mod neighbour_table;

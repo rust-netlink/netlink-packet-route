@@ -7,6 +7,7 @@ use netlink_packet_core::{
 
 use crate::{
     address::{AddressHeader, AddressMessage},
+    addrlabel::AddrLabelMessage,
     link::LinkMessage,
     neighbour::NeighbourMessage,
     neighbour_table::NeighbourTableMessage,
@@ -53,9 +54,9 @@ const RTM_NEWNEIGHTBL: u16 = 64;
 const RTM_GETNEIGHTBL: u16 = 66;
 const RTM_SETNEIGHTBL: u16 = 67;
 // const RTM_NEWNDUSEROPT: u16 = 68;
-// const RTM_NEWADDRLABEL: u16 = 72;
-// const RTM_DELADDRLABEL: u16 = 73;
-// const RTM_GETADDRLABEL: u16 = 74;
+const RTM_NEWADDRLABEL: u16 = 72;
+const RTM_DELADDRLABEL: u16 = 73;
+const RTM_GETADDRLABEL: u16 = 74;
 // const RTM_GETDCB: u16 = 78;
 // const RTM_SETDCB: u16 = 79;
 // const RTM_NEWNETCONF: u16 = 80;
@@ -135,6 +136,18 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_GETNEIGH => RouteNetlinkMessage::GetNeighbour(msg),
                     RTM_NEWNEIGH => RouteNetlinkMessage::NewNeighbour(msg),
                     RTM_DELNEIGH => RouteNetlinkMessage::DelNeighbour(msg),
+                    _ => unreachable!(),
+                }
+            }
+
+            // Address label messages
+            RTM_NEWADDRLABEL | RTM_DELADDRLABEL | RTM_GETADDRLABEL => {
+                let err = "invalid addrlabel message";
+                let msg = AddrLabelMessage::parse(buf).context(err)?;
+                match message_type {
+                    RTM_NEWADDRLABEL => RouteNetlinkMessage::NewAddrLabel(msg),
+                    RTM_DELADDRLABEL => RouteNetlinkMessage::DelAddrLabel(msg),
+                    RTM_GETADDRLABEL => RouteNetlinkMessage::GetAddrLabel(msg),
                     _ => unreachable!(),
                 }
             }
@@ -298,6 +311,9 @@ pub enum RouteNetlinkMessage {
     NewAddress(AddressMessage),
     DelAddress(AddressMessage),
     GetAddress(AddressMessage),
+    NewAddrLabel(AddrLabelMessage),
+    DelAddrLabel(AddrLabelMessage),
+    GetAddrLabel(AddrLabelMessage),
     NewNeighbour(NeighbourMessage),
     GetNeighbour(NeighbourMessage),
     DelNeighbour(NeighbourMessage),
@@ -360,6 +376,18 @@ impl RouteNetlinkMessage {
 
     pub fn is_get_address(&self) -> bool {
         matches!(self, RouteNetlinkMessage::GetAddress(_))
+    }
+
+    pub fn is_new_addr_label(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::NewAddrLabel(_))
+    }
+
+    pub fn is_del_addr_label(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::DelAddrLabel(_))
+    }
+
+    pub fn is_get_addr_label(&self) -> bool {
+        matches!(self, RouteNetlinkMessage::GetAddrLabel(_))
     }
 
     pub fn is_get_neighbour(&self) -> bool {
@@ -501,6 +529,9 @@ impl RouteNetlinkMessage {
             Self::NewAddress(_) => RTM_NEWADDR,
             Self::DelAddress(_) => RTM_DELADDR,
             Self::GetAddress(_) => RTM_GETADDR,
+            Self::NewAddrLabel(_) => RTM_NEWADDRLABEL,
+            Self::DelAddrLabel(_) => RTM_DELADDRLABEL,
+            Self::GetAddrLabel(_) => RTM_GETADDRLABEL,
             Self::GetNeighbour(_) => RTM_GETNEIGH,
             Self::NewNeighbour(_) => RTM_NEWNEIGH,
             Self::DelNeighbour(_) => RTM_DELNEIGH,
@@ -551,6 +582,10 @@ impl Emitable for RouteNetlinkMessage {
             Self::NewAddress(ref msg)
             | Self::DelAddress(ref msg)
             | Self::GetAddress(ref msg) => msg.buffer_len(),
+
+            Self::NewAddrLabel(ref msg)
+            | Self::DelAddrLabel(ref msg)
+            | Self::GetAddrLabel(ref msg) => msg.buffer_len(),
 
             Self::NewNeighbour(ref msg)
             | Self::GetNeighbour(ref msg)
@@ -609,6 +644,10 @@ impl Emitable for RouteNetlinkMessage {
             Self::NewAddress(ref msg)
             | Self::DelAddress(ref msg)
             | Self::GetAddress(ref msg) => msg.emit(buffer),
+
+            Self::NewAddrLabel(ref msg)
+            | Self::DelAddrLabel(ref msg)
+            | Self::GetAddrLabel(ref msg) => msg.emit(buffer),
 
             Self::GetNeighbour(ref msg)
             | Self::NewNeighbour(ref msg)
