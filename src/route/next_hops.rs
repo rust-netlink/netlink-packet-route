@@ -218,6 +218,9 @@ pub(crate) fn parse_multipath_next_hops(
 ) -> Result<Vec<RouteNextHop>, DecodeError> {
     let mut next_hops = vec![];
     let mut buf = buf;
+    if buf.is_empty() {
+        return Ok(next_hops);
+    }
     loop {
         let length = RouteNextHopBuffer::new_checked(buf)?.length as usize;
         next_hops.push(RouteNextHop::parse_with_param(
