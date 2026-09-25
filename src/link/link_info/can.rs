@@ -3,7 +3,8 @@
 use bitflags::bitflags;
 use netlink_packet_core::{
     emit_u16, emit_u32, parse_u16, parse_u32, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    NLA_F_NESTED,
 };
 
 const IFLA_CAN_BITTIMING: u16 = 1;
@@ -16,12 +17,22 @@ const IFLA_CAN_RESTART: u16 = 7;
 const IFLA_CAN_BERR_COUNTER: u16 = 8;
 const IFLA_CAN_DATA_BITTIMING: u16 = 9;
 const IFLA_CAN_DATA_BITTIMING_CONST: u16 = 10;
-const IFLA_CAN_TERMINATION: u16 = 12;
-const IFLA_CAN_BITTIMING_MAX: u16 = 14;
-const IFLA_CAN_CC_LEN: u16 = 15;
-const IFLA_CAN_DATA_BITTIMING_MAX: u16 = 16;
-const IFLA_CAN_TDC: u16 = 17;
-const IFLA_CAN_CTRLMODE_EXT: u16 = 18;
+const IFLA_CAN_TERMINATION: u16 = 11;
+const IFLA_CAN_BITRATE_MAX: u16 = 15;
+const IFLA_CAN_TDC: u16 = 16;
+const IFLA_CAN_CTRLMODE_EXT: u16 = 17;
+
+const IFLA_CAN_TDC_TDCV_MIN: u16 = 1;
+const IFLA_CAN_TDC_TDCV_MAX: u16 = 2;
+const IFLA_CAN_TDC_TDCO_MIN: u16 = 3;
+const IFLA_CAN_TDC_TDCO_MAX: u16 = 4;
+const IFLA_CAN_TDC_TDCF_MIN: u16 = 5;
+const IFLA_CAN_TDC_TDCF_MAX: u16 = 6;
+const IFLA_CAN_TDC_TDCV: u16 = 7;
+const IFLA_CAN_TDC_TDCO: u16 = 8;
+const IFLA_CAN_TDC_TDCF: u16 = 9;
+
+const IFLA_CAN_CTRLMODE_SUPPORTED: u16 = 1;
 
 /// CAN bit timing parameters, corresponding to `struct can_bittiming` in the
 /// kernel.
@@ -244,62 +255,155 @@ impl CanBerrCounter {
     }
 }
 
-/// CAN Transmitter Delay Compensation (TDC) parameters, corresponding to
-/// `struct can_tdc` in the kernel.
+/// CAN Transmitter Delay Compensation (TDC) attributes nested in
+/// `IFLA_CAN_TDC`.
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct CanTdc {
-    pub tdcv_min: u32,
-    pub tdcv_max: u32,
-    pub tdcv: u32,
-    pub tdco_min: u32,
-    pub tdco_max: u32,
-    pub tdco: u32,
-    pub tdcf: u32,
+#[non_exhaustive]
+pub enum CanTdc {
+    TdcvMin(u32),
+    TdcvMax(u32),
+    TdcoMin(u32),
+    TdcoMax(u32),
+    TdcfMin(u32),
+    TdcfMax(u32),
+    Tdcv(u32),
+    Tdco(u32),
+    Tdcf(u32),
+    Other(DefaultNla),
 }
 
-const CAN_TDC_LEN: usize = 28;
-
-impl CanTdc {
-    fn value_len() -> usize {
-        CAN_TDC_LEN
+impl Nla for CanTdc {
+    fn value_len(&self) -> usize {
+        match self {
+            Self::Other(nla) => nla.value_len(),
+            _ => 4,
+        }
     }
 
     fn emit_value(&self, buffer: &mut [u8]) {
-        let mut offset = 0;
-        emit_u32(&mut buffer[offset..], self.tdcv_min).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tdcv_max).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tdcv).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tdco_min).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tdco_max).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tdco).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tdcf).unwrap();
+        match self {
+            Self::TdcvMin(v)
+            | Self::TdcvMax(v)
+            | Self::TdcoMin(v)
+            | Self::TdcoMax(v)
+            | Self::TdcfMin(v)
+            | Self::TdcfMax(v)
+            | Self::Tdcv(v)
+            | Self::Tdco(v)
+            | Self::Tdcf(v) => emit_u32(buffer, *v).unwrap(),
+            Self::Other(nla) => nla.emit_value(buffer),
+        }
     }
 
-    fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        if payload.len() < Self::value_len() {
-            return Err("invalid IFLA_CAN_TDC: expected 28 bytes".into());
+    fn kind(&self) -> u16 {
+        match self {
+            Self::TdcvMin(_) => IFLA_CAN_TDC_TDCV_MIN,
+            Self::TdcvMax(_) => IFLA_CAN_TDC_TDCV_MAX,
+            Self::TdcoMin(_) => IFLA_CAN_TDC_TDCO_MIN,
+            Self::TdcoMax(_) => IFLA_CAN_TDC_TDCO_MAX,
+            Self::TdcfMin(_) => IFLA_CAN_TDC_TDCF_MIN,
+            Self::TdcfMax(_) => IFLA_CAN_TDC_TDCF_MAX,
+            Self::Tdcv(_) => IFLA_CAN_TDC_TDCV,
+            Self::Tdco(_) => IFLA_CAN_TDC_TDCO,
+            Self::Tdcf(_) => IFLA_CAN_TDC_TDCF,
+            Self::Other(nla) => nla.kind(),
         }
-        Ok(Self {
-            tdcv_min: parse_u32(&payload[0..4])
-                .context("invalid IFLA_CAN_TDC tdcv_min")?,
-            tdcv_max: parse_u32(&payload[4..8])
-                .context("invalid IFLA_CAN_TDC tdcv_max")?,
-            tdcv: parse_u32(&payload[8..12])
-                .context("invalid IFLA_CAN_TDC tdcv")?,
-            tdco_min: parse_u32(&payload[12..16])
-                .context("invalid IFLA_CAN_TDC tdco_min")?,
-            tdco_max: parse_u32(&payload[16..20])
-                .context("invalid IFLA_CAN_TDC tdco_max")?,
-            tdco: parse_u32(&payload[20..24])
-                .context("invalid IFLA_CAN_TDC tdco")?,
-            tdcf: parse_u32(&payload[24..28])
-                .context("invalid IFLA_CAN_TDC tdcf")?,
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for CanTdc {
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            IFLA_CAN_TDC_TDCV_MIN => Self::TdcvMin(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCV_MIN value")?,
+            ),
+            IFLA_CAN_TDC_TDCV_MAX => Self::TdcvMax(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCV_MAX value")?,
+            ),
+            IFLA_CAN_TDC_TDCO_MIN => Self::TdcoMin(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCO_MIN value")?,
+            ),
+            IFLA_CAN_TDC_TDCO_MAX => Self::TdcoMax(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCO_MAX value")?,
+            ),
+            IFLA_CAN_TDC_TDCF_MIN => Self::TdcfMin(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCF_MIN value")?,
+            ),
+            IFLA_CAN_TDC_TDCF_MAX => Self::TdcfMax(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCF_MAX value")?,
+            ),
+            IFLA_CAN_TDC_TDCV => Self::Tdcv(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCV value")?,
+            ),
+            IFLA_CAN_TDC_TDCO => Self::Tdco(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCO value")?,
+            ),
+            IFLA_CAN_TDC_TDCF => Self::Tdcf(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_TDC_TDCF value")?,
+            ),
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
+                "unknown NLA type {kind} for IFLA_CAN_TDC"
+            ))?),
+        })
+    }
+}
+
+/// CAN controller mode extended attributes nested in `IFLA_CAN_CTRLMODE_EXT`.
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
+pub enum CanCtrlModeExt {
+    Supported(CanCtrlModeFlags),
+    Other(DefaultNla),
+}
+
+impl Nla for CanCtrlModeExt {
+    fn value_len(&self) -> usize {
+        match self {
+            Self::Supported(_) => 4,
+            Self::Other(nla) => nla.value_len(),
+        }
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        match self {
+            Self::Supported(v) => emit_u32(buffer, v.bits()).unwrap(),
+            Self::Other(nla) => nla.emit_value(buffer),
+        }
+    }
+
+    fn kind(&self) -> u16 {
+        match self {
+            Self::Supported(_) => IFLA_CAN_CTRLMODE_SUPPORTED,
+            Self::Other(nla) => nla.kind(),
+        }
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
+    for CanCtrlModeExt
+{
+    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+        let payload = buf.value();
+        Ok(match buf.kind() {
+            IFLA_CAN_CTRLMODE_SUPPORTED => {
+                Self::Supported(CanCtrlModeFlags::from_bits_retain(
+                    parse_u32(payload)
+                        .context("invalid IFLA_CAN_CTRLMODE_SUPPORTED value")?,
+                ))
+            }
+            kind => Self::Other(DefaultNla::parse(buf).context(format!(
+                "unknown NLA type {kind} for IFLA_CAN_CTRLMODE_EXT"
+            ))?),
         })
     }
 }
@@ -402,11 +506,9 @@ pub enum InfoCan {
     DataBitTiming(CanBitTiming),
     DataBitTimingConst(CanBitTimingConst),
     Termination(u16),
-    BitTimingMax(CanBitTiming),
-    CcLen(u32),
-    DataBitTimingMax(CanBitTiming),
-    Tdc(CanTdc),
-    CtrlModeExt(CanCtrlMode),
+    BitrateMax(u32),
+    Tdc(Vec<CanTdc>),
+    CtrlModeExt(Vec<CanCtrlModeExt>),
     Other(DefaultNla),
 }
 
@@ -424,11 +526,9 @@ impl Nla for InfoCan {
             Self::DataBitTiming(_) => CanBitTiming::value_len(),
             Self::DataBitTimingConst(_) => CanBitTimingConst::value_len(),
             Self::Termination(_) => 2,
-            Self::BitTimingMax(_) => CanBitTiming::value_len(),
-            Self::CcLen(_) => 4,
-            Self::DataBitTimingMax(_) => CanBitTiming::value_len(),
-            Self::Tdc(_) => CanTdc::value_len(),
-            Self::CtrlModeExt(_) => CanCtrlMode::value_len(),
+            Self::BitrateMax(_) => 4,
+            Self::Tdc(nlas) => nlas.as_slice().buffer_len(),
+            Self::CtrlModeExt(nlas) => nlas.as_slice().buffer_len(),
             Self::Other(nla) => nla.value_len(),
         }
     }
@@ -446,11 +546,9 @@ impl Nla for InfoCan {
             Self::DataBitTiming(v) => v.emit_value(buffer),
             Self::DataBitTimingConst(v) => v.emit_value(buffer),
             Self::Termination(v) => emit_u16(buffer, *v).unwrap(),
-            Self::BitTimingMax(v) => v.emit_value(buffer),
-            Self::CcLen(v) => emit_u32(buffer, *v).unwrap(),
-            Self::DataBitTimingMax(v) => v.emit_value(buffer),
-            Self::Tdc(v) => v.emit_value(buffer),
-            Self::CtrlModeExt(v) => v.emit_value(buffer),
+            Self::BitrateMax(v) => emit_u32(buffer, *v).unwrap(),
+            Self::Tdc(nlas) => nlas.as_slice().emit(buffer),
+            Self::CtrlModeExt(nlas) => nlas.as_slice().emit(buffer),
             Self::Other(nla) => nla.emit_value(buffer),
         }
     }
@@ -468,11 +566,9 @@ impl Nla for InfoCan {
             Self::DataBitTiming(_) => IFLA_CAN_DATA_BITTIMING,
             Self::DataBitTimingConst(_) => IFLA_CAN_DATA_BITTIMING_CONST,
             Self::Termination(_) => IFLA_CAN_TERMINATION,
-            Self::BitTimingMax(_) => IFLA_CAN_BITTIMING_MAX,
-            Self::CcLen(_) => IFLA_CAN_CC_LEN,
-            Self::DataBitTimingMax(_) => IFLA_CAN_DATA_BITTIMING_MAX,
-            Self::Tdc(_) => IFLA_CAN_TDC,
-            Self::CtrlModeExt(_) => IFLA_CAN_CTRLMODE_EXT,
+            Self::BitrateMax(_) => IFLA_CAN_BITRATE_MAX,
+            Self::Tdc(_) => IFLA_CAN_TDC | NLA_F_NESTED,
+            Self::CtrlModeExt(_) => IFLA_CAN_CTRLMODE_EXT | NLA_F_NESTED,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -523,24 +619,28 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoCan {
                 parse_u16(payload)
                     .context("invalid IFLA_CAN_TERMINATION value")?,
             ),
-            IFLA_CAN_BITTIMING_MAX => Self::BitTimingMax(
-                CanBitTiming::parse(payload)
-                    .context("invalid IFLA_CAN_BITTIMING_MAX")?,
+            IFLA_CAN_BITRATE_MAX => Self::BitrateMax(
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_BITRATE_MAX value")?,
             ),
-            IFLA_CAN_CC_LEN => Self::CcLen(
-                parse_u32(payload).context("invalid IFLA_CAN_CC_LEN value")?,
-            ),
-            IFLA_CAN_DATA_BITTIMING_MAX => Self::DataBitTimingMax(
-                CanBitTiming::parse(payload)
-                    .context("invalid IFLA_CAN_DATA_BITTIMING_MAX")?,
-            ),
-            IFLA_CAN_TDC => Self::Tdc(
-                CanTdc::parse(payload).context("invalid IFLA_CAN_TDC")?,
-            ),
-            IFLA_CAN_CTRLMODE_EXT => Self::CtrlModeExt(
-                CanCtrlMode::parse(payload)
-                    .context("invalid IFLA_CAN_CTRLMODE_EXT")?,
-            ),
+            IFLA_CAN_TDC => {
+                let mut v = Vec::new();
+                let err = "invalid IFLA_CAN_TDC";
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(err)?;
+                    v.push(CanTdc::parse(nla).context(err)?);
+                }
+                Self::Tdc(v)
+            }
+            IFLA_CAN_CTRLMODE_EXT => {
+                let mut v = Vec::new();
+                let err = "invalid IFLA_CAN_CTRLMODE_EXT";
+                for nla in NlasIterator::new(payload) {
+                    let nla = &nla.context(err)?;
+                    v.push(CanCtrlModeExt::parse(nla).context(err)?);
+                }
+                Self::CtrlModeExt(v)
+            }
             kind => Self::Other(DefaultNla::parse(buf).context(format!(
                 "unknown NLA type {kind} for IFLA_INFO_DATA(can)"
             ))?),

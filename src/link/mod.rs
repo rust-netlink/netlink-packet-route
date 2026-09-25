@@ -53,7 +53,7 @@ pub use self::{
         BridgeBooleanOptionFlags, BridgeBooleanOptions, BridgeId,
         BridgeIdBuffer, BridgeMulticastRouterType, BridgePortState,
         BridgeQuerierState, BridgeStpMode, BridgeStpState, CanBerrCounter,
-        CanBitTiming, CanBitTimingConst, CanClock, CanCtrlMode,
+        CanBitTiming, CanBitTimingConst, CanClock, CanCtrlMode, CanCtrlModeExt,
         CanCtrlModeFlags, CanTdc, ChurnState, ErSpanDir, GeneveDf,
         GreEncapFlags, GreEncapType, GreIOFlags, GtpRole, HsrProtocol, InfoAmt,
         InfoBareUdp, InfoBatAdv, InfoBond, InfoBondPort, InfoBridge,
