@@ -58,7 +58,7 @@ pub use self::{
     bridge_port::{BridgePortState, InfoBridgePort},
     can::{
         CanBerrCounter, CanBitTiming, CanBitTimingConst, CanClock, CanCtrlMode,
-        CanCtrlModeFlags, CanTdc, InfoCan,
+        CanCtrlModeExt, CanCtrlModeFlags, CanTdc, InfoCan,
     },
     dsa::InfoDsa,
     geneve::{GeneveDf, InfoGeneve},
