@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::{
     link::{
@@ -67,4 +67,18 @@ fn test_macsec_link_info() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_macsec_port_big_endian() {
+    let port = InfoMacSec::Port(1);
+    let expected = [0x06, 0x00, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00];
+
+    let mut buffer = vec![0; port.buffer_len()];
+    port.emit(&mut buffer);
+    assert_eq!(buffer, expected);
+
+    let parsed =
+        InfoMacSec::parse(&NlaBuffer::new_checked(&expected).unwrap()).unwrap();
+    assert_eq!(parsed, port);
 }
