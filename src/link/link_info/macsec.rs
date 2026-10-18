@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, emit_u32, emit_u64, parse_u16, parse_u32, parse_u64, parse_u8,
-    DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    emit_u16_be, emit_u32, emit_u64, parse_u16_be, parse_u32, parse_u64,
+    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_MACSEC_SCI: u16 = 1;
@@ -181,7 +181,7 @@ impl Nla for InfoMacSec {
                 emit_u64(buffer, (*value).into()).unwrap()
             }
             Self::Window(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Port(value) => emit_u16(buffer, *value).unwrap(),
+            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
             Self::IcvLen(value)
             | Self::EncodingSa(value)
             | Self::Encrypt(value)
@@ -225,7 +225,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacSec {
                 parse_u64(payload).context("invalid IFLA_MACSEC_SCI value")?,
             ),
             IFLA_MACSEC_PORT => Self::Port(
-                parse_u16(payload).context("invalid IFLA_MACSEC_PORT value")?,
+                parse_u16_be(payload)
+                    .context("invalid IFLA_MACSEC_PORT value")?,
             ),
             IFLA_MACSEC_ICV_LEN => Self::IcvLen(
                 parse_u8(payload)
