@@ -3,8 +3,9 @@
 use std::net::IpAddr;
 
 use netlink_packet_core::{
-    emit_u32, parse_string, parse_u32, parse_u8, DecodeError, DefaultNla,
-    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    emit_u32, emit_u64_be, parse_string, parse_u32, parse_u64_be, parse_u8,
+    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 use crate::{
@@ -54,7 +55,7 @@ pub enum RuleAttribute {
     FwMask(u32),
     /// IPv4 route realm
     Realm(RouteRealm),
-    TunId(u32),
+    TunId(u64),
     SuppressIfGroup(u32),
     SuppressPrefixLen(u32),
     Table(u32),
@@ -81,11 +82,11 @@ impl Nla for RuleAttribute {
             Self::Priority(_)
             | Self::FwMark(_)
             | Self::FwMask(_)
-            | Self::TunId(_)
             | Self::Goto(_)
             | Self::SuppressIfGroup(_)
             | Self::SuppressPrefixLen(_)
             | Self::Table(_) => 4,
+            Self::TunId(_) => 8,
             Self::Realm(v) => v.buffer_len(),
             Self::L3MDev(_) | Self::Protocol(_) | Self::IpProtocol(_) => 1,
             Self::Other(attr) => attr.value_len(),
@@ -133,11 +134,11 @@ impl Nla for RuleAttribute {
             Self::Priority(value)
             | Self::FwMark(value)
             | Self::FwMask(value)
-            | Self::TunId(value)
             | Self::Goto(value)
             | Self::SuppressIfGroup(value)
             | Self::SuppressPrefixLen(value)
             | Self::Table(value) => emit_u32(buffer, *value).unwrap(),
+            Self::TunId(value) => emit_u64_be(buffer, *value).unwrap(),
             Self::L3MDev(value) => buffer[0] = (*value).into(),
             Self::IpProtocol(value) => buffer[0] = u8::from(*value),
             Self::Protocol(value) => buffer[0] = u8::from(*value),
@@ -177,7 +178,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 RouteRealm::parse(payload).context("invalid FRA_FLOW value")?,
             ),
             FRA_TUN_ID => Self::TunId(
-                parse_u32(payload).context("invalid FRA_TUN_ID value")?,
+                parse_u64_be(payload).context("invalid FRA_TUN_ID value")?,
             ),
             FRA_SUPPRESS_IFGROUP => Self::SuppressIfGroup(
                 parse_u32(payload)
