@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{Emitable, NlaBuffer, ParseableParametrized};
+use netlink_packet_core::{
+    Emitable, NlaBuffer, Parseable, ParseableParametrized,
+};
 
 use crate::{
     link::{
-        LinkAttribute, LinkVfInfo, VfInfo, VfInfoBroadcast, VfInfoLinkState,
+        LinkAttribute, LinkFlags, LinkHeader, LinkLayerType, LinkMessage,
+        LinkVfInfo, VfInfo, VfInfoBroadcast, VfInfoGuid, VfInfoLinkState,
         VfInfoMac, VfInfoRate, VfInfoRssQueryEn, VfInfoSpoofCheck, VfInfoTrust,
         VfInfoTxRate, VfInfoVlan, VfLinkState, VfStats, VfVlan, VfVlanInfo,
         VlanProtocol,
@@ -201,4 +204,48 @@ fn test_parsing_empty_link_sriov_vf_info() {
         )
         .unwrap(),
     );
+}
+
+// nlmon capture (netlink header removed) of the request sent by iproute2
+// on Linux 7.2.11 for a netdevsim VF:
+//
+//      ip link set dev eni1np1 vf 0 node_guid 00:11:22:33:44:55:66:77
+//
+// `struct ifla_vf_guid` is `{ __u32 vf; __u64 guid; }`; on 64-bit ABIs
+// the compiler inserts 4 bytes of padding, so the attribute payload is 16
+// bytes and `guid` is at offset 8. The padding bytes in this capture are
+// uninitialized (`ff 7f 00 00`), so only the parsed value and a re-emitted
+// message are compared.
+#[cfg(not(target_pointer_width = "32"))]
+#[test]
+fn test_create_vf_node_guid() {
+    let raw = vec![
+        0x00, 0x00, 0x00, 0x00, 0x42, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x16, 0x00, 0x18, 0x00, 0x01, 0x00,
+        0x14, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x7f, 0x00, 0x00,
+        0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 322,
+            link_layer_type: LinkLayerType::Netrom,
+            flags: LinkFlags::empty(),
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![LinkAttribute::VfInfoList(vec![LinkVfInfo(vec![
+            VfInfo::IbNodeGuid(VfInfoGuid::new(0, 0x0011_2233_4455_6677)),
+        ])])],
+    };
+
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
+
+    let mut buf = vec![0; expected.buffer_len()];
+    expected.emit(&mut buf);
+    assert_eq!(buf.len(), raw.len());
+    assert_eq!(&buf[28..32], &raw[28..32]);
+    assert_eq!(&buf[32..36], &[0, 0, 0, 0]);
+    assert_eq!(&buf[36..44], &raw[36..44]);
+    assert_eq!(LinkMessage::parse(&buf).unwrap(), expected);
 }
