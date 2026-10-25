@@ -3,10 +3,10 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_mac, parse_u16,
-    parse_u16_be, parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla,
-    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
-    NLA_F_NESTED,
+    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_mac, parse_string,
+    parse_u16, parse_u16_be, parse_u32, parse_u32_be, parse_u8, DecodeError,
+    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable, NLA_F_NESTED,
 };
 
 use super::TcFilterFlowerMplsOption;
@@ -143,7 +143,7 @@ pub struct TcFilterFlower {}
 #[non_exhaustive]
 pub enum TcFilterFlowerOption {
     ClassId(u32),
-    InDev(u32),
+    InDev(String),
     Actions(Vec<TcAction>),
     EthDst([u8; 6]),
     EthDstMask([u8; 6]),
@@ -255,7 +255,7 @@ impl Nla for TcFilterFlowerOption {
     fn value_len(&self) -> usize {
         match self {
             Self::ClassId(_) => 4,
-            Self::InDev(_) => 4,
+            Self::InDev(name) => name.len() + 1,
             Self::Actions(acts) => acts.as_slice().buffer_len(),
             Self::EthDst(_)
             | Self::EthDstMask(_)
@@ -354,7 +354,10 @@ impl Nla for TcFilterFlowerOption {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::ClassId(i) => emit_u32(buffer, *i).unwrap(),
-            Self::InDev(i) => emit_u32(buffer, *i).unwrap(),
+            Self::InDev(name) => {
+                buffer[..name.len()].copy_from_slice(name.as_bytes());
+                buffer[name.len()] = 0;
+            }
             Self::Actions(acts) => acts.as_slice().emit(buffer),
             Self::EthDst(b)
             | Self::EthDstMask(b)
@@ -584,7 +587,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             //    parse_u32(payload).context("failed to parse
             // TCA_FLOWER_CLASSID")?, )),
             TCA_FLOWER_INDEV => Self::InDev(
-                parse_u32(payload).context(nla_err!(TCA_FLOWER_INDEV))?,
+                parse_string(payload).context(nla_err!(TCA_FLOWER_INDEV))?,
             ),
             TCA_FLOWER_ACT => {
                 let mut acts = vec![];
