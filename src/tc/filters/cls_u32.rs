@@ -166,8 +166,8 @@ pub struct TcU32Selector {
     pub nkeys: u8,
     pub offmask: u16,
     pub off: u16,
-    pub offoff: u16,
-    pub hoff: u16,
+    pub offoff: i16,
+    pub hoff: i16,
     pub hmask: u32,
     pub keys: Vec<TcU32Key>,
 }
@@ -191,8 +191,8 @@ pub struct TcU32SelectorBuffer {
     _pad: u8,
     offmask: u16,
     off: u16,
-    offoff: u16,
-    hoff: u16,
+    offoff: i16,
+    hoff: i16,
     hmask: u32,
 }
 
