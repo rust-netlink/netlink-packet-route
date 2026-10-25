@@ -2,7 +2,7 @@
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::{
     tc::{
@@ -1068,4 +1068,28 @@ fn test_get_filter_flower_ipv6_enc() {
     expected.emit(&mut buf);
 
     assert_eq!(buf, raw);
+}
+
+// nlmon capture of the TCA_FLOWER_INDEV attribute emitted by the kernel
+// for the reply to `tc filter show dev veth-test ingress` on Linux 7.2.11:
+//
+//      tc filter add dev veth-test ingress protocol ip flower \
+//          indev veth-test-peer action drop
+//
+// TCA_FLOWER_INDEV is a NUL terminated interface name, the kernel parses
+// it with tcf_change_indev() and dumps it with nla_put_string().
+#[test]
+fn test_parse_flower_indev() {
+    let raw = vec![
+        0x13, 0x00, 0x02, 0x00, 0x76, 0x65, 0x74, 0x68, 0x2d, 0x74, 0x65, 0x73,
+        0x74, 0x2d, 0x70, 0x65, 0x65, 0x72, 0x00, 0x00,
+    ];
+
+    let buf = NlaBuffer::new_checked(&raw[..]).unwrap();
+    let expected = TcFilterFlowerOption::InDev("veth-test-peer".to_string());
+    assert_eq!(TcFilterFlowerOption::parse(&buf).unwrap(), expected);
+
+    let mut out = vec![0; expected.buffer_len()];
+    expected.emit(&mut out);
+    assert_eq!(out, raw);
 }
