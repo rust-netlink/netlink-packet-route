@@ -87,10 +87,8 @@ impl Nla for InfoGre {
             Self::PathMTUDiscovery(discover) => {
                 buffer[0] = if *discover { 1 } else { 0 }
             }
-            Self::EncapType(t) => emit_u16_be(buffer, t.into()).unwrap(),
-            Self::EncapFlags(flags) => {
-                emit_u16_be(buffer, flags.bits()).unwrap()
-            }
+            Self::EncapType(t) => emit_u16(buffer, t.into()).unwrap(),
+            Self::EncapFlags(flags) => emit_u16(buffer, flags.bits()).unwrap(),
             Self::SourcePort(port) | Self::DestinationPort(port) => {
                 emit_u16_be(buffer, *port).unwrap()
             }
@@ -170,12 +168,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre {
                 parse_u8(payload).context("invalid IFLA_GRE_TOS value")? == 1,
             ),
             IFLA_GRE_ENCAP_TYPE => Self::EncapType(GreEncapType::from(
-                parse_u16_be(payload)
+                parse_u16(payload)
                     .context("invalid IFLA_GRE_ENCAP_TYPE value")?,
             )),
             IFLA_GRE_ENCAP_FLAGS => {
                 Self::EncapFlags(GreEncapFlags::from_bits_retain(
-                    parse_u16_be(payload)
+                    parse_u16(payload)
                         .context("invalid IFLA_GRE_ENCAP_FLAGS value")?,
                 ))
             }

@@ -4,9 +4,13 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{DefaultNla, Emitable, Parseable};
 
-use crate::link::{
-    ErSpanDir, GreEncapFlags, GreEncapType, GreIOFlags, InfoData, InfoGre,
-    InfoGre6, InfoKind, LinkAttribute, LinkInfo, LinkMessage,
+use crate::{
+    link::{
+        ErSpanDir, GreEncapFlags, GreEncapType, GreIOFlags, InfoData, InfoGre,
+        InfoGre6, InfoKind, LinkAttribute, LinkFlags, LinkHeader, LinkInfo,
+        LinkLayerType, LinkMessage,
+    },
+    AddressFamily,
 };
 
 #[test]
@@ -1397,6 +1401,70 @@ fn test_create_ip6erspan_v2() {
             ]),
         ],
         ..Default::default()
+    };
+    assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
+    let mut buf = vec![0; expected.buffer_len()];
+    expected.emit(&mut buf);
+    assert_eq!(buf, raw);
+}
+
+// nlmon capture (netlink header removed) of the kernel reply to
+// `ip -d link show gre-test` on Linux 7.2.11 with iproute2 7.1.0:
+//
+//      ip link add gre-test type gretap local 127.0.0.1 remote 127.0.0.2 \
+//          encap fou encap-sport 5555 encap-dport 5556 encap-csum
+//
+// Only the `IFLA_LINKINFO` attribute is kept. The kernel dumps
+// `IFLA_GRE_ENCAP_TYPE` and `IFLA_GRE_ENCAP_FLAGS` with `nla_put_u16()`
+// (native endian), so the FOU type is 1 and the checksum flag is bit 0.
+#[test]
+fn test_parsing_gretap_with_fou_encap() {
+    let raw = vec![
+        0x00, 0x00, 0x01, 0x00, 0xc9, 0x00, 0x00, 0x00, 0x02, 0x10, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x94, 0x00, 0x12, 0x00, 0x0b, 0x00, 0x01, 0x00,
+        0x67, 0x72, 0x65, 0x74, 0x61, 0x70, 0x00, 0x00, 0x84, 0x00, 0x02, 0x00,
+        0x08, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x02, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x08, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x05, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x06, 0x00, 0x7f, 0x00, 0x00, 0x01,
+        0x08, 0x00, 0x07, 0x00, 0x7f, 0x00, 0x00, 0x02, 0x05, 0x00, 0x08, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x05, 0x00, 0x0a, 0x00, 0x01, 0x00, 0x00, 0x00, 0x08, 0x00, 0x14, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x0e, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x06, 0x00, 0x10, 0x00, 0x15, 0xb3, 0x00, 0x00, 0x06, 0x00, 0x11, 0x00,
+        0x15, 0xb4, 0x00, 0x00, 0x06, 0x00, 0x0f, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x05, 0x00, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 201,
+            link_layer_type: LinkLayerType::Ether,
+            flags: LinkFlags::Broadcast | LinkFlags::Multicast,
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![LinkAttribute::LinkInfo(vec![
+            LinkInfo::Kind(InfoKind::GreTap),
+            LinkInfo::Data(InfoData::GreTap(vec![
+                InfoGre::Link(0),
+                InfoGre::IFlags(GreIOFlags::empty()),
+                InfoGre::OFlags(GreIOFlags::empty()),
+                InfoGre::IKey(0),
+                InfoGre::OKey(0),
+                InfoGre::Local(Ipv4Addr::new(127, 0, 0, 1)),
+                InfoGre::Remote(Ipv4Addr::new(127, 0, 0, 2)),
+                InfoGre::Ttl(0),
+                InfoGre::Tos(0),
+                InfoGre::PathMTUDiscovery(true),
+                InfoGre::FwMask(0),
+                InfoGre::EncapType(GreEncapType::Fou),
+                InfoGre::SourcePort(5555),
+                InfoGre::DestinationPort(5556),
+                InfoGre::EncapFlags(GreEncapFlags::Checksum),
+                InfoGre::Other(DefaultNla::new(19, vec![0])),
+            ])),
+        ])],
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
