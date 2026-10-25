@@ -39,9 +39,19 @@ impl RplSrh {
     }
 
     fn cmpr_fields(&self) -> u32 {
-        u32::from(self.cmpri & 0x0f)
-            | (u32::from(self.cmpre & 0x0f) << 4)
-            | (u32::from(self.pad & 0x0f) << 8)
+        // `struct ipv6_rpl_sr_hdr` uses endian-dependent bitfields:
+        //
+        // little endian: cmpre:4, cmpri:4, reserved:4, pad:4
+        // big endian:    cmpri:4, cmpre:4, pad:4, reserved:20
+        if cfg!(target_endian = "little") {
+            u32::from(self.cmpre & 0x0f)
+                | (u32::from(self.cmpri & 0x0f) << 4)
+                | (u32::from(self.pad & 0x0f) << 12)
+        } else {
+            (u32::from(self.cmpri & 0x0f) << 28)
+                | (u32::from(self.cmpre & 0x0f) << 24)
+                | (u32::from(self.pad & 0x0f) << 20)
+        }
     }
 }
 
@@ -90,9 +100,19 @@ where
         }
         let cmpr_fields =
             parse_u32(&payload[4..8]).context("Invalid RPL_IPTUNNEL_SRH")?;
-        let cmpri = (cmpr_fields & 0x0f) as u8;
-        let cmpre = ((cmpr_fields >> 4) & 0x0f) as u8;
-        let pad = ((cmpr_fields >> 8) & 0x0f) as u8;
+        let (cmpri, cmpre, pad) = if cfg!(target_endian = "little") {
+            (
+                ((cmpr_fields >> 4) & 0x0f) as u8,
+                (cmpr_fields & 0x0f) as u8,
+                ((cmpr_fields >> 12) & 0x0f) as u8,
+            )
+        } else {
+            (
+                ((cmpr_fields >> 28) & 0x0f) as u8,
+                ((cmpr_fields >> 24) & 0x0f) as u8,
+                ((cmpr_fields >> 20) & 0x0f) as u8,
+            )
+        };
         if cmpri != 0 || cmpre != 0 {
             return Err(DecodeError::from(format!(
                 "Compressed RPL segment is not supported: {payload:?}"

@@ -157,3 +157,86 @@ fn test_rpl_tunnel_request() {
 
     assert_eq!(buf, raw);
 }
+
+// nlmon capture (netlink header removed) of the kernel route dump for a
+// route created with a crafted `RPL_IPTUNNEL_SRH` whose `pad` field is 5:
+//
+//      ip -6 route add 2001:db8:90::/64 dev d0 \
+//          encap rpl segs 2001:db8::2,2001:db8::3
+//
+// The kernel does not validate `pad` and dumps the stored SRH verbatim:
+// the little endian bitfield word is `0x00005000`, i.e. `pad = 5`.
+#[test]
+fn test_rpl_tunnel_pad() {
+    let raw = vec![
+        0x0a, 0x40, 0x00, 0x00, 0xfe, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x08, 0x00, 0x0f, 0x00, 0xfe, 0x00, 0x00, 0x00, 0x14, 0x00, 0x01, 0x00,
+        0x20, 0x01, 0x0d, 0xb8, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x06, 0x00, 0x00, 0x04, 0x00, 0x00,
+        0x08, 0x00, 0x04, 0x00, 0x3d, 0x01, 0x00, 0x00, 0x30, 0x00, 0x16, 0x00,
+        0x2c, 0x00, 0x01, 0x00, 0x00, 0x04, 0x03, 0x02, 0x00, 0x50, 0x00, 0x00,
+        0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x03, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x06, 0x00, 0x15, 0x00,
+        0x08, 0x00, 0x00, 0x00, 0x24, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = RouteMessage {
+        header: RouteHeader {
+            address_family: AddressFamily::Inet6,
+            destination_prefix_length: 64,
+            source_prefix_length: 0,
+            tos: 0,
+            table: 254,
+            protocol: RouteProtocol::Boot,
+            scope: RouteScope::Universe,
+            kind: RouteType::Unicast,
+            flags: RouteFlags::empty(),
+        },
+        attributes: vec![
+            RouteAttribute::Table(254),
+            RouteAttribute::Destination(
+                Ipv6Addr::from_str("2001:db8:90::").unwrap().into(),
+            ),
+            RouteAttribute::Priority(1024),
+            RouteAttribute::Oif(317),
+            RouteAttribute::Encap(vec![RouteLwTunnelEncap::Rpl(
+                RouteRplIpTunnel::Srh(RplSrh {
+                    next_header: 0,
+                    routing_type: 3,
+                    segments_left: 2,
+                    cmpri: 0,
+                    cmpre: 0,
+                    pad: 5,
+                    segments: vec![
+                        Ipv6Addr::from_str("2001:db8::3").unwrap(),
+                        Ipv6Addr::from_str("2001:db8::2").unwrap(),
+                    ],
+                }),
+            )]),
+            RouteAttribute::EncapType(RouteLwEnCapType::Rpl),
+            RouteAttribute::CacheInfo(RouteCacheInfo {
+                clntref: 0,
+                last_use: 0,
+                expires: 0,
+                error: 0,
+                used: 0,
+                id: 0,
+                ts: 0,
+                ts_age: 0,
+            }),
+            RouteAttribute::Preference(RoutePreference::Medium),
+        ],
+    };
+
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
+
+    let mut buf = vec![0; expected.buffer_len()];
+    expected.emit(&mut buf);
+    // The kernel does not set NLA_F_NESTED on RTA_ENCAP in dumps while an
+    // emitted message carries the flag required by the kernel.
+    assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
+}
