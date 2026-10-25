@@ -84,11 +84,9 @@ impl Nla for InfoGre6 {
                 buffer.copy_from_slice(&ip.octets());
             }
             Self::Ttl(value) | Self::EncapLimit(value) => buffer[0] = *value,
-            Self::EncapFlags(flags) => {
-                emit_u16_be(buffer, flags.bits()).unwrap()
-            }
+            Self::EncapFlags(flags) => emit_u16(buffer, flags.bits()).unwrap(),
             Self::FlowLabel(value) => emit_u32_be(buffer, *value).unwrap(),
-            Self::EncapType(t) => emit_u16_be(buffer, t.into()).unwrap(),
+            Self::EncapType(t) => emit_u16(buffer, t.into()).unwrap(),
             Self::SourcePort(port) | Self::DestinationPort(port) => {
                 emit_u16_be(buffer, *port).unwrap()
             }
@@ -172,12 +170,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGre6 {
                     .context("invalid IFLA_GRE_FLOWINFO value")?,
             ),
             IFLA_GRE_ENCAP_TYPE => Self::EncapType(GreEncapType::from(
-                parse_u16_be(payload)
+                parse_u16(payload)
                     .context("invalid IFLA_GRE_ENCAP_TYPE value")?,
             )),
             IFLA_GRE_ENCAP_FLAGS => {
                 Self::EncapFlags(GreEncapFlags::from_bits_retain(
-                    parse_u16_be(payload)
+                    parse_u16(payload)
                         .context("invalid IFLA_GRE_ENCAP_FLAGS value")?,
                 ))
             }

@@ -12,9 +12,9 @@ const GRE_ACK: u16 = 0x0080;
 const GRE_FLAGS: u16 = 0x0078;
 const GRE_VERSION: u16 = 0x0007;
 
-const TUNNEL_ENCAP_FLAG_CSUM: u16 = 0x0100;
-const TUNNEL_ENCAP_FLAG_CSUM6: u16 = 0x0200;
-const TUNNEL_ENCAP_FLAG_REMCSUM: u16 = 0x0400;
+const TUNNEL_ENCAP_FLAG_CSUM: u16 = 1 << 0;
+const TUNNEL_ENCAP_FLAG_CSUM6: u16 = 1 << 1;
+const TUNNEL_ENCAP_FLAG_REMCSUM: u16 = 1 << 2;
 
 bitflags! {
     #[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
