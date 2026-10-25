@@ -230,11 +230,13 @@ impl From<&TcU32Selector> for TcU32SelectorBuffer {
             offshift: selector.offshift,
             nkeys: selector.nkeys,
             _pad: 0,
-            offmask: selector.offmask,
+            // `offmask` is `__be16` and `hmask` is `__be32` in
+            // `struct tc_u32_sel`.
+            offmask: selector.offmask.to_be(),
             off: selector.off,
             offoff: selector.offoff,
             hoff: selector.hoff,
-            hmask: selector.hmask,
+            hmask: selector.hmask.to_be(),
         }
     }
 }
@@ -280,11 +282,11 @@ impl TcU32Selector {
             flags: TcU32SelectorFlags::from_bits_retain(raw.flags),
             offshift: raw.offshift,
             nkeys,
-            offmask: raw.offmask,
+            offmask: u16::from_be(raw.offmask),
             off: raw.off,
             offoff: raw.offoff,
             hoff: raw.hoff,
-            hmask: raw.hmask,
+            hmask: u32::from_be(raw.hmask),
             keys,
         })
     }
