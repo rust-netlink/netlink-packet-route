@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    emit_u32, parse_string, parse_u32, DecodeError, DefaultNla, ErrorContext,
+    Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const RTAX_LOCK: u16 = 1;
@@ -43,7 +43,8 @@ pub enum RouteMetric {
     RtoMin(u32),
     InitRwnd(u32),
     QuickAck(u32),
-    CcAlgo(u32),
+    /// TCP congestion control algorithm name, e.g. `cubic`
+    CcAlgo(String),
     FastopenNoCookie(u32),
     Other(DefaultNla),
 }
@@ -66,8 +67,8 @@ impl Nla for RouteMetric {
             | Self::RtoMin(_)
             | Self::InitRwnd(_)
             | Self::QuickAck(_)
-            | Self::CcAlgo(_)
             | Self::FastopenNoCookie(_) => size_of::<u32>(),
+            Self::CcAlgo(value) => value.len() + 1,
             Self::Other(attr) => attr.value_len(),
         }
     }
@@ -89,9 +90,13 @@ impl Nla for RouteMetric {
             | Self::RtoMin(value)
             | Self::InitRwnd(value)
             | Self::QuickAck(value)
-            | Self::CcAlgo(value)
             | Self::FastopenNoCookie(value) => {
                 emit_u32(buffer, *value).unwrap()
+            }
+
+            Self::CcAlgo(value) => {
+                buffer[..value.len()].copy_from_slice(value.as_bytes());
+                buffer[value.len()] = 0;
             }
 
             Self::Other(attr) => attr.emit_value(buffer),
@@ -172,7 +177,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for RouteMetric {
                 parse_u32(payload).context("invalid RTAX_QUICKACK value")?,
             ),
             RTAX_CC_ALGO => Self::CcAlgo(
-                parse_u32(payload).context("invalid RTAX_CC_ALGO value")?,
+                parse_string(payload).context("invalid RTAX_CC_ALGO value")?,
             ),
             RTAX_FASTOPEN_NO_COOKIE => Self::FastopenNoCookie(
                 parse_u32(payload)

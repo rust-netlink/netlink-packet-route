@@ -236,3 +236,58 @@ fn test_route_metrics_features_ecn() {
     expected.emit(&mut buf);
     assert_eq!(buf, raw);
 }
+
+// nlmon capture (netlink header removed) of the kernel route dump
+// triggered by `ip route show 10.200.0.0/16` on Linux 7.2.11:
+//
+//      ip route add 10.200.0.0/16 via 127.0.0.1 dev lo congctl cubic
+//
+// RTA_METRICS contains RTAX_CC_ALGO as a NUL terminated string, not a
+// u32. The payload of the 16 byte RTA_METRICS attribute is
+// `0a 00 10 00 63 75 62 69 63 00 00 00`.
+#[test]
+fn test_route_metrics_cc_algo() {
+    let raw = vec![
+        // rtmsg: family=AF_INET(2), dst_len=16, src_len=0, tos=0,
+        //        table=main(254), proto=boot(3), scope=global(0),
+        //        type=unicast(1), flags=0
+        0x02, 0x10, 0x00, 0x00, 0xfe, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+        // RTA_TABLE(0x0f)=254
+        0x08, 0x00, 0x0f, 0x00, 0xfe, 0x00, 0x00, 0x00,
+        // RTA_DST(0x01)=10.200.0.0
+        0x08, 0x00, 0x01, 0x00, 0x0a, 0xc8, 0x00, 0x00,
+        // RTA_METRICS(0x08) containing RTAX_CC_ALGO(16)="cubic"
+        0x10, 0x00, 0x08, 0x00, 0x0a, 0x00, 0x10, 0x00, 0x63, 0x75, 0x62, 0x69,
+        0x63, 0x00, 0x00, 0x00, // RTA_GATEWAY(0x05)=127.0.0.1
+        0x08, 0x00, 0x05, 0x00, 0x7f, 0x00, 0x00, 0x01,
+        // RTA_OIF(0x04)=1
+        0x08, 0x00, 0x04, 0x00, 0x01, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = RouteMessage {
+        header: RouteHeader {
+            address_family: AddressFamily::Inet,
+            destination_prefix_length: 16,
+            source_prefix_length: 0,
+            tos: 0,
+            table: 254,
+            protocol: RouteProtocol::Boot,
+            scope: RouteScope::Universe,
+            kind: RouteType::Unicast,
+            flags: RouteFlags::empty(),
+        },
+        attributes: vec![
+            RouteAttribute::Table(254),
+            RouteAttribute::Destination(Ipv4Addr::new(10, 200, 0, 0).into()),
+            RouteAttribute::Metrics(vec![RouteMetric::CcAlgo("cubic".into())]),
+            RouteAttribute::Gateway(Ipv4Addr::new(127, 0, 0, 1).into()),
+            RouteAttribute::Oif(1),
+        ],
+    };
+
+    assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
+
+    let mut buf = vec![0; expected.buffer_len()];
+    expected.emit(&mut buf);
+    assert_eq!(buf, raw);
+}
