@@ -6,8 +6,9 @@ use std::{
 };
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, emit_u64_be, parse_u16_be, parse_u32, parse_u64_be,
-    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    emit_u16_be, emit_u32, emit_u32_be, emit_u64_be, parse_u16_be, parse_u32,
+    parse_u32_be, parse_u64_be, parse_u8, DecodeError, DefaultNla,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_VXLAN_ID: u16 = 1;
@@ -192,11 +193,11 @@ impl Nla for InfoVxlan {
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
             Self::Id(value)
-            | Self::Label(value)
             | Self::LabelPolicy(value)
             | Self::Link(value)
             | Self::Ageing(value)
             | Self::Limit(value) => emit_u32(buffer, *value).unwrap(),
+            Self::Label(value) => emit_u32_be(buffer, *value).unwrap(),
             Self::Gbp
             | Self::Gpe
             | Self::RemCsumNoPartial
@@ -342,7 +343,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVxlan {
                 parse_u8(payload).context("invalid IFLA_VXLAN_TTL value")?,
             ),
             IFLA_VXLAN_LABEL => Self::Label(
-                parse_u32(payload).context("invalid IFLA_VXLAN_LABEL value")?,
+                parse_u32_be(payload)
+                    .context("invalid IFLA_VXLAN_LABEL value")?,
             ),
             IFLA_VXLAN_LEARNING => Self::Learning(
                 parse_u8(payload)
