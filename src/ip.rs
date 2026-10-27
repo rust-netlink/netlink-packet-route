@@ -2,35 +2,20 @@
 
 #[cfg(any(feature = "route", feature = "link-info"))]
 use std::net::IpAddr;
-#[cfg(any(feature = "route", feature = "tc", feature = "link-info"))]
+#[cfg(has_ipv4_parser)]
 use std::net::Ipv4Addr;
-#[cfg(any(
-    feature = "route",
-    feature = "tc",
-    feature = "link-info",
-    feature = "link-af-spec"
-))]
+#[cfg(has_ipv6_parser)]
 use std::net::Ipv6Addr;
 
-#[cfg(any(
-    feature = "route",
-    feature = "tc",
-    feature = "link-info",
-    feature = "link-af-spec"
-))]
+#[cfg(has_ipv6_parser)]
 use netlink_packet_core::DecodeError;
 
-#[cfg(any(feature = "route", feature = "tc", feature = "link-info"))]
+#[cfg(has_ipv4_parser)]
 pub(crate) const IPV4_ADDR_LEN: usize = 4;
-#[cfg(any(
-    feature = "route",
-    feature = "tc",
-    feature = "link-info",
-    feature = "link-af-spec"
-))]
+#[cfg(has_ipv6_parser)]
 pub(crate) const IPV6_ADDR_LEN: usize = 16;
 
-#[cfg(any(feature = "route", feature = "tc", feature = "link-info"))]
+#[cfg(has_ipv4_parser)]
 pub(crate) fn parse_ipv4_addr(raw: &[u8]) -> Result<Ipv4Addr, DecodeError> {
     if raw.len() == IPV4_ADDR_LEN {
         Ok(Ipv4Addr::new(raw[0], raw[1], raw[2], raw[3]))
@@ -44,12 +29,7 @@ pub(crate) fn parse_ipv4_addr(raw: &[u8]) -> Result<Ipv4Addr, DecodeError> {
     }
 }
 
-#[cfg(any(
-    feature = "route",
-    feature = "tc",
-    feature = "link-info",
-    feature = "link-af-spec"
-))]
+#[cfg(has_ipv6_parser)]
 pub(crate) fn parse_ipv6_addr(raw: &[u8]) -> Result<Ipv6Addr, DecodeError> {
     if raw.len() == IPV6_ADDR_LEN {
         let mut data = [0u8; IPV6_ADDR_LEN];

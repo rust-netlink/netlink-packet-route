@@ -4,19 +4,7 @@ use netlink_packet_core::{
     DecodeError, Emitable, NetlinkDeserializable, NetlinkHeader,
     NetlinkPayload, NetlinkSerializable, ParseableParametrized,
 };
-#[cfg(any(
-    feature = "address",
-    feature = "addrlabel",
-    feature = "link",
-    feature = "neighbour",
-    feature = "neighbour-table",
-    feature = "nsid",
-    feature = "prefix",
-    feature = "route",
-    feature = "rule",
-    feature = "stats",
-    feature = "tc",
-))]
+#[cfg(has_message_family)]
 use netlink_packet_core::{ErrorContext, Parseable};
 
 #[cfg(feature = "address")]

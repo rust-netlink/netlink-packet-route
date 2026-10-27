@@ -104,33 +104,10 @@ pub use netlink_packet_core::EthernetProtocol;
 pub use self::address_family_fallback::AddressFamily;
 pub use self::{ip::IpProtocol, message::RouteNetlinkMessage};
 
-#[cfg(all(
-    test,
-    any(
-        feature = "address",
-        feature = "addrlabel",
-        feature = "link",
-        feature = "neighbour",
-        feature = "neighbour-table",
-        feature = "nsid",
-        feature = "prefix",
-        feature = "route",
-        feature = "rule",
-        feature = "stats",
-        feature = "tc",
-    )
-))]
+#[cfg(all(test, has_message_family))]
 #[macro_use]
 extern crate pretty_assertions;
 
-#[cfg(any(
-    feature = "address",
-    feature = "link",
-    feature = "neighbour",
-    feature = "route",
-    feature = "rule",
-    feature = "stats",
-    feature = "tc"
-))]
+#[cfg(has_bitflags)]
 #[macro_use]
 extern crate bitflags;
