@@ -8,10 +8,9 @@ use netlink_packet_core::{
     NlasIterator, Parseable, ParseableParametrized, NLA_F_NESTED,
 };
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "fuchsia",
-    target_os = "android"
+#[cfg(all(
+    feature = "link-af-spec",
+    any(target_os = "linux", target_os = "fuchsia", target_os = "android")
 ))]
 use super::af_spec::VecAfSpecBridge;
 #[cfg(any(
@@ -20,20 +19,22 @@ use super::af_spec::VecAfSpecBridge;
     target_os = "android"
 ))]
 use super::proto_info::VecLinkProtoInfoBridge;
+#[cfg(feature = "link-af-spec")]
+use super::{af_spec::VecAfSpecUnspec, AfSpecBridge, AfSpecUnspec};
 use super::{
-    af_spec::VecAfSpecUnspec,
-    buffer_tool::expand_buffer_if_small,
-    devlink_port::DevlinkPort,
-    dpll_pin::DpllPin,
-    ext_mask::VecLinkExtentMask,
-    link_info::VecLinkInfo,
-    proto_info::VecLinkProtoInfoInet6,
-    sriov::{VecLinkVfInfo, VecLinkVfPort},
-    xdp::VecLinkXdp,
-    AfSpecBridge, AfSpecUnspec, LinkEvent, LinkExtentMask, LinkInfo, LinkMode,
-    LinkPhysId, LinkProtoInfoBridge, LinkProtoInfoInet6,
-    LinkProtocolDownReason, LinkVfInfo, LinkVfPort, LinkXdp, Map, Prop, State,
+    buffer_tool::expand_buffer_if_small, devlink_port::DevlinkPort,
+    dpll_pin::DpllPin, ext_mask::VecLinkExtentMask,
+    proto_info::VecLinkProtoInfoInet6, xdp::VecLinkXdp, LinkEvent,
+    LinkExtentMask, LinkMode, LinkPhysId, LinkProtoInfoBridge,
+    LinkProtoInfoInet6, LinkProtocolDownReason, LinkXdp, Map, Prop, State,
     Stats, Stats64, Stats64Buffer, StatsBuffer, WirelessEvent,
+};
+#[cfg(feature = "link-info")]
+use super::{link_info::VecLinkInfo, LinkInfo};
+#[cfg(feature = "link-sriov")]
+use super::{
+    sriov::{VecLinkVfInfo, VecLinkVfPort},
+    LinkVfInfo, LinkVfPort,
 };
 use crate::AddressFamily;
 
@@ -57,14 +58,19 @@ const IFLA_MAP: u16 = 14;
 // const IFLA_WEIGHT: u16 = 15;
 const IFLA_OPERSTATE: u16 = 16;
 const IFLA_LINKMODE: u16 = 17;
+#[cfg(feature = "link-info")]
 const IFLA_LINKINFO: u16 = 18;
 const IFLA_NET_NS_PID: u16 = 19;
 const IFLA_IFALIAS: u16 = 20;
 const IFLA_NUM_VF: u16 = 21;
+#[cfg(feature = "link-sriov")]
 const IFLA_VFINFO_LIST: u16 = 22;
 const IFLA_STATS64: u16 = 23;
+#[cfg(feature = "link-sriov")]
 const IFLA_VF_PORTS: u16 = 24;
+#[cfg(feature = "link-sriov")]
 const IFLA_PORT_SELF: u16 = 25;
+#[cfg(feature = "link-af-spec")]
 const IFLA_AF_SPEC: u16 = 26;
 const IFLA_GROUP: u16 = 27;
 const IFLA_NET_NS_FD: u16 = 28;
@@ -112,8 +118,11 @@ const IFLA_NETNS_IMMUTABLE: u16 = 67;
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum LinkAttribute {
+    #[cfg(feature = "link-sriov")]
     VfInfoList(Vec<LinkVfInfo>),
+    #[cfg(feature = "link-sriov")]
     VfPorts(Vec<LinkVfPort>),
+    #[cfg(feature = "link-sriov")]
     PortSelf(LinkVfPort),
     PhysPortId(LinkPhysId),
     PhysSwitchId(LinkPhysId),
@@ -124,6 +133,7 @@ pub enum LinkAttribute {
     CarrierUpCount(u32),
     CarrierDownCount(u32),
     NewIfIndex(i32),
+    #[cfg(feature = "link-info")]
     LinkInfo(Vec<LinkInfo>),
     ProtoInfoBridge(Vec<LinkProtoInfoBridge>),
     ProtoInfoInet6(Vec<LinkProtoInfoInet6>),
@@ -169,8 +179,11 @@ pub enum LinkAttribute {
     Map(Map),
     // AF_SPEC (the type of af_spec depends on the interface family of the
     // message)
+    #[cfg(feature = "link-af-spec")]
     AfSpecUnspec(Vec<AfSpecUnspec>),
+    #[cfg(feature = "link-af-spec")]
     AfSpecBridge(Vec<AfSpecBridge>),
+    #[cfg(feature = "link-af-spec")]
     AfSpecUnknown(Vec<u8>),
     ParentDevName(String),
     ParentDevBusName(String),
@@ -189,8 +202,11 @@ pub enum LinkAttribute {
 impl Nla for LinkAttribute {
     fn value_len(&self) -> usize {
         match self {
+            #[cfg(feature = "link-sriov")]
             Self::VfInfoList(v) => v.as_slice().buffer_len(),
+            #[cfg(feature = "link-sriov")]
             Self::VfPorts(v) => v.as_slice().buffer_len(),
+            #[cfg(feature = "link-sriov")]
             Self::PortSelf(v) => v.buffer_len(),
             Self::PhysPortId(v) => v.buffer_len(),
             Self::PhysSwitchId(v) => v.buffer_len(),
@@ -201,8 +217,10 @@ impl Nla for LinkAttribute {
 
             Self::Address(bytes)
             | Self::Broadcast(bytes)
-            | Self::PermAddress(bytes)
-            | Self::AfSpecUnknown(bytes) => bytes.len(),
+            | Self::PermAddress(bytes) => bytes.len(),
+
+            #[cfg(feature = "link-af-spec")]
+            Self::AfSpecUnknown(bytes) => bytes.len(),
 
             Self::IfName(string)
             | Self::Qdisc(string)
@@ -250,10 +268,13 @@ impl Nla for LinkAttribute {
             Self::Stats(_) => size_of::<StatsBuffer>(),
             Self::Stats64(_) => size_of::<Stats64Buffer>(),
             Self::Map(nla) => nla.buffer_len(),
+            #[cfg(feature = "link-info")]
             Self::LinkInfo(nlas) => nlas.as_slice().buffer_len(),
             Self::Xdp(nlas) => nlas.as_slice().buffer_len(),
             Self::PropList(nlas) => nlas.as_slice().buffer_len(),
+            #[cfg(feature = "link-af-spec")]
             Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
+            #[cfg(feature = "link-af-spec")]
             Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
             Self::DevlinkPort(nlas) => nlas.as_slice().buffer_len(),
             Self::DpllPin(nlas) => nlas.as_slice().buffer_len(),
@@ -265,8 +286,11 @@ impl Nla for LinkAttribute {
 
     fn emit_value(&self, buffer: &mut [u8]) {
         match self {
+            #[cfg(feature = "link-sriov")]
             Self::VfInfoList(v) => v.as_slice().emit(buffer),
+            #[cfg(feature = "link-sriov")]
             Self::VfPorts(v) => v.as_slice().emit(buffer),
+            #[cfg(feature = "link-sriov")]
             Self::PortSelf(v) => v.emit(buffer),
             Self::PhysPortId(v) => v.emit(buffer),
             Self::PhysSwitchId(v) => v.emit(buffer),
@@ -276,8 +300,12 @@ impl Nla for LinkAttribute {
             Self::ProtoDownReason(v) => v.as_slice().emit(buffer),
             Self::Address(bytes)
             | Self::Broadcast(bytes)
-            | Self::PermAddress(bytes)
-            | Self::AfSpecUnknown(bytes) => {
+            | Self::PermAddress(bytes) => {
+                buffer.copy_from_slice(bytes.as_slice())
+            }
+
+            #[cfg(feature = "link-af-spec")]
+            Self::AfSpecUnknown(bytes) => {
                 buffer.copy_from_slice(bytes.as_slice())
             }
 
@@ -334,10 +362,13 @@ impl Nla for LinkAttribute {
             Self::Map(nla) => nla.emit(buffer),
             Self::Stats64(nla) => nla.emit(buffer),
             Self::OperState(state) => buffer[0] = (*state).into(),
+            #[cfg(feature = "link-info")]
             Self::LinkInfo(nlas) => nlas.as_slice().emit(buffer),
             Self::Xdp(nlas) => nlas.as_slice().emit(buffer),
             Self::PropList(nlas) => nlas.as_slice().emit(buffer),
+            #[cfg(feature = "link-af-spec")]
             Self::AfSpecUnspec(nlas) => nlas.as_slice().emit(buffer),
+            #[cfg(feature = "link-af-spec")]
             Self::AfSpecBridge(nlas) => nlas.as_slice().emit(buffer),
             Self::DevlinkPort(nlas) => nlas.as_slice().emit(buffer),
             Self::DpllPin(nlas) => nlas.as_slice().emit(buffer),
@@ -350,11 +381,15 @@ impl Nla for LinkAttribute {
 
     fn kind(&self) -> u16 {
         match self {
+            #[cfg(feature = "link-sriov")]
             Self::VfInfoList(_) => IFLA_VFINFO_LIST,
+            #[cfg(feature = "link-sriov")]
             Self::VfPorts(_) => IFLA_VF_PORTS,
+            #[cfg(feature = "link-sriov")]
             Self::PortSelf(_) => IFLA_PORT_SELF,
             Self::PhysPortId(_) => IFLA_PHYS_PORT_ID,
             Self::PhysSwitchId(_) => IFLA_PHYS_SWITCH_ID,
+            #[cfg(feature = "link-info")]
             Self::LinkInfo(_) => IFLA_LINKINFO,
             Self::ProtoInfoBridge(_) | Self::ProtoInfoInet6(_) => {
                 IFLA_PROTINFO | NLA_F_NESTED
@@ -401,6 +436,7 @@ impl Nla for LinkAttribute {
             Self::Map(_) => IFLA_MAP,
             Self::Stats(_) => IFLA_STATS,
             Self::Stats64(_) => IFLA_STATS64,
+            #[cfg(feature = "link-af-spec")]
             Self::AfSpecUnspec(_)
             | Self::AfSpecBridge(_)
             | Self::AfSpecUnknown(_) => IFLA_AF_SPEC,
@@ -430,6 +466,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
     ) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
+            #[cfg(feature = "link-sriov")]
             IFLA_VFINFO_LIST => {
                 let err =
                     |payload| format!("invalid IFLA_VFINFO_LIST {payload:?}");
@@ -448,6 +485,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     Self::VfInfoList(vec![])
                 }
             }
+            #[cfg(feature = "link-sriov")]
             IFLA_VF_PORTS => {
                 let err =
                     |payload| format!("invalid IFLA_VF_PORTS {payload:?}");
@@ -460,6 +498,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .0,
                 )
             }
+            #[cfg(feature = "link-sriov")]
             IFLA_PORT_SELF => {
                 let err =
                     |payload| format!("invalid IFLA_PORT_SELF {payload:?}");
@@ -685,6 +724,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     )?,
                 )
             }
+            #[cfg(feature = "link-af-spec")]
             IFLA_AF_SPEC => match interface_family {
                 AddressFamily::Unspec => {
                     let err = "invalid IFLA_AF_SPEC value for AF_UNSPEC";
@@ -712,6 +752,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
                 _ => Self::AfSpecUnknown(payload.to_vec()),
             },
+            #[cfg(feature = "link-info")]
             IFLA_LINKINFO => {
                 let err = "invalid IFLA_LINKINFO value";
                 Self::LinkInfo(

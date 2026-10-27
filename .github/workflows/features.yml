@@ -1,0 +1,47 @@
+name: Feature flags
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test feature ${{ matrix.feature }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        feature:
+          - none
+          - address
+          - addrlabel
+          - link
+          - link-af-spec
+          - link-info
+          - link-sriov
+          - neighbour
+          - neighbour-table
+          - nsid
+          - prefix
+          - route
+          - rule
+          - stats
+          - tc
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Rust Stable
+        run: |
+          rustup override set stable
+          rustup update stable
+      - name: Test without default features
+        env:
+          FEATURE: ${{ matrix.feature }}
+        run: |
+          if [ "$FEATURE" = none ]; then
+            cargo test --no-default-features
+          else
+            cargo test --no-default-features --features "$FEATURE"
+          fi
