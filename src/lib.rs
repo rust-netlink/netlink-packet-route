@@ -107,6 +107,7 @@ pub use self::address_family_fallback::AddressFamily;
 pub use self::{ip::IpProtocol, message::RouteNetlinkMessage};
 
 #[cfg(test)]
+#[allow(unused_imports)]
 #[macro_use]
 extern crate pretty_assertions;
 
@@ -121,21 +122,3 @@ extern crate pretty_assertions;
 ))]
 #[macro_use]
 extern crate bitflags;
-
-#[cfg(not(any(
-    feature = "address",
-    feature = "addrlabel",
-    feature = "link",
-    feature = "neighbour",
-    feature = "neighbour-table",
-    feature = "nsid",
-    feature = "prefix",
-    feature = "route",
-    feature = "rule",
-    feature = "stats",
-    feature = "tc"
-)))]
-compile_error!(
-    "netlink-packet-route requires at least one message family feature; see \
-     the `Feature flags` section of the crate documentation"
-);

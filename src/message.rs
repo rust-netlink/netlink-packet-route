@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, Emitable, ErrorContext, NetlinkDeserializable, NetlinkHeader,
-    NetlinkPayload, NetlinkSerializable, Parseable, ParseableParametrized,
+    DecodeError, Emitable, NetlinkDeserializable, NetlinkHeader,
+    NetlinkPayload, NetlinkSerializable, ParseableParametrized,
 };
+// These traits are only used when at least one message family is enabled.
+#[allow(unused_imports)]
+use netlink_packet_core::{ErrorContext, Parseable};
 
 #[cfg(feature = "address")]
 use crate::address::{AddressHeader, AddressMessage};
@@ -132,6 +135,8 @@ const RTM_NEWLINKPROP: u16 = 108;
 const RTM_DELLINKPROP: u16 = 109;
 
 impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
+    // With no message families, all message types take the error branch.
+    #[allow(unreachable_code, unused_variables)]
     fn parse_with_param(
         buf: &[u8],
         message_type: u16,
@@ -672,7 +677,7 @@ impl RouteNetlinkMessage {
     }
 
     pub fn message_type(&self) -> u16 {
-        match self {
+        match *self {
             #[cfg(feature = "link")]
             Self::NewLink(_) => RTM_NEWLINK,
             #[cfg(feature = "link")]
@@ -769,7 +774,7 @@ impl RouteNetlinkMessage {
 
 impl Emitable for RouteNetlinkMessage {
     fn buffer_len(&self) -> usize {
-        match self {
+        match *self {
             #[cfg(feature = "link")]
             Self::NewLink(ref msg)
             | Self::DelLink(ref msg)
@@ -843,7 +848,8 @@ impl Emitable for RouteNetlinkMessage {
     }
 
     fn emit(&self, buffer: &mut [u8]) {
-        match self {
+        let _ = &buffer; // The empty feature set has no variants to emit.
+        match *self {
             #[cfg(feature = "link")]
             Self::NewLink(ref msg)
             | Self::DelLink(ref msg)
