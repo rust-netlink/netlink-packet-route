@@ -1,12 +1,36 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+#[cfg(any(feature = "route", feature = "link-info"))]
+use std::net::IpAddr;
+#[cfg(any(feature = "route", feature = "tc", feature = "link-info"))]
+use std::net::Ipv4Addr;
+#[cfg(any(
+    feature = "route",
+    feature = "tc",
+    feature = "link-info",
+    feature = "link-af-spec"
+))]
+use std::net::Ipv6Addr;
 
+#[cfg(any(
+    feature = "route",
+    feature = "tc",
+    feature = "link-info",
+    feature = "link-af-spec"
+))]
 use netlink_packet_core::DecodeError;
 
+#[cfg(any(feature = "route", feature = "tc", feature = "link-info"))]
 pub(crate) const IPV4_ADDR_LEN: usize = 4;
+#[cfg(any(
+    feature = "route",
+    feature = "tc",
+    feature = "link-info",
+    feature = "link-af-spec"
+))]
 pub(crate) const IPV6_ADDR_LEN: usize = 16;
 
+#[cfg(any(feature = "route", feature = "tc", feature = "link-info"))]
 pub(crate) fn parse_ipv4_addr(raw: &[u8]) -> Result<Ipv4Addr, DecodeError> {
     if raw.len() == IPV4_ADDR_LEN {
         Ok(Ipv4Addr::new(raw[0], raw[1], raw[2], raw[3]))
@@ -20,6 +44,12 @@ pub(crate) fn parse_ipv4_addr(raw: &[u8]) -> Result<Ipv4Addr, DecodeError> {
     }
 }
 
+#[cfg(any(
+    feature = "route",
+    feature = "tc",
+    feature = "link-info",
+    feature = "link-af-spec"
+))]
 pub(crate) fn parse_ipv6_addr(raw: &[u8]) -> Result<Ipv6Addr, DecodeError> {
     if raw.len() == IPV6_ADDR_LEN {
         let mut data = [0u8; IPV6_ADDR_LEN];
@@ -35,6 +65,7 @@ pub(crate) fn parse_ipv6_addr(raw: &[u8]) -> Result<Ipv6Addr, DecodeError> {
     }
 }
 
+#[cfg(feature = "route")]
 pub(crate) fn emit_ip_to_buffer(ip: &IpAddr, buffer: &mut [u8]) {
     match ip {
         IpAddr::V4(ip) => buffer.copy_from_slice(&ip.octets()),
@@ -42,6 +73,7 @@ pub(crate) fn emit_ip_to_buffer(ip: &IpAddr, buffer: &mut [u8]) {
     }
 }
 
+#[cfg(any(feature = "rule", feature = "link-info"))]
 pub(crate) fn parse_ip_addr(raw: &[u8]) -> Result<IpAddr, DecodeError> {
     if raw.len() == IPV6_ADDR_LEN {
         parse_ipv6_addr(raw).map(IpAddr::from)
@@ -57,6 +89,7 @@ pub(crate) fn parse_ip_addr(raw: &[u8]) -> Result<IpAddr, DecodeError> {
     }
 }
 
+#[cfg(feature = "rule")]
 pub(crate) fn ip_addr_len(addr: &IpAddr) -> usize {
     if addr.is_ipv4() {
         IPV4_ADDR_LEN
@@ -65,6 +98,7 @@ pub(crate) fn ip_addr_len(addr: &IpAddr) -> usize {
     }
 }
 
+#[cfg(feature = "route")]
 pub(crate) fn emit_ip_addr(addr: &IpAddr, buffer: &mut [u8]) {
     match addr {
         IpAddr::V4(ip) => buffer.copy_from_slice(&ip.octets()),

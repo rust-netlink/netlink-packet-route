@@ -4,8 +4,19 @@ use netlink_packet_core::{
     DecodeError, Emitable, NetlinkDeserializable, NetlinkHeader,
     NetlinkPayload, NetlinkSerializable, ParseableParametrized,
 };
-// These traits are only used when at least one message family is enabled.
-#[allow(unused_imports)]
+#[cfg(any(
+    feature = "address",
+    feature = "addrlabel",
+    feature = "link",
+    feature = "neighbour",
+    feature = "neighbour-table",
+    feature = "nsid",
+    feature = "prefix",
+    feature = "route",
+    feature = "rule",
+    feature = "stats",
+    feature = "tc",
+))]
 use netlink_packet_core::{ErrorContext, Parseable};
 
 #[cfg(feature = "address")]
@@ -135,16 +146,15 @@ const RTM_NEWLINKPROP: u16 = 108;
 const RTM_DELLINKPROP: u16 = 109;
 
 impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
-    // With no message families, all message types take the error branch.
-    #[allow(unreachable_code, unused_variables)]
     fn parse_with_param(
         buf: &[u8],
         message_type: u16,
     ) -> Result<Self, DecodeError> {
-        let message = match message_type {
+        let _ = buf; // No message families need the payload when all are disabled.
+        match message_type {
             // Link messages
             #[cfg(feature = "link")]
-            RTM_NEWLINK | RTM_GETLINK | RTM_DELLINK | RTM_SETLINK => {
+            RTM_NEWLINK | RTM_GETLINK | RTM_DELLINK | RTM_SETLINK => Ok({
                 // HACK: iproute2 sends invalid RTM_GETLINK message, where
                 // the header is limited to the interface family (1 byte) and
                 // 3 bytes of padding.
@@ -162,11 +172,11 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_SETLINK => RouteNetlinkMessage::SetLink(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // Address messages
             #[cfg(feature = "address")]
-            RTM_NEWADDR | RTM_GETADDR | RTM_DELADDR => {
+            RTM_NEWADDR | RTM_GETADDR | RTM_DELADDR => Ok({
                 // HACK: iproute2 sends invalid RTM_GETADDR message, where
                 // the header is limited to the interface family (1 byte) and
                 // 3 bytes of padding.
@@ -187,11 +197,11 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_DELADDR => RouteNetlinkMessage::DelAddress(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // Neighbour messages
             #[cfg(feature = "neighbour")]
-            RTM_NEWNEIGH | RTM_GETNEIGH | RTM_DELNEIGH => {
+            RTM_NEWNEIGH | RTM_GETNEIGH | RTM_DELNEIGH => Ok({
                 let err = "invalid neighbour message";
                 let msg = NeighbourMessage::parse(buf).context(err)?;
                 match message_type {
@@ -200,11 +210,11 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_DELNEIGH => RouteNetlinkMessage::DelNeighbour(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // Address label messages
             #[cfg(feature = "addrlabel")]
-            RTM_NEWADDRLABEL | RTM_DELADDRLABEL | RTM_GETADDRLABEL => {
+            RTM_NEWADDRLABEL | RTM_DELADDRLABEL | RTM_GETADDRLABEL => Ok({
                 let err = "invalid addrlabel message";
                 let msg = AddrLabelMessage::parse(buf).context(err)?;
                 match message_type {
@@ -213,11 +223,11 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_GETADDRLABEL => RouteNetlinkMessage::GetAddrLabel(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // Neighbour table messages
             #[cfg(feature = "neighbour-table")]
-            RTM_NEWNEIGHTBL | RTM_GETNEIGHTBL | RTM_SETNEIGHTBL => {
+            RTM_NEWNEIGHTBL | RTM_GETNEIGHTBL | RTM_SETNEIGHTBL => Ok({
                 let err = "invalid neighbour table message";
                 let msg = NeighbourTableMessage::parse(buf).context(err)?;
                 match message_type {
@@ -232,11 +242,11 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     }
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // Route messages
             #[cfg(feature = "route")]
-            RTM_NEWROUTE | RTM_GETROUTE | RTM_DELROUTE => {
+            RTM_NEWROUTE | RTM_GETROUTE | RTM_DELROUTE => Ok({
                 // HACK: iproute2 sends invalid RTM_GETROUTE message, where
                 // the header is limited to the interface family (1 byte) and
                 // 3 bytes of padding.
@@ -264,19 +274,19 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_DELROUTE => RouteNetlinkMessage::DelRoute(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // Prefix messages
             #[cfg(feature = "prefix")]
-            RTM_NEWPREFIX => {
+            RTM_NEWPREFIX => Ok({
                 let err = "invalid prefix message";
                 RouteNetlinkMessage::NewPrefix(
                     PrefixMessage::parse(buf).context(err)?,
                 )
-            }
+            }),
 
             #[cfg(feature = "rule")]
-            RTM_NEWRULE | RTM_GETRULE | RTM_DELRULE => {
+            RTM_NEWRULE | RTM_GETRULE | RTM_DELRULE => Ok({
                 let err = "invalid fib rule message";
                 let msg = RuleMessage::parse(buf).context(err)?;
                 match message_type {
@@ -285,13 +295,13 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_GETRULE => RouteNetlinkMessage::GetRule(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
             // TC Messages
             #[cfg(feature = "tc")]
             RTM_NEWQDISC | RTM_DELQDISC | RTM_GETQDISC | RTM_NEWTCLASS
             | RTM_DELTCLASS | RTM_GETTCLASS | RTM_NEWTFILTER
             | RTM_DELTFILTER | RTM_GETTFILTER | RTM_NEWCHAIN | RTM_DELCHAIN
-            | RTM_GETCHAIN => {
+            | RTM_GETCHAIN => Ok({
                 let err = "invalid tc message";
                 let msg = TcMessage::parse(buf).context(err)?;
                 match message_type {
@@ -321,10 +331,10 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_GETCHAIN => RouteNetlinkMessage::GetTrafficChain(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             #[cfg(feature = "tc")]
-            RTM_NEWACTION | RTM_DELACTION | RTM_GETACTION => {
+            RTM_NEWACTION | RTM_DELACTION | RTM_GETACTION => Ok({
                 let err = "invalid tc action message";
                 let msg = TcActionMessage::parse(buf).context(err)?;
                 match message_type {
@@ -333,11 +343,11 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_GETACTION => RouteNetlinkMessage::GetTrafficAction(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // Stats messages
             #[cfg(feature = "stats")]
-            RTM_NEWSTATS | RTM_GETSTATS => {
+            RTM_NEWSTATS | RTM_GETSTATS => Ok({
                 let err = "invalid stats message";
                 let msg = StatsMessage::parse(buf).context(err)?;
                 match message_type {
@@ -345,11 +355,11 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_GETSTATS => RouteNetlinkMessage::GetStats(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
             // ND ID Messages
             #[cfg(feature = "nsid")]
-            RTM_NEWNSID | RTM_GETNSID | RTM_DELNSID => {
+            RTM_NEWNSID | RTM_GETNSID | RTM_DELNSID => Ok({
                 let err = "invalid nsid message";
                 let msg = NsidMessage::parse(buf).context(err)?;
                 match message_type {
@@ -358,15 +368,10 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                     RTM_GETNSID => RouteNetlinkMessage::GetNsId(msg),
                     _ => unreachable!(),
                 }
-            }
+            }),
 
-            _ => {
-                return Err(
-                    format!("Unknown message type: {message_type}").into()
-                )
-            }
-        };
-        Ok(message)
+            _ => Err(format!("Unknown message type: {message_type}").into()),
+        }
     }
 }
 

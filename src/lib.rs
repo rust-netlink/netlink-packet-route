@@ -67,8 +67,6 @@ mod message;
 #[cfg(all(test, feature = "link"))]
 mod tests;
 
-// Not every message family uses every helper in here.
-#[allow(dead_code)]
 pub(crate) mod ip;
 
 #[cfg(any(target_os = "linux", target_os = "fuchsia", target_os = "android"))]
@@ -106,8 +104,22 @@ pub use netlink_packet_core::EthernetProtocol;
 pub use self::address_family_fallback::AddressFamily;
 pub use self::{ip::IpProtocol, message::RouteNetlinkMessage};
 
-#[cfg(test)]
-#[allow(unused_imports)]
+#[cfg(all(
+    test,
+    any(
+        feature = "address",
+        feature = "addrlabel",
+        feature = "link",
+        feature = "neighbour",
+        feature = "neighbour-table",
+        feature = "nsid",
+        feature = "prefix",
+        feature = "route",
+        feature = "rule",
+        feature = "stats",
+        feature = "tc",
+    )
+))]
 #[macro_use]
 extern crate pretty_assertions;
 
