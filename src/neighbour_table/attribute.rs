@@ -92,21 +92,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 parse_string(payload).context("invalid NDTA_NAME value")?,
             ),
             NDTA_CONFIG => Self::Config(
-                NeighbourTableConfig::parse(payload)
-                    .context(format!("invalid NDTA_CONFIG {payload:?}"))?,
+                NeighbourTableConfig::parse(payload).with_context(|| {
+                    format!("invalid NDTA_CONFIG {payload:?}")
+                })?,
             ),
-            NDTA_STATS => Self::Stats(
-                NeighbourTableStats::parse(payload)
-                    .context(format!("invalid NDTA_STATS {payload:?}"))?,
-            ),
+            NDTA_STATS => {
+                Self::Stats(NeighbourTableStats::parse(payload).with_context(
+                    || format!("invalid NDTA_STATS {payload:?}"),
+                )?)
+            }
             NDTA_PARMS => {
-                let err = |payload| format!("invalid NDTA_PARMS {payload:?}");
+                let err = || format!("invalid NDTA_PARMS {payload:?}");
                 Self::Parms(
                     VecNeighbourTableParameter::parse(
-                        &NlaBuffer::new_checked(payload)
-                            .context(err(payload))?,
+                        &NlaBuffer::new_checked(payload).with_context(err)?,
                     )
-                    .context(err(payload))?
+                    .with_context(err)?
                     .0,
                 )
             }
@@ -124,7 +125,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             ),
             kind => Self::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
+                    .with_context(|| format!("unknown NLA type {kind}"))?,
             ),
         })
     }

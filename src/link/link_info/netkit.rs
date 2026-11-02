@@ -271,10 +271,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoNetkit {
             }
             IFLA_NETKIT_HEADROOM => Self::Headroom(parse_u16(payload)?),
             IFLA_NETKIT_TAILROOM => Self::Tailroom(parse_u16(payload)?),
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind} for netkit"))?,
-            ),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for netkit")
+            })?),
         })
     }
 }

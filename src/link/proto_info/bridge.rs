@@ -22,10 +22,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(format!(
-                "invalid bridge IFLA_PROTINFO {:?}",
-                buf.value()
-            ))?;
+            let nla = nla.with_context(|| {
+                format!("invalid bridge IFLA_PROTINFO {:?}", buf.value())
+            })?;
             nlas.push(LinkProtoInfoBridge::parse(&nla)?);
         }
         Ok(Self(nlas))
@@ -67,10 +66,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .context("invalid IFLA_BRPORT_NEIGH_FORWARD_GRAT value")?
                     > 0,
             ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid bridge IFLA_PROTINFO {:?}",
-                buf.value()
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("invalid bridge IFLA_PROTINFO {:?}", buf.value())
+            })?),
         })
     }
 }

@@ -50,9 +50,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoDsa {
                 parse_u32(payload).context("invalid IFLA_DSA_CONDUIT value")?,
             ),
             unknown_kind => {
-                Self::Other(DefaultNla::parse(buf).context(format!(
-                    "unknown NLA type {unknown_kind} for dsa"
-                ))?)
+                Self::Other(DefaultNla::parse(buf).with_context(|| {
+                    format!("unknown NLA type {unknown_kind} for dsa")
+                })?)
             }
         })
     }

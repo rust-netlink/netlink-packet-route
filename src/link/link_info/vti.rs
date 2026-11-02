@@ -97,10 +97,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVti {
             IFLA_VTI_FWMARK => Self::FwMark(
                 parse_u32(payload).context("invalid IFLA_VTI_FWMARK value")?,
             ),
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind} for vti"))?,
-            ),
+            kind => {
+                Self::Other(DefaultNla::parse(buf).with_context(|| {
+                    format!("unknown NLA type {kind} for vti")
+                })?)
+            }
         })
     }
 }
