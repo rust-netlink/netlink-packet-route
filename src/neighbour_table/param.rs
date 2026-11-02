@@ -217,7 +217,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             }
             NDTPA_MCAST_REPROBES => {
                 Self::McastReprobes(parse_u32(payload).with_context(|| {
-                    format!("invalid NDTPA_MCAST_PROBES value {payload:?}")
+                    format!("invalid NDTPA_MCAST_REPROBES value {payload:?}")
                 })?)
             }
             NDTPA_INTERVAL_PROBE_TIME_MS => Self::IntervalProbeTimeMs(

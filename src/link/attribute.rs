@@ -500,7 +500,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         )?)
                         .with_context(|| {
                             format!(
-                                "invalid IFLA_PROTINFO for AF_INET6 \
+                                "invalid IFLA_PROTINFO for AF_BRIDGE \
                                  {payload:?}"
                             )
                         })?

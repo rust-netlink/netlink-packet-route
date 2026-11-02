@@ -376,7 +376,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 Self::Flags(BridgeVlanInfoFlags::from_bits_retain(
                     parse_u16(payload).with_context(|| {
                         format!(
-                            "Invalid IFLA_BRIDGE_VLAN_TUNNEL_VID {payload:?}"
+                            "Invalid IFLA_BRIDGE_VLAN_TUNNEL_FLAGS {payload:?}"
                         )
                     })?,
                 ))
