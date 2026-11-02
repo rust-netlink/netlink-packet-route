@@ -279,7 +279,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGeneve {
             IFLA_GENEVE_INNER_PROTO_INHERIT => Self::InnerProtoInherit,
             kind => Self::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
+                    .with_context(|| format!("unknown NLA type {kind}"))?,
             ),
         })
     }

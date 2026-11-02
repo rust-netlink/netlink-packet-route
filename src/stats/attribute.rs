@@ -101,10 +101,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             IFLA_STATS_AF_SPEC => Self::AfSpec(
                 AfSpecStats::parse(payload).context("invalid AF_SPEC stats")?,
             ),
-            kind => Self::Other(
-                DefaultNla::parse(buf)
-                    .context(format!("unknown IFLA_STATS type {kind}"))?,
-            ),
+            kind => {
+                Self::Other(DefaultNla::parse(buf).with_context(|| {
+                    format!("unknown IFLA_STATS type {kind}")
+                })?)
+            }
         })
     }
 }

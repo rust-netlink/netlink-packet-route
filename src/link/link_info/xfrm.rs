@@ -52,9 +52,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoXfrm {
             IFLA_XFRM_IF_ID => Self::IfId(
                 parse_u32(payload).context("invalid IFLA_XFRM_IF_ID value")?,
             ),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(xfrm)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(xfrm)")
+            })?),
         })
     }
 }

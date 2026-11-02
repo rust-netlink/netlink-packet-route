@@ -156,10 +156,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for BondAdInfo {
                 parse_mac(payload)
                     .context("invalid IFLA_BOND_AD_INFO_PARTNER_MAC value")?,
             ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid NLA for {}: {payload:?}",
-                buf.kind()
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("invalid NLA for {}: {payload:?}", buf.kind())
+            })?),
         })
     }
 }
@@ -1205,10 +1204,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
                     .context("invalid IFLA_BOND_LACP_STRICT value")?
                     > 0,
             ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid NLA for {}: {payload:?}",
-                buf.kind()
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("invalid NLA for {}: {payload:?}", buf.kind())
+            })?),
         })
     }
 }

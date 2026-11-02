@@ -44,13 +44,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfVlan {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VF_VLAN_INFO => {
-                Self::Info(VfVlanInfo::parse(payload).context(format!(
-                    "invalid IFLA_VF_VLAN_INFO {payload:?}"
-                ))?)
+                Self::Info(VfVlanInfo::parse(payload).with_context(|| {
+                    format!("invalid IFLA_VF_VLAN_INFO {payload:?}")
+                })?)
             }
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "failed to parse {kind} as DefaultNla: {payload:?}"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("failed to parse {kind} as DefaultNla: {payload:?}")
+            })?),
         })
     }
 }

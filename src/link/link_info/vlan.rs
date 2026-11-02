@@ -145,9 +145,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                         .context("expected u32 to value")?,
                 )
             }
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for VLAN QoS mapping"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for VLAN QoS mapping")
+            })?),
         })
     }
 }
@@ -194,10 +194,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
                     .context("invalid IFLA_VLAN_PROTOCOL value")?
                     .into(),
             ),
-            _ => Self::Other(DefaultNla::parse(buf).context(format!(
-                "invalid NLA for {}: {payload:?}",
-                buf.kind()
-            ))?),
+            _ => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("invalid NLA for {}: {payload:?}", buf.kind())
+            })?),
         })
     }
 }

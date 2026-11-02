@@ -164,9 +164,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoGtp {
                 }
             }
             unknown_kind => {
-                Self::Other(DefaultNla::parse(buf).context(format!(
-                    "unknown NLA type {unknown_kind} for gtp"
-                ))?)
+                Self::Other(DefaultNla::parse(buf).with_context(|| {
+                    format!("unknown NLA type {unknown_kind} for gtp")
+                })?)
             }
         })
     }

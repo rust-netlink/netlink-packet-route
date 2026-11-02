@@ -129,9 +129,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
                 parse_i32(payload)
                     .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
             ),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(mac_vlan)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(mac_vlan)")
+            })?),
         })
     }
 }
@@ -248,9 +248,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
                 parse_i32(payload)
                     .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
             ),
-            kind => Self::Other(DefaultNla::parse(buf).context(format!(
-                "unknown NLA type {kind} for IFLA_INFO_DATA(mac_vtap)"
-            ))?),
+            kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
+                format!("unknown NLA type {kind} for IFLA_INFO_DATA(mac_vtap)")
+            })?),
         })
     }
 }

@@ -129,9 +129,9 @@ fn parse_bytes_16(payload: &[u8]) -> Result<[u8; 16], DecodeError> {
 }
 
 macro_rules! nla_err {
-    // Match rule that takes an argument expression
-    ($message:expr) => {
-        format!("failed to parse {} value", stringify!($message))
+    // Shorthand for an NLA parse error message; expands to a &'static str
+    ($message:ident) => {
+        concat!("failed to parse ", stringify!($message), " value")
     };
 }
 

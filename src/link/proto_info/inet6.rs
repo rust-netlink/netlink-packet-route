@@ -19,10 +19,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
         for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(format!(
-                "invalid inet6 IFLA_PROTINFO {:?}",
-                buf.value()
-            ))?;
+            let nla = nla.with_context(|| {
+                format!("invalid inet6 IFLA_PROTINFO {:?}", buf.value())
+            })?;
             nlas.push(LinkProtoInfoInet6::parse(&nla)?);
         }
         Ok(Self(nlas))
@@ -53,9 +52,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     for LinkProtoInfoInet6
 {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        Ok(Self::Other(DefaultNla::parse(buf).context(format!(
-            "invalid inet6 IFLA_PROTINFO {:?}",
-            buf.value()
-        ))?))
+        Ok(Self::Other(DefaultNla::parse(buf).with_context(|| {
+            format!("invalid inet6 IFLA_PROTINFO {:?}", buf.value())
+        })?))
     }
 }
