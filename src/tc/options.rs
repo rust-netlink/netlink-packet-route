@@ -127,7 +127,7 @@ where
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(buf.value()) {
                     let nla = nla.with_context(|| {
-                        format!("Invalid TCA_OPTIONS for kind: {kind}",)
+                        format!("Invalid TCA_OPTIONS for kind: {kind}")
                     })?;
                     nlas.push(
                         TcOption::parse_with_param(&nla, kind).with_context(

@@ -615,7 +615,7 @@ where
             })?;
             ret.push(
                 RouteLwTunnelEncap::parse_with_param(&nla, kind).with_context(
-                    || format!("Failed to parse RTA_ENCAP for kind: {kind}",),
+                    || format!("Failed to parse RTA_ENCAP for kind: {kind}"),
                 )?,
             )
         }
