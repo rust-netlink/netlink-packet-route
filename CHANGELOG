@@ -1,4 +1,47 @@
 # Changelog
+## [0.34.0] - 2026-11-03
+### Breaking changes
+ - API break: tc: use signed offsets in u32 selector. (a2e46de)
+ - API break: tc: parse `TCA_FLOWER_INDEV` as string. (981bc5f)
+ - API break: route: parse RTAX_CC_ALGO as string. (925de25)
+ - API break: link: fix CAN attribute numbering and nesting. (d866307)
+ - API break: rule: use u64 for tunnel IDs. (4bbf8a9)
+ - API break: route: represent `vxlan_opts` and `erspan_opts` as enum lists. (f1aae26)
+ - API break: route: fix `RTA_TTL_PROPAGATE` wire values. (bcc8ba7)
+
+### New features
+ - addrlabel: add `RTM_NEWADDRLABEL`/`RTM_DELADDRLABEL`/`RTM_GETADDRLABEL`. (dc30bfa)
+ - route: support `LWTUNNEL_IP_OPTS` of `encap ip` and `encap ip6`. (e66670c)
+ - route: support `tunsrc`, `hmac` and `lookup` of `LWTUNNEL_ENCAP_SEG6`. (bfe6bb7)
+ - route: support `LWTUNNEL_ENCAP_IOAM6` encap. (0e4eb20)
+ - route: support `LWTUNNEL_ENCAP_RPL` encap. (e7b1d8c)
+ - route: support `LWTUNNEL_ENCAP_XFRM` encap. (1806028)
+ - route: support `LWTUNNEL_ENCAP_IP` encap. (d940886)
+ - route: support `as ADDRESS` in `RTA_NEWDST`. (d8edb70)
+ - route: support `LWTUNNEL_ENCAP_SEG6_LOCAL` encap. (7606be3)
+ - link: add `lacp_strict` bond info attribute. (c28fd36)
+
+### Bug fixes
+ - Fix incorrect attribute names in error messages. (fbd8880)
+ - build error context lazily when using format!(). (1d4a0dd)
+ - link: fix `struct ifla_vf_guid` layout. (629839c)
+ - route: fix RPL SRH bitfield packing. (44bb2ae)
+ - tc: fix u32 selector offmask and hmask byte order. (c7f4d45)
+ - route: accept `RTA_MULTIPATH` without any next hops. (f0a9490)
+ - Fix MACsec port byte order. (9907711)
+ - link: fix GRE encap type and flags byte order. (cfa32c5)
+ - link: fix IFLA_VXLAN_LABEL byte order. (9ec9c60)
+ - LICENSE: fix LICENSE-MIT. (926e29a)
+ - doc: neighbour: remove the line referring removed constants. (1811023)
+ - link: zero pad short `IFLA_STATS` and `IFLA_STATS64` payloads. (bce8d0a)
+ - route: set `NLA_F_NESTED` on `RTA_ENCAP` of RPL and IOAM6. (22aa6fb)
+ - route: spell the `seg6local` encapsulation type like iproute2. (ea23630)
+ - route: wrap import list of `ip_tunnel` test as rustfmt requires. (e352679)
+ - route: set `NLA_F_NESTED` on `RTA_ENCAP` of xfrm tunnels. (ebd64b4)
+ - route: keep the trailing inline segment of `Seg6Header`. (9153acf)
+ - route: export lwtunnel tunnel flag types. (e896f7e)
+ - route: fix `RTA_FLOWLABEL` byte order. (83aab6c)
+
 ## [0.33.0] - 2026-08-18
 ### Breaking changes
  - API break: use zerocopy for remaining buffer parsing. (67e978e)
