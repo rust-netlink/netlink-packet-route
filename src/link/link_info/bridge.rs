@@ -3,10 +3,10 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, emit_u64, parse_ip, parse_mac, parse_u16,
-    parse_u16_be, parse_u32, parse_u64, parse_u8, DecodeError, DefaultNla,
-    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
-    NLA_F_NESTED,
+    append_bytes, append_u16, append_u16_be, append_u32, append_u64,
+    emit_nlas_into, parse_ip, parse_mac, parse_u16, parse_u16_be, parse_u32,
+    parse_u64, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{
     byteorder::big_endian::U16, FromBytes, Immutable, IntoBytes, KnownLayout,
@@ -122,73 +122,9 @@ pub enum InfoBridge {
 }
 
 impl Nla for InfoBridge {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            // The existence of FdbFlush means true
-            Self::FdbFlush => 0,
-            Self::HelloTimer(_)
-            | Self::TcnTimer(_)
-            | Self::TopologyChangeTimer(_)
-            | Self::GcTimer(_)
-            | Self::MulticastMembershipInterval(_)
-            | Self::MulticastQuerierInterval(_)
-            | Self::MulticastQueryInterval(_)
-            | Self::MulticastQueryResponseInterval(_)
-            | Self::MulticastLastMemberInterval(_)
-            | Self::MulticastStartupQueryInterval(_) => 8,
-            Self::ForwardDelay(_)
-            | Self::HelloTime(_)
-            | Self::MaxAge(_)
-            | Self::AgeingTime(_)
-            | Self::MulticastHashElasticity(_)
-            | Self::MulticastHashMax(_)
-            | Self::MulticastLastMemberCount(_)
-            | Self::MulticastStartupQueryCount(_)
-            | Self::RootPathCost(_)
-            | Self::FdbNLearned(_)
-            | Self::FdbMaxLearned(_) => 4,
-            Self::Priority(_)
-            | Self::GroupFwdMask(_)
-            | Self::RootPort(_)
-            | Self::VlanDefaultPvid(_) => 2,
-
-            Self::VlanProtocol(_) => 2,
-
-            Self::StpState(_) => 4,
-            Self::StpMode(_) => 4,
-
-            Self::RootId(_) | Self::BridgeId(_) => 8,
-
-            Self::MultiBoolOpt(v) => v.buffer_len(),
-
-            Self::GroupAddr(_) => 6,
-
-            Self::VlanFiltering(_) => 1,
-            Self::MulticastRouter(_) => 1,
-            Self::TopologyChange(_)
-            | Self::TopologyChangeDetected(_)
-            | Self::MulticastIgmpVersion(_)
-            | Self::MulticastMldVersion(_) => 1,
-
-            Self::MulticastSnooping(_)
-            | Self::NfCallIpTables(_)
-            | Self::NfCallIp6Tables(_)
-            | Self::NfCallArpTables(_)
-            | Self::MulticastStatsEnabled(_)
-            | Self::MulticastQuerier(_)
-            | Self::MulticastQueryUseIfaddr(_)
-            | Self::VlanStatsPerPort(_)
-            | Self::VlanStatsEnabled(_) => 1,
-
-            Self::MulticastQuerierState(nlas) => nlas.as_slice().buffer_len(),
-
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::FdbFlush => (),
+            Self::FdbFlush => Ok(()),
 
             Self::HelloTimer(value)
             | Self::TcnTimer(value)
@@ -200,10 +136,11 @@ impl Nla for InfoBridge {
             | Self::MulticastQueryResponseInterval(value)
             | Self::MulticastLastMemberInterval(value)
             | Self::MulticastStartupQueryInterval(value) => {
-                emit_u64(buffer, *value).unwrap()
+                append_u64(out, *value);
+                Ok(())
             }
 
-            Self::MultiBoolOpt(value) => value.emit(buffer),
+            Self::MultiBoolOpt(value) => value.emit_into(out),
 
             Self::ForwardDelay(value)
             | Self::HelloTime(value)
@@ -215,36 +152,59 @@ impl Nla for InfoBridge {
             | Self::MulticastStartupQueryCount(value)
             | Self::FdbNLearned(value)
             | Self::FdbMaxLearned(value)
-            | Self::RootPathCost(value) => emit_u32(buffer, *value).unwrap(),
-
-            Self::StpState(value) => {
-                emit_u32(buffer, u32::from(*value)).unwrap()
+            | Self::RootPathCost(value) => {
+                append_u32(out, *value);
+                Ok(())
             }
 
-            Self::StpMode(value) => emit_u32(buffer, (*value).into()).unwrap(),
+            Self::StpState(value) => {
+                append_u32(out, u32::from(*value));
+                Ok(())
+            }
+
+            Self::StpMode(value) => {
+                append_u32(out, (*value).into());
+                Ok(())
+            }
 
             Self::Priority(value)
             | Self::GroupFwdMask(value)
             | Self::RootPort(value)
-            | Self::VlanDefaultPvid(value) => emit_u16(buffer, *value).unwrap(),
+            | Self::VlanDefaultPvid(value) => {
+                append_u16(out, *value);
+                Ok(())
+            }
 
             Self::VlanProtocol(value) => {
-                emit_u16_be(buffer, (*value).into()).unwrap()
+                append_u16_be(out, (*value).into());
+                Ok(())
             }
 
             Self::RootId(bridge_id) | Self::BridgeId(bridge_id) => {
-                bridge_id.emit(buffer)
+                bridge_id.emit_into(out)
             }
 
-            Self::GroupAddr(value) => buffer.copy_from_slice(&value[..]),
+            Self::GroupAddr(value) => {
+                append_bytes(out, &value[..]);
+                Ok(())
+            }
 
-            Self::VlanFiltering(value) => buffer[0] = (*value).into(),
+            Self::VlanFiltering(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
             Self::TopologyChange(value)
             | Self::TopologyChangeDetected(value)
             | Self::MulticastIgmpVersion(value)
-            | Self::MulticastMldVersion(value) => buffer[0] = *value,
+            | Self::MulticastMldVersion(value) => {
+                out.push(*value);
+                Ok(())
+            }
 
-            Self::MulticastRouter(value) => buffer[0] = (*value).into(),
+            Self::MulticastRouter(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
 
             Self::MulticastSnooping(value)
             | Self::NfCallIpTables(value)
@@ -254,15 +214,29 @@ impl Nla for InfoBridge {
             | Self::MulticastQuerier(value)
             | Self::MulticastQueryUseIfaddr(value)
             | Self::VlanStatsPerPort(value)
-            | Self::VlanStatsEnabled(value) => buffer[0] = (*value).into(),
+            | Self::VlanStatsEnabled(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
 
-            Self::MulticastQuerierState(nlas) => nlas.as_slice().emit(buffer),
+            Self::MulticastQuerierState(nlas) => {
+                emit_nlas_into(nlas.as_slice(), out)
+            }
 
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <InfoBridge>::kind(self)
+    }
+}
+
+impl InfoBridge {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::GroupAddr(_) => IFLA_BR_GROUP_ADDR,
             Self::FdbFlush => IFLA_BR_FDB_FLUSH,
@@ -591,6 +565,7 @@ pub struct BridgeIdBuffer {
     address: [u8; 6],
 }
 
+#[allow(dead_code)]
 impl BridgeId {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -604,6 +579,7 @@ impl BridgeId {
     }
 }
 
+#[allow(dead_code)]
 impl From<BridgeIdBuffer> for BridgeId {
     fn from(raw: BridgeIdBuffer) -> Self {
         Self {
@@ -613,6 +589,7 @@ impl From<BridgeIdBuffer> for BridgeId {
     }
 }
 
+#[allow(dead_code)]
 impl From<&BridgeId> for BridgeIdBuffer {
     fn from(bridge_id: &BridgeId) -> Self {
         Self {
@@ -623,13 +600,10 @@ impl From<&BridgeId> for BridgeIdBuffer {
 }
 
 impl Emitable for BridgeId {
-    fn buffer_len(&self) -> usize {
-        std::mem::size_of::<BridgeIdBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = BridgeIdBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -654,17 +628,38 @@ pub enum BridgeQuerierState {
 }
 
 impl Nla for BridgeQuerierState {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Ipv4Address(_) => 4,
-            Self::Ipv6Address(_) => 16,
-            Self::Ipv4Port(_) | Self::Ipv6Port(_) => 4,
-            Self::Ipv4OtherTimer(_) | Self::Ipv6OtherTimer(_) => 8,
-            Self::Other(nla) => nla.value_len(),
+            Self::Ipv4Port(d) | Self::Ipv6Port(d) => {
+                append_u32(out, *d);
+                Ok(())
+            }
+            Self::Ipv4OtherTimer(d) | Self::Ipv6OtherTimer(d) => {
+                append_u64(out, *d);
+                Ok(())
+            }
+            Self::Ipv4Address(addr) => {
+                append_bytes(out, &addr.octets());
+                Ok(())
+            }
+            Self::Ipv6Address(addr) => {
+                append_bytes(out, &addr.octets());
+                Ok(())
+            }
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <BridgeQuerierState>::kind(self)
+    }
+}
+
+impl BridgeQuerierState {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Ipv4Address(_) => BRIDGE_QUERIER_IP_ADDRESS,
             Self::Ipv4Port(_) => BRIDGE_QUERIER_IP_PORT,
@@ -673,20 +668,6 @@ impl Nla for BridgeQuerierState {
             Self::Ipv6Port(_) => BRIDGE_QUERIER_IPV6_PORT,
             Self::Ipv6OtherTimer(_) => BRIDGE_QUERIER_IPV6_OTHER_TIMER,
             Self::Other(nla) => nla.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Ipv4Port(d) | Self::Ipv6Port(d) => {
-                emit_u32(buffer, *d).unwrap()
-            }
-            Self::Ipv4OtherTimer(d) | Self::Ipv6OtherTimer(d) => {
-                emit_u64(buffer, *d).unwrap()
-            }
-            Self::Ipv4Address(addr) => buffer.copy_from_slice(&addr.octets()),
-            Self::Ipv6Address(addr) => buffer.copy_from_slice(&addr.octets()),
-            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 }

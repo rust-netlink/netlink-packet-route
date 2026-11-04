@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, emit_nlas_into, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -38,15 +38,17 @@ const IFLA_VF_PORT: u16 = 1;
 pub struct LinkVfPort(pub Vec<VfPort>);
 
 impl Nla for LinkVfPort {
-    fn value_len(&self) -> usize {
-        self.0.as_slice().buffer_len()
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        self.0.as_slice().emit(buffer)
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        emit_nlas_into(&self.0, out)
     }
 
     fn kind(&self) -> u16 {
+        <LinkVfPort>::kind(self)
+    }
+}
+
+impl LinkVfPort {
+    pub(crate) fn kind(&self) -> u16 {
         IFLA_VF_PORT
     }
 }
@@ -89,19 +91,20 @@ pub enum VfPort {
 }
 
 impl Nla for VfPort {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Other(v) => v.value_len(),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Other(attr) => attr.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <VfPort>::kind(self)
+    }
+}
+
+impl VfPort {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Other(v) => v.kind(),
         }

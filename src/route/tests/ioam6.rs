@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv6Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
@@ -11,7 +10,7 @@ use crate::{
         RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage, RoutePreference,
         RouteProtocol, RouteScope, RouteType,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -93,7 +92,7 @@ fn test_ioam6_tunnel() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // The kernel does not set `NLA_F_NESTED` on `RTA_ENCAP` in dumps while
     // the emitted message carries the flag required by the kernel.
@@ -168,7 +167,7 @@ fn test_ioam6_tunnel_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

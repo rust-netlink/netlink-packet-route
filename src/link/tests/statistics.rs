@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::mem::size_of;
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
@@ -12,7 +11,7 @@ use crate::{
         LinkLayerType, LinkMessage, LinkMode, LinkXdp, Map, Prop, State, Stats,
         Stats64, XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // tshark capture of command `ip -s link show ens3`
@@ -727,12 +726,12 @@ fn test_parsing_link_statistics() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -756,7 +755,7 @@ fn test_parsing_link_statistics_short_stats64() {
     };
 
     let mut raw = vec![0u8; expected.buffer_len()];
-    expected.emit(&mut raw);
+    expected.emit_slice(&mut raw);
 
     // Simulate a kernel without `rx_otherhost_dropped`: remove the last
     // field of the `IFLA_STATS64` payload and fix the NLA length.
@@ -778,7 +777,7 @@ fn test_parsing_short_stats64_payload() {
     };
 
     let mut payload = vec![0u8; expected.buffer_len()];
-    expected.emit(&mut payload);
+    expected.emit_slice(&mut payload);
 
     // Kernels older than 6.9 do not send `rx_otherhost_dropped`.
     payload.truncate(payload.len() - size_of::<u64>());
@@ -796,7 +795,7 @@ fn test_parsing_short_stats_payload() {
     };
 
     let mut payload = vec![0u8; expected.buffer_len()];
-    expected.emit(&mut payload);
+    expected.emit_slice(&mut payload);
 
     // Kernels without `rx_nohandler` send a shorter payload.
     payload.truncate(payload.len() - size_of::<u32>());

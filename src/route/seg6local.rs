@@ -2,13 +2,13 @@
 
 use std::{
     fmt::Debug,
-    mem::size_of,
     net::{Ipv4Addr, Ipv6Addr},
 };
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, parse_u16_be, parse_u32, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16_be, append_u32, parse_u16_be, parse_u32,
+    DecodeError, DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
@@ -165,27 +165,28 @@ impl Seg6LocalSrh {
 }
 
 impl Nla for Seg6LocalSrh {
-    fn value_len(&self) -> usize {
-        SEG6_LOCAL_SRH_FIXED_LEN + SEG6_LOCAL_SEGMENT_LEN * self.segments.len()
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        out.push(self.next_header);
+        out.push(self.hdr_len());
+        out.push(self.routing_type);
+        out.push(self.segments_left);
+        out.push(self.first_segment);
+        out.push(self.flags);
+        append_u16_be(out, self.tag);
+        for segment in &self.segments {
+            append_bytes(out, &segment.octets());
+        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
-        SEG6_LOCAL_SRH
+        <Self>::kind(self)
     }
+}
 
-    fn emit_value(&self, buffer: &mut [u8]) {
-        buffer[0] = self.next_header;
-        buffer[1] = self.hdr_len();
-        buffer[2] = self.routing_type;
-        buffer[3] = self.segments_left;
-        buffer[4] = self.first_segment;
-        buffer[5] = self.flags;
-        emit_u16_be(&mut buffer[6..8], self.tag).unwrap();
-        for (i, segment) in self.segments.iter().enumerate() {
-            let start = SEG6_LOCAL_SRH_FIXED_LEN + SEG6_LOCAL_SEGMENT_LEN * i;
-            buffer[start..start + SEG6_LOCAL_SEGMENT_LEN]
-                .copy_from_slice(&segment.octets());
-        }
+impl Seg6LocalSrh {
+    pub(crate) fn kind(&self) -> u16 {
+        SEG6_LOCAL_SRH
     }
 }
 
@@ -279,22 +280,29 @@ impl std::fmt::Display for RouteSeg6LocalTunnel {
 }
 
 impl Nla for RouteSeg6LocalTunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Unspecified => 0,
-            Self::Action(_)
-            | Self::Table(_)
-            | Self::Iif(_)
-            | Self::Oif(_)
-            | Self::VrfTable(_) => size_of::<u32>(),
-            Self::Srh(srh) => srh.value_len(),
-            Self::Nh4(_) => size_of::<Ipv4Addr>(),
-            Self::Nh6(_) => size_of::<Ipv6Addr>(),
-            Self::Other(other) => other.value_len(),
+            Self::Unspecified => {}
+            Self::Action(action) => append_u32(out, u32::from(*action)),
+            Self::Srh(srh) => srh.emit_value_into(out)?,
+            Self::Table(value)
+            | Self::Iif(value)
+            | Self::Oif(value)
+            | Self::VrfTable(value) => append_u32(out, *value),
+            Self::Nh4(addr) => append_bytes(out, &addr.octets()),
+            Self::Nh6(addr) => append_bytes(out, &addr.octets()),
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteSeg6LocalTunnel {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Unspecified => SEG6_LOCAL_UNSPEC,
             Self::Action(_) => SEG6_LOCAL_ACTION,
@@ -306,23 +314,6 @@ impl Nla for RouteSeg6LocalTunnel {
             Self::Oif(_) => SEG6_LOCAL_OIF,
             Self::VrfTable(_) => SEG6_LOCAL_VRFTABLE,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Unspecified => {}
-            Self::Action(action) => {
-                emit_u32(buffer, u32::from(*action)).unwrap()
-            }
-            Self::Srh(srh) => srh.emit_value(buffer),
-            Self::Table(value)
-            | Self::Iif(value)
-            | Self::Oif(value)
-            | Self::VrfTable(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Nh4(addr) => buffer.copy_from_slice(&addr.octets()),
-            Self::Nh6(addr) => buffer.copy_from_slice(&addr.octets()),
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }

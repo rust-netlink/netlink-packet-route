@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv6Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
         flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
         RouteNextHopBuffer, RouteProtocol, RouteScope, RouteType,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // wireshark capture(netlink message header removed) of nlmon against command:
@@ -47,7 +46,7 @@ fn test_ipv6_add_route_onlink() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

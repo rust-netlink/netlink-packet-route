@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
@@ -30,6 +30,7 @@ pub struct NeighbourTableHeader {
     pub family: AddressFamily,
 }
 
+#[allow(dead_code)]
 impl NeighbourTableHeader {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = NeighbourTableMessageBuffer::ref_from_prefix(payload)
@@ -45,6 +46,7 @@ impl NeighbourTableHeader {
     }
 }
 
+#[allow(dead_code)]
 impl From<&NeighbourTableHeader> for NeighbourTableMessageBuffer {
     fn from(header: &NeighbourTableHeader) -> Self {
         Self {
@@ -55,12 +57,9 @@ impl From<&NeighbourTableHeader> for NeighbourTableMessageBuffer {
 }
 
 impl Emitable for NeighbourTableHeader {
-    fn buffer_len(&self) -> usize {
-        NEIGHBOUR_TABLE_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = NeighbourTableMessageBuffer::from(self);
-        buffer[..NEIGHBOUR_TABLE_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

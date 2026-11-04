@@ -22,7 +22,7 @@ fn disabled_message_family_is_rejected() {
 ))]
 fn disabled_link_attributes_round_trip_as_opaque_data() {
     use netlink_packet_core::{
-        Emitable, NlaBuffer, ParseableParametrized, NLA_F_NESTED,
+        Nla, NlaBuffer, ParseableParametrized, NLA_F_NESTED,
     };
     use netlink_packet_route::{link::LinkAttribute, AddressFamily};
 
@@ -43,8 +43,8 @@ fn disabled_link_attributes_round_trip_as_opaque_data() {
         let attr = LinkAttribute::parse_with_param(&nla, AddressFamily::Unspec)
             .unwrap();
         assert!(matches!(attr, LinkAttribute::Other(_)));
-        let mut emitted = [0u8; 8];
-        attr.emit(&mut emitted);
+        let mut emitted = Vec::new();
+        attr.emit_nla_into(&mut emitted).unwrap();
         assert_eq!(emitted, bytes);
     }
 }

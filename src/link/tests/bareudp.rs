@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
         link_flag::LinkFlags, InfoBareUdp, InfoData, InfoKind, LinkAttribute,
         LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
     },
-    AddressFamily, EthernetProtocol,
+    AddressFamily, EthernetProtocol, TestEmit, TestNla,
 };
 
 // nlmon capture of netlink packet sent by command:
@@ -66,7 +65,7 @@ fn test_parsing_link_bareudp_basic() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

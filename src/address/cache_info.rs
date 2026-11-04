@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
@@ -33,6 +33,7 @@ pub struct CacheInfoBuffer {
     tstamp: u32,
 }
 
+#[allow(dead_code)]
 impl CacheInfo {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -51,6 +52,7 @@ impl CacheInfo {
     }
 }
 
+#[allow(dead_code)]
 impl From<&CacheInfo> for CacheInfoBuffer {
     fn from(value: &CacheInfo) -> Self {
         Self {
@@ -63,12 +65,9 @@ impl From<&CacheInfo> for CacheInfoBuffer {
 }
 
 impl Emitable for CacheInfo {
-    fn buffer_len(&self) -> usize {
-        size_of::<CacheInfoBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = CacheInfoBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

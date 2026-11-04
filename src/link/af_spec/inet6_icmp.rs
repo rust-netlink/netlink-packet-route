@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Default)]
@@ -39,6 +39,7 @@ pub struct Icmp6StatsBuffer {
     rate_limit_host: i64,
 }
 
+#[allow(dead_code)]
 impl Icmp6Stats {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -60,6 +61,7 @@ impl Icmp6Stats {
     }
 }
 
+#[allow(dead_code)]
 impl From<&Icmp6Stats> for Icmp6StatsBuffer {
     fn from(stats: &Icmp6Stats) -> Self {
         Self {
@@ -75,12 +77,9 @@ impl From<&Icmp6Stats> for Icmp6StatsBuffer {
 }
 
 impl Emitable for Icmp6Stats {
-    fn buffer_len(&self) -> usize {
-        size_of::<Icmp6StatsBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = Icmp6StatsBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

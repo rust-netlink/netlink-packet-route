@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, emit_u64, parse_u32, parse_u64, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_u32, append_u64, parse_u32, parse_u64, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable,
 };
 
 const NDTPA_IFINDEX: u16 = 1;
@@ -50,33 +51,7 @@ pub enum NeighbourTableParameter {
 }
 
 impl Nla for NeighbourTableParameter {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Ifindex(_)
-            | Self::ReferenceCount(_)
-            | Self::QueueLen(_)
-            | Self::AppProbes(_)
-            | Self::UcastProbes(_)
-            | Self::McastProbes(_)
-            | Self::ProxyQlen(_)
-            | Self::QueueLenbytes(_)
-            | Self::McastReprobes(_) => 4,
-
-            Self::ReachableTime(_)
-            | Self::BaseReachableTime(_)
-            | Self::RetransTime(_)
-            | Self::GcStaletime(_)
-            | Self::DelayProbeTime(_)
-            | Self::AnycastDelay(_)
-            | Self::ProxyDelay(_)
-            | Self::Locktime(_)
-            | Self::IntervalProbeTimeMs(_) => 8,
-
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Ifindex(v)
             | Self::ReferenceCount(v)
@@ -86,7 +61,10 @@ impl Nla for NeighbourTableParameter {
             | Self::McastProbes(v)
             | Self::ProxyQlen(v)
             | Self::QueueLenbytes(v)
-            | Self::McastReprobes(v) => emit_u32(buffer, *v).unwrap(),
+            | Self::McastReprobes(v) => {
+                append_u32(out, *v);
+                Ok(())
+            }
 
             Self::ReachableTime(v)
             | Self::BaseReachableTime(v)
@@ -96,13 +74,25 @@ impl Nla for NeighbourTableParameter {
             | Self::AnycastDelay(v)
             | Self::ProxyDelay(v)
             | Self::Locktime(v)
-            | Self::IntervalProbeTimeMs(v) => emit_u64(buffer, *v).unwrap(),
+            | Self::IntervalProbeTimeMs(v) => {
+                append_u64(out, *v);
+                Ok(())
+            }
 
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl NeighbourTableParameter {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Ifindex(_) => NDTPA_IFINDEX,
             Self::ReferenceCount(_) => NDTPA_REFCNT,

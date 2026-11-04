@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     neighbour_table::{
         NeighbourTableAttribute, NeighbourTableConfig, NeighbourTableHeader,
         NeighbourTableMessage, NeighbourTableParameter, NeighbourTableStats,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // There is no need to do ipv6 test as it is almost identical to ipv4 for
@@ -69,7 +68,7 @@ fn test_ipv4_neighbour_table() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -170,7 +169,7 @@ fn test_ipv4_neighbour_table_stats_config() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

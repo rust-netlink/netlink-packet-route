@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
@@ -29,6 +29,7 @@ pub struct NsidHeader {
     pub family: AddressFamily,
 }
 
+#[allow(dead_code)]
 impl NsidHeader {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -41,6 +42,7 @@ impl NsidHeader {
     }
 }
 
+#[allow(dead_code)]
 impl From<&NsidHeader> for NsidMessageBuffer {
     fn from(header: &NsidHeader) -> Self {
         Self {
@@ -51,12 +53,9 @@ impl From<&NsidHeader> for NsidMessageBuffer {
 }
 
 impl Emitable for NsidHeader {
-    fn buffer_len(&self) -> usize {
-        NSID_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = NsidMessageBuffer::from(self);
-        buffer[..NSID_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

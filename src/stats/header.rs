@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
@@ -61,6 +61,7 @@ pub struct StatsHeader {
     pub filter_mask: StatsFilterMask,
 }
 
+#[allow(dead_code)]
 impl StatsHeader {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -75,6 +76,7 @@ impl StatsHeader {
     }
 }
 
+#[allow(dead_code)]
 impl From<&StatsHeader> for StatsMessageBuffer {
     fn from(header: &StatsHeader) -> Self {
         Self {
@@ -88,12 +90,9 @@ impl From<&StatsHeader> for StatsMessageBuffer {
 }
 
 impl Emitable for StatsHeader {
-    fn buffer_len(&self) -> usize {
-        STATS_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = StatsMessageBuffer::from(self);
-        buffer[..STATS_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

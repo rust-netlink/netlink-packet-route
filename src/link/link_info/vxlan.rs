@@ -6,9 +6,9 @@ use std::{
 };
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, emit_u32_be, emit_u64_be, parse_u16_be, parse_u32,
-    parse_u32_be, parse_u64_be, parse_u8, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16_be, append_u32, append_u32_be, append_u64_be,
+    parse_u16_be, parse_u32, parse_u32_be, parse_u64_be, parse_u8, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_VXLAN_ID: u16 = 1;
@@ -150,61 +150,21 @@ pub enum InfoVxlan {
 }
 
 impl Nla for InfoVxlan {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Tos(_)
-            | Self::Ttl(_)
-            | Self::Learning(_)
-            | Self::Proxy(_)
-            | Self::Rsc(_)
-            | Self::L2Miss(_)
-            | Self::L3Miss(_)
-            | Self::CollectMetadata(_)
-            | Self::UDPCsum(_)
-            | Self::UDPZeroCsumTX(_)
-            | Self::UDPZeroCsumRX(_)
-            | Self::RemCsumTX(_)
-            | Self::RemCsumRX(_)
-            | Self::Df(_)
-            | Self::Vnifilter(_)
-            | Self::Localbypass(_)
-            | Self::McRoute(_) => 1,
-            Self::Gbp
-            | Self::Gpe
-            | Self::RemCsumNoPartial
-            | Self::TtlInheritFlag => 0,
-            Self::TtlInherit(_) => 1,
-            Self::Port(_) => 2,
-            Self::Id(_)
-            | Self::Label(_)
-            | Self::LabelPolicy(_)
-            | Self::Link(_)
-            | Self::Ageing(_)
-            | Self::Limit(_)
-            | Self::PortRange(_)
-            | Self::Group(_)
-            | Self::Local(_) => 4,
-            Self::Group6(_) | Self::Local6(_) => 16,
-            Self::ReservedBits(_) => 8,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Id(value)
             | Self::LabelPolicy(value)
             | Self::Link(value)
             | Self::Ageing(value)
-            | Self::Limit(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Label(value) => emit_u32_be(buffer, *value).unwrap(),
+            | Self::Limit(value) => append_u32(out, *value),
+            Self::Label(value) => append_u32_be(out, *value),
             Self::Gbp
             | Self::Gpe
             | Self::RemCsumNoPartial
             | Self::TtlInheritFlag => (),
-            Self::TtlInherit(value) => buffer[0] = *value,
-            Self::Tos(value) | Self::Ttl(value) => buffer[0] = *value,
-            Self::Df(value) => buffer[0] = u8::from(*value),
+            Self::TtlInherit(value) => out.push(*value),
+            Self::Tos(value) | Self::Ttl(value) => out.push(*value),
+            Self::Df(value) => out.push(u8::from(*value)),
             Self::Vnifilter(value)
             | Self::Localbypass(value)
             | Self::Learning(value)
@@ -218,24 +178,31 @@ impl Nla for InfoVxlan {
             | Self::UDPZeroCsumRX(value)
             | Self::RemCsumTX(value)
             | Self::RemCsumRX(value)
-            | Self::McRoute(value) => buffer[0] = *value as u8,
+            | Self::McRoute(value) => out.push(*value as u8),
             Self::Group(value) | Self::Local(value) => {
-                buffer.copy_from_slice(&value.octets())
+                append_bytes(out, &value.octets())
             }
             Self::Group6(value) | Self::Local6(value) => {
-                buffer.copy_from_slice(&value.octets())
+                append_bytes(out, &value.octets())
             }
-            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
+            Self::Port(value) => append_u16_be(out, *value),
             Self::PortRange(range) => {
-                emit_u16_be(buffer, range.0).unwrap();
-                emit_u16_be(&mut buffer[2..], range.1).unwrap()
+                append_u16_be(out, range.0);
+                append_u16_be(out, range.1)
             }
-            Self::ReservedBits(value) => emit_u64_be(buffer, *value).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::ReservedBits(value) => append_u64_be(out, *value),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoVxlan {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Id(_) => IFLA_VXLAN_ID,
             Self::Group(_) => IFLA_VXLAN_GROUP,

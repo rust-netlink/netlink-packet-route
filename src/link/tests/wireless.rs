@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
+use netlink_packet_core::Parseable;
 
-use netlink_packet_core::{Emitable, Parseable};
-
-use crate::link::WirelessEvent;
+use crate::{link::WirelessEvent, TestEmit, TestNla};
 
 #[test]
 fn test_wireless_event_rejects_short_payload() {
@@ -78,7 +77,7 @@ fn test_wireless_associate_request_event() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -146,7 +145,7 @@ fn test_wireless_associate_response_event() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

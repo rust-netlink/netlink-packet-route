@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
+use netlink_packet_core::{DefaultNla, NlaBuffer, Parseable};
 
-use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
-
-use crate::link::{xdp::VecLinkXdp, LinkXdp, XdpAttached};
+use crate::{
+    link::{xdp::VecLinkXdp, LinkXdp, XdpAttached},
+    TestEmit, TestNla,
+};
 
 static ATTACHED: [u8; 48] = [
     0x05, 0x00, // length = 5
@@ -53,7 +55,7 @@ fn emit_xdp_attached() {
     assert_eq!(nlas.as_slice().buffer_len(), 8);
 
     let mut vec = vec![0xff; 8];
-    nlas.as_slice().emit(&mut vec);
+    nlas.as_slice().emit_slice(&mut vec);
     assert_eq!(&vec[..], &ATTACHED[..8]);
 
     // Driver
@@ -61,7 +63,7 @@ fn emit_xdp_attached() {
     assert_eq!(nlas.as_slice().buffer_len(), 8);
 
     let mut vec = vec![0xff; 8];
-    nlas.as_slice().emit(&mut vec);
+    nlas.as_slice().emit_slice(&mut vec);
     assert_eq!(&vec[..], &ATTACHED[8..16]);
 
     // SocketBuffer/skb
@@ -69,7 +71,7 @@ fn emit_xdp_attached() {
     assert_eq!(nlas.as_slice().buffer_len(), 8);
 
     let mut vec = vec![0xff; 8];
-    nlas.as_slice().emit(&mut vec);
+    nlas.as_slice().emit_slice(&mut vec);
     assert_eq!(&vec[..], &ATTACHED[16..24]);
 
     // Hardware
@@ -77,7 +79,7 @@ fn emit_xdp_attached() {
     assert_eq!(nlas.as_slice().buffer_len(), 8);
 
     let mut vec = vec![0xff; 8];
-    nlas.as_slice().emit(&mut vec);
+    nlas.as_slice().emit_slice(&mut vec);
     assert_eq!(&vec[..], &ATTACHED[24..32]);
 
     // Multiple
@@ -85,7 +87,7 @@ fn emit_xdp_attached() {
     assert_eq!(nlas.as_slice().buffer_len(), 8);
 
     let mut vec = vec![0xff; 8];
-    nlas.as_slice().emit(&mut vec);
+    nlas.as_slice().emit_slice(&mut vec);
     assert_eq!(&vec[..], &ATTACHED[32..40]);
 
     // Multiple
@@ -93,7 +95,7 @@ fn emit_xdp_attached() {
     assert_eq!(nlas.as_slice().buffer_len(), 8);
 
     let mut vec = vec![0xff; 8];
-    nlas.as_slice().emit(&mut vec);
+    nlas.as_slice().emit_slice(&mut vec);
     assert_eq!(&vec[..], &ATTACHED[40..48]);
 }
 
@@ -167,6 +169,6 @@ fn emit_xdp() {
     assert_eq!(nlas.as_slice().buffer_len(), XDP.len());
 
     let mut vec = vec![0xff; XDP.len()];
-    nlas.as_slice().emit(&mut vec);
+    nlas.as_slice().emit_slice(&mut vec);
     assert_eq!(&vec[..], &XDP[..]);
 }

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use std::mem::size_of;
-
 use netlink_packet_core::{
-    emit_u32, parse_string, parse_u32, DecodeError, DefaultNla, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
+    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const RTAX_LOCK: u16 = 1;
@@ -50,30 +48,7 @@ pub enum RouteMetric {
 }
 
 impl Nla for RouteMetric {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Lock(_)
-            | Self::Mtu(_)
-            | Self::Window(_)
-            | Self::Rtt(_)
-            | Self::RttVar(_)
-            | Self::SsThresh(_)
-            | Self::Cwnd(_)
-            | Self::Advmss(_)
-            | Self::Reordering(_)
-            | Self::Hoplimit(_)
-            | Self::InitCwnd(_)
-            | Self::Features(_)
-            | Self::RtoMin(_)
-            | Self::InitRwnd(_)
-            | Self::QuickAck(_)
-            | Self::FastopenNoCookie(_) => size_of::<u32>(),
-            Self::CcAlgo(value) => value.len() + 1,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Lock(value)
             | Self::Mtu(value)
@@ -90,20 +65,25 @@ impl Nla for RouteMetric {
             | Self::RtoMin(value)
             | Self::InitRwnd(value)
             | Self::QuickAck(value)
-            | Self::FastopenNoCookie(value) => {
-                emit_u32(buffer, *value).unwrap()
-            }
+            | Self::FastopenNoCookie(value) => append_u32(out, *value),
 
             Self::CcAlgo(value) => {
-                buffer[..value.len()].copy_from_slice(value.as_bytes());
-                buffer[value.len()] = 0;
+                append_bytes(out, value.as_bytes());
+                out.push(0);
             }
 
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteMetric {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Lock(_) => RTAX_LOCK,
             Self::Mtu(_) => RTAX_MTU,

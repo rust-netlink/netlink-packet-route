@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_string, parse_u32, parse_u8, DecodeError, DefaultNla,
-    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_u32, append_u8, emit_nlas_into, parse_string,
+    parse_u32, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
     ParseableParametrized,
 };
 
@@ -46,44 +47,34 @@ pub enum TcAttribute {
 }
 
 impl Nla for TcAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
             Self::Rate(ref bytes)
             | Self::Fcnt(ref bytes)
-            | Self::Stab(ref bytes) => bytes.len(),
-            Self::Chain(_) => 4,
-            Self::Xstats(ref v) => v.buffer_len(),
-            Self::HwOffload(_) => 1,
-            Self::Stats2(ref v) => v.as_slice().buffer_len(),
-            Self::Stats(ref v) => v.buffer_len(),
-            Self::Kind(ref string) => string.len() + 1,
-            Self::Options(ref opt) => opt.as_slice().buffer_len(),
-            Self::DumpInvisible(_) => 0, // The existence of NLA means true
-            Self::Other(ref attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match *self {
-            Self::Rate(ref bytes)
-            | Self::Fcnt(ref bytes)
-            | Self::Stab(ref bytes) => buffer.copy_from_slice(bytes.as_slice()),
-            Self::Chain(v) => emit_u32(buffer, v).unwrap(),
-            Self::Xstats(ref v) => v.emit(buffer),
-            Self::HwOffload(ref val) => buffer[0] = *val,
-            Self::Stats2(ref stats) => stats.as_slice().emit(buffer),
-            Self::Stats(ref stats) => stats.emit(buffer),
+            | Self::Stab(ref bytes) => append_bytes(out, bytes.as_slice()),
+            Self::Chain(v) => append_u32(out, v),
+            Self::Xstats(ref v) => v.emit_into(out)?,
+            Self::HwOffload(ref val) => append_u8(out, *val),
+            Self::Stats2(ref stats) => emit_nlas_into(stats.as_slice(), out)?,
+            Self::Stats(ref stats) => stats.emit_into(out)?,
             Self::Kind(ref string) => {
-                buffer[..string.len()].copy_from_slice(string.as_bytes());
-                buffer[string.len()] = 0;
+                append_bytes(out, string.as_bytes());
+                out.push(0);
             }
-            Self::Options(ref opt) => opt.as_slice().emit(buffer),
+            Self::Options(ref opt) => emit_nlas_into(opt.as_slice(), out)?,
             Self::DumpInvisible(_) => (),
-            Self::Other(ref attr) => attr.emit_value(buffer),
+            Self::Other(ref attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <TcAttribute>::kind(self)
+    }
+}
+
+impl TcAttribute {
+    pub(crate) fn kind(&self) -> u16 {
         match *self {
             Self::Kind(_) => TCA_KIND,
             Self::Options(_) => TCA_OPTIONS,

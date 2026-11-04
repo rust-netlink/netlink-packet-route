@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::super::AddressFamily;
@@ -38,6 +38,7 @@ pub struct AddrLabelHeader {
     pub sequence: u32,
 }
 
+#[allow(dead_code)]
 impl AddrLabelHeader {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = AddrLabelMessageBuffer::ref_from_prefix(payload)
@@ -57,6 +58,7 @@ impl AddrLabelHeader {
     }
 }
 
+#[allow(dead_code)]
 impl From<&AddrLabelHeader> for AddrLabelMessageBuffer {
     fn from(header: &AddrLabelHeader) -> Self {
         Self {
@@ -71,12 +73,9 @@ impl From<&AddrLabelHeader> for AddrLabelMessageBuffer {
 }
 
 impl Emitable for AddrLabelHeader {
-    fn buffer_len(&self) -> usize {
-        ADDRLABEL_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = AddrLabelMessageBuffer::from(self);
-        buffer[..ADDRLABEL_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

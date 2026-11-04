@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_PROTO_DOWN_REASON_MASK: u16 = 1;
@@ -43,25 +43,25 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 }
 
 impl Nla for LinkProtocolDownReason {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        match self {
+            Self::Value(v) | Self::Mask(v) => append_u32(out, *v),
+            Self::Other(v) => append_bytes(out, v.value()),
+        }
+        Ok(())
+    }
+
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl LinkProtocolDownReason {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Value(_) => IFLA_PROTO_DOWN_REASON_VALUE,
             Self::Mask(_) => IFLA_PROTO_DOWN_REASON_MASK,
             Self::Other(v) => v.kind(),
-        }
-    }
-
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Value(_) | Self::Mask(_) => 4,
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Value(v) | Self::Mask(v) => emit_u32(buffer, *v).unwrap(),
-            Self::Other(v) => v.emit_value(buffer),
         }
     }
 }

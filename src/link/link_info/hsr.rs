@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, emit_u32, parse_mac, parse_u16, parse_u32, parse_u8, DecodeError,
-    DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u32, parse_mac, parse_u16, parse_u32,
+    parse_u8, DecodeError, DefaultNla, EncodeError, ErrorContext, Nla,
+    NlaBuffer, Parseable,
 };
 
 // Kernel constant name is IFLA_HSR_SLAVE1
@@ -31,34 +32,44 @@ pub enum InfoHsr {
 }
 
 impl Nla for InfoHsr {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::SupervisionAddr(_) => 6,
-            Self::Port1(_) | Self::Port2(_) | Self::Interlink(_) => 4,
-            Self::SeqNr(_) => 2,
-            Self::MulticastSpec(_) | Self::Version(_) | Self::Protocol(_) => 1,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Port1(value)
             | Self::Port2(value)
-            | Self::Interlink(value) => emit_u32(buffer, *value).unwrap(),
+            | Self::Interlink(value) => {
+                append_u32(out, *value);
+                Ok(())
+            }
             Self::MulticastSpec(value) | Self::Version(value) => {
-                buffer[0] = *value
+                out.push(*value);
+                Ok(())
             }
-            Self::SeqNr(value) => emit_u16(buffer, *value).unwrap(),
-            Self::Protocol(value) => buffer[0] = (*value).into(),
+            Self::SeqNr(value) => {
+                append_u16(out, *value);
+                Ok(())
+            }
+            Self::Protocol(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
             Self::SupervisionAddr(ref value) => {
-                buffer.copy_from_slice(&value[..])
+                append_bytes(out, &value[..]);
+                Ok(())
             }
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <InfoHsr>::kind(self)
+    }
+}
+
+impl InfoHsr {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Port1(_) => IFLA_HSR_PORT1,
             Self::Port2(_) => IFLA_HSR_PORT2,

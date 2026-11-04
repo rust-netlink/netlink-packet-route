@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_u32, DecodeError, Emitable, EncodeError};
 
 const RULE_UID_RANGE_LEN: usize = 8;
 
@@ -10,6 +10,7 @@ pub struct RuleUidRange {
     pub end: u32,
 }
 
+#[allow(dead_code)]
 impl RuleUidRange {
     pub(crate) fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         if buf.len() == RULE_UID_RANGE_LEN {
@@ -27,12 +28,9 @@ impl RuleUidRange {
 }
 
 impl Emitable for RuleUidRange {
-    fn buffer_len(&self) -> usize {
-        RULE_UID_RANGE_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer[0..4].copy_from_slice(&self.start.to_ne_bytes());
-        buffer[4..8].copy_from_slice(&self.end.to_ne_bytes());
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32(out, self.start);
+        append_u32(out, self.end);
+        Ok(())
     }
 }

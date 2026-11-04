@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use std::{mem::size_of, os::fd::RawFd};
+use std::os::fd::RawFd;
 
 use netlink_packet_core::{
-    emit_i32, emit_u32, parse_i32, parse_u32, parse_u8, DecodeError,
-    DefaultNla, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_i32, append_u32, parse_i32, parse_u32, parse_u8,
+    DecodeError, DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable,
 };
 
 const IFLA_XDP_FD: u32 = 1;
@@ -37,35 +38,28 @@ pub enum LinkXdp {
 }
 
 impl Nla for LinkXdp {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Fd(_) => size_of::<RawFd>(),
-            Self::Attached(_) => size_of::<u8>(),
-            Self::Flags(_) => size_of::<u32>(),
-            Self::ProgId(_) => size_of::<u32>(),
-            Self::DrvProgId(_) => size_of::<u32>(),
-            Self::SkbProgId(_) => size_of::<u32>(),
-            Self::HwProgId(_) => size_of::<u32>(),
-            Self::ExpectedFd(_) => size_of::<u32>(),
-            Self::Other(nla) => nla.value_len(),
+            Self::Fd(ref value) => append_i32(out, *value),
+            Self::Attached(ref value) => out.push(value.as_u8()),
+            Self::Flags(ref value) => append_u32(out, *value),
+            Self::ProgId(ref value) => append_u32(out, *value),
+            Self::DrvProgId(ref value) => append_u32(out, *value),
+            Self::SkbProgId(ref value) => append_u32(out, *value),
+            Self::HwProgId(ref value) => append_u32(out, *value),
+            Self::ExpectedFd(ref value) => append_u32(out, *value),
+            Self::Other(ref nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Fd(ref value) => emit_i32(buffer, *value).unwrap(),
-            Self::Attached(ref value) => buffer[0] = value.as_u8(),
-            Self::Flags(ref value) => emit_u32(buffer, *value).unwrap(),
-            Self::ProgId(ref value) => emit_u32(buffer, *value).unwrap(),
-            Self::DrvProgId(ref value) => emit_u32(buffer, *value).unwrap(),
-            Self::SkbProgId(ref value) => emit_u32(buffer, *value).unwrap(),
-            Self::HwProgId(ref value) => emit_u32(buffer, *value).unwrap(),
-            Self::ExpectedFd(ref value) => emit_u32(buffer, *value).unwrap(),
-            Self::Other(ref nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl LinkXdp {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Fd(_) => IFLA_XDP_FD as u16,
             Self::Attached(_) => IFLA_XDP_ATTACHED as u16,

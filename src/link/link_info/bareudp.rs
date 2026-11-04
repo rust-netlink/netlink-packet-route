@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16_be, parse_u16_be, DecodeError, DefaultNla, ErrorContext,
-    EthernetProtocol, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u16_be, parse_u16_be, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, EthernetProtocol, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_BAREUDP_PORT: u16 = 1;
@@ -21,29 +22,24 @@ pub enum InfoBareUdp {
 }
 
 impl Nla for InfoBareUdp {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Port(_) | Self::Ethertype(_) | Self::SrcPortMin(_) => 2,
-            Self::MultiprotoMode => 0,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
-            Self::Ethertype(value) => {
-                emit_u16_be(buffer, u16::from(*value)).unwrap()
-            }
-            Self::SrcPortMin(value) => {
-                buffer.copy_from_slice(&value.to_ne_bytes());
-            }
+            Self::Port(value) => append_u16_be(out, *value),
+            Self::Ethertype(value) => append_u16_be(out, u16::from(*value)),
+            Self::SrcPortMin(value) => append_u16(out, *value),
             Self::MultiprotoMode => {}
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <InfoBareUdp>::kind(self)
+    }
+}
+
+impl InfoBareUdp {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Port(_) => IFLA_BAREUDP_PORT,
             Self::Ethertype(_) => IFLA_BAREUDP_ETHERTYPE,

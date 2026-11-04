@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv4Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
     },
-    AddressFamily, IpProtocol,
+    AddressFamily, IpProtocol, TestEmit, TestNla,
 };
 
 // Setup:
@@ -58,7 +57,7 @@ fn test_ipv4_iif_oif_prohibit() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -103,7 +102,7 @@ fn test_ipv6_iif_oif_ipproto() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

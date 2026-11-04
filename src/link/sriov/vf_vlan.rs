@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -17,21 +18,23 @@ pub enum VfVlan {
 }
 
 impl Nla for VfVlan {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Info(v) => v.buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Info(v) => v.emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Info(v) => v.emit_into(out),
+            Self::Other(attr) => {
+                append_bytes(out, attr.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <VfVlan>::kind(self)
+    }
+}
+
+impl VfVlan {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Info(_) => IFLA_VF_VLAN_INFO,
             Self::Other(v) => v.kind(),
@@ -102,6 +105,7 @@ pub struct VfVlanInfoBuffer {
     _padding: [u8; 2],
 }
 
+#[allow(dead_code)]
 impl VfVlanInfo {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -117,6 +121,7 @@ impl VfVlanInfo {
     }
 }
 
+#[allow(dead_code)]
 impl From<&VfVlanInfo> for VfVlanInfoBuffer {
     fn from(vlan_info: &VfVlanInfo) -> Self {
         Self {
@@ -130,12 +135,8 @@ impl From<&VfVlanInfo> for VfVlanInfoBuffer {
 }
 
 impl Emitable for VfVlanInfo {
-    fn buffer_len(&self) -> usize {
-        VF_VLAN_INFO_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = VfVlanInfoBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_bytes(out, VfVlanInfoBuffer::from(self).as_bytes());
+        Ok(())
     }
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv6Addr;
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Parseable};
 
 use crate::{
     link::{
@@ -12,7 +11,7 @@ use crate::{
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
         LinkMode, LinkXdp, Map, MctpPhysBinding, State, XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // nlmon capture kernel reply netlink packet of ip link show wwan1
@@ -266,7 +265,7 @@ fn test_parsing_link_wwan_show() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -306,7 +305,7 @@ fn test_parsing_link_wwan_add() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -33,6 +33,7 @@ pub struct NeighbourCacheInfoBuffer {
     refcnt: u32,
 }
 
+#[allow(dead_code)]
 impl NeighbourCacheInfo {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = NeighbourCacheInfoBuffer::ref_from_prefix(payload)
@@ -51,6 +52,7 @@ impl NeighbourCacheInfo {
     }
 }
 
+#[allow(dead_code)]
 impl From<&NeighbourCacheInfo> for NeighbourCacheInfoBuffer {
     fn from(value: &NeighbourCacheInfo) -> Self {
         Self {
@@ -63,12 +65,9 @@ impl From<&NeighbourCacheInfo> for NeighbourCacheInfoBuffer {
 }
 
 impl Emitable for NeighbourCacheInfo {
-    fn buffer_len(&self) -> usize {
-        size_of::<NeighbourCacheInfoBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = NeighbourCacheInfoBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

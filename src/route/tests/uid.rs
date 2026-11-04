@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv4Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
         flags::RouteFlags, RouteAttribute, RouteCacheInfo, RouteHeader,
         RouteMessage, RouteProtocol, RouteScope, RouteType,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // wireshark capture(netlink message header removed) of nlmon against command:
@@ -69,7 +68,7 @@ fn test_ipv4_route_uid() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

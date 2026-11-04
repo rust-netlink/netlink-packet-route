@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{flags::NeighbourFlags, NeighbourState};
@@ -56,6 +56,7 @@ pub struct NeighbourHeader {
     pub kind: RouteType,
 }
 
+#[allow(dead_code)]
 impl NeighbourHeader {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = NeighbourMessageBuffer::ref_from_prefix(payload)
@@ -75,6 +76,7 @@ impl NeighbourHeader {
     }
 }
 
+#[allow(dead_code)]
 impl From<&NeighbourHeader> for NeighbourMessageBuffer {
     fn from(header: &NeighbourHeader) -> Self {
         Self {
@@ -89,12 +91,9 @@ impl From<&NeighbourHeader> for NeighbourMessageBuffer {
 }
 
 impl Emitable for NeighbourHeader {
-    fn buffer_len(&self) -> usize {
-        NEIGHBOUR_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = NeighbourMessageBuffer::from(self);
-        buffer[..NEIGHBOUR_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

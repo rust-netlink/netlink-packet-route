@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv4Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
@@ -11,7 +10,7 @@ use crate::{
         RouteLwTunnelEncap, RouteLwTunnelOpt, RouteMessage, RouteProtocol,
         RouteScope, RouteType, RouteVxlanOpt,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // strace capture(netlink message header removed) against command:
@@ -56,7 +55,7 @@ fn test_ip_tunnel_vxlan_opts_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -103,7 +102,7 @@ fn test_ip_tunnel_erspan_opts_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -170,7 +169,7 @@ fn test_ip_tunnel_geneve_opts_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -236,7 +235,7 @@ fn test_ip_tunnel_vxlan_opts_dump() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }
@@ -301,7 +300,7 @@ fn test_ip_tunnel_erspan_opts_dump() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }

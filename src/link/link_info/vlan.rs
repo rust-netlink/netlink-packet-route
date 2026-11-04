@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, parse_u16, parse_u16_be, parse_u32,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, append_u16, append_u16_be, append_u32, emit_nlas_into,
+    parse_u16, parse_u16_be, parse_u32, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use crate::link::VlanProtocol;
@@ -54,35 +54,29 @@ pub enum InfoVlan {
 }
 
 impl Nla for InfoVlan {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Id(_) | Self::Protocol(_) => 2,
-            Self::Flags(_) => 8,
-            Self::EgressQos(mappings) | Self::IngressQos(mappings) => {
-                mappings.as_slice().buffer_len()
-            }
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::EgressQos(ref mappings) | Self::IngressQos(ref mappings) => {
-                mappings.as_slice().emit(buffer)
+                emit_nlas_into(mappings, out)?;
             }
-            Self::Id(value) => emit_u16(buffer, *value).unwrap(),
-            Self::Protocol(value) => {
-                emit_u16_be(buffer, (*value).into()).unwrap()
-            }
+            Self::Id(value) => append_u16(out, *value),
+            Self::Protocol(value) => append_u16_be(out, (*value).into()),
             Self::Flags((active, mask)) => {
-                emit_u32(&mut buffer[0..4], active.bits()).unwrap();
-                emit_u32(&mut buffer[4..8], mask.bits()).unwrap()
+                append_u32(out, active.bits());
+                append_u32(out, mask.bits());
             }
-            Self::Other(v) => v.emit_value(buffer),
+            Self::Other(v) => append_bytes(out, v.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoVlan {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Id(_) => IFLA_VLAN_ID,
             Self::Flags(_) => IFLA_VLAN_FLAGS,
@@ -103,27 +97,27 @@ pub enum VlanQosMapping {
 }
 
 impl Nla for VlanQosMapping {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            VlanQosMapping::Mapping { .. } => 8,
-            VlanQosMapping::Other(nla) => nla.value_len(),
+            Self::Mapping(from, to) => {
+                append_u32(out, *from);
+                append_u32(out, *to);
+            }
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl VlanQosMapping {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             VlanQosMapping::Mapping { .. } => IFLA_VLAN_QOS_MAPPING,
             VlanQosMapping::Other(nla) => nla.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mapping(from, to) => {
-                emit_u32(buffer, *from).unwrap();
-                emit_u32(&mut buffer[4..], *to).unwrap();
-            }
-            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 }

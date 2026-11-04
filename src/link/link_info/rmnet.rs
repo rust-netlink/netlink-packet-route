@@ -2,8 +2,8 @@
 
 use bitflags::bitflags;
 use netlink_packet_core::{
-    emit_u16, emit_u32, parse_u16, parse_u32, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u32, parse_u16, parse_u32, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_RMNET_MUX_ID: u16 = 1;
@@ -51,26 +51,25 @@ pub enum InfoRmNet {
 }
 
 impl Nla for InfoRmNet {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::MuxId(_) => 2,
-            Self::Flags(_) => 8,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::MuxId(value) => emit_u16(buffer, *value).unwrap(),
+            Self::MuxId(value) => append_u16(out, *value),
             Self::Flags(flags) => {
-                emit_u32(buffer, flags.flags.bits()).unwrap();
-                emit_u32(&mut buffer[4..], flags.mask.bits()).unwrap();
+                append_u32(out, flags.flags.bits());
+                append_u32(out, flags.mask.bits());
             }
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoRmNet {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::MuxId(_) => IFLA_RMNET_MUX_ID,
             Self::Flags(_) => IFLA_RMNET_FLAGS,

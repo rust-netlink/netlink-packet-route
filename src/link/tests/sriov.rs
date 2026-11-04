@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{
-    Emitable, NlaBuffer, Parseable, ParseableParametrized,
-};
+use netlink_packet_core::{NlaBuffer, Parseable, ParseableParametrized};
 
 use crate::{
     link::{
@@ -12,7 +9,7 @@ use crate::{
         VfInfoTxRate, VfInfoVlan, VfLinkState, VfStats, VfVlan, VfVlanInfo,
         VlanProtocol,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Wireshark capture of nlmon on a PF NIC with 2 SR-IOV VF enabled.
@@ -184,7 +181,7 @@ fn test_parsing_link_sriov() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -242,7 +239,7 @@ fn test_create_vf_node_guid() {
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf.len(), raw.len());
     assert_eq!(&buf[28..32], &raw[28..32]);
     assert_eq!(&buf[32..36], &[0, 0, 0, 0]);

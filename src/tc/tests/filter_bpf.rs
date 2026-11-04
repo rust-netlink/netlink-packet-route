@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable as _};
+use netlink_packet_core::Parseable as _;
 
 use crate::{
     tc::{
         TcAttribute, TcBpfFlags, TcFilterBpfOption, TcHandle, TcHeader,
         TcMessage, TcOption, TcU32OptionFlags,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // TC eBPF program attaches to the clsact qdisc.
@@ -108,7 +107,7 @@ fn test_get_filter_bpf() {
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

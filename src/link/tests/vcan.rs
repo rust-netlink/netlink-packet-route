@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv6Addr;
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Parseable};
 
 use crate::{
     link::{
@@ -11,7 +10,7 @@ use crate::{
         LinkFlags, LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMode,
         LinkXdp, Map, State, XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // netlink capture of kernel reply on `ip link show vcan1`.
@@ -252,7 +251,7 @@ fn test_show_vcan() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

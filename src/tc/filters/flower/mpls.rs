@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
+    append_bytes, append_u32, emit_nlas_into, parse_u32, parse_u8, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable, NLA_F_NESTED,
 };
 
 macro_rules! nla_err {
@@ -34,21 +35,21 @@ pub enum TcFilterFlowerMplsOption {
 }
 
 impl Nla for TcFilterFlowerMplsOption {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Lse(attr) => attr.as_slice().buffer_len(),
-            Self::Other(attr) => attr.value_len(),
+            Self::Lse(attr) => emit_nlas_into(attr, out)?,
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Lse(attr) => attr.as_slice().emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl TcFilterFlowerMplsOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Lse(_) => TCA_FLOWER_KEY_MPLS_OPT_LSE | NLA_F_NESTED,
             Self::Other(attr) => attr.kind(),
@@ -100,31 +101,26 @@ pub enum TcFilterFlowerMplsLseOption {
 }
 
 impl Nla for TcFilterFlowerMplsLseOption {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::LseDepth(_) => 1,
-            Self::LseTtl(_) => 1,
-            Self::LseBos(_) => 1,
-            Self::LseTc(_) => 1,
-            Self::LseLabel(_) => 4,
+            Self::LseDepth(i)
+            | Self::LseTtl(i)
+            | Self::LseBos(i)
+            | Self::LseTc(i) => out.push(*i),
+            Self::LseLabel(i) => append_u32(out, *i & 0xFFFFF),
 
-            Self::Other(attr) => attr.value_len(),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::LseDepth(i) => buffer[0] = *i,
-            Self::LseTtl(i) => buffer[0] = *i,
-            Self::LseBos(i) => buffer[0] = *i,
-            Self::LseTc(i) => buffer[0] = *i,
-            Self::LseLabel(i) => emit_u32(buffer, *i & 0xFFFFF).unwrap(),
-
-            Self::Other(attr) => attr.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl TcFilterFlowerMplsLseOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::LseDepth(_) => TCA_FLOWER_KEY_MPLS_OPT_LSE_DEPTH,
             Self::LseTtl(_) => TCA_FLOWER_KEY_MPLS_OPT_LSE_TTL,

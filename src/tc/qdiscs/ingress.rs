@@ -3,7 +3,10 @@
 use netlink_packet_core::ErrorContext;
 // Currently, the qdisc ingress does not have any attribute, kernel
 // just start a empty nla_nest. This is just a place holder
-use netlink_packet_core::{DecodeError, DefaultNla, Nla, NlaBuffer, Parseable};
+use netlink_packet_core::{
+    append_bytes, DecodeError, DefaultNla, EncodeError, Nla, NlaBuffer,
+    Parseable,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -20,19 +23,22 @@ impl TcQdiscIngress {
 }
 
 impl Nla for TcQdiscIngressOption {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Other(attr) => {
+                append_bytes(out, attr.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <TcQdiscIngressOption>::kind(self)
+    }
+}
+
+impl TcQdiscIngressOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Other(attr) => attr.kind(),
         }

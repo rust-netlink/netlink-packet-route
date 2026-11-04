@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
         InfoData, InfoKind, InfoNetkit, LinkAttribute, LinkHeader, LinkInfo,
         LinkLayerType, LinkMessage, NetkitMode, NetkitPolicy, NetkitScrub,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -77,7 +76,7 @@ fn test_create_netkit() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

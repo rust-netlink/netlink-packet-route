@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const LINK_MAP_LEN: usize = 32;
@@ -38,6 +38,7 @@ pub struct Map {
     pub port: u8,
 }
 
+#[allow(dead_code)]
 impl Map {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = MapBuffer::ref_from_prefix(payload).map_err(|_| {
@@ -54,6 +55,7 @@ impl Map {
     }
 }
 
+#[allow(dead_code)]
 impl From<&Map> for MapBuffer {
     fn from(map: &Map) -> Self {
         Self {
@@ -69,12 +71,9 @@ impl From<&Map> for MapBuffer {
 }
 
 impl Emitable for Map {
-    fn buffer_len(&self) -> usize {
-        LINK_MAP_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = MapBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

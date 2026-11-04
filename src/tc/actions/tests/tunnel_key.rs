@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{NlaBuffer, Parseable};
 
-use crate::tc::{
-    TcAction, TcActionAttribute, TcActionGeneric, TcActionOption,
-    TcActionTunnelKeyOption, TcActionType, TcStats2, TcStatsBasic,
-    TcStatsQueue, TcTunnelKey, Tcf,
+use crate::{
+    tc::{
+        TcAction, TcActionAttribute, TcActionGeneric, TcActionOption,
+        TcActionTunnelKeyOption, TcActionType, TcStats2, TcStatsBasic,
+        TcStatsQueue, TcTunnelKey, Tcf,
+    },
+    TestEmit, TestNla,
 };
 
 //      > tc actions add action tunnel_key set id 33 src_ip 1.2.3.4 dst_ip
@@ -102,7 +104,7 @@ fn get_tunnel_key_vxlan_action_ipv4() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -201,7 +203,7 @@ fn test_action_tunnel_key_vxlan_ipv6() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

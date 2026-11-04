@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
@@ -41,6 +41,7 @@ pub struct TcHeader {
     pub info: u32,
 }
 
+#[allow(dead_code)]
 impl TcHeader {
     pub const TCM_IFINDEX_MAGIC_BLOCK: u32 = 0xFFFFFFFF;
 
@@ -59,6 +60,7 @@ impl TcHeader {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcHeader> for TcMessageBuffer {
     fn from(header: &TcHeader) -> Self {
         Self {
@@ -74,13 +76,10 @@ impl From<&TcHeader> for TcMessageBuffer {
 }
 
 impl Emitable for TcHeader {
-    fn buffer_len(&self) -> usize {
-        TC_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcMessageBuffer::from(self);
-        buffer[..TC_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 

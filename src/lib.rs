@@ -39,6 +39,7 @@
 //!
 //! [rtnetlink_url]: https://docs.rs/rtnetlink
 
+#![allow(unused_imports)]
 #[cfg(feature = "address")]
 pub mod address;
 mod address_family;
@@ -66,6 +67,69 @@ pub mod tc;
 mod message;
 #[cfg(all(test, feature = "link"))]
 mod tests;
+
+#[cfg(test)]
+pub(crate) trait TestEmit {
+    fn buffer_len(&self) -> usize;
+    fn emit_slice(&self, buffer: &mut [u8]);
+}
+
+#[cfg(test)]
+impl<T: netlink_packet_core::Emitable> TestEmit for T {
+    fn buffer_len(&self) -> usize {
+        let mut out = Vec::new();
+        self.emit_into(&mut out).expect("test emission failed");
+        out.len()
+    }
+
+    fn emit_slice(&self, buffer: &mut [u8]) {
+        let mut out = Vec::new();
+        self.emit_into(&mut out).expect("test emission failed");
+        buffer.copy_from_slice(&out);
+    }
+}
+
+#[cfg(test)]
+pub(crate) trait TestNla {
+    fn value_len(&self) -> usize;
+    fn emit_value(&self, buffer: &mut [u8]);
+    fn buffer_len(&self) -> usize;
+    fn emit_slice(&self, buffer: &mut [u8]);
+    fn kind(&self) -> u16;
+}
+
+#[cfg(test)]
+impl<T: netlink_packet_core::Nla> TestNla for T {
+    fn value_len(&self) -> usize {
+        let mut out = Vec::new();
+        self.emit_value_into(&mut out)
+            .expect("test emission failed");
+        out.len()
+    }
+
+    fn emit_value(&self, buffer: &mut [u8]) {
+        let mut out = Vec::new();
+        self.emit_value_into(&mut out)
+            .expect("test emission failed");
+        buffer.copy_from_slice(&out);
+    }
+
+    fn buffer_len(&self) -> usize {
+        let mut out = Vec::new();
+        self.emit_nla_into(&mut out).expect("test emission failed");
+        out.len()
+    }
+
+    fn emit_slice(&self, buffer: &mut [u8]) {
+        let mut out = Vec::new();
+        self.emit_nla_into(&mut out).expect("test emission failed");
+        buffer.copy_from_slice(&out);
+    }
+
+    fn kind(&self) -> u16 {
+        netlink_packet_core::Nla::kind(self)
+    }
+}
 
 pub(crate) mod ip;
 

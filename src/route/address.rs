@@ -2,13 +2,10 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 
 use crate::{
-    ip::{
-        emit_ip_to_buffer, parse_ipv4_addr, parse_ipv6_addr, IPV4_ADDR_LEN,
-        IPV6_ADDR_LEN,
-    },
+    ip::{parse_ipv4_addr, parse_ipv6_addr},
     route::MplsLabel,
     AddressFamily,
 };
@@ -22,6 +19,7 @@ pub enum RouteAddress {
     Other(Vec<u8>),
 }
 
+#[allow(dead_code)]
 impl From<IpAddr> for RouteAddress {
     fn from(ip: IpAddr) -> Self {
         match ip {
@@ -31,6 +29,7 @@ impl From<IpAddr> for RouteAddress {
     }
 }
 
+#[allow(dead_code)]
 impl RouteAddress {
     pub(crate) fn parse(
         address_family: AddressFamily,
@@ -47,22 +46,14 @@ impl RouteAddress {
 }
 
 impl Emitable for RouteAddress {
-    fn buffer_len(&self) -> usize {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Inet(_) => IPV4_ADDR_LEN,
-            Self::Inet6(_) => IPV6_ADDR_LEN,
-            Self::Mpls(v) => v.buffer_len(),
-            Self::Other(v) => v.len(),
+            Self::Inet(v) => append_bytes(out, &v.octets()),
+            Self::Inet6(v) => append_bytes(out, &v.octets()),
+            Self::Mpls(v) => v.emit_into(out)?,
+            Self::Other(v) => append_bytes(out, v.as_slice()),
         }
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Inet(v) => emit_ip_to_buffer(&((*v).into()), buffer),
-            Self::Inet6(v) => emit_ip_to_buffer(&((*v).into()), buffer),
-            Self::Mpls(v) => v.emit(buffer),
-            Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
-        }
+        Ok(())
     }
 }
 

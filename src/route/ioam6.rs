@@ -3,8 +3,9 @@
 use std::{fmt::Debug, net::Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, emit_u32_be, parse_u16_be, parse_u32, parse_u32_be,
-    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16_be, append_u32, append_u32_be, parse_u16_be,
+    parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::ip::parse_ipv6_addr;
@@ -81,20 +82,22 @@ pub struct Ioam6TraceHdr {
 }
 
 impl Nla for Ioam6TraceHdr {
-    fn value_len(&self) -> usize {
-        8
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u16_be(out, self.namespace_id);
+        out.push(((self.nodelen & 0x1f) << 3) | (u8::from(self.overflow) << 2));
+        out.push(self.remlen & 0x7f);
+        append_u32_be(out, self.trace_type << 8);
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
-        IOAM6_IPTUNNEL_TRACE
+        <Self>::kind(self)
     }
+}
 
-    fn emit_value(&self, buffer: &mut [u8]) {
-        emit_u16_be(&mut buffer[0..2], self.namespace_id).unwrap();
-        buffer[2] =
-            ((self.nodelen & 0x1f) << 3) | (u8::from(self.overflow) << 2);
-        buffer[3] = self.remlen & 0x7f;
-        emit_u32_be(&mut buffer[4..8], self.trace_type << 8).unwrap();
+impl Ioam6TraceHdr {
+    pub(crate) fn kind(&self) -> u16 {
+        IOAM6_IPTUNNEL_TRACE
     }
 }
 
@@ -160,18 +163,27 @@ impl std::fmt::Display for RouteIoam6Tunnel {
 }
 
 impl Nla for RouteIoam6Tunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Unspecified => 0,
-            Self::Mode(_) => 1,
-            Self::Dst(_) | Self::Src(_) => 16,
-            Self::Trace(trace) => trace.value_len(),
-            Self::FreqK(_) | Self::FreqN(_) => 4,
-            Self::Other(other) => other.value_len(),
+            Self::Unspecified => {}
+            Self::Mode(mode) => out.push(u8::from(*mode)),
+            Self::Dst(addr) | Self::Src(addr) => {
+                append_bytes(out, &addr.octets())
+            }
+            Self::Trace(trace) => trace.emit_value_into(out)?,
+            Self::FreqK(freq) | Self::FreqN(freq) => append_u32(out, *freq),
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteIoam6Tunnel {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Unspecified => IOAM6_IPTUNNEL_UNSPEC,
             Self::Mode(_) => IOAM6_IPTUNNEL_MODE,
@@ -181,21 +193,6 @@ impl Nla for RouteIoam6Tunnel {
             Self::FreqN(_) => IOAM6_IPTUNNEL_FREQ_N,
             Self::Src(_) => IOAM6_IPTUNNEL_SRC,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Unspecified => {}
-            Self::Mode(mode) => buffer[0] = u8::from(*mode),
-            Self::Dst(addr) | Self::Src(addr) => {
-                buffer.copy_from_slice(&addr.octets())
-            }
-            Self::Trace(trace) => trace.emit_value(buffer),
-            Self::FreqK(freq) | Self::FreqN(freq) => {
-                emit_u32(buffer, *freq).unwrap()
-            }
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }

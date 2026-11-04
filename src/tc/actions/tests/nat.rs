@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv4Addr;
 
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{NlaBuffer, Parseable};
 
 use crate::{
     tc::{
@@ -19,7 +18,7 @@ use crate::{
         TcStats2::{Basic, BasicHw, Queue},
         TcStatsBasic, TcStatsQueue, Tcf,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 /// Capture of request for
@@ -74,7 +73,7 @@ fn parse_tc_action_nat_example1() {
 fn emit_tc_action_nat_example1() {
     let example = tc_action_message_nat_example1();
     let mut buf = vec![0; example.buffer_len()];
-    example.emit(&mut buf);
+    example.emit_slice(&mut buf);
     assert_eq!(buf.as_slice(), TC_ACTION_NAT_EXAMPLE1);
 }
 
@@ -130,7 +129,7 @@ fn parse_tc_action_nat_example2() {
 fn emit_tc_action_nat_example2() {
     let example = tc_action_message_nat_example2();
     let mut buf = vec![0; example.buffer_len()];
-    example.emit(&mut buf);
+    example.emit_slice(&mut buf);
     assert_eq!(buf.as_slice(), TC_ACTION_NAT_EXAMPLE2);
 }
 
@@ -186,7 +185,7 @@ fn parse_tc_action_nat_example3() {
 fn emit_tc_action_nat_example3() {
     let example = tc_action_message_nat_example3();
     let mut buf = vec![0x00; example.buffer_len()];
-    example.emit(&mut buf);
+    example.emit_slice(&mut buf);
     assert_eq!(buf.as_slice(), TC_ACTION_NAT_EXAMPLE3);
 }
 
@@ -223,7 +222,7 @@ const TC_ACTION_NAT_OPTION_PARAMS_EXAMPLES: [TcActionNatOption; 2] = [
 fn tc_action_nat_option_parse_back_example_params() {
     for example in TC_ACTION_NAT_OPTION_PARAMS_EXAMPLES {
         let mut buffer = vec![0; example.buffer_len()];
-        example.emit(&mut buffer);
+        example.emit_slice(&mut buffer);
         let parsed = TcActionNatOption::parse(
             &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
         )
@@ -237,8 +236,8 @@ fn tc_action_nat_option_emit_uses_whole_buffer() {
     for example in TC_ACTION_NAT_OPTION_PARAMS_EXAMPLES {
         let mut buffer1 = vec![0x00; example.buffer_len()];
         let mut buffer2 = vec![0xff; example.buffer_len()];
-        example.emit(&mut buffer1);
-        example.emit(&mut buffer2);
+        example.emit_slice(&mut buffer1);
+        example.emit_slice(&mut buffer2);
         assert_eq!(buffer1, buffer2);
     }
 }
@@ -334,7 +333,7 @@ fn test_get_filter_nat() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, RAW);
 }

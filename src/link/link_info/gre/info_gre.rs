@@ -3,9 +3,9 @@
 use std::{mem::size_of, net::Ipv4Addr};
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_u16, parse_u16_be,
-    parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla, ErrorContext,
-    Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u16_be, append_u32, append_u32_be,
+    parse_u16, parse_u16_be, parse_u32, parse_u32_be, parse_u8, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use super::{
@@ -50,59 +50,79 @@ pub enum InfoGre {
 }
 
 impl Nla for InfoGre {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Link(_) => size_of::<u32>(),
-            Self::IFlags(_) | Self::OFlags(_) => size_of::<u16>(),
-            Self::IKey(_) | Self::OKey(_) => size_of::<u32>(),
-            Self::Local(_) | Self::Remote(_) => size_of::<Ipv4Addr>(),
-            Self::Ttl(_) | Self::Tos(_) | Self::PathMTUDiscovery(_) => {
-                size_of::<u8>()
+            Self::Link(id) => {
+                append_u32(out, *id);
+                Ok(())
             }
-            Self::EncapType(_) => size_of::<u16>(),
-            Self::EncapFlags(_) => size_of::<u16>(),
-            Self::SourcePort(_) | Self::DestinationPort(_) => size_of::<u16>(),
-            Self::CollectMetadata => 0,
-            Self::FwMask(_) => size_of::<u32>(),
-            Self::ErSpanIndex(_) => size_of::<u32>(),
-            Self::ErSpanVer(_) | Self::ErSpanDir(_) => size_of::<u8>(),
-            Self::ErSpanHwId(_) => size_of::<u16>(),
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Link(id) => emit_u32(buffer, *id).unwrap(),
             Self::IFlags(flags) | Self::OFlags(flags) => {
-                emit_u16_be(buffer, flags.bits()).unwrap()
+                append_u16_be(out, flags.bits());
+                Ok(())
             }
             Self::IKey(key) | Self::OKey(key) => {
-                emit_u32_be(buffer, *key).unwrap()
+                append_u32_be(out, *key);
+                Ok(())
             }
             Self::Local(ip) | Self::Remote(ip) => {
-                buffer.copy_from_slice(&ip.octets());
+                append_bytes(out, &ip.octets());
+                Ok(())
             }
-            Self::Ttl(value) | Self::Tos(value) => buffer[0] = *value,
+            Self::Ttl(value) | Self::Tos(value) => {
+                out.push(*value);
+                Ok(())
+            }
             Self::PathMTUDiscovery(discover) => {
-                buffer[0] = if *discover { 1 } else { 0 }
+                out.push(if *discover { 1 } else { 0 });
+                Ok(())
             }
-            Self::EncapType(t) => emit_u16(buffer, t.into()).unwrap(),
-            Self::EncapFlags(flags) => emit_u16(buffer, flags.bits()).unwrap(),
+            Self::EncapType(t) => {
+                append_u16(out, t.into());
+                Ok(())
+            }
+            Self::EncapFlags(flags) => {
+                append_u16(out, flags.bits());
+                Ok(())
+            }
             Self::SourcePort(port) | Self::DestinationPort(port) => {
-                emit_u16_be(buffer, *port).unwrap()
+                append_u16_be(out, *port);
+                Ok(())
             }
-            Self::CollectMetadata => {}
-            Self::FwMask(fw_mask) => emit_u32(buffer, *fw_mask).unwrap(),
-            Self::ErSpanIndex(idx) => emit_u32(buffer, *idx).unwrap(),
-            Self::ErSpanVer(v) => buffer[0] = *v,
-            Self::ErSpanDir(v) => buffer[0] = v.into(),
-            Self::ErSpanHwId(id) => emit_u16(buffer, *id).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::CollectMetadata => Ok(()),
+            Self::FwMask(fw_mask) => {
+                append_u32(out, *fw_mask);
+                Ok(())
+            }
+            Self::ErSpanIndex(idx) => {
+                append_u32(out, *idx);
+                Ok(())
+            }
+            Self::ErSpanVer(v) => {
+                out.push(*v);
+                Ok(())
+            }
+            Self::ErSpanDir(v) => {
+                out.push(v.into());
+                Ok(())
+            }
+            Self::ErSpanHwId(id) => {
+                append_u16(out, *id);
+                Ok(())
+            }
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <InfoGre>::kind(self)
+    }
+}
+
+impl InfoGre {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Link(_) => IFLA_GRE_LINK,
             Self::IFlags(_) => IFLA_GRE_IFLAGS,

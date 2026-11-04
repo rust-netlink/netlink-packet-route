@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     stats::{
@@ -8,7 +7,7 @@ use crate::{
         BridgeXstat, HwStatsInfo, LinkXstatGroup, OffloadXstat, StatsAttribute,
         StatsFilterMask, StatsHeader, StatsMessage,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Synthetic data matching kernel layout: RTM_NEWSTATS for br-test
@@ -68,7 +67,7 @@ fn test_parsing_bridge_xstats() {
     assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -172,6 +171,6 @@ fn test_parsing_bridge_port_xstats() {
     assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

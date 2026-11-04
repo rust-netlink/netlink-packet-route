@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, DefaultNla, Nla, NlaBuffer, Parseable};
+use netlink_packet_core::{
+    append_bytes, DecodeError, DefaultNla, EncodeError, Nla, NlaBuffer,
+    Parseable,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -9,19 +12,20 @@ pub enum InfoTeamPort {
 }
 
 impl Nla for InfoTeamPort {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Other(nla) => nla.value_len(),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoTeamPort {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Other(nla) => nla.kind(),
         }

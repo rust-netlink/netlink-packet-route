@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_string, parse_u32, DecodeError, DefaultNla, ErrorContext,
-    Nla, NlaBuffer, Parseable,
+    append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const DEVLINK_ATTR_BUS_NAME: u16 = 1;
@@ -19,26 +19,25 @@ pub enum DevlinkPort {
 }
 
 impl Nla for DevlinkPort {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::BusName(s) | Self::DevName(s) => s.len() + 1,
-            Self::PortIndex(_) => 4,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::BusName(s) | Self::DevName(s) => {
-                buffer[..s.len()].copy_from_slice(s.as_bytes());
-                buffer[s.len()] = 0;
+                append_bytes(out, s.as_bytes());
+                out.push(0);
             }
-            Self::PortIndex(v) => emit_u32(buffer, *v).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::PortIndex(v) => append_u32(out, *v),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl DevlinkPort {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::BusName(_) => DEVLINK_ATTR_BUS_NAME,
             Self::DevName(_) => DEVLINK_ATTR_DEV_NAME,

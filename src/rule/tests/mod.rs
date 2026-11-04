@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+use crate::{TestEmit, TestNla};
 
 #[cfg(test)]
 mod fw_mark;

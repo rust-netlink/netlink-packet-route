@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, Nla, NlaBuffer, Parseable,
-    ParseableParametrized,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, Nla,
+    NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use super::{TcStatsBasic, TcStatsQueue, TcXstats};
@@ -26,27 +26,24 @@ pub enum TcStats2 {
 }
 
 impl Nla for TcStats2 {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::App(v) => v.buffer_len(),
-            Self::Basic(v) => v.buffer_len(),
-            Self::Queue(v) => v.buffer_len(),
-            Self::BasicHw(v) => v.buffer_len(),
-            Self::Other(ref nla) => nla.value_len(),
+            Self::App(v) => v.emit_into(out)?,
+            Self::Basic(v) => v.emit_into(out)?,
+            Self::Queue(v) => v.emit_into(out)?,
+            Self::BasicHw(v) => v.emit_into(out)?,
+            Self::Other(ref nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::App(v) => v.emit(buffer),
-            Self::Basic(v) => v.emit(buffer),
-            Self::Queue(v) => v.emit(buffer),
-            Self::BasicHw(v) => v.emit(buffer),
-            Self::Other(ref nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <TcStats2>::kind(self)
+    }
+}
+
+impl TcStats2 {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::App(_) => TCA_STATS_APP,
             Self::Basic(_) => TCA_STATS_BASIC,

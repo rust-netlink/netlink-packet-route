@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{
-    Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload, Nla, Parseable,
+    NetlinkHeader, NetlinkMessage, NetlinkPayload, Parseable,
 };
 
 use crate::{
@@ -9,7 +8,7 @@ use crate::{
         AfSpecStats, HwStatsInfo, OffloadXstat, StatsAttribute,
         StatsFilterMask, StatsHeader, StatsMessage,
     },
-    AddressFamily, RouteNetlinkMessage,
+    AddressFamily, RouteNetlinkMessage, TestEmit, TestNla,
 };
 
 // nlmon of kernel reply on command `ip stat show dev enp3s0u2u1u4`
@@ -69,7 +68,7 @@ fn test_parsing_combined_stats() {
     assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -95,8 +94,8 @@ fn test_parsing_rtm_newstats_message() {
         NetlinkPayload::from(RouteNetlinkMessage::NewStats(stats_msg)),
     );
 
-    let mut buf = vec![0; msg.buffer_len()];
-    msg.emit(&mut buf);
+    let mut buf = Vec::new();
+    msg.serialize_into(&mut buf).unwrap();
 
     let parsed = NetlinkMessage::deserialize(&buf).unwrap();
     assert_eq!(parsed, msg);
@@ -128,8 +127,8 @@ fn test_parsing_rtm_getstats_message() {
         NetlinkPayload::from(RouteNetlinkMessage::GetStats(stats_msg)),
     );
 
-    let mut buf = vec![0; msg.buffer_len()];
-    msg.emit(&mut buf);
+    let mut buf = Vec::new();
+    msg.serialize_into(&mut buf).unwrap();
 
     let parsed = NetlinkMessage::deserialize(&buf).unwrap();
     assert_eq!(parsed, msg);
@@ -170,6 +169,6 @@ fn test_parsing_unknown_stats_attribute() {
 
     // Roundtrip
     let mut buf = vec![0; parsed.buffer_len()];
-    parsed.emit(&mut buf);
+    parsed.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

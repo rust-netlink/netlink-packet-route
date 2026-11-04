@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{
+    append_bytes, DecodeError, Emitable, EncodeError, Parseable,
+};
 
 const MAX_PHYS_ITEM_ID_LEN: usize = 32;
 
@@ -11,6 +13,7 @@ pub struct LinkPhysId {
     pub len: usize,
 }
 
+#[allow(dead_code)]
 impl Parseable<[u8]> for LinkPhysId {
     fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         let len = buf.len().min(MAX_PHYS_ITEM_ID_LEN);
@@ -21,11 +24,8 @@ impl Parseable<[u8]> for LinkPhysId {
 }
 
 impl Emitable for LinkPhysId {
-    fn buffer_len(&self) -> usize {
-        self.len
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer[..self.len].copy_from_slice(&self.id[..self.len])
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_bytes(out, &self.id[..self.len]);
+        Ok(())
     }
 }

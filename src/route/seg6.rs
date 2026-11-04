@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-use std::net::{IpAddr, Ipv6Addr};
+use std::net::Ipv6Addr;
 
 use netlink_packet_core::{
-    emit_u32, emit_u32_be, parse_u32, parse_u32_be, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u32, append_u32_be, parse_u32, parse_u32_be,
+    DecodeError, DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
-use crate::ip::{emit_ip_addr, parse_ipv6_addr};
+use crate::ip::parse_ipv6_addr;
 
 const SEG6_IPTUN_MODE_INLINE: u32 = 0;
 const SEG6_IPTUN_MODE_ENCAP: u32 = 1;
@@ -82,34 +83,28 @@ pub enum RouteSeg6IpTunnel {
 }
 
 impl Nla for RouteSeg6IpTunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            RouteSeg6IpTunnel::Seg6(v) => v.value_len(),
-            RouteSeg6IpTunnel::Src(_) => 16,
-            RouteSeg6IpTunnel::Table(_) => 4,
-            RouteSeg6IpTunnel::Other(v) => v.value_len(),
+            RouteSeg6IpTunnel::Seg6(v) => v.emit_value_into(out)?,
+            RouteSeg6IpTunnel::Src(addr) => append_bytes(out, &addr.octets()),
+            RouteSeg6IpTunnel::Table(table) => append_u32(out, *table),
+            RouteSeg6IpTunnel::Other(v) => append_bytes(out, v.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteSeg6IpTunnel {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             RouteSeg6IpTunnel::Seg6(v) => v.kind(),
             RouteSeg6IpTunnel::Src(_) => SEG6_IPTUNNEL_SRC,
             RouteSeg6IpTunnel::Table(_) => SEG6_IPTUNNEL_TABLE,
             RouteSeg6IpTunnel::Other(v) => v.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            RouteSeg6IpTunnel::Seg6(v) => v.emit_value(buffer),
-            RouteSeg6IpTunnel::Src(addr) => {
-                emit_ip_addr(&IpAddr::V6(*addr), buffer)
-            }
-            RouteSeg6IpTunnel::Table(table) => {
-                emit_u32(buffer, *table).unwrap()
-            }
-            RouteSeg6IpTunnel::Other(v) => v.emit_value(buffer),
         }
     }
 }
@@ -159,13 +154,6 @@ pub struct Seg6Header {
 }
 
 impl Seg6Header {
-    fn push_segments(buf: &mut [u8], mut segments: Vec<Ipv6Addr>) {
-        if let Some(segment) = segments.pop() {
-            emit_ip_addr(&IpAddr::V6(segment), &mut buf[..SEG6_SEGMENT_LEN]);
-            Self::push_segments(&mut buf[SEG6_SEGMENT_LEN..], segments);
-        }
-    }
-
     fn get_segments(
         buf: &[u8],
         segments: &mut Vec<Ipv6Addr>,
@@ -181,21 +169,7 @@ impl Seg6Header {
 }
 
 impl Nla for Seg6Header {
-    fn value_len(&self) -> usize {
-        SEG6_HEADER_LEN
-            + SEG6_SEGMENT_LEN * self.segments.len()
-            + if self.hmac.is_some() {
-                SR6_HMAC_TLV_LEN
-            } else {
-                0
-            }
-    }
-
-    fn kind(&self) -> u16 {
-        SEG6_IPTUNNEL_SRH
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         // Some sources for understanding the format of Seg6 in Netlink
         //
         // torvalds/linux:
@@ -229,21 +203,31 @@ impl Nla for Seg6Header {
             },
             tag: 0,
         };
-        buffer[..SEG6_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
 
-        Seg6Header::push_segments(
-            &mut buffer[SEG6_HEADER_LEN..],
-            self.segments.clone(),
-        );
+        for segment in self.segments.iter().rev() {
+            append_bytes(out, &segment.octets());
+        }
 
         if let Some(key_id) = self.hmac {
-            let tlv = &mut buffer
-                [SEG6_HEADER_LEN + SEG6_SEGMENT_LEN * number_segments..];
-            tlv[0] = SR6_TLV_HMAC;
-            tlv[1] = (SR6_HMAC_TLV_LEN - 2) as u8;
+            out.push(SR6_TLV_HMAC);
+            out.push((SR6_HMAC_TLV_LEN - 2) as u8);
             // The 2 reserved octets and the 32 octet HMAC field are zero.
-            emit_u32_be(&mut tlv[4..8], key_id).unwrap();
+            append_bytes(out, &[0, 0]);
+            append_u32_be(out, key_id);
+            append_bytes(out, &[0u8; 32]);
         }
+        Ok(())
+    }
+
+    fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl Seg6Header {
+    pub(crate) fn kind(&self) -> u16 {
+        SEG6_IPTUNNEL_SRH
     }
 }
 

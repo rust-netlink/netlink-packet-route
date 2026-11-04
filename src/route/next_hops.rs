@@ -3,7 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, Emitable, ErrorContext, ParseableParametrized,
+    append_bytes, emit_nlas_into, DecodeError, Emitable, EncodeError,
+    ErrorContext, ParseableParametrized,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -179,26 +180,39 @@ impl ParseableParametrized<[u8], (AddressFamily, RouteType, RouteLwEnCapType)>
 }
 
 impl Emitable for RouteNextHop {
-    fn buffer_len(&self) -> usize {
-        // len, flags, hops and interface id fields
-        size_of::<RouteNextHopBuffer>()
-            + self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = RouteNextHopBuffer::from(self);
-        buffer[..size_of::<RouteNextHopBuffer>()]
-            .copy_from_slice(raw.as_bytes());
-        self.attributes
-            .as_slice()
-            .emit(&mut buffer[size_of::<RouteNextHopBuffer>()..]);
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        let start = out.len();
+        let header_end = start + size_of::<RouteNextHopBuffer>();
+        out.resize(header_end, 0);
+        let result = (|| -> Result<(), EncodeError> {
+            emit_nlas_into(&self.attributes, out)?;
+            let length = out.len() - start;
+            let raw = RouteNextHopBuffer {
+                length: length as u16,
+                flags: self.flags.bits(),
+                hops: self.hops,
+                interface_index: self.interface_index,
+            };
+            out[start..header_end].copy_from_slice(raw.as_bytes());
+            Ok(())
+        })();
+        if result.is_err() {
+            out.truncate(start);
+        }
+        result
     }
 }
 
 impl From<&RouteNextHop> for RouteNextHopBuffer {
     fn from(nh: &RouteNextHop) -> Self {
+        let mut attributes = Vec::new();
+        let attributes_len = emit_nlas_into(&nh.attributes, &mut attributes)
+            .map(|_| attributes.len())
+            .unwrap_or(usize::MAX);
+        let length =
+            size_of::<RouteNextHopBuffer>().saturating_add(attributes_len);
         Self {
-            length: nh.buffer_len() as u16,
+            length: length as u16,
             flags: nh.flags.bits(),
             hops: nh.hops,
             interface_index: nh.interface_index,

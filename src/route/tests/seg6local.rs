@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
 };
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
@@ -14,7 +13,7 @@ use crate::{
         RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage, RoutePreference,
         RouteProtocol, RouteScope, RouteType,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -86,7 +85,7 @@ fn test_seg6local_end_dx4() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 
@@ -175,7 +174,7 @@ fn test_seg6local_end_b6_encaps() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -248,7 +247,7 @@ fn test_seg6local_end_dx6() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -297,7 +296,7 @@ fn test_seg6local_end() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // The capture carries `NLA_F_NESTED` on `RTA_ENCAP` while the kernel
     // does not require the flag for `seg6local` and omits it in dumps, so
@@ -357,7 +356,7 @@ fn test_seg6local_end_x() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -414,7 +413,7 @@ fn test_seg6local_end_t() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -489,7 +488,7 @@ fn test_seg6local_end_b6() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -544,7 +543,7 @@ fn test_seg6local_end_dx2() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -601,7 +600,7 @@ fn test_seg6local_end_dt6() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -662,7 +661,7 @@ fn test_seg6local_end_dt4() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -723,7 +722,7 @@ fn test_seg6local_end_dt46() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());

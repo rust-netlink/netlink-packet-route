@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{IpAddr, Ipv6Addr},
     str::FromStr,
 };
 
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{NlaBuffer, Parseable};
 
 use crate::{
     address::{
         AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
         AddressMessage, AddressProtocol, AddressScope, CacheInfo,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // TODO(Gris Ge): Need test for `AddressAttribute::Anycast` and `Multicast`.
@@ -36,7 +35,7 @@ fn test_addr_flag_stable_privacy() {
     assert_eq!(nla.buffer_len(), 8);
 
     let mut buffer: [u8; 8] = [0; 8];
-    nla.emit(&mut buffer);
+    nla.emit_slice(&mut buffer);
     assert_eq!(buffer, raw);
 }
 
@@ -76,7 +75,7 @@ fn test_get_loopback_ipv6_addr() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -119,7 +118,7 @@ fn test_get_ipv6_address_ra_protocol() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

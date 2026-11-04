@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_string, DecodeError, DefaultNla, Emitable, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable, ParseableParametrized,
+    append_bytes, parse_string, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ParseableParametrized,
 };
 
 use super::super::{InfoData, InfoPortData, InfoPortKind, LinkXstats};
@@ -72,29 +73,25 @@ pub enum LinkInfo {
 }
 
 impl Nla for LinkInfo {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Xstats(v) => v.buffer_len(),
-            Self::Kind(nla) => nla.value_len(),
-            Self::Data(nla) => nla.value_len(),
-            Self::PortKind(nla) => nla.value_len(),
-            Self::PortData(nla) => nla.value_len(),
-            Self::Other(nla) => nla.value_len(),
+            Self::Xstats(v) => v.emit_into(out)?,
+            Self::Kind(nla) => nla.emit_value_into(out)?,
+            Self::Data(nla) => nla.emit_value_into(out)?,
+            Self::PortKind(nla) => nla.emit_value_into(out)?,
+            Self::PortData(nla) => nla.emit_value_into(out)?,
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Xstats(v) => v.emit(buffer),
-            Self::Kind(nla) => nla.emit_value(buffer),
-            Self::Data(nla) => nla.emit_value(buffer),
-            Self::PortKind(nla) => nla.emit_value(buffer),
-            Self::PortData(nla) => nla.emit_value(buffer),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl LinkInfo {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Xstats(_) => IFLA_INFO_XSTATS,
             Self::PortKind(_) => IFLA_INFO_PORT_KIND,
@@ -297,67 +294,20 @@ impl std::fmt::Display for InfoKind {
 }
 
 impl Nla for InfoKind {
-    fn value_len(&self) -> usize {
-        let len = match self {
-            Self::Dummy => DUMMY.len(),
-            Self::Ifb => IFB.len(),
-            Self::Bridge => BRIDGE.len(),
-            Self::Tun => TUN.len(),
-            Self::Nlmon => NLMON.len(),
-            Self::Vlan => VLAN.len(),
-            Self::Veth => VETH.len(),
-            Self::Vxlan => VXLAN.len(),
-            Self::Bond => BOND.len(),
-            Self::IpVlan => IPVLAN.len(),
-            Self::IpVtap => IPVTAP.len(),
-            Self::MacVlan => MACVLAN.len(),
-            Self::MacVtap => MACVTAP.len(),
-            Self::GreTap => GRETAP.len(),
-            Self::GreTap6 => IP6GRETAP.len(),
-            Self::IpIp => IPIP.len(),
-            Self::Ip6Tnl => IP6TNL.len(),
-            Self::SitTun => SIT.len(),
-            Self::GreTun => GRE.len(),
-            Self::GreTun6 => IP6GRE.len(),
-            Self::Vti => VTI.len(),
-            Self::Vti6 => VTI6.len(),
-            Self::Vrf => VRF.len(),
-            Self::Gtp => GTP.len(),
-            Self::Ipoib => IPOIB.len(),
-            Self::Wireguard => WIREGUARD.len(),
-            Self::Xfrm => XFRM.len(),
-            Self::MacSec => MACSEC.len(),
-            Self::Hsr => HSR.len(),
-            Self::Geneve => GENEVE.len(),
-            Self::Netkit => NETKIT.len(),
-            Self::Vcan => VCAN.len(),
-            Self::Vxcan => VXCAN.len(),
-            Self::Amt => AMT.len(),
-            Self::BatAdv => BATADV.len(),
-            Self::BareUdp => BAREUDP.len(),
-            Self::Netdevsim => NETDEVSIM.len(),
-            Self::VirtWifi => VIRT_WIFI.len(),
-            Self::Wwan => WWAN.len(),
-            Self::Can => CAN.len(),
-            Self::Dsa => DSA.len(),
-            Self::Team => TEAM.len(),
-            Self::ErSpan => ERSPAN.len(),
-            Self::Ip6ErSpan => IP6ERSPAN.len(),
-            Self::Pfcp => PFCP.len(),
-            Self::RmNet => RMNET.len(),
-            Self::Other(s) => s.len(),
-        };
-        len + 1
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let kind = self.to_string();
-        let s = kind.as_str();
-        buffer[..s.len()].copy_from_slice(s.to_string().as_bytes());
-        buffer[s.len()] = 0;
+        append_bytes(out, kind.as_bytes());
+        out.push(0);
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoKind {
+    pub(crate) fn kind(&self) -> u16 {
         IFLA_INFO_KIND
     }
 }

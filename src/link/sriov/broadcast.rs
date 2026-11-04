@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_BROADCAST_LEN: usize = 32;
@@ -39,6 +39,7 @@ pub struct VfInfoBroadcastBuffer {
     addr: [u8; VF_INFO_BROADCAST_LEN],
 }
 
+#[allow(dead_code)]
 impl VfInfoBroadcast {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = VfInfoBroadcastBuffer::ref_from_prefix(payload)
@@ -52,6 +53,7 @@ impl VfInfoBroadcast {
     }
 }
 
+#[allow(dead_code)]
 impl From<&VfInfoBroadcast> for VfInfoBroadcastBuffer {
     fn from(broadcast: &VfInfoBroadcast) -> Self {
         Self {
@@ -61,12 +63,8 @@ impl From<&VfInfoBroadcast> for VfInfoBroadcastBuffer {
 }
 
 impl Emitable for VfInfoBroadcast {
-    fn buffer_len(&self) -> usize {
-        VF_INFO_BROADCAST_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = VfInfoBroadcastBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_bytes(out, VfInfoBroadcastBuffer::from(self).as_bytes());
+        Ok(())
     }
 }

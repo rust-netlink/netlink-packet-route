@@ -103,3 +103,6 @@ required-features = ["rule"]
 [dev-dependencies]
 netlink-sys = { version = "0.9.0" }
 pretty_assertions = "1.4.1"
+
+[patch.crates-io]
+netlink-packet-core = { git = "https://github.com/cathay4t/netlink-packet-core.git", branch = "main" }

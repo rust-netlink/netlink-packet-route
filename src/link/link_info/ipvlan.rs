@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, parse_u16, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, append_u16, parse_u16, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_IPVLAN_MODE: u16 = 1;
@@ -17,22 +17,22 @@ pub enum InfoIpVlan {
 }
 
 impl Nla for InfoIpVlan {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mode(_) | Self::Flags(_) => 2,
-            Self::Other(nla) => nla.value_len(),
+            Self::Mode(value) => append_u16(out, (*value).into()),
+            Self::Flags(f) => append_u16(out, f.bits()),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
-            Self::Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoIpVlan {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Mode(_) => IFLA_IPVLAN_MODE,
             Self::Flags(_) => IFLA_IPVLAN_FLAGS,
@@ -70,22 +70,22 @@ pub enum InfoIpVtap {
 }
 
 impl Nla for InfoIpVtap {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mode(_) | Self::Flags(_) => 2,
-            Self::Other(nla) => nla.value_len(),
+            Self::Mode(value) => append_u16(out, (*value).into()),
+            Self::Flags(f) => append_u16(out, f.bits()),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
-            Self::Flags(f) => emit_u16(buffer, f.bits()).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoIpVtap {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Mode(_) => IFLA_IPVLAN_MODE,
             Self::Flags(_) => IFLA_IPVLAN_FLAGS,

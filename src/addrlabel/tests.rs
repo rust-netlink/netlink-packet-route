@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::IpAddr;
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     addrlabel::{AddrLabelAttribute, AddrLabelHeader, AddrLabelMessage},
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // iproute2 request, wireshark capture(netlink message header removed) of
@@ -41,7 +40,7 @@ fn test_addrlabel_add_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -78,7 +77,7 @@ fn test_addrlabel_add_request_with_dev() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -115,7 +114,7 @@ fn test_addrlabel_delete_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -144,7 +143,7 @@ fn test_addrlabel_dump_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -182,7 +181,7 @@ fn test_addrlabel_dump_reply_loopback() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -219,7 +218,7 @@ fn test_addrlabel_dump_reply_ipv4_mapped() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -256,7 +255,7 @@ fn test_addrlabel_dump_reply_with_dev() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -293,7 +292,7 @@ fn test_addrlabel_dump_reply_added() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -328,7 +327,7 @@ fn test_addrlabel_dump_reply_default() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

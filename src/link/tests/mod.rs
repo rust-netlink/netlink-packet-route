@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+use crate::{TestEmit, TestNla};
 
 #[cfg(feature = "link-af-spec")]
 mod afspec;

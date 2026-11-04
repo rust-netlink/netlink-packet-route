@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
-    Parseable, NLA_F_NESTED,
+    append_bytes, emit_nlas_into, DecodeError, DefaultNla, Emitable,
+    EncodeError, ErrorContext, Nla, NlasIterator, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -90,16 +90,19 @@ impl From<&MplsLinkStats> for MplsLinkStatsBuffer {
 }
 
 impl Nla for MplsLinkStats {
-    fn value_len(&self) -> usize {
-        size_of::<MplsLinkStatsBuffer>()
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = MplsLinkStatsBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <MplsLinkStats>::kind(self)
+    }
+}
+
+impl MplsLinkStats {
+    pub(crate) fn kind(&self) -> u16 {
         MPLS_STATS_LINK
     }
 }
@@ -113,21 +116,22 @@ pub enum AfSpecStat {
 }
 
 impl Nla for AfSpecStat {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mpls(v) => v.buffer_len(),
-            Self::Other(v) => v.value_len(),
+            Self::Mpls(v) => v.emit_nla_into(out)?,
+            Self::Other(v) => append_bytes(out, v.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mpls(v) => v.emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <AfSpecStat>::kind(self)
+    }
+}
+
+#[allow(dead_code)]
+impl AfSpecStat {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Mpls(_) => AF_MPLS,
             Self::Other(v) => v.kind(),
@@ -141,12 +145,8 @@ impl Nla for AfSpecStat {
 pub struct AfSpecStats(pub Vec<AfSpecStat>);
 
 impl Emitable for AfSpecStats {
-    fn buffer_len(&self) -> usize {
-        self.0.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        self.0.as_slice().emit(buffer);
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        emit_nlas_into(&self.0, out)
     }
 }
 

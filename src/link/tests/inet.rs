@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
-
 use std::mem::size_of;
 
-use netlink_packet_core::{Nla, NLA_F_NESTED};
+use netlink_packet_core::NLA_F_NESTED;
 
-use crate::link::{AfSpecInet, InetDevConf, InetDevConfBuffer};
+use crate::{
+    link::{AfSpecInet, InetDevConf, InetDevConfBuffer},
+    TestEmit, TestNla,
+};
 
 const IFLA_INET_CONF: u16 = 1;
 

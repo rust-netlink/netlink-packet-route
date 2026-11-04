@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, NLA_F_NESTED,
+    append_bytes, emit_nlas_into, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
 };
 
 use super::{
@@ -29,23 +29,24 @@ pub enum LinkXstatGroup {
 }
 
 impl Nla for LinkXstatGroup {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Bridge(v) => v.as_slice().buffer_len(),
-            Self::Bond(v) => v.as_slice().buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Bridge(v) => v.as_slice().emit(buffer),
-            Self::Bond(v) => v.as_slice().emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::Bridge(v) => emit_nlas_into(v, out),
+            Self::Bond(v) => emit_nlas_into(v, out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <LinkXstatGroup>::kind(self)
+    }
+}
+
+impl LinkXstatGroup {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Bridge(_) => LINK_XSTATS_TYPE_BRIDGE,
             Self::Bond(_) => LINK_XSTATS_TYPE_BOND,

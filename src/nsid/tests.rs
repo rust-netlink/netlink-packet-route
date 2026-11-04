@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     nsid::{NsidAttribute, NsidHeader, NsidMessage},
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup
@@ -29,7 +28,7 @@ fn test_ip_netns_query_reply() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -56,7 +55,7 @@ fn test_ip_netns_query() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -80,7 +79,7 @@ fn test_ip_netns_query_target_ns_id() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
