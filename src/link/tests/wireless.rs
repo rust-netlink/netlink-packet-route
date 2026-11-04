@@ -1,8 +1,22 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{Emitable, Parseable};
 
 use crate::link::WirelessEvent;
+
+#[test]
+fn test_wireless_associate_event_rejects_oversized_payload() {
+    let header_len = if cfg!(target_pointer_width = "32") {
+        4
+    } else {
+        8
+    };
+    let max_value_len = u16::MAX as usize - header_len;
+    let event = WirelessEvent::AssociateRequest(vec![0; max_value_len + 1]);
+    let mut out = Vec::new();
+    let error = event.emit(&mut out).unwrap_err();
+    assert!(error.is_too_large());
+    assert!(out.is_empty());
+}
 
 #[test]
 fn test_wireless_event_rejects_short_payload() {
@@ -76,9 +90,9 @@ fn test_wireless_associate_request_event() {
 
     assert_eq!(expected, WirelessEvent::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -144,9 +158,9 @@ fn test_wireless_associate_response_event() {
 
     assert_eq!(expected, WirelessEvent::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }

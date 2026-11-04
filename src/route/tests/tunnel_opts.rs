@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv4Addr, str::FromStr};
 
 use netlink_packet_core::{Emitable, Parseable};
@@ -54,9 +53,9 @@ fn test_ip_tunnel_vxlan_opts_request() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -101,9 +100,9 @@ fn test_ip_tunnel_erspan_opts_request() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -168,9 +167,9 @@ fn test_ip_tunnel_geneve_opts_request() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -234,9 +233,9 @@ fn test_ip_tunnel_vxlan_opts_dump() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }
@@ -299,9 +298,9 @@ fn test_ip_tunnel_erspan_opts_dump() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }

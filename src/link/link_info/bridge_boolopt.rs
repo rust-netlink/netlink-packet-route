@@ -3,7 +3,7 @@
 const BUFF_LEN: usize = 8;
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, Emitable, Parseable,
+    append_u32, parse_u32, DecodeError, Emitable, EncodeError, Parseable,
 };
 
 // Kernel struct `br_boolopt_multi`
@@ -38,13 +38,10 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for BridgeBooleanOptions {
 }
 
 impl Emitable for BridgeBooleanOptions {
-    fn buffer_len(&self) -> usize {
-        BUFF_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        emit_u32(&mut buffer[..4], self.value.bits()).unwrap();
-        emit_u32(&mut buffer[4..], self.mask.bits()).unwrap();
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32(out, self.value.bits());
+        append_u32(out, self.mask.bits());
+        Ok(())
     }
 }
 

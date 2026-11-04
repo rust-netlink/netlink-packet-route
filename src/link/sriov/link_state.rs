@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_LINK_STATE_LEN: usize = 8;
@@ -58,13 +58,9 @@ impl From<&VfInfoLinkState> for VfInfoLinkStateBuffer {
 }
 
 impl Emitable for VfInfoLinkState {
-    fn buffer_len(&self) -> usize {
-        VF_INFO_LINK_STATE_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = VfInfoLinkStateBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_bytes(out, VfInfoLinkStateBuffer::from(self).as_bytes());
+        Ok(())
     }
 }
 

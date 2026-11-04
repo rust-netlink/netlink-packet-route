@@ -4,8 +4,8 @@
 // this module.
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const DPLL_A_PIN_ID: u16 = 1;
@@ -19,18 +19,12 @@ pub enum DpllPin {
 }
 
 impl Nla for DpllPin {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::PinId(_) => 4,
-            Self::Other(nla) => nla.value_len(),
+            Self::PinId(v) => append_u32(out, *v),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::PinId(v) => emit_u32(buffer, *v).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

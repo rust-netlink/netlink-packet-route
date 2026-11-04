@@ -3,8 +3,9 @@
 use std::net::IpAddr;
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, parse_ip, parse_u16_be, parse_u32, DecodeError,
-    DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16_be, append_u32, parse_ip, parse_u16_be, parse_u32,
+    DecodeError, DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 const IFLA_AMT_MODE: u16 = 1;
@@ -85,37 +86,24 @@ pub enum InfoAmt {
 }
 
 impl Nla for InfoAmt {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mode(_) | Self::MaxTunnels(_) | Self::Link(_) => 4,
-            Self::RelayPort(_) | Self::GatewayPort(_) => 2,
-            Self::LocalIp(ip) | Self::RemoteIp(ip) | Self::DiscoveryIp(ip) => {
-                match ip {
-                    IpAddr::V4(_) => 4,
-                    IpAddr::V6(_) => 16,
-                }
-            }
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
+            Self::Mode(value) => append_u32(out, (*value).into()),
             Self::Link(value) | Self::MaxTunnels(value) => {
-                emit_u32(buffer, *value).unwrap()
+                append_u32(out, *value)
             }
             Self::RelayPort(value) | Self::GatewayPort(value) => {
-                emit_u16_be(buffer, *value).unwrap()
+                append_u16_be(out, *value)
             }
             Self::LocalIp(ip) | Self::RemoteIp(ip) | Self::DiscoveryIp(ip) => {
                 match ip {
-                    IpAddr::V4(ipv4) => buffer.copy_from_slice(&ipv4.octets()),
-                    IpAddr::V6(ipv6) => buffer.copy_from_slice(&ipv6.octets()),
+                    IpAddr::V4(ipv4) => append_bytes(out, &ipv4.octets()),
+                    IpAddr::V6(ipv6) => append_bytes(out, &ipv6.octets()),
                 }
             }
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

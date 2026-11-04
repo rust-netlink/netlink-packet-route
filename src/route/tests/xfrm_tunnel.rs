@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv4Addr, str::FromStr};
 
 use netlink_packet_core::{Emitable, Parseable};
@@ -56,9 +55,9 @@ fn test_xfrm_tunnel() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // The capture above comes from a kernel dump which does not set
     // `NLA_F_NESTED` on `RTA_ENCAP`, while `iproute2` and this crate do

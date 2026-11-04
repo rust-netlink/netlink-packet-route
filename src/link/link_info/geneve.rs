@@ -3,9 +3,9 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, emit_u32_be, parse_ip, parse_u16_be, parse_u32,
-    parse_u32_be, parse_u8, DecodeError, DefaultNla, ErrorContext, Nla,
-    NlaBuffer, Parseable,
+    append_bytes, append_u16_be, append_u32, append_u32_be, parse_ip,
+    parse_u16_be, parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_GENEVE_ID: u16 = 1;
@@ -111,43 +111,25 @@ pub enum InfoGeneve {
 }
 
 impl Nla for InfoGeneve {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Id(_) | Self::Remote(_) | Self::Local(_) | Self::Label(_) => {
-                4
-            }
-            Self::Remote6(_) | Self::Local6(_) => 16,
-            Self::Ttl(_)
-            | Self::Tos(_)
-            | Self::UdpCsum(_)
-            | Self::UdpZeroCsum6Tx(_)
-            | Self::UdpZeroCsum6Rx(_)
-            | Self::TtlInherit(_)
-            | Self::Df(_) => 1,
-            Self::Port(_) => 2,
-            Self::CollectMetadata | Self::InnerProtoInherit => 0,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Id(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Remote(value) => buffer.copy_from_slice(&value.octets()),
-            Self::Remote6(value) => buffer.copy_from_slice(&value.octets()),
-            Self::Local(value) => buffer.copy_from_slice(&value.octets()),
-            Self::Local6(value) => buffer.copy_from_slice(&value.octets()),
-            Self::Ttl(value) | Self::Tos(value) => buffer[0] = *value,
-            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
+            Self::Id(value) => append_u32(out, *value),
+            Self::Remote(value) => append_bytes(out, &value.octets()),
+            Self::Remote6(value) => append_bytes(out, &value.octets()),
+            Self::Local(value) => append_bytes(out, &value.octets()),
+            Self::Local6(value) => append_bytes(out, &value.octets()),
+            Self::Ttl(value) | Self::Tos(value) => out.push(*value),
+            Self::Port(value) => append_u16_be(out, *value),
             Self::CollectMetadata | Self::InnerProtoInherit => (),
             Self::UdpCsum(value)
             | Self::UdpZeroCsum6Tx(value)
             | Self::UdpZeroCsum6Rx(value)
-            | Self::TtlInherit(value) => buffer[0] = *value as u8,
-            Self::Label(value) => emit_u32_be(buffer, *value).unwrap(),
-            Self::Df(value) => buffer[0] = (*value).into(),
-            Self::Other(nla) => nla.emit_value(buffer),
+            | Self::TtlInherit(value) => out.push(*value as u8),
+            Self::Label(value) => append_u32_be(out, *value),
+            Self::Df(value) => out.push((*value).into()),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

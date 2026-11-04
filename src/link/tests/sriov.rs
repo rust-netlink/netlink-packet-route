@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{
-    Emitable, NlaBuffer, Parseable, ParseableParametrized,
+    Emitable, Nla, NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use crate::{
@@ -182,9 +181,9 @@ fn test_parsing_link_sriov() {
         .unwrap(),
     );
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -241,8 +240,8 @@ fn test_create_vf_node_guid() {
 
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf.len(), raw.len());
     assert_eq!(&buf[28..32], &raw[28..32]);
     assert_eq!(&buf[32..36], &[0, 0, 0, 0]);

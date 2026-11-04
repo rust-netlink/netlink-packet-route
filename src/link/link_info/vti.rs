@@ -3,8 +3,9 @@
 use std::net::IpAddr;
 
 use netlink_packet_core::{
-    emit_u32, emit_u32_be, parse_u32, parse_u32_be, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u32, append_u32_be, parse_u32, parse_u32_be,
+    DecodeError, DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer,
+    Parseable,
 };
 
 use crate::ip::parse_ip_addr;
@@ -29,33 +30,17 @@ pub enum InfoVti {
 }
 
 impl Nla for InfoVti {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Local(value) | Self::Remote(value) => match value {
-                IpAddr::V4(_) => 4,
-                IpAddr::V6(_) => 16,
+                IpAddr::V4(ipv4) => append_bytes(out, &ipv4.octets()),
+                IpAddr::V6(ipv6) => append_bytes(out, &ipv6.octets()),
             },
-            Self::Link(_) | Self::IKey(_) | Self::OKey(_) | Self::FwMark(_) => {
-                4
-            }
-            Self::Other(nla) => nla.value_len(),
+            Self::Link(value) | Self::FwMark(value) => append_u32(out, *value),
+            Self::IKey(value) | Self::OKey(value) => append_u32_be(out, *value),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Local(value) | Self::Remote(value) => match value {
-                IpAddr::V4(ipv4) => buffer.copy_from_slice(&ipv4.octets()),
-                IpAddr::V6(ipv6) => buffer.copy_from_slice(&ipv6.octets()),
-            },
-            Self::Link(value) | Self::FwMark(value) => {
-                emit_u32(buffer, *value).unwrap()
-            }
-            Self::IKey(value) | Self::OKey(value) => {
-                emit_u32_be(buffer, *value).unwrap()
-            }
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

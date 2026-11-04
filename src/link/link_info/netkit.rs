@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, emit_u32, parse_u16, parse_u32, parse_u8, DecodeError,
-    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u32, parse_u16, parse_u32, parse_u8,
+    DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext, Nla,
+    NlaBuffer, Parseable,
 };
 
 use super::super::LinkMessage;
@@ -199,37 +200,27 @@ pub enum InfoNetkit {
 }
 
 impl Nla for InfoNetkit {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
-            Self::Peer(ref message) => message.buffer_len(),
-            Self::Primary(_) => 1,
-            Self::Policy(_) | Self::PeerPolicy(_) | Self::Mode(_) => 4,
-            Self::Scrub(_) | Self::PeerScrub(_) => 4,
-            Self::Headroom(_) | Self::Tailroom(_) => 4,
-            Self::Other(ref attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match *self {
-            Self::Peer(ref message) => message.emit(buffer),
+            Self::Peer(ref message) => message.emit(out)?,
             Self::Primary(value) => {
-                buffer[0] = value as u8;
+                out.push(value as u8);
             }
             Self::Policy(value) | Self::PeerPolicy(value) => {
-                emit_u32(buffer, value.into()).unwrap();
+                append_u32(out, value.into());
             }
             Self::Mode(value) => {
-                emit_u32(buffer, value.into()).unwrap();
+                append_u32(out, value.into());
             }
             Self::Scrub(value) | Self::PeerScrub(value) => {
-                emit_u32(buffer, value.into()).unwrap();
+                append_u32(out, value.into());
             }
             Self::Headroom(value) | Self::Tailroom(value) => {
-                emit_u16(buffer, value).unwrap();
+                append_u16(out, value);
             }
-            Self::Other(ref attr) => attr.emit_value(buffer),
+            Self::Other(ref attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

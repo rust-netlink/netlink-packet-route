@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, NLA_F_NESTED,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use super::{
@@ -29,19 +29,14 @@ pub enum LinkXstatGroup {
 }
 
 impl Nla for LinkXstatGroup {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Bridge(v) => v.as_slice().buffer_len(),
-            Self::Bond(v) => v.as_slice().buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Bridge(v) => v.as_slice().emit(buffer),
-            Self::Bond(v) => v.as_slice().emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::Bridge(v) => (v).emit(out),
+            Self::Bond(v) => (v).emit(out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 
@@ -63,7 +58,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
         let mut groups = Vec::new();
         for nla in NlasIterator::new(buf.into_inner()) {
             let nla = nla?;
-            let kind = nla.kind() & !NLA_F_NESTED;
+            let kind = nla.kind();
             let val = nla.value();
             groups.push(match kind {
                 LINK_XSTATS_TYPE_BRIDGE => LinkXstatGroup::Bridge(

@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
-    Parseable, NLA_F_NESTED,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlasIterator, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -90,13 +90,10 @@ impl From<&MplsLinkStats> for MplsLinkStatsBuffer {
 }
 
 impl Nla for MplsLinkStats {
-    fn value_len(&self) -> usize {
-        size_of::<MplsLinkStatsBuffer>()
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = MplsLinkStatsBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -113,18 +110,12 @@ pub enum AfSpecStat {
 }
 
 impl Nla for AfSpecStat {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mpls(v) => v.buffer_len(),
-            Self::Other(v) => v.value_len(),
+            Self::Mpls(v) => v.emit(out)?,
+            Self::Other(v) => append_bytes(out, v.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mpls(v) => v.emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -141,12 +132,8 @@ impl Nla for AfSpecStat {
 pub struct AfSpecStats(pub Vec<AfSpecStat>);
 
 impl Emitable for AfSpecStats {
-    fn buffer_len(&self) -> usize {
-        self.0.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        self.0.as_slice().emit(buffer);
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        self.0.emit(out)
     }
 }
 
@@ -155,7 +142,7 @@ impl AfSpecStats {
         let mut entries = Vec::new();
         for nla in NlasIterator::new(payload) {
             let nla = nla.context("invalid NLA in AF_SPEC stats")?;
-            let family = nla.kind() & !NLA_F_NESTED;
+            let family = nla.kind();
             if family == AF_MPLS {
                 entries.push(AfSpecStat::Mpls(parse_mpls_stats(nla.value())?));
             } else {
@@ -169,7 +156,7 @@ impl AfSpecStats {
 fn parse_mpls_stats(payload: &[u8]) -> Result<MplsLinkStats, DecodeError> {
     for nla in NlasIterator::new(payload) {
         let nla = nla.context("invalid NLA in MPLS stats")?;
-        let kind = nla.kind() & !NLA_F_NESTED;
+        let kind = nla.kind();
         if kind == MPLS_STATS_LINK {
             return MplsLinkStats::parse(nla.value())
                 .context("invalid MPLS link stats");

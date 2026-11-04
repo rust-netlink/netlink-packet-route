@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_u32, parse_u32, parse_u8, DecodeError, DefaultNla,
+    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFLA_MCTP_NET: u16 = 1;
@@ -66,20 +66,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 }
 
 impl Nla for AfSpecMctp {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
-            Self::Net(_) => 4,
-            Self::PhysBinding(_) => 1,
-            Self::Other(ref nla) => nla.value_len(),
+            Self::Net(ref value) => append_u32(out, *value),
+            Self::PhysBinding(ref b) => out.push(u8::from(b)),
+            Self::Other(ref nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match *self {
-            Self::Net(ref value) => emit_u32(buffer, *value).unwrap(),
-            Self::PhysBinding(ref b) => buffer[0] = b.into(),
-            Self::Other(ref nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

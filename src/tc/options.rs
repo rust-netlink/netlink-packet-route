@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable, ParseableParametrized,
+    append_bytes, DecodeError, DefaultNla, EncodeError, ErrorContext, Nla,
+    NlaBuffer, NlasIterator, Parseable, ParseableParametrized,
 };
 
 use super::{
@@ -29,27 +29,18 @@ pub enum TcOption {
 }
 
 impl Nla for TcOption {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::FqCodel(u) => u.value_len(),
-            Self::Ingress(u) => u.value_len(),
-            Self::U32(u) => u.value_len(),
-            Self::Flower(u) => u.value_len(),
-            Self::MatchAll(m) => m.value_len(),
-            Self::Bpf(u) => u.value_len(),
-            Self::Other(o) => o.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::FqCodel(u) => u.emit_value(buffer),
-            Self::Ingress(u) => u.emit_value(buffer),
-            Self::Flower(u) => u.emit_value(buffer),
-            Self::U32(u) => u.emit_value(buffer),
-            Self::MatchAll(m) => m.emit_value(buffer),
-            Self::Bpf(u) => u.emit_value(buffer),
-            Self::Other(o) => o.emit_value(buffer),
+            Self::FqCodel(u) => u.emit_value(out),
+            Self::Ingress(u) => u.emit_value(out),
+            Self::Flower(u) => u.emit_value(out),
+            Self::U32(u) => u.emit_value(out),
+            Self::MatchAll(m) => m.emit_value(out),
+            Self::Bpf(u) => u.emit_value(out),
+            Self::Other(o) => {
+                append_bytes(out, o.value());
+                Ok(())
+            }
         }
     }
 

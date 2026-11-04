@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-
-// This file only contains testing parsing RouteNetlinkMessage, not focusing on
-// detailed sub-component parsing. Each component has its own test module.
-
+// This file only contains testing parsing RouteNetlinkMessage, not
+// focusing on detailed sub-component parsing. Each component has its own
+// test module.
 use netlink_packet_core::{
-    Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload,
+    Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload, Nla,
 };
 
 use crate::{
@@ -44,13 +43,24 @@ fn test_get_link() {
     );
 
     assert_eq!(NetlinkMessage::deserialize(&raw).unwrap(), expected);
-    let mut buffer = vec![0; expected.buffer_len()];
-    expected.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    expected.emit(&mut buffer).unwrap();
     assert_eq!(buffer.as_slice(), raw);
+}
 
-    // Use a non zeroed buffer as well to check the emit function zeros all the
-    // padding bytes properly.
-    let mut buffer = vec![255; expected.buffer_len()];
-    expected.emit(&mut buffer);
-    assert_eq!(buffer.as_slice(), raw);
+// Emission appends to the buffer and zeroes the padding after the attribute
+// value instead of leaving whatever was previously stored there.
+#[test]
+fn test_emit_appends_and_zeroes_nla_padding() {
+    let attribute = LinkAttribute::IfName("lo".to_string());
+    let mut buffer = vec![0xaa, 0xbb];
+    attribute.emit(&mut buffer).unwrap();
+
+    assert_eq!(&buffer[..2], &[0xaa, 0xbb]);
+    // IFLA_IFNAME: len=7, type=3, value="lo\0", followed by one zero padding
+    // byte.
+    assert_eq!(
+        &buffer[2..],
+        &[0x07, 0x00, 0x03, 0x00, b'l', b'o', 0x00, 0x00]
+    );
 }

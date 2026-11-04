@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Emitable, Nla, NlaBuffer, Parseable};
 
 use crate::{
     tc::{
@@ -254,9 +253,9 @@ fn test_get_filter_flower_mac_ipv4() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -352,9 +351,9 @@ fn test_get_filter_flower_ipv6_ports() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -413,9 +412,9 @@ fn test_get_filter_flower_ipv4_tcp_portrange() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -470,9 +469,9 @@ fn test_get_filter_flower_ipv4_icmp() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -527,9 +526,9 @@ fn test_get_filter_flower_ipv6_icmp() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -598,9 +597,9 @@ fn test_get_filter_flower_ct() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -682,9 +681,9 @@ fn test_get_filter_flower_arp() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -741,9 +740,9 @@ fn test_get_filter_flower_vlan() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -796,9 +795,9 @@ fn test_get_filter_flower_mpls_uc_single() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -869,9 +868,9 @@ fn test_get_filter_flower_mpls_uc_lse() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -964,9 +963,9 @@ fn test_get_filter_flower_ipv4_enc() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -1063,9 +1062,9 @@ fn test_get_filter_flower_ipv6_enc() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -1089,7 +1088,7 @@ fn test_parse_flower_indev() {
     let expected = TcFilterFlowerOption::InDev("veth-test-peer".to_string());
     assert_eq!(TcFilterFlowerOption::parse(&buf).unwrap(), expected);
 
-    let mut out = vec![0; expected.buffer_len()];
-    expected.emit(&mut out);
+    let mut out = Vec::new();
+    expected.emit(&mut out).unwrap();
     assert_eq!(out, raw);
 }

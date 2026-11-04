@@ -3,9 +3,9 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    emit_u32, parse_string, parse_u32, DecodeError, DefaultNla, Emitable,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
-    ParseableParametrized, NLA_F_NESTED,
+    append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable, ParseableParametrized, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -43,12 +43,8 @@ impl Default for TcAction {
 }
 
 impl Nla for TcAction {
-    fn value_len(&self) -> usize {
-        self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        self.attributes.as_slice().emit(buffer);
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        self.attributes.emit(out)
     }
 
     fn kind(&self) -> u16 {
@@ -176,31 +172,23 @@ pub enum TcActionAttribute {
 }
 
 impl Nla for TcActionAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Cookie(bytes) => bytes.len(),
-            Self::Kind(k) => k.len() + 1,
-            Self::Options(opt) => opt.as_slice().buffer_len(),
-            Self::Index(_) | Self::InHwCount(_) => 4,
-            Self::Stats(s) => s.as_slice().buffer_len(),
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Cookie(bytes) => buffer.copy_from_slice(bytes.as_slice()),
+            Self::Cookie(bytes) => append_bytes(out, bytes.as_slice()),
             Self::Kind(string) => {
-                buffer[..string.len()].copy_from_slice(string.as_bytes());
-                buffer[string.len()] = 0;
+                append_bytes(out, string.as_bytes());
+                out.push(0);
             }
-            Self::Options(opt) => opt.as_slice().emit(buffer),
+            Self::Options(opt) => (opt).emit(out)?,
             Self::Index(value) | Self::InHwCount(value) => {
-                emit_u32(buffer, *value).unwrap();
+                append_u32(out, *value);
             }
-            Self::Stats(s) => s.as_slice().emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Stats(s) => (s).emit(out)?,
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
+
     fn kind(&self) -> u16 {
         match self {
             Self::Kind(_) => TCA_ACT_KIND,
@@ -295,22 +283,14 @@ pub enum TcActionOption {
 }
 
 impl Nla for TcActionOption {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mirror(nla) => nla.value_len(),
-            Self::Nat(nla) => nla.value_len(),
-            Self::TunnelKey(nla) => nla.value_len(),
-            Self::Other(nla) => nla.value_len(),
+            Self::Mirror(nla) => nla.emit_value(out)?,
+            Self::Nat(nla) => nla.emit_value(out)?,
+            Self::TunnelKey(nla) => nla.emit_value(out)?,
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mirror(nla) => nla.emit_value(buffer),
-            Self::Nat(nla) => nla.emit_value(buffer),
-            Self::TunnelKey(nla) => nla.emit_value(buffer),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -474,13 +454,10 @@ impl From<&TcActionGeneric> for TcActionGenericBuffer {
 }
 
 impl Emitable for TcActionGeneric {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcActionGenericBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcActionGenericBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -637,12 +614,9 @@ impl From<&Tcf> for TcfBuffer {
 }
 
 impl Emitable for Tcf {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcfBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcfBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

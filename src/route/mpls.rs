@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_u8, DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, append_u32_be, parse_u8, DecodeError, DefaultNla, Emitable,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const MPLS_IPTUNNEL_DST: u16 = 1;
@@ -19,12 +19,17 @@ pub enum RouteMplsIpTunnel {
 }
 
 impl Nla for RouteMplsIpTunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Destination(v) => VecMplsLabel(v.to_vec()).buffer_len(),
-            Self::Ttl(_) => 1,
-            Self::Other(attr) => attr.value_len(),
+            Self::Destination(v) => {
+                for label in v {
+                    label.emit(out)?;
+                }
+            }
+            Self::Ttl(ttl) => out.push(*ttl),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -32,14 +37,6 @@ impl Nla for RouteMplsIpTunnel {
             Self::Destination(_) => MPLS_IPTUNNEL_DST,
             Self::Ttl(_) => MPLS_IPTUNNEL_TTL,
             Self::Other(attr) => attr.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Destination(v) => VecMplsLabel(v.to_vec()).emit(buffer),
-            Self::Ttl(ttl) => buffer[0] = *ttl,
-            Self::Other(attr) => attr.emit_value(buffer),
         }
     }
 }
@@ -108,12 +105,9 @@ impl MplsLabel {
 }
 
 impl Emitable for MplsLabel {
-    fn buffer_len(&self) -> usize {
-        4
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(u32::from(*self).to_be_bytes().as_slice())
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32_be(out, u32::from(*self));
+        Ok(())
     }
 }
 
@@ -156,14 +150,11 @@ impl VecMplsLabel {
 }
 
 impl Emitable for VecMplsLabel {
-    fn buffer_len(&self) -> usize {
-        self.0.len() * 4
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        for (i, label) in self.0.iter().enumerate() {
-            label.emit(&mut buffer[i * 4..i * 4 + 4]);
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        for label in &self.0 {
+            label.emit(out)?;
         }
+        Ok(())
     }
 }
 

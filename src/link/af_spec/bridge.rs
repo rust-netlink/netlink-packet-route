@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, emit_u32, parse_u16, parse_u32, DecodeError, DefaultNla,
-    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_u16, append_u32, emit_u16, parse_u16, parse_u32,
+    DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext, Nla,
+    NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFLA_BRIDGE_FLAGS: u16 = 0;
@@ -24,26 +25,17 @@ pub enum AfSpecBridge {
 }
 
 impl Nla for AfSpecBridge {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Flags(_) => BridgeFlag::LENGTH,
-            Self::Mode(_) => BridgeMode::LENGTH,
-            Self::VlanInfo(_) => BridgeVlanInfo::LENGTH,
-            Self::VlanTunnelInfo(s) => s.as_slice().buffer_len(),
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Flags(value) => emit_u16(buffer, u16::from(*value)).unwrap(),
-            Self::Mode(value) => emit_u16(buffer, u16::from(*value)).unwrap(),
+            Self::Flags(value) => append_u16(out, u16::from(*value)),
+            Self::Mode(value) => append_u16(out, u16::from(*value)),
             Self::VlanInfo(info) => {
-                buffer[..4].copy_from_slice(<[u8; 4]>::from(info).as_slice())
+                append_bytes(out, <[u8; 4]>::from(info).as_slice())
             }
-            Self::VlanTunnelInfo(s) => s.as_slice().emit(buffer),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::VlanTunnelInfo(s) => (s).emit(out)?,
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -328,22 +320,14 @@ pub enum BridgeVlanTunnelInfo {
 }
 
 impl Nla for BridgeVlanTunnelInfo {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Id(_) => 4,
-            Self::Vid(_) => 2,
-            Self::Flags(_) => BridgeVlanInfoFlags::LENGTH,
-            Self::Other(nla) => nla.value_len(),
+            Self::Id(v) => append_u32(out, *v),
+            Self::Vid(v) => append_u16(out, *v),
+            Self::Flags(value) => append_u16(out, value.bits()),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Id(v) => emit_u32(buffer, *v).unwrap(),
-            Self::Vid(v) => emit_u16(buffer, *v).unwrap(),
-            Self::Flags(value) => emit_u16(buffer, value.bits()).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

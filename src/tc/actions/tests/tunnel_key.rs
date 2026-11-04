@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Nla, NlaBuffer, Parseable};
 
 use crate::tc::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionOption,
@@ -100,9 +99,9 @@ fn get_tunnel_key_vxlan_action_ipv4() {
 
     assert_eq!(expected, TcAction::parse(&NlaBuffer::new(&raw)).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -199,9 +198,9 @@ fn test_action_tunnel_key_vxlan_ipv6() {
 
     assert_eq!(expected, TcAction::parse(&NlaBuffer::new(&raw)).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }

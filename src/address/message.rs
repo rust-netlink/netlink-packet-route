@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
+use netlink_packet_core::{
+    append_bytes, DecodeError, Emitable, EncodeError, ErrorContext, Parseable,
+};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::{
@@ -78,26 +80,18 @@ impl From<&AddressHeader> for AddressMessageBuffer {
 }
 
 impl Emitable for AddressHeader {
-    fn buffer_len(&self) -> usize {
-        ADDRESS_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = AddressMessageBuffer::from(self);
-        buffer[..ADDRESS_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
 impl Emitable for AddressMessage {
-    fn buffer_len(&self) -> usize {
-        self.header.buffer_len() + self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        self.header.emit(buffer);
-        self.attributes
-            .as_slice()
-            .emit(&mut buffer[self.header.buffer_len()..]);
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        self.header.emit(out)?;
+        self.attributes.emit(out)?;
+        Ok(())
     }
 }
 

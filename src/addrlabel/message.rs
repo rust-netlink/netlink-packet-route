@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
+use netlink_packet_core::{
+    DecodeError, Emitable, EncodeError, ErrorContext, Parseable,
+};
 
 use super::{
     attribute::VecAddrLabelAttribute, header::ADDRLABEL_HEADER_LEN,
@@ -27,14 +29,9 @@ impl Parseable<[u8]> for AddrLabelMessage {
 }
 
 impl Emitable for AddrLabelMessage {
-    fn buffer_len(&self) -> usize {
-        self.header.buffer_len() + self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        self.header.emit(buffer);
-        self.attributes
-            .as_slice()
-            .emit(&mut buffer[self.header.buffer_len()..]);
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        self.header.emit(out)?;
+        self.attributes.emit(out)?;
+        Ok(())
     }
 }

@@ -3,9 +3,9 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_i32, emit_u32, parse_i32, parse_string, parse_u32, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, append_i32, append_u32, parse_i32, parse_string, parse_u32,
+    parse_u8, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use crate::address::{AddressFlags, CacheInfo};
@@ -49,48 +49,28 @@ pub enum AddressAttribute {
 }
 
 impl Nla for AddressAttribute {
-    fn value_len(&self) -> usize {
-        match *self {
-            Self::Broadcast(_) => IPV4_ADDR_LEN,
-            Self::Anycast(_) | Self::Multicast(_) => IPV6_ADDR_LEN,
-            Self::Address(ref addr) | Self::Local(ref addr) => {
-                if addr.is_ipv6() {
-                    IPV6_ADDR_LEN
-                } else {
-                    IPV4_ADDR_LEN
-                }
-            }
-            Self::Label(ref string) => string.len() + 1,
-            Self::Flags(_)
-            | Self::RoutePriority(_)
-            | Self::TargetNetNsId(_) => 4,
-            Self::CacheInfo(ref attr) => attr.buffer_len(),
-            Self::Protocol(_) => 1,
-            Self::Other(ref attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Broadcast(ref addr) => buffer.copy_from_slice(&addr.octets()),
+            Self::Broadcast(ref addr) => append_bytes(out, &addr.octets()),
             Self::Anycast(ref addr) | Self::Multicast(ref addr) => {
-                buffer.copy_from_slice(&addr.octets())
+                append_bytes(out, &addr.octets())
             }
             Self::Address(ref addr) | Self::Local(ref addr) => match addr {
-                IpAddr::V4(addr4) => buffer.copy_from_slice(&addr4.octets()),
-                IpAddr::V6(addr6) => buffer.copy_from_slice(&addr6.octets()),
+                IpAddr::V4(addr4) => append_bytes(out, &addr4.octets()),
+                IpAddr::V6(addr6) => append_bytes(out, &addr6.octets()),
             },
             Self::Label(ref string) => {
-                buffer[..string.len()].copy_from_slice(string.as_bytes());
-                buffer[string.len()] = 0;
+                append_bytes(out, string.as_bytes());
+                out.push(0);
             }
-            Self::Flags(ref value) => emit_u32(buffer, value.bits()).unwrap(),
-            Self::CacheInfo(ref attr) => attr.emit(buffer),
-            Self::RoutePriority(v) => emit_u32(buffer, *v).unwrap(),
-            Self::TargetNetNsId(v) => emit_i32(buffer, *v).unwrap(),
-            Self::Protocol(v) => buffer[0] = u8::from(*v),
-            Self::Other(ref attr) => attr.emit_value(buffer),
+            Self::Flags(ref value) => append_u32(out, value.bits()),
+            Self::CacheInfo(ref attr) => attr.emit(out)?,
+            Self::RoutePriority(v) => append_u32(out, *v),
+            Self::TargetNetNsId(v) => append_i32(out, *v),
+            Self::Protocol(v) => out.push(u8::from(*v)),
+            Self::Other(ref attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

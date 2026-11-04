@@ -3,7 +3,7 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, Emitable, ErrorContext, ParseableParametrized,
+    DecodeError, Emitable, EncodeError, ErrorContext, ParseableParametrized,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -179,30 +179,26 @@ impl ParseableParametrized<[u8], (AddressFamily, RouteType, RouteLwEnCapType)>
 }
 
 impl Emitable for RouteNextHop {
-    fn buffer_len(&self) -> usize {
-        // len, flags, hops and interface id fields
-        size_of::<RouteNextHopBuffer>()
-            + self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = RouteNextHopBuffer::from(self);
-        buffer[..size_of::<RouteNextHopBuffer>()]
-            .copy_from_slice(raw.as_bytes());
-        self.attributes
-            .as_slice()
-            .emit(&mut buffer[size_of::<RouteNextHopBuffer>()..]);
-    }
-}
-
-impl From<&RouteNextHop> for RouteNextHopBuffer {
-    fn from(nh: &RouteNextHop) -> Self {
-        Self {
-            length: nh.buffer_len() as u16,
-            flags: nh.flags.bits(),
-            hops: nh.hops,
-            interface_index: nh.interface_index,
-        }
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        let start = out.len();
+        let header_end = start + size_of::<RouteNextHopBuffer>();
+        out.resize(header_end, 0);
+        self.attributes.emit(out)?;
+        let length = out.len() - start;
+        let length = u16::try_from(length).map_err(|_| {
+            EncodeError::too_large(format!(
+                "route next hop is too long: {length} > {} bytes",
+                u16::MAX
+            ))
+        })?;
+        let raw = RouteNextHopBuffer {
+            length,
+            flags: self.flags.bits(),
+            hops: self.hops,
+            interface_index: self.interface_index,
+        };
+        out[start..header_end].copy_from_slice(raw.as_bytes());
+        Ok(())
     }
 }
 

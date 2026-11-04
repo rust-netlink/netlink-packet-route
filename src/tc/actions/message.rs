@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_string, parse_u32, DecodeError, DefaultNla, Emitable, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable,
 };
 
 use crate::tc::{
@@ -62,17 +63,14 @@ pub struct TcActionMessageFlagsWithSelector {
 }
 
 impl Nla for TcActionMessageFlagsWithSelector {
-    fn value_len(&self) -> usize {
-        8
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32(out, self.flags.bits());
+        append_u32(out, self.selector.bits());
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
         TCA_ROOT_FLAGS
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        buffer[..4].copy_from_slice(&self.flags.bits().to_ne_bytes());
-        buffer[4..8].copy_from_slice(&self.selector.bits().to_ne_bytes());
     }
 }
 
@@ -188,15 +186,16 @@ impl<'a, T: AsRef<[u8]> + 'a + ?Sized> Parseable<NlaBuffer<&'a T>>
 }
 
 impl Nla for TcActionMessageAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Actions(actions) => actions.as_slice().buffer_len(),
-            Self::Flags(_) => 8,
-            Self::RootCount(_) => 4,
-            Self::RootTimeDelta(_) => 4,
-            Self::RootExtWarnMsg(msg) => msg.len(),
-            Self::Other(nla) => nla.value_len(),
+            Self::Actions(actions) => (actions).emit(out)?,
+            Self::Flags(flags) => flags.emit_value(out)?,
+            Self::RootCount(count) => append_u32(out, *count),
+            Self::RootTimeDelta(delta) => append_u32(out, *delta),
+            Self::RootExtWarnMsg(msg) => append_bytes(out, msg.as_bytes()),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -207,23 +206,6 @@ impl Nla for TcActionMessageAttribute {
             Self::RootTimeDelta(_) => TCA_ROOT_TIME_DELTA,
             Self::RootExtWarnMsg(_) => TCA_ROOT_EXT_WARN_MSG,
             Self::Other(nla) => nla.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Actions(actions) => actions.as_slice().emit(buffer),
-            Self::Flags(flags) => {
-                flags.emit_value(buffer);
-            }
-            Self::RootCount(count) => {
-                buffer.copy_from_slice(&count.to_ne_bytes());
-            }
-            Self::RootTimeDelta(delta) => {
-                buffer.copy_from_slice(&delta.to_ne_bytes());
-            }
-            Self::RootExtWarnMsg(msg) => buffer.copy_from_slice(msg.as_bytes()),
-            Self::Other(nla) => nla.emit_value(buffer),
         }
     }
 }
@@ -241,14 +223,9 @@ impl Parseable<[u8]> for TcActionMessage {
 }
 
 impl Emitable for TcActionMessage {
-    fn buffer_len(&self) -> usize {
-        self.header.buffer_len() + self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        self.header.emit(buffer);
-        self.attributes
-            .as_slice()
-            .emit(&mut buffer[self.header.buffer_len()..]);
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        self.header.emit(out)?;
+        self.attributes.emit(out)?;
+        Ok(())
     }
 }

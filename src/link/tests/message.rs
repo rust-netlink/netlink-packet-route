@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, NlasIterator, ParseableParametrized};
+use netlink_packet_core::{
+    DefaultNla, Emitable, Nla, NlasIterator, ParseableParametrized,
+    NLA_MAX_VALUE_LEN,
+};
 
 use crate::{
     link::{
@@ -56,7 +58,7 @@ fn link_message_packet_header_read() {
 
 #[test]
 fn link_message_packet_header_build() {
-    let mut buf = vec![0xff; 16];
+    let mut buf = Vec::new();
     let header = LinkHeader {
         interface_family: AddressFamily::Unspec,
         link_layer_type: LinkLayerType::Loopback,
@@ -67,7 +69,7 @@ fn link_message_packet_header_build() {
             | LinkFlags::Up,
         change_mask: LinkFlags::empty(),
     };
-    header.emit(&mut buf);
+    header.emit(&mut buf).unwrap();
     assert_eq!(&buf[..], &LINK_MSG[0..16]);
 }
 
@@ -187,11 +189,10 @@ fn link_message_emit() {
 
     let packet = LinkMessage { header, attributes };
 
-    let mut buf = [0; 96];
+    let mut buf = Vec::new();
+    packet.emit(&mut buf).unwrap();
 
-    assert_eq!(packet.buffer_len(), 96);
-    packet.emit(&mut buf[..]);
-
+    assert_eq!(buf.len(), 96);
     assert_eq!(buf, &LINK_MSG[..96]);
 }
 
@@ -208,4 +209,36 @@ fn link_type_mctp() {
     let header = LinkHeader::parse(&LINK_MSG_MCTP).unwrap();
     assert_eq!(header.interface_family, AddressFamily::Unspec);
     assert_eq!(header.link_layer_type, LinkLayerType::Mctp);
+}
+
+#[test]
+fn link_message_emit_rolls_back_on_attribute_failure() {
+    let message = LinkMessage {
+        header: LinkHeader::default(),
+        attributes: vec![
+            LinkAttribute::IfName("lo".into()),
+            LinkAttribute::Other(DefaultNla::new(
+                0x1234,
+                vec![0; NLA_MAX_VALUE_LEN + 1],
+            )),
+        ],
+    };
+
+    let mut out = vec![0xaa, 0xbb];
+    let error = message.emit(&mut out).unwrap_err();
+    assert!(error.is_too_large());
+    assert_eq!(out, vec![0xaa, 0xbb]);
+}
+
+#[test]
+fn link_attribute_emit_rolls_back_on_failure() {
+    let attribute = LinkAttribute::Other(DefaultNla::new(
+        0x1234,
+        vec![0; NLA_MAX_VALUE_LEN + 1],
+    ));
+
+    let mut out = vec![0xaa, 0xbb];
+    let error = attribute.emit(&mut out).unwrap_err();
+    assert!(error.is_too_large());
+    assert_eq!(out, vec![0xaa, 0xbb]);
 }

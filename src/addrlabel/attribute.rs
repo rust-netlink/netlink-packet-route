@@ -3,8 +3,8 @@
 use std::net::IpAddr;
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFAL_ADDRESS: u16 = 1;
@@ -24,26 +24,18 @@ pub enum AddrLabelAttribute {
 }
 
 impl Nla for AddrLabelAttribute {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Address(IpAddr::V4(_)) => IPV4_ADDR_LEN,
-            Self::Address(IpAddr::V6(_)) => IPV6_ADDR_LEN,
-            Self::Label(_) => 4,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Address(IpAddr::V4(addr)) => {
-                buffer.copy_from_slice(&addr.octets())
+                append_bytes(out, &addr.octets())
             }
             Self::Address(IpAddr::V6(addr)) => {
-                buffer.copy_from_slice(&addr.octets())
+                append_bytes(out, &addr.octets())
             }
-            Self::Label(label) => emit_u32(buffer, *label).unwrap(),
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Label(label) => append_u32(out, *label),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

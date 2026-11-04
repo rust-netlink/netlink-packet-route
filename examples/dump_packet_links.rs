@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
+    Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP,
+    NLM_F_REQUEST,
 };
 use netlink_packet_route::{link::LinkMessage, RouteNetlinkMessage};
 use netlink_sys::{protocols::NETLINK_ROUTE, Socket, SocketAddr};
@@ -19,15 +20,9 @@ fn main() {
     );
     packet.header.flags = NLM_F_DUMP | NLM_F_REQUEST;
     packet.header.sequence_number = 1;
-    packet.finalize();
 
-    let mut buf = vec![0; packet.header.length as usize];
-
-    // Before calling serialize, it is important to check that the buffer in
-    // which we're emitting is big enough for the packet, other
-    // `serialize()` panics.
-    assert!(buf.len() == packet.buffer_len());
-    packet.serialize(&mut buf[..]);
+    let mut buf = Vec::new();
+    packet.emit(&mut buf).unwrap();
 
     println!(">>> {packet:?}");
     socket.send(&buf[..], 0).unwrap();

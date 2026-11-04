@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Emitable, Nla, NlaBuffer, Parseable};
 
 use crate::tc::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionType, TcStats2,
@@ -16,8 +15,8 @@ fn tc_action_generic_parse_back() {
         refcnt: 3,
         bindcnt: 4,
     };
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionGeneric::parse(&buffer).unwrap();
     assert_eq!(orig, parsed);
 }
@@ -28,8 +27,8 @@ fn tc_action_parse_back_minimal() {
         tab: 1,
         attributes: vec![TcActionAttribute::Kind("example".into())],
     };
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed =
         TcAction::parse(&NlaBuffer::new_checked(buffer.as_slice()).unwrap())
             .unwrap();
@@ -58,8 +57,8 @@ fn tc_action_parse_back_example() {
             TcActionAttribute::Options(vec![]),
         ],
     };
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed =
         TcAction::parse(&NlaBuffer::new_checked(buffer.as_slice()).unwrap())
             .unwrap();

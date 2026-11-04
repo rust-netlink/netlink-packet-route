@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{IpAddr, Ipv6Addr},
     str::FromStr,
 };
 
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Emitable, Nla, NlaBuffer, Parseable};
 
 use crate::{
     address::{
@@ -33,10 +32,9 @@ fn test_addr_flag_stable_privacy() {
     let parsed = AddressAttribute::parse(&nla_buffer).unwrap();
     assert_eq!(parsed, nla);
 
-    assert_eq!(nla.buffer_len(), 8);
-
-    let mut buffer: [u8; 8] = [0; 8];
-    nla.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    nla.emit(&mut buffer).unwrap();
+    assert_eq!(buffer.len(), 8);
     assert_eq!(buffer, raw);
 }
 
@@ -74,9 +72,9 @@ fn test_get_loopback_ipv6_addr() {
 
     assert_eq!(expected, AddressMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -117,9 +115,9 @@ fn test_get_ipv6_address_ra_protocol() {
 
     assert_eq!(expected, AddressMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable,
+    append_bytes, DecodeError, DefaultNla, EncodeError, ErrorContext, Nla,
+    NlaBuffer, NlasIterator, Parseable,
 };
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -29,16 +29,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 }
 
 impl Nla for LinkProtoInfoInet6 {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
-            Self::Other(ref nla) => nla.value_len(),
+            Self::Other(ref nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match *self {
-            Self::Other(ref nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

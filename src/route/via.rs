@@ -2,11 +2,11 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::{
-    ip::{parse_ipv4_addr, parse_ipv6_addr, IPV4_ADDR_LEN, IPV6_ADDR_LEN},
+    ip::{parse_ipv4_addr, parse_ipv6_addr},
     AddressFamily,
 };
 
@@ -60,29 +60,26 @@ impl RouteVia {
 }
 
 impl Emitable for RouteVia {
-    fn buffer_len(&self) -> usize {
-        match self {
-            Self::Inet(_) => IPV4_ADDR_LEN + 2,
-            Self::Inet6(_) => IPV6_ADDR_LEN + 2,
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        let address_family = match self {
+            Self::Inet(_) => AddressFamily::Inet,
+            Self::Inet6(_) => AddressFamily::Inet6,
             #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
-            Self::Packet(a) => a.len() + 2,
-            Self::Other((_, a)) => a.len() + 2,
-        }
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let (address_family, addr) = match self {
-            Self::Inet(ip) => (AddressFamily::Inet, ip.octets().to_vec()),
-            Self::Inet6(ip) => (AddressFamily::Inet6, ip.octets().to_vec()),
-            #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
-            Self::Packet(a) => (AddressFamily::Packet, a.to_vec()),
-            Self::Other((f, a)) => (*f, a.to_vec()),
+            Self::Packet(_) => AddressFamily::Packet,
+            Self::Other((f, _)) => *f,
         };
         let raw = RouteViaBuffer {
             address_family: u16::from(u8::from(address_family)),
         };
-        buffer[..RTVIA_LEN].copy_from_slice(raw.as_bytes());
-        buffer[RTVIA_LEN..].copy_from_slice(addr.as_slice());
+        append_bytes(out, raw.as_bytes());
+        match self {
+            Self::Inet(ip) => append_bytes(out, &ip.octets()),
+            Self::Inet6(ip) => append_bytes(out, &ip.octets()),
+            #[cfg(any(target_os = "linux", target_os = "fuchsia"))]
+            Self::Packet(a) => append_bytes(out, a),
+            Self::Other((_, a)) => append_bytes(out, a),
+        }
+        Ok(())
     }
 }
 

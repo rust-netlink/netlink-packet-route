@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use super::{
@@ -30,27 +30,16 @@ pub enum StatsAttribute {
 }
 
 impl Nla for StatsAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Link64(v) => v.buffer_len(),
-            Self::LinkXstats(v) | Self::LinkXstatsPort(v) => {
-                v.as_slice().buffer_len()
+            Self::Link64(v) => v.emit(out),
+            Self::LinkXstats(v) | Self::LinkXstatsPort(v) => (v).emit(out),
+            Self::LinkOffloadXstats(v) => (v).emit(out),
+            Self::AfSpec(v) => v.emit(out),
+            Self::Other(attr) => {
+                append_bytes(out, attr.value());
+                Ok(())
             }
-            Self::LinkOffloadXstats(v) => v.as_slice().buffer_len(),
-            Self::AfSpec(v) => v.buffer_len(),
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Link64(v) => v.emit(buffer),
-            Self::LinkXstats(v) | Self::LinkXstatsPort(v) => {
-                v.as_slice().emit(buffer)
-            }
-            Self::LinkOffloadXstats(v) => v.as_slice().emit(buffer),
-            Self::AfSpec(v) => v.emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
         }
     }
 

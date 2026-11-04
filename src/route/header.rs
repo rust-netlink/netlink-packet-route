@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{
+    append_bytes, DecodeError, Emitable, EncodeError, Parseable,
+};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{super::AddressFamily, flags::RouteFlags};
@@ -82,13 +84,10 @@ impl RouteHeader {
 }
 
 impl Emitable for RouteHeader {
-    fn buffer_len(&self) -> usize {
-        ROUTE_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = RouteMessageBuffer::from(self);
-        buffer[..ROUTE_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -264,12 +263,9 @@ impl Parseable<[u8]> for RouteProtocol {
 }
 
 impl Emitable for RouteProtocol {
-    fn buffer_len(&self) -> usize {
-        1
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer[0] = u8::from(*self);
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        out.push(u8::from(*self));
+        Ok(())
     }
 }
 

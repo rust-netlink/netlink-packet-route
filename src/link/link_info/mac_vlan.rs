@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_i32, emit_u16, emit_u32, parse_i32, parse_mac, parse_u16, parse_u32,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, append_i32, append_u16, append_u32, parse_i32, parse_mac,
+    parse_u16, parse_u32, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFLA_MACVLAN_MODE: u16 = 1;
@@ -33,36 +33,20 @@ pub enum InfoMacVlan {
 }
 
 impl Nla for InfoMacVlan {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mode(_) => 4,
-            Self::Flags(_) => 2,
-            Self::MacAddrMode(_) => 4,
-            Self::MacAddr(_) => 6,
-            Self::MacAddrData(ref nlas) => nlas.as_slice().buffer_len(),
-            Self::MacAddrCount(_) => 4,
-            Self::BcQueueLen(_) => 4,
-            Self::BcQueueLenUsed(_) => 4,
-            Self::BcCutoff(_) => 4,
-            Self::Other(nla) => nla.value_len(),
+            Self::Mode(value) => append_u32(out, (*value).into()),
+            Self::Flags(value) => append_u16(out, value.bits()),
+            Self::MacAddrMode(value) => append_u32(out, (*value).into()),
+            Self::MacAddr(bytes) => append_bytes(out, bytes),
+            Self::MacAddrData(ref nlas) => (nlas).emit(out)?,
+            Self::MacAddrCount(value) => append_u32(out, *value),
+            Self::BcQueueLen(value) => append_u32(out, *value),
+            Self::BcQueueLenUsed(value) => append_u32(out, *value),
+            Self::BcCutoff(value) => append_i32(out, *value),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
-            Self::Flags(value) => emit_u16(buffer, value.bits()).unwrap(),
-            Self::MacAddrMode(value) => {
-                emit_u32(buffer, (*value).into()).unwrap()
-            }
-            Self::MacAddr(bytes) => buffer.copy_from_slice(bytes),
-            Self::MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
-            Self::MacAddrCount(value) => emit_u32(buffer, *value).unwrap(),
-            Self::BcQueueLen(value) => emit_u32(buffer, *value).unwrap(),
-            Self::BcQueueLenUsed(value) => emit_u32(buffer, *value).unwrap(),
-            Self::BcCutoff(value) => emit_i32(buffer, *value).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -152,36 +136,20 @@ pub enum InfoMacVtap {
 }
 
 impl Nla for InfoMacVtap {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mode(_) => 4,
-            Self::Flags(_) => 2,
-            Self::MacAddrMode(_) => 4,
-            Self::MacAddr(_) => 6,
-            Self::MacAddrData(ref nlas) => nlas.as_slice().buffer_len(),
-            Self::MacAddrCount(_) => 4,
-            Self::BcQueueLen(_) => 4,
-            Self::BcQueueLenUsed(_) => 4,
-            Self::BcCutoff(_) => 4,
-            Self::Other(nla) => nla.value_len(),
+            Self::Mode(value) => append_u32(out, (*value).into()),
+            Self::Flags(value) => append_u16(out, value.bits()),
+            Self::MacAddrMode(value) => append_u32(out, (*value).into()),
+            Self::MacAddr(bytes) => append_bytes(out, bytes),
+            Self::MacAddrData(ref nlas) => (nlas).emit(out)?,
+            Self::MacAddrCount(value) => append_u32(out, *value),
+            Self::BcQueueLen(value) => append_u32(out, *value),
+            Self::BcQueueLenUsed(value) => append_u32(out, *value),
+            Self::BcCutoff(value) => append_i32(out, *value),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mode(value) => emit_u32(buffer, (*value).into()).unwrap(),
-            Self::Flags(value) => emit_u16(buffer, value.bits()).unwrap(),
-            Self::MacAddrMode(value) => {
-                emit_u32(buffer, (*value).into()).unwrap()
-            }
-            Self::MacAddr(bytes) => buffer.copy_from_slice(bytes),
-            Self::MacAddrData(ref nlas) => nlas.as_slice().emit(buffer),
-            Self::MacAddrCount(value) => emit_u32(buffer, *value).unwrap(),
-            Self::BcQueueLen(value) => emit_u32(buffer, *value).unwrap(),
-            Self::BcQueueLenUsed(value) => emit_u32(buffer, *value).unwrap(),
-            Self::BcCutoff(value) => emit_i32(buffer, *value).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

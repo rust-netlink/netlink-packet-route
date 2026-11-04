@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, emit_u32, emit_u64, parse_u16, parse_u32, parse_u64, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u32, append_u64, parse_u16, parse_u32,
+    parse_u64, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::link::{BridgeId, BridgeMulticastRouterType};
@@ -104,58 +105,9 @@ pub enum InfoBridgePort {
 }
 
 impl Nla for InfoBridgePort {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            InfoBridgePort::Flush => 0,
-            InfoBridgePort::State(_)
-            | InfoBridgePort::HairpinMode(_)
-            | InfoBridgePort::Guard(_)
-            | InfoBridgePort::Protect(_)
-            | InfoBridgePort::FastLeave(_)
-            | InfoBridgePort::Learning(_)
-            | InfoBridgePort::UnicastFlood(_)
-            | InfoBridgePort::ProxyARP(_)
-            | InfoBridgePort::ProxyARPWifi(_)
-            | InfoBridgePort::TopologyChangeAck(_)
-            | InfoBridgePort::ConfigPending(_)
-            | InfoBridgePort::MulticastRouter(_)
-            | InfoBridgePort::MulticastFlood(_)
-            | InfoBridgePort::MulticastToUnicast(_)
-            | InfoBridgePort::VlanTunnel(_)
-            | InfoBridgePort::BroadcastFlood(_)
-            | InfoBridgePort::NeighSupress(_)
-            | InfoBridgePort::Isolated(_)
-            | InfoBridgePort::MrpRingOpen(_)
-            | InfoBridgePort::MrpInOpen(_)
-            | InfoBridgePort::Locked(_)
-            | InfoBridgePort::Mab(_)
-            | InfoBridgePort::NeighVlanSuppress(_)
-            | InfoBridgePort::NeighForwardGrat(_) => 1,
-            InfoBridgePort::Priority(_)
-            | InfoBridgePort::DesignatedPort(_)
-            | InfoBridgePort::DesignatedCost(_)
-            | InfoBridgePort::PortId(_)
-            | InfoBridgePort::PortNumber(_)
-            | InfoBridgePort::GroupFwdMask(_) => 2,
-            InfoBridgePort::Cost(_)
-            | InfoBridgePort::BackupPort(_)
-            | InfoBridgePort::MulticastEhtHostsLimit(_)
-            | InfoBridgePort::MulticastEhtHostsCnt(_)
-            | InfoBridgePort::MulticastNGroups(_)
-            | InfoBridgePort::MulticastMaxGroups(_)
-            | InfoBridgePort::BackupNextHopId(_) => 4,
-            InfoBridgePort::RootId(_)
-            | InfoBridgePort::BridgeId(_)
-            | InfoBridgePort::MessageAgeTimer(_)
-            | InfoBridgePort::ForwardDelayTimer(_)
-            | InfoBridgePort::HoldTimer(_) => 8,
-            InfoBridgePort::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            InfoBridgePort::Flush => (),
+            InfoBridgePort::Flush => Ok(()),
             InfoBridgePort::HairpinMode(value)
             | InfoBridgePort::Guard(value)
             | InfoBridgePort::Protect(value)
@@ -178,7 +130,8 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::Mab(value)
             | InfoBridgePort::NeighVlanSuppress(value)
             | InfoBridgePort::NeighForwardGrat(value) => {
-                buffer[0] = if *value { 1 } else { 0 }
+                out.push(if *value { 1 } else { 0 });
+                Ok(())
             }
             InfoBridgePort::Priority(value)
             | InfoBridgePort::DesignatedPort(value)
@@ -186,7 +139,8 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::PortId(value)
             | InfoBridgePort::PortNumber(value)
             | InfoBridgePort::GroupFwdMask(value) => {
-                emit_u16(buffer, *value).unwrap()
+                append_u16(out, *value);
+                Ok(())
             }
             InfoBridgePort::Cost(value)
             | InfoBridgePort::BackupPort(value)
@@ -195,20 +149,29 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::MulticastNGroups(value)
             | InfoBridgePort::MulticastMaxGroups(value)
             | InfoBridgePort::BackupNextHopId(value) => {
-                emit_u32(buffer, *value).unwrap()
+                append_u32(out, *value);
+                Ok(())
             }
             InfoBridgePort::MessageAgeTimer(value)
             | InfoBridgePort::ForwardDelayTimer(value)
             | InfoBridgePort::HoldTimer(value) => {
-                emit_u64(buffer, *value).unwrap()
+                append_u64(out, *value);
+                Ok(())
             }
             InfoBridgePort::RootId(bridge_id)
-            | InfoBridgePort::BridgeId(bridge_id) => bridge_id.emit(buffer),
-            InfoBridgePort::State(state) => buffer[0] = (*state).into(),
-            InfoBridgePort::MulticastRouter(mcast_router) => {
-                buffer[0] = (*mcast_router).into()
+            | InfoBridgePort::BridgeId(bridge_id) => bridge_id.emit(out),
+            InfoBridgePort::State(state) => {
+                out.push((*state).into());
+                Ok(())
             }
-            InfoBridgePort::Other(nla) => nla.emit_value(buffer),
+            InfoBridgePort::MulticastRouter(mcast_router) => {
+                out.push((*mcast_router).into());
+                Ok(())
+            }
+            InfoBridgePort::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
