@@ -3,9 +3,10 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_u16, parse_u16_be,
-    parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla, ErrorContext,
-    Nla, NlaBuffer, Parseable, ParseableParametrized,
+    append_bytes, append_u16, append_u16_be, append_u32, append_u32_be,
+    parse_u16, parse_u16_be, parse_u32, parse_u32_be, parse_u8, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
+    ParseableParametrized,
 };
 
 use crate::ip::{parse_ip_addr, IpProtocol};
@@ -60,75 +61,38 @@ pub enum InfoIpTunnel {
 }
 
 impl Nla for InfoIpTunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Ipv6RdPrefix(_) => 16,
-            Self::Ipv6RdRelayPrefix(_) => 4,
-            Self::Local(value) | Self::Remote(value) => match value {
-                IpAddr::V4(_) => 4,
-                IpAddr::V6(_) => 16,
-            },
-            Self::Link(_)
-            | Self::FwMark(_)
-            | Self::FlowInfo(_)
-            | Self::Ipv6Flags(_) => 4,
-            Self::Ipv6SitFlags(_)
-            | Self::Ipv4Flags(_)
-            | Self::EncapType(_)
-            | Self::EncapFlags(_)
-            | Self::EncapSPort(_)
-            | Self::EncapDPort(_)
-            | Self::Ipv6RdPrefixLen(_)
-            | Self::Ipv6RdRelayPrefixLen(_) => 2,
-            Self::Ttl(_)
-            | Self::Tos(_)
-            | Self::Protocol(_)
-            | Self::PMtuDisc(_)
-            | Self::EncapLimit(_) => 1,
-            Self::CollectMetadata => 0,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Ipv6RdPrefix(value) => {
-                buffer.copy_from_slice(&value.octets())
-            }
+            Self::Ipv6RdPrefix(value) => append_bytes(out, &value.octets()),
             Self::Ipv6RdRelayPrefix(value) => {
-                buffer.copy_from_slice(&value.octets())
+                append_bytes(out, &value.octets())
             }
-            Self::Link(value) | Self::FwMark(value) => {
-                emit_u32(buffer, *value).unwrap()
-            }
-            Self::FlowInfo(value) => emit_u32_be(buffer, *value).unwrap(),
-            Self::Ipv6Flags(f) => emit_u32(buffer, f.bits()).unwrap(),
+            Self::Link(value) | Self::FwMark(value) => append_u32(out, *value),
+            Self::FlowInfo(value) => append_u32_be(out, *value),
+            Self::Ipv6Flags(f) => append_u32(out, f.bits()),
             Self::Ipv6SitFlags(val) | Self::Ipv4Flags(val) => {
-                emit_u16_be(buffer, *val).unwrap()
+                append_u16_be(out, *val)
             }
             Self::Local(value) | Self::Remote(value) => match value {
-                IpAddr::V4(ipv4) => buffer.copy_from_slice(&ipv4.octets()),
-                IpAddr::V6(ipv6) => buffer.copy_from_slice(&ipv6.octets()),
+                IpAddr::V4(ipv4) => append_bytes(out, &ipv4.octets()),
+                IpAddr::V6(ipv6) => append_bytes(out, &ipv6.octets()),
             },
-            Self::EncapType(value) => {
-                emit_u16(buffer, (*value).into()).unwrap()
-            }
-            Self::EncapFlags(f) => emit_u16(buffer, f.bits()).unwrap(),
+            Self::EncapType(value) => append_u16(out, (*value).into()),
+            Self::EncapFlags(f) => append_u16(out, f.bits()),
             Self::EncapSPort(value) | Self::EncapDPort(value) => {
-                emit_u16_be(buffer, *value).unwrap()
+                append_u16_be(out, *value)
             }
             Self::Ipv6RdPrefixLen(value)
-            | Self::Ipv6RdRelayPrefixLen(value) => {
-                emit_u16(buffer, *value).unwrap()
-            }
-            Self::Protocol(value) => buffer[0] = u8::from(*value),
+            | Self::Ipv6RdRelayPrefixLen(value) => append_u16(out, *value),
+            Self::Protocol(value) => out.push(u8::from(*value)),
             Self::Ttl(value) | Self::Tos(value) | Self::EncapLimit(value) => {
-                buffer[0] = *value
+                out.push(*value)
             }
-            Self::PMtuDisc(value) => buffer[0] = if *value { 1 } else { 0 },
+            Self::PMtuDisc(value) => out.push(if *value { 1 } else { 0 }),
             Self::CollectMetadata => { /* zero-length flag attribute */ }
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

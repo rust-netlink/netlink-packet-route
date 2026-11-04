@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_u16, DecodeError, Emitable, EncodeError};
 
 const RULE_PORT_RANGE_LEN: usize = 4;
 
@@ -27,12 +27,9 @@ impl RulePortRange {
 }
 
 impl Emitable for RulePortRange {
-    fn buffer_len(&self) -> usize {
-        RULE_PORT_RANGE_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer[0..2].copy_from_slice(&self.start.to_ne_bytes());
-        buffer[2..4].copy_from_slice(&self.end.to_ne_bytes());
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u16(out, self.start);
+        append_u16(out, self.end);
+        Ok(())
     }
 }

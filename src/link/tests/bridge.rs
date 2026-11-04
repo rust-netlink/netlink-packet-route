@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv6Addr;
 
 use netlink_packet_core::{
-    DefaultNla, Emitable, NlaBuffer, Parseable, ParseableParametrized,
+    DefaultNla, Emitable, Nla, NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use crate::{
@@ -428,9 +427,9 @@ fn test_parse_link_bridge_no_extention_mask() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -780,9 +779,9 @@ fn test_parse_link_bridge_stp_mode() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -815,9 +814,9 @@ fn test_parse_link_bridge_port_neigh_forward_grat() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -953,9 +952,9 @@ fn test_bridge_port_link_info() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -1082,9 +1081,9 @@ fn test_bridge_boolean_options() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -1124,9 +1123,9 @@ fn test_bridge_boolean_options_fdb_local_vlan_0() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -1250,9 +1249,9 @@ fn test_bridge_fdb_max_learned() {
         .unwrap()
     );
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -1601,9 +1600,9 @@ fn test_bridge_netns_immutable() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 }
 
 #[test]

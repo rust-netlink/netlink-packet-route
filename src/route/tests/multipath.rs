@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv4Addr;
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Emitable, Parseable};
 
 use crate::{
     route::{
@@ -75,8 +74,8 @@ fn test_route_multipath_two_nexthops() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -152,7 +151,25 @@ fn test_route_multipath_zero_nexthops() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_next_hop_length_over_u16_is_rejected() {
+    let nh = RouteNextHop {
+        flags: RouteNextHopFlags::empty(),
+        hops: 0,
+        interface_index: 1,
+        attributes: vec![
+            RouteAttribute::Other(DefaultNla::new(0x1234, vec![0; 40000])),
+            RouteAttribute::Other(DefaultNla::new(0x1234, vec![0; 40000])),
+        ],
+    };
+
+    let mut out = vec![0xaa];
+    let error = nh.emit(&mut out).unwrap_err();
+    assert!(error.is_too_large());
+    assert_eq!(out, vec![0xaa]);
 }

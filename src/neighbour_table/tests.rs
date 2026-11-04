@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
@@ -67,9 +66,9 @@ fn test_ipv4_neighbour_table() {
 
     assert_eq!(expected, NeighbourTableMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -168,9 +167,9 @@ fn test_ipv4_neighbour_table_stats_config() {
 
     assert_eq!(expected, NeighbourTableMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u64, parse_u64, DecodeError, DefaultNla, Emitable, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
+    append_bytes, append_u64, parse_u64, DecodeError, DefaultNla, Emitable,
+    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    NLA_F_NESTED,
 };
 
 const BOND_XSTATS_3AD: u16 = 1;
@@ -16,17 +17,13 @@ pub enum BondXstat {
 }
 
 impl Nla for BondXstat {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::ThreeAd(v) => v.as_slice().buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::ThreeAd(v) => v.as_slice().emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::ThreeAd(v) => (v).emit(out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 
@@ -65,14 +62,7 @@ pub enum Bond3adStats {
 }
 
 impl Nla for Bond3adStats {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Other(v) => v.value_len(),
-            _ => 8,
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::LacpduRx(d)
             | Self::LacpduTx(d)
@@ -82,9 +72,10 @@ impl Nla for Bond3adStats {
             | Self::MarkerTx(d)
             | Self::MarkerRespRx(d)
             | Self::MarkerRespTx(d)
-            | Self::MarkerUnknownRx(d) => emit_u64(buffer, *d).unwrap(),
-            Self::Other(v) => v.emit_value(buffer),
+            | Self::MarkerUnknownRx(d) => append_u64(out, *d),
+            Self::Other(v) => append_bytes(out, v.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -106,7 +97,7 @@ impl Nla for Bond3adStats {
 impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Bond3adStats {
     fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
         let payload = buf.value();
-        Ok(match buf.kind() & !NLA_F_NESTED {
+        Ok(match buf.kind() {
             BOND_3AD_STAT_LACPDU_RX => Self::LacpduRx(
                 parse_u64(payload)
                     .context("invalid BOND_3AD_STAT_LACPDU_RX value")?,
@@ -158,7 +149,7 @@ pub(crate) fn parse_bond_xstats(
     let mut result = Vec::new();
     for nla in NlasIterator::new(payload) {
         let nla = nla.context("invalid NLA in bond xstats")?;
-        let kind = nla.kind() & !NLA_F_NESTED;
+        let kind = nla.kind();
         let payload = nla.value();
         result.push(match kind {
             BOND_XSTATS_3AD => {

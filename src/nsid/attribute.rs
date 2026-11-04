@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_i32, emit_u32, parse_i32, parse_u32, DecodeError, DefaultNla,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    append_bytes, append_i32, append_u32, parse_i32, parse_u32, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable,
 };
 
 const NETNSA_NSID: u16 = 1;
@@ -24,25 +25,15 @@ pub enum NsidAttribute {
 }
 
 impl Nla for NsidAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Id(_)
-            | Self::Pid(_)
-            | Self::Fd(_)
-            | Self::TargetNsid(_)
-            | Self::CurrentNsid(_) => 4,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Fd(v) | Self::Pid(v) => emit_u32(buffer, *v).unwrap(),
+            Self::Fd(v) | Self::Pid(v) => append_u32(out, *v),
             Self::Id(v) | Self::TargetNsid(v) | Self::CurrentNsid(v) => {
-                emit_i32(buffer, *v).unwrap()
+                append_i32(out, *v)
             }
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

@@ -2,14 +2,14 @@
 
 use std::{
     fmt::Debug,
-    mem::size_of,
     net::{Ipv4Addr, Ipv6Addr},
 };
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, emit_u64_be, parse_u16_be, parse_u32, parse_u64_be,
-    parse_u8, DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, ParseableParametrized, NLA_F_NESTED,
+    append_bytes, append_u16, append_u16_be, append_u32, append_u64_be,
+    parse_u16_be, parse_u32, parse_u64_be, parse_u8, DecodeError, DefaultNla,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable, ParseableParametrized, NLA_F_NESTED,
 };
 
 use super::{
@@ -114,12 +114,9 @@ impl From<RouteLwEnCapType> for u16 {
 }
 
 impl Emitable for RouteLwEnCapType {
-    fn buffer_len(&self) -> usize {
-        2
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&(u16::from(*self).to_ne_bytes()))
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u16(out, u16::from(*self));
+        Ok(())
     }
 }
 
@@ -208,18 +205,19 @@ impl std::fmt::Display for RouteIpTunnel {
 }
 
 impl Nla for RouteIpTunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Unspecified => 0,
-            Self::Id(_) => size_of::<u64>(),
-            Self::Destination(_) => size_of::<Ipv4Addr>(),
-            Self::Source(_) => size_of::<Ipv4Addr>(),
-            Self::Ttl(_) => size_of::<u8>(),
-            Self::Tos(_) => size_of::<u8>(),
-            Self::Flags(_) => size_of::<u16>(),
-            Self::Opts(opts) => opts.as_slice().buffer_len(),
-            Self::Other(_) => size_of::<DefaultNla>(),
+            Self::Unspecified => {}
+            Self::Id(id) => append_u64_be(out, *id),
+            Self::Destination(ip) | Self::Source(ip) => {
+                append_bytes(out, &ip.octets())
+            }
+            Self::Ttl(value) | Self::Tos(value) => out.push(*value),
+            Self::Flags(flags) => append_u16_be(out, flags.bits()),
+            Self::Opts(opts) => (opts).emit(out)?,
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -233,20 +231,6 @@ impl Nla for RouteIpTunnel {
             Self::Flags(_) => LWTUNNEL_IP_FLAGS,
             Self::Opts(_) => LWTUNNEL_IP_OPTS | NLA_F_NESTED,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Unspecified => {}
-            Self::Id(id) => emit_u64_be(buffer, *id).unwrap(),
-            Self::Destination(ip) | Self::Source(ip) => {
-                buffer.copy_from_slice(&ip.octets());
-            }
-            Self::Ttl(value) | Self::Tos(value) => buffer[0] = *value,
-            Self::Flags(flags) => emit_u16_be(buffer, flags.bits()).unwrap(),
-            Self::Opts(opts) => opts.as_slice().emit(buffer),
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }
@@ -355,18 +339,19 @@ impl std::fmt::Display for RouteIp6Tunnel {
 }
 
 impl Nla for RouteIp6Tunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Unspecified => 0,
-            Self::Id(_) => size_of::<u64>(),
-            Self::Destination(_) => size_of::<Ipv6Addr>(),
-            Self::Source(_) => size_of::<Ipv6Addr>(),
-            Self::Hoplimit(_) => size_of::<u8>(),
-            Self::Tc(_) => size_of::<u8>(),
-            Self::Flags(_) => size_of::<u16>(),
-            Self::Opts(opts) => opts.as_slice().buffer_len(),
-            Self::Other(_) => size_of::<DefaultNla>(),
+            Self::Unspecified => {}
+            Self::Id(id) => append_u64_be(out, *id),
+            Self::Destination(ip) | Self::Source(ip) => {
+                append_bytes(out, &ip.octets())
+            }
+            Self::Hoplimit(value) | Self::Tc(value) => out.push(*value),
+            Self::Flags(flags) => append_u16_be(out, flags.bits()),
+            Self::Opts(opts) => (opts).emit(out)?,
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -380,20 +365,6 @@ impl Nla for RouteIp6Tunnel {
             Self::Flags(_) => LWTUNNEL_IP6_FLAGS,
             Self::Opts(_) => LWTUNNEL_IP_OPTS | NLA_F_NESTED,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Unspecified => {}
-            Self::Id(id) => emit_u64_be(buffer, *id).unwrap(),
-            Self::Destination(ip) | Self::Source(ip) => {
-                buffer.copy_from_slice(&ip.octets());
-            }
-            Self::Hoplimit(value) | Self::Tc(value) => buffer[0] = *value,
-            Self::Flags(flags) => emit_u16_be(buffer, flags.bits()).unwrap(),
-            Self::Opts(opts) => opts.as_slice().emit(buffer),
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }
@@ -473,12 +444,13 @@ impl std::fmt::Display for RouteXfrmTunnel {
 }
 
 impl Nla for RouteXfrmTunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Unspecified => 0,
-            Self::IfId(_) | Self::Link(_) => size_of::<u32>(),
-            Self::Other(_) => size_of::<DefaultNla>(),
+            Self::Unspecified => {}
+            Self::IfId(value) | Self::Link(value) => append_u32(out, *value),
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -487,16 +459,6 @@ impl Nla for RouteXfrmTunnel {
             Self::IfId(_) => LWT_XFRM_IF_ID,
             Self::Link(_) => LWT_XFRM_LINK,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Unspecified => {}
-            Self::IfId(value) | Self::Link(value) => {
-                emit_u32(buffer, *value).unwrap()
-            }
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }
@@ -521,32 +483,19 @@ where
 }
 
 impl Nla for RouteLwTunnelEncap {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mpls(v) => v.value_len(),
-            Self::Seg6(v) => v.value_len(),
-            Self::Ip(v) => v.value_len(),
-            Self::Ip6(v) => v.value_len(),
-            Self::Ioam6(v) => v.value_len(),
-            Self::Rpl(v) => v.value_len(),
-            Self::Seg6Local(v) => v.value_len(),
-            Self::Xfrm(v) => v.value_len(),
-            Self::Other(v) => v.value_len(),
+            Self::Mpls(v) => v.emit_value(out)?,
+            Self::Seg6(v) => v.emit_value(out)?,
+            Self::Ip(v) => v.emit_value(out)?,
+            Self::Ip6(v) => v.emit_value(out)?,
+            Self::Ioam6(v) => v.emit_value(out)?,
+            Self::Rpl(v) => v.emit_value(out)?,
+            Self::Seg6Local(v) => v.emit_value(out)?,
+            Self::Xfrm(v) => v.emit_value(out)?,
+            Self::Other(v) => append_bytes(out, v.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mpls(v) => v.emit_value(buffer),
-            Self::Seg6(v) => v.emit_value(buffer),
-            Self::Ip(v) => v.emit_value(buffer),
-            Self::Ip6(v) => v.emit_value(buffer),
-            Self::Ioam6(v) => v.emit_value(buffer),
-            Self::Rpl(v) => v.emit_value(buffer),
-            Self::Seg6Local(v) => v.emit_value(buffer),
-            Self::Xfrm(v) => v.emit_value(buffer),
-            Self::Other(v) => v.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

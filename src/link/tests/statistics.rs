@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use std::mem::size_of;
 
 use netlink_packet_core::{Emitable, Parseable};
@@ -725,14 +724,14 @@ fn test_parsing_link_statistics() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -755,12 +754,14 @@ fn test_parsing_link_statistics_short_stats64() {
         })],
     };
 
-    let mut raw = vec![0u8; expected.buffer_len()];
-    expected.emit(&mut raw);
+    let mut raw = Vec::new();
+    expected.emit(&mut raw).unwrap();
 
     // Simulate a kernel without `rx_otherhost_dropped`: remove the last
     // field of the `IFLA_STATS64` payload and fix the NLA length.
-    let header_len = expected.header.buffer_len();
+    let mut header_buf = Vec::new();
+    expected.header.emit(&mut header_buf).unwrap();
+    let header_len = header_buf.len();
     raw.truncate(raw.len() - size_of::<u64>());
     let nla_len = ((raw.len() - header_len) as u16).to_le_bytes();
     raw[header_len..header_len + size_of::<u16>()].copy_from_slice(&nla_len);
@@ -777,8 +778,8 @@ fn test_parsing_short_stats64_payload() {
         ..Default::default()
     };
 
-    let mut payload = vec![0u8; expected.buffer_len()];
-    expected.emit(&mut payload);
+    let mut payload = Vec::new();
+    expected.emit(&mut payload).unwrap();
 
     // Kernels older than 6.9 do not send `rx_otherhost_dropped`.
     payload.truncate(payload.len() - size_of::<u64>());
@@ -795,8 +796,8 @@ fn test_parsing_short_stats_payload() {
         ..Default::default()
     };
 
-    let mut payload = vec![0u8; expected.buffer_len()];
-    expected.emit(&mut payload);
+    let mut payload = Vec::new();
+    expected.emit(&mut payload).unwrap();
 
     // Kernels without `rx_nohandler` send a shorter payload.
     payload.truncate(payload.len() - size_of::<u32>());

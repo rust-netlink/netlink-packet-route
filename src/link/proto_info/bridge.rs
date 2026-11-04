@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, parse_u8, DecodeError, DefaultNla, EncodeError, ErrorContext,
+    Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFLA_BRPORT_NEIGH_FORWARD_GRAT: u16 = 45;
@@ -32,20 +32,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 }
 
 impl Nla for LinkProtoInfoBridge {
-    fn value_len(&self) -> usize {
-        match *self {
-            Self::NeighForwardGrat(_) => 1,
-            Self::Other(ref nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
             Self::NeighForwardGrat(value) => {
-                buffer[0] = if value { 1 } else { 0 }
+                out.push(if value { 1 } else { 0 })
             }
-            Self::Other(ref nla) => nla.emit_value(buffer),
+            Self::Other(ref nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

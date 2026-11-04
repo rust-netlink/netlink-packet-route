@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
@@ -84,9 +83,9 @@ fn test_seg6local_end_dx4() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 
@@ -173,9 +172,9 @@ fn test_seg6local_end_b6_encaps() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -246,9 +245,9 @@ fn test_seg6local_end_dx6() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -295,9 +294,9 @@ fn test_seg6local_end() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // The capture carries `NLA_F_NESTED` on `RTA_ENCAP` while the kernel
     // does not require the flag for `seg6local` and omits it in dumps, so
@@ -355,9 +354,9 @@ fn test_seg6local_end_x() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -412,9 +411,9 @@ fn test_seg6local_end_t() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -487,9 +486,9 @@ fn test_seg6local_end_b6() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -542,9 +541,9 @@ fn test_seg6local_end_dx2() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -599,9 +598,9 @@ fn test_seg6local_end_dt6() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -660,9 +659,9 @@ fn test_seg6local_end_dt4() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
@@ -721,9 +720,9 @@ fn test_seg6local_end_dt46() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // See `test_seg6local_end` for the `NLA_F_NESTED` flag difference.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());

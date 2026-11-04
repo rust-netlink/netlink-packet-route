@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{
     FromBytes, FromZeros, Immutable, IntoBytes, KnownLayout, Unaligned,
 };
@@ -174,12 +174,9 @@ impl From<&Stats64> for Stats64Buffer {
 }
 
 impl Emitable for Stats64 {
-    fn buffer_len(&self) -> usize {
-        size_of::<Stats64Buffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = Stats64Buffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{DefaultNla, Emitable, Parseable};
 
 use crate::link::{
@@ -59,8 +58,8 @@ fn test_parsing_link_can_add() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -238,7 +237,7 @@ fn test_parsing_link_can_fd_tdc() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }

@@ -2,9 +2,9 @@
 
 use bitflags::bitflags;
 use netlink_packet_core::{
-    emit_u16, emit_u32, parse_u16, parse_u32, DecodeError, DefaultNla,
-    Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
-    NLA_F_NESTED,
+    append_bytes, append_u16, append_u32, parse_u16, parse_u32, DecodeError,
+    DefaultNla, Emitable, EncodeError, ErrorContext, Nla, NlaBuffer,
+    NlasIterator, Parseable, NLA_F_NESTED,
 };
 
 const IFLA_CAN_BITTIMING: u16 = 1;
@@ -51,6 +51,20 @@ pub struct CanBitTiming {
 
 const CAN_BITTIMING_LEN: usize = 32;
 
+impl Emitable for CanBitTiming {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32(out, self.bitrate);
+        append_u32(out, self.sample_point);
+        append_u32(out, self.tq);
+        append_u32(out, self.prop_seg);
+        append_u32(out, self.phase_seg1);
+        append_u32(out, self.phase_seg2);
+        append_u32(out, self.sjw);
+        append_u32(out, self.brp);
+        Ok(())
+    }
+}
+
 impl CanBitTiming {
     /// Create a new `CanBitTiming` with the given bitrate.
     pub fn new(bitrate: u32) -> Self {
@@ -60,31 +74,8 @@ impl CanBitTiming {
         }
     }
 
-    fn value_len() -> usize {
-        CAN_BITTIMING_LEN
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        let mut offset = 0;
-        emit_u32(&mut buffer[offset..], self.bitrate).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.sample_point).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tq).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.prop_seg).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.phase_seg1).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.phase_seg2).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.sjw).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.brp).unwrap();
-    }
-
     fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        if payload.len() < Self::value_len() {
+        if payload.len() < CAN_BITTIMING_LEN {
             return Err("invalid IFLA_CAN_BITTIMING: expected 32 bytes".into());
         }
         Ok(Self {
@@ -161,18 +152,17 @@ pub struct CanCtrlMode {
 
 const CAN_CTRLMODE_LEN: usize = 8;
 
+impl Emitable for CanCtrlMode {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32(out, self.mask.bits());
+        append_u32(out, self.flags.bits());
+        Ok(())
+    }
+}
+
 impl CanCtrlMode {
-    fn value_len() -> usize {
-        CAN_CTRLMODE_LEN
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        emit_u32(&mut buffer[0..4], self.mask.bits()).unwrap();
-        emit_u32(&mut buffer[4..8], self.flags.bits()).unwrap();
-    }
-
     fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        if payload.len() < Self::value_len() {
+        if payload.len() < CAN_CTRLMODE_LEN {
             return Err("invalid IFLA_CAN_CTRLMODE: expected 8 bytes".into());
         }
         Ok(Self {
@@ -197,21 +187,20 @@ pub struct CanClock {
 
 const CAN_CLOCK_LEN: usize = 4;
 
+impl Emitable for CanClock {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32(out, self.freq);
+        Ok(())
+    }
+}
+
 impl CanClock {
     pub fn new(freq: u32) -> Self {
         Self { freq }
     }
 
-    fn value_len() -> usize {
-        CAN_CLOCK_LEN
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        emit_u32(buffer, self.freq).unwrap();
-    }
-
     fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        if payload.len() < Self::value_len() {
+        if payload.len() < CAN_CLOCK_LEN {
             return Err("invalid IFLA_CAN_CLOCK: expected 4 bytes".into());
         }
         Ok(Self {
@@ -230,18 +219,17 @@ pub struct CanBerrCounter {
 
 const CAN_BERR_COUNTER_LEN: usize = 4;
 
+impl Emitable for CanBerrCounter {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u16(out, self.txerr);
+        append_u16(out, self.rxerr);
+        Ok(())
+    }
+}
+
 impl CanBerrCounter {
-    fn value_len() -> usize {
-        CAN_BERR_COUNTER_LEN
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        emit_u16(&mut buffer[0..2], self.txerr).unwrap();
-        emit_u16(&mut buffer[2..4], self.rxerr).unwrap();
-    }
-
     fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        if payload.len() < Self::value_len() {
+        if payload.len() < CAN_BERR_COUNTER_LEN {
             return Err(
                 "invalid IFLA_CAN_BERR_COUNTER: expected 4 bytes".into()
             );
@@ -273,14 +261,7 @@ pub enum CanTdc {
 }
 
 impl Nla for CanTdc {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Other(nla) => nla.value_len(),
-            _ => 4,
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::TdcvMin(v)
             | Self::TdcvMax(v)
@@ -290,8 +271,14 @@ impl Nla for CanTdc {
             | Self::TdcfMax(v)
             | Self::Tdcv(v)
             | Self::Tdco(v)
-            | Self::Tdcf(v) => emit_u32(buffer, *v).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
+            | Self::Tdcf(v) => {
+                append_u32(out, *v);
+                Ok(())
+            }
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
@@ -367,17 +354,16 @@ pub enum CanCtrlModeExt {
 }
 
 impl Nla for CanCtrlModeExt {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Supported(_) => 4,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Supported(v) => emit_u32(buffer, v.bits()).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Supported(v) => {
+                append_u32(out, v.bits());
+                Ok(())
+            }
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
@@ -426,6 +412,26 @@ pub struct CanBitTimingConst {
 
 const CAN_BITTIMING_CONST_LEN: usize = 48;
 
+impl Emitable for CanBitTimingConst {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        let name_bytes = self.name.as_bytes();
+        let name_len = name_bytes.len().min(15);
+        let start = out.len();
+        append_bytes(out, &name_bytes[..name_len]);
+        out.push(0);
+        out.resize(start + 16, 0);
+        append_u32(out, self.tseg1_min);
+        append_u32(out, self.tseg1_max);
+        append_u32(out, self.tseg2_min);
+        append_u32(out, self.tseg2_max);
+        append_u32(out, self.sjw_max);
+        append_u32(out, self.brp_min);
+        append_u32(out, self.brp_max);
+        append_u32(out, self.brp_inc);
+        Ok(())
+    }
+}
+
 impl CanBitTimingConst {
     /// Create a new `CanBitTimingConst` with the given name.
     pub fn new(name: impl Into<String>) -> Self {
@@ -435,35 +441,8 @@ impl CanBitTimingConst {
         }
     }
 
-    fn value_len() -> usize {
-        CAN_BITTIMING_CONST_LEN
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        let name_bytes = self.name.as_bytes();
-        let name_len = name_bytes.len().min(15);
-        buffer[..name_len].copy_from_slice(&name_bytes[..name_len]);
-        buffer[name_len] = 0;
-        let mut offset = 16usize;
-        emit_u32(&mut buffer[offset..], self.tseg1_min).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tseg1_max).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tseg2_min).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.tseg2_max).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.sjw_max).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.brp_min).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.brp_max).unwrap();
-        offset += 4;
-        emit_u32(&mut buffer[offset..], self.brp_inc).unwrap();
-    }
-
     fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
-        if payload.len() < Self::value_len() {
+        if payload.len() < CAN_BITTIMING_CONST_LEN {
             return Err(
                 "invalid IFLA_CAN_BITTIMING_CONST: expected 48 bytes".into()
             );
@@ -513,43 +492,41 @@ pub enum InfoCan {
 }
 
 impl Nla for InfoCan {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::BitTiming(_) => CanBitTiming::value_len(),
-            Self::BitTimingConst(_) => CanBitTimingConst::value_len(),
-            Self::Clock(_) => CanClock::value_len(),
-            Self::State(_) => 4,
-            Self::CtrlMode(_) => CanCtrlMode::value_len(),
-            Self::RestartMs(_) => 4,
-            Self::Restart(_) => 4,
-            Self::BerrCounter(_) => CanBerrCounter::value_len(),
-            Self::DataBitTiming(_) => CanBitTiming::value_len(),
-            Self::DataBitTimingConst(_) => CanBitTimingConst::value_len(),
-            Self::Termination(_) => 2,
-            Self::BitrateMax(_) => 4,
-            Self::Tdc(nlas) => nlas.as_slice().buffer_len(),
-            Self::CtrlModeExt(nlas) => nlas.as_slice().buffer_len(),
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::BitTiming(v) => v.emit_value(buffer),
-            Self::BitTimingConst(v) => v.emit_value(buffer),
-            Self::Clock(v) => v.emit_value(buffer),
-            Self::State(v) => emit_u32(buffer, *v).unwrap(),
-            Self::CtrlMode(v) => v.emit_value(buffer),
-            Self::RestartMs(v) => emit_u32(buffer, *v).unwrap(),
-            Self::Restart(v) => emit_u32(buffer, *v).unwrap(),
-            Self::BerrCounter(v) => v.emit_value(buffer),
-            Self::DataBitTiming(v) => v.emit_value(buffer),
-            Self::DataBitTimingConst(v) => v.emit_value(buffer),
-            Self::Termination(v) => emit_u16(buffer, *v).unwrap(),
-            Self::BitrateMax(v) => emit_u32(buffer, *v).unwrap(),
-            Self::Tdc(nlas) => nlas.as_slice().emit(buffer),
-            Self::CtrlModeExt(nlas) => nlas.as_slice().emit(buffer),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::BitTiming(v) => v.emit(out),
+            Self::BitTimingConst(v) => v.emit(out),
+            Self::Clock(v) => v.emit(out),
+            Self::State(v) => {
+                append_u32(out, *v);
+                Ok(())
+            }
+            Self::CtrlMode(v) => v.emit(out),
+            Self::RestartMs(v) => {
+                append_u32(out, *v);
+                Ok(())
+            }
+            Self::Restart(v) => {
+                append_u32(out, *v);
+                Ok(())
+            }
+            Self::BerrCounter(v) => v.emit(out),
+            Self::DataBitTiming(v) => v.emit(out),
+            Self::DataBitTimingConst(v) => v.emit(out),
+            Self::Termination(v) => {
+                append_u16(out, *v);
+                Ok(())
+            }
+            Self::BitrateMax(v) => {
+                append_u32(out, *v);
+                Ok(())
+            }
+            Self::Tdc(nlas) => (nlas.as_slice()).emit(out),
+            Self::CtrlModeExt(nlas) => (nlas.as_slice()).emit(out),
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 

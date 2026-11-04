@@ -6,9 +6,9 @@ use std::{
 };
 
 use netlink_packet_core::{
-    emit_u16, emit_u32, parse_ip, parse_mac, parse_u16, parse_u32, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, append_u16, append_u32, parse_ip, parse_mac, parse_u16,
+    parse_u32, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 const IFLA_BOND_AD_INFO_AGGREGATOR: u16 = 1;
@@ -98,15 +98,16 @@ pub enum BondAdInfo {
 }
 
 impl Nla for BondAdInfo {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Aggregator(_)
-            | Self::NumPorts(_)
-            | Self::ActorKey(_)
-            | Self::PartnerKey(_) => 2,
-            Self::PartnerMac(_) => 6,
-            Self::Other(v) => v.value_len(),
+            Self::Aggregator(d)
+            | Self::NumPorts(d)
+            | Self::ActorKey(d)
+            | Self::PartnerKey(d) => append_u16(out, *d),
+            Self::PartnerMac(mac) => append_bytes(out, mac),
+            Self::Other(v) => append_bytes(out, v.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -117,17 +118,6 @@ impl Nla for BondAdInfo {
             Self::PartnerKey(_) => IFLA_BOND_AD_INFO_PARTNER_KEY,
             Self::PartnerMac(_) => IFLA_BOND_AD_INFO_PARTNER_MAC,
             Self::Other(v) => v.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Aggregator(d)
-            | Self::NumPorts(d)
-            | Self::ActorKey(d)
-            | Self::PartnerKey(d) => emit_u16(buffer, *d).unwrap(),
-            Self::PartnerMac(mac) => buffer.copy_from_slice(mac),
-            Self::Other(v) => v.emit_value(buffer),
         }
     }
 }
@@ -638,19 +628,14 @@ impl From<&Vec<Ipv6Addr>> for BondIpAddrNlaList {
 }
 
 impl Nla for BondIpAddrNla {
-    fn value_len(&self) -> usize {
-        if self.addr.is_ipv4() {
-            4
-        } else {
-            16
-        }
-    }
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self.addr {
-            IpAddr::V4(addr) => buffer.copy_from_slice(&addr.octets()),
-            IpAddr::V6(addr) => buffer.copy_from_slice(&addr.octets()),
+            IpAddr::V4(addr) => append_bytes(out, &addr.octets()),
+            IpAddr::V6(addr) => append_bytes(out, &addr.octets()),
         }
+        Ok(())
     }
+
     fn kind(&self) -> u16 {
         self.index
     }
@@ -896,75 +881,60 @@ pub enum InfoBond {
 }
 
 impl Nla for InfoBond {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mode(_)
-            | Self::UseCarrier(_)
-            | Self::PrimaryReselect(_)
-            | Self::FailOverMac(_)
-            | Self::XmitHashPolicy(_)
-            | Self::NumPeerNotif(_)
-            | Self::AllPortsActive(_)
-            | Self::AdLacpActive(_)
-            | Self::AdLacpRate(_)
-            | Self::AdSelect(_)
-            | Self::TlbDynamicLb(_)
-            | Self::MissedMax(_)
-            | Self::CoupledControl(_)
-            | Self::BroadcastNeigh(_)
-            | Self::LacpStrict(_) => 1,
-            Self::AdActorSysPrio(_) | Self::AdUserPortKey(_) => 2,
-            Self::ActivePort(_)
-            | Self::MiiMon(_)
-            | Self::UpDelay(_)
-            | Self::DownDelay(_)
-            | Self::ArpInterval(_)
-            | Self::ArpValidate(_)
-            | Self::ArpAllTargets(_)
-            | Self::Primary(_)
-            | Self::ResendIgmp(_)
-            | Self::MinLinks(_)
-            | Self::LpInterval(_)
-            | Self::PacketsPerPort(_)
-            | Self::PeerNotifDelay(_) => 4,
-            Self::ArpIpTarget(ref addrs) => {
-                BondIpAddrNlaList::from(addrs).as_slice().buffer_len()
+            Self::Mode(value) => {
+                out.push((*value).into());
+                Ok(())
             }
-            Self::NsIp6Target(ref addrs) => {
-                BondIpAddrNlaList::from(addrs).as_slice().buffer_len()
+            Self::XmitHashPolicy(value) => {
+                out.push((*value).into());
+                Ok(())
             }
-            Self::AdActorSystem(_) => 6,
-            Self::AdInfo(infos) => infos.as_slice().buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mode(value) => buffer[0] = (*value).into(),
-            Self::XmitHashPolicy(value) => buffer[0] = (*value).into(),
-            Self::PrimaryReselect(value) => buffer[0] = (*value).into(),
-            Self::AdSelect(value) => buffer[0] = (*value).into(),
+            Self::PrimaryReselect(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
+            Self::AdSelect(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
             Self::NumPeerNotif(value) | Self::MissedMax(value) => {
-                buffer[0] = *value
+                out.push(*value);
+                Ok(())
             }
             Self::UseCarrier(value)
             | Self::AdLacpActive(value)
             | Self::TlbDynamicLb(value)
             | Self::CoupledControl(value)
             | Self::BroadcastNeigh(value)
-            | Self::LacpStrict(value) => buffer[0] = (*value).into(),
-            Self::AdLacpRate(value) => buffer[0] = (*value).into(),
-            Self::AllPortsActive(value) => buffer[0] = (*value).into(),
-            Self::FailOverMac(value) => buffer[0] = (*value).into(),
+            | Self::LacpStrict(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
+            Self::AdLacpRate(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
+            Self::AllPortsActive(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
+            Self::FailOverMac(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
             Self::AdActorSysPrio(value) | Self::AdUserPortKey(value) => {
-                emit_u16(buffer, *value).unwrap()
+                append_u16(out, *value);
+                Ok(())
             }
             Self::ArpValidate(value) => {
-                emit_u32(buffer, (*value).into()).unwrap()
+                append_u32(out, (*value).into());
+                Ok(())
             }
             Self::ArpAllTargets(value) => {
-                emit_u32(buffer, (*value).into()).unwrap()
+                append_u32(out, (*value).into());
+                Ok(())
             }
             Self::ActivePort(value)
             | Self::MiiMon(value)
@@ -976,16 +946,25 @@ impl Nla for InfoBond {
             | Self::MinLinks(value)
             | Self::LpInterval(value)
             | Self::PacketsPerPort(value)
-            | Self::PeerNotifDelay(value) => emit_u32(buffer, *value).unwrap(),
-            Self::AdActorSystem(bytes) => buffer.copy_from_slice(bytes),
+            | Self::PeerNotifDelay(value) => {
+                append_u32(out, *value);
+                Ok(())
+            }
+            Self::AdActorSystem(bytes) => {
+                append_bytes(out, bytes);
+                Ok(())
+            }
             Self::ArpIpTarget(addrs) => {
-                BondIpAddrNlaList::from(addrs).as_slice().emit(buffer)
+                (BondIpAddrNlaList::from(addrs).as_slice()).emit(out)
             }
             Self::NsIp6Target(addrs) => {
-                BondIpAddrNlaList::from(addrs).as_slice().emit(buffer)
+                (BondIpAddrNlaList::from(addrs).as_slice()).emit(out)
             }
-            Self::AdInfo(infos) => infos.as_slice().emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::AdInfo(infos) => (infos.as_slice()).emit(out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 

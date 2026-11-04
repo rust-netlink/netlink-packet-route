@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{
     Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload, Nla, Parseable,
 };
@@ -68,8 +67,8 @@ fn test_parsing_combined_stats() {
 
     assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -87,7 +86,9 @@ fn test_parsing_rtm_newstats_message() {
     };
 
     let mut header = NetlinkHeader::default();
-    header.length = 16 + stats_msg.buffer_len() as u32;
+    let mut body = Vec::new();
+    stats_msg.emit(&mut body).unwrap();
+    header.length = 16 + body.len() as u32;
     header.message_type = 92; // RTM_NEWSTATS
 
     let msg = NetlinkMessage::new(
@@ -95,8 +96,8 @@ fn test_parsing_rtm_newstats_message() {
         NetlinkPayload::from(RouteNetlinkMessage::NewStats(stats_msg)),
     );
 
-    let mut buf = vec![0; msg.buffer_len()];
-    msg.emit(&mut buf);
+    let mut buf = Vec::new();
+    msg.emit(&mut buf).unwrap();
 
     let parsed = NetlinkMessage::deserialize(&buf).unwrap();
     assert_eq!(parsed, msg);
@@ -120,7 +121,9 @@ fn test_parsing_rtm_getstats_message() {
     };
 
     let mut header = NetlinkHeader::default();
-    header.length = 16 + stats_msg.buffer_len() as u32;
+    let mut body = Vec::new();
+    stats_msg.emit(&mut body).unwrap();
+    header.length = 16 + body.len() as u32;
     header.message_type = 94; // RTM_GETSTATS
 
     let msg = NetlinkMessage::new(
@@ -128,8 +131,8 @@ fn test_parsing_rtm_getstats_message() {
         NetlinkPayload::from(RouteNetlinkMessage::GetStats(stats_msg)),
     );
 
-    let mut buf = vec![0; msg.buffer_len()];
-    msg.emit(&mut buf);
+    let mut buf = Vec::new();
+    msg.emit(&mut buf).unwrap();
 
     let parsed = NetlinkMessage::deserialize(&buf).unwrap();
     assert_eq!(parsed, msg);
@@ -161,15 +164,15 @@ fn test_parsing_unknown_stats_attribute() {
     match &parsed.attributes[0] {
         StatsAttribute::Other(nla) => {
             assert_eq!(nla.kind(), 99);
-            let mut val = vec![0u8; nla.value_len()];
-            nla.emit_value(&mut val);
+            let mut val = Vec::new();
+            nla.emit_value(&mut val).unwrap();
             assert_eq!(val, &[0xde, 0xad, 0xbe, 0xef]);
         }
         other => panic!("expected Other, got {other:?}"),
     }
 
     // Roundtrip
-    let mut buf = vec![0; parsed.buffer_len()];
-    parsed.emit(&mut buf);
+    let mut buf = Vec::new();
+    parsed.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }

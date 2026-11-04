@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv6Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, Nla, Parseable};
 
 use crate::{
     route::{
@@ -68,9 +67,9 @@ fn test_encap() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -157,9 +156,9 @@ fn test_encap_tunsrc() {
 
     // The kernel emits `RTA_ENCAP` without `NLA_F_NESTED` while the emitted
     // message carries the flag required by the kernel.
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }
@@ -241,9 +240,9 @@ fn test_encap_hmac() {
 
     // The kernel emits `RTA_ENCAP` without `NLA_F_NESTED` while the emitted
     // message carries the flag required by the kernel.
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }
@@ -308,9 +307,9 @@ fn test_encap_tunsrc_lookup_request() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -371,9 +370,27 @@ fn test_inline() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
+}
+
+#[test]
+fn test_seg6_empty_segments_emit_error() {
+    let header = Seg6Header {
+        mode: Seg6Mode::Encap,
+        segments: vec![],
+        hmac: None,
+    };
+
+    let mut buf = vec![0xaa];
+    let error = header.emit(&mut buf).unwrap_err();
+    assert!(matches!(
+        error.kind(),
+        netlink_packet_core::EncodeErrorKind::InvalidValue
+    ));
+    // Failed emission must roll back the buffer.
+    assert_eq!(buf, vec![0xaa]);
 }

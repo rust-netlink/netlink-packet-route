@@ -3,13 +3,13 @@
 use std::net::IpAddr;
 
 use netlink_packet_core::{
-    emit_u32, emit_u64_be, parse_string, parse_u32, parse_u64_be, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, append_u32, append_u64_be, parse_string, parse_u32,
+    parse_u64_be, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use crate::{
-    ip::{emit_ip_addr, ip_addr_len, parse_ip_addr, IpProtocol},
+    ip::{parse_ip_addr, IpProtocol},
     route::{RouteProtocol, RouteRealm},
     rule::{RulePortRange, RuleUidRange},
 };
@@ -71,25 +71,55 @@ pub enum RuleAttribute {
 }
 
 impl Nla for RuleAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Destination(ip) | Self::Source(ip) => ip_addr_len(ip),
-            Self::UidRange(v) => v.buffer_len(),
-            Self::SourcePortRange(v) | Self::DestinationPortRange(v) => {
-                v.buffer_len()
+            Self::Destination(ip) | Self::Source(ip) => {
+                match ip {
+                    IpAddr::V4(ip) => append_bytes(out, &ip.octets()),
+                    IpAddr::V6(ip) => append_bytes(out, &ip.octets()),
+                }
+                Ok(())
             }
-            Self::Iifname(s) | Self::Oifname(s) => s.len() + 1,
-            Self::Priority(_)
-            | Self::FwMark(_)
-            | Self::FwMask(_)
-            | Self::Goto(_)
-            | Self::SuppressIfGroup(_)
-            | Self::SuppressPrefixLen(_)
-            | Self::Table(_) => 4,
-            Self::TunId(_) => 8,
-            Self::Realm(v) => v.buffer_len(),
-            Self::L3MDev(_) | Self::Protocol(_) | Self::IpProtocol(_) => 1,
-            Self::Other(attr) => attr.value_len(),
+            Self::SourcePortRange(v) | Self::DestinationPortRange(v) => {
+                v.emit(out)
+            }
+            Self::UidRange(v) => v.emit(out),
+            Self::Iifname(s) | Self::Oifname(s) => {
+                append_bytes(out, s.as_bytes());
+                out.push(0);
+                Ok(())
+            }
+            Self::Realm(v) => v.emit(out),
+            Self::Priority(value)
+            | Self::FwMark(value)
+            | Self::FwMask(value)
+            | Self::Goto(value)
+            | Self::SuppressIfGroup(value)
+            | Self::SuppressPrefixLen(value)
+            | Self::Table(value) => {
+                append_u32(out, *value);
+                Ok(())
+            }
+            Self::TunId(value) => {
+                append_u64_be(out, *value);
+                Ok(())
+            }
+            Self::L3MDev(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
+            Self::IpProtocol(value) => {
+                out.push(u8::from(*value));
+                Ok(())
+            }
+            Self::Protocol(value) => {
+                out.push(u8::from(*value));
+                Ok(())
+            }
+            Self::Other(attr) => {
+                append_bytes(out, attr.value());
+                Ok(())
+            }
         }
     }
 
@@ -115,34 +145,6 @@ impl Nla for RuleAttribute {
             Self::SourcePortRange(_) => FRA_SPORT_RANGE,
             Self::DestinationPortRange(_) => FRA_DPORT_RANGE,
             Self::Other(attr) => attr.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Destination(ip) | Self::Source(ip) => {
-                emit_ip_addr(ip, buffer)
-            }
-            Self::SourcePortRange(v) | Self::DestinationPortRange(v) => {
-                v.emit(buffer)
-            }
-            Self::UidRange(v) => v.emit(buffer),
-            Self::Iifname(s) | Self::Oifname(s) => {
-                buffer[..s.len()].copy_from_slice(s.as_bytes())
-            }
-            Self::Realm(v) => v.emit(buffer),
-            Self::Priority(value)
-            | Self::FwMark(value)
-            | Self::FwMask(value)
-            | Self::Goto(value)
-            | Self::SuppressIfGroup(value)
-            | Self::SuppressPrefixLen(value)
-            | Self::Table(value) => emit_u32(buffer, *value).unwrap(),
-            Self::TunId(value) => emit_u64_be(buffer, *value).unwrap(),
-            Self::L3MDev(value) => buffer[0] = (*value).into(),
-            Self::IpProtocol(value) => buffer[0] = u8::from(*value),
-            Self::Protocol(value) => buffer[0] = u8::from(*value),
-            Self::Other(attr) => attr.emit_value(buffer),
         }
     }
 }

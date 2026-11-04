@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv4Addr;
 
 use netlink_packet_core::{Emitable, Parseable};
@@ -66,8 +65,8 @@ fn test_route_metrics_mtu_window_rtt_hoplimit() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -127,8 +126,8 @@ fn test_route_metrics_advmss_ssthresh_cwnd_initcwnd_initrwnd() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -186,8 +185,8 @@ fn test_route_metrics_reordering_rto_min_quickack_fastopen() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -232,8 +231,8 @@ fn test_route_metrics_features_ecn() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -287,7 +286,7 @@ fn test_route_metrics_cc_algo() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }

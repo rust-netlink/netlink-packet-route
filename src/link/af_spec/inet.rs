@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, NLA_F_NESTED,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -80,19 +80,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 }
 
 impl Nla for AfSpecInet {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
-            Self::DevConf(ref c) => c.buffer_len(),
-            Self::DevConfRequest(ref c) => devconf_nested_value_len(c),
-            Self::Other(ref nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match *self {
-            Self::DevConf(ref c) => c.emit(buffer),
-            Self::DevConfRequest(ref c) => emit_devconf_nested(buffer, c),
-            Self::Other(ref nla) => nla.emit_value(buffer),
+            Self::DevConf(ref c) => c.emit(out),
+            Self::DevConfRequest(ref c) => emit_devconf_nested(out, c),
+            Self::Other(ref nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
@@ -124,30 +119,19 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet {
     }
 }
 
-fn devconf_nested_value_len(conf: &InetDevConf) -> usize {
-    let mut len = 0;
+fn emit_devconf_nested(
+    out: &mut Vec<u8>,
+    conf: &InetDevConf,
+) -> Result<(), EncodeError> {
     let entries = devconf_entries(conf);
     for &(kind, val) in &entries {
         if val == 0 {
             continue;
         }
         let nla = DefaultNla::new(kind, (val as u32).to_ne_bytes().to_vec());
-        len += nla.buffer_len();
+        nla.emit(out)?;
     }
-    len
-}
-
-fn emit_devconf_nested(buffer: &mut [u8], conf: &InetDevConf) {
-    let entries = devconf_entries(conf);
-    let mut offset = 0;
-    for &(kind, val) in &entries {
-        if val == 0 {
-            continue;
-        }
-        let nla = DefaultNla::new(kind, (val as u32).to_ne_bytes().to_vec());
-        nla.emit(&mut buffer[offset..offset + nla.buffer_len()]);
-        offset += nla.buffer_len();
-    }
+    Ok(())
 }
 
 fn devconf_entries(conf: &InetDevConf) -> [(u16, i32); IPV4_DEVCONF_MAX] {
@@ -380,12 +364,9 @@ impl From<&InetDevConf> for InetDevConfBuffer {
 }
 
 impl Emitable for InetDevConf {
-    fn buffer_len(&self) -> usize {
-        size_of::<InetDevConfBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = InetDevConfBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

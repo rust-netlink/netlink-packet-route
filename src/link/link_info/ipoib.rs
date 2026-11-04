@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, parse_u16, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, append_u16, parse_u16, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_IPOIB_PKEY: u16 = 1;
@@ -19,20 +19,14 @@ pub enum InfoIpoib {
 }
 
 impl Nla for InfoIpoib {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Pkey(_) | Self::Mode(_) | Self::UmCast(_) => 2,
-            Self::Other(nla) => nla.value_len(),
+            Self::Pkey(value) => append_u16(out, *value),
+            Self::Mode(value) => append_u16(out, (*value).into()),
+            Self::UmCast(value) => append_u16(out, *value),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Pkey(value) => emit_u16(buffer, *value).unwrap(),
-            Self::Mode(value) => emit_u16(buffer, (*value).into()).unwrap(),
-            Self::UmCast(value) => emit_u16(buffer, *value).unwrap(),
-            Self::Other(nla) => nla.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

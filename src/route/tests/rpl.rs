@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv6Addr, str::FromStr};
 
 use netlink_packet_core::{Emitable, Parseable};
@@ -88,9 +87,9 @@ fn test_rpl_tunnel() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     // The kernel does not set `NLA_F_NESTED` on `RTA_ENCAP` in dumps while
     // the emitted message carries the flag required by the kernel.
@@ -151,9 +150,9 @@ fn test_rpl_tunnel_request() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -234,8 +233,8 @@ fn test_rpl_tunnel_pad() {
 
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     // The kernel does not set NLA_F_NESTED on RTA_ENCAP in dumps while an
     // emitted message carries the flag required by the kernel.
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());

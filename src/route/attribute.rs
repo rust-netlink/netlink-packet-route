@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, emit_u32_be, emit_u64, parse_u16, parse_u16_be, parse_u32,
-    parse_u32_be, parse_u64, parse_u8, DecodeError, DefaultNla, Emitable,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
-    ParseableParametrized,
+    append_bytes, append_u16_be, append_u32, append_u32_be, append_u64,
+    parse_u16, parse_u16_be, parse_u32, parse_u32_be, parse_u64, parse_u8,
+    DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext, Nla,
+    NlaBuffer, NlasIterator, Parseable, ParseableParametrized, NLA_F_NESTED,
 };
 
 use super::{
@@ -15,7 +15,6 @@ use super::{
     RouteLwTunnelEncap, RouteMetric, RouteMfcStats, RouteMplsTtlPropagation,
     RouteNextHop, RoutePreference, RouteRealm, RouteType, RouteVia,
 };
-
 const RTA_DST: u16 = 1;
 const RTA_SRC: u16 = 2;
 const RTA_IIF: u16 = 3;
@@ -94,85 +93,52 @@ pub enum RouteAttribute {
 }
 
 impl Nla for RouteAttribute {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Destination(addr)
-            | Self::PrefSource(addr)
-            | Self::Gateway(addr)
-            | Self::Source(addr) => addr.buffer_len(),
-            Self::Via(v) => v.buffer_len(),
-            Self::NewDestination(v) => VecMplsLabel(v.clone()).buffer_len(),
-            Self::NewDestinationAddress(v) => v.buffer_len(),
-            Self::Encap(v) => v.as_slice().buffer_len(),
-            Self::TtlPropagate(_) => 1,
-            Self::CacheInfo(cache_info) => cache_info.buffer_len(),
-            Self::MfcStats(stats) => stats.buffer_len(),
-            Self::Metrics(metrics) => metrics.as_slice().buffer_len(),
-            Self::MultiPath(next_hops) => {
-                next_hops.iter().map(|nh| nh.buffer_len()).sum()
-            }
-            Self::Preference(_) => 1,
-            Self::EncapType(v) => v.buffer_len(),
-            Self::Realm(v) => v.buffer_len(),
-            Self::Uid(_)
-            | Self::Expires(_)
-            | Self::Iif(_)
-            | Self::Oif(_)
-            | Self::Priority(_)
-            | Self::Table(_)
-            | Self::Mark(_) => 4,
-            Self::MulticastExpires(_) => 8,
-            Self::IpProto(_) => 1,
-            Self::Sport(_) | Self::Dport(_) => 2,
-            Self::Flowlabel(_) | Self::NhId(_) => 4,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Destination(addr)
             | Self::PrefSource(addr)
             | Self::Source(addr)
-            | Self::Gateway(addr) => addr.emit(buffer),
-            Self::Via(v) => v.emit(buffer),
-            Self::NewDestination(v) => VecMplsLabel(v.to_vec()).emit(buffer),
-            Self::NewDestinationAddress(v) => v.emit(buffer),
-
-            Self::Encap(nlas) => nlas.as_slice().emit(buffer),
-            Self::TtlPropagate(v) => buffer[0] = u8::from(*v),
-            Self::Preference(p) => buffer[0] = (*p).into(),
-            Self::CacheInfo(cache_info) => cache_info.emit(buffer),
-            Self::MfcStats(stats) => stats.emit(buffer),
-            Self::Metrics(metrics) => metrics.as_slice().emit(buffer),
-            Self::MultiPath(next_hops) => {
-                let mut offset = 0;
-                for nh in next_hops {
-                    let len = nh.buffer_len();
-                    nh.emit(&mut buffer[offset..offset + len]);
-                    offset += len
+            | Self::Gateway(addr) => addr.emit(out)?,
+            Self::Via(v) => v.emit(out)?,
+            Self::NewDestination(v) => {
+                for label in v {
+                    label.emit(out)?;
                 }
             }
-            Self::EncapType(v) => v.emit(buffer),
+            Self::NewDestinationAddress(v) => v.emit(out)?,
+
+            Self::Encap(nlas) => (nlas).emit(out)?,
+            Self::TtlPropagate(v) => out.push(u8::from(*v)),
+            Self::Preference(p) => out.push((*p).into()),
+            Self::CacheInfo(cache_info) => cache_info.emit(out)?,
+            Self::MfcStats(stats) => stats.emit(out)?,
+            Self::Metrics(metrics) => (metrics).emit(out)?,
+            Self::MultiPath(next_hops) => {
+                for nh in next_hops {
+                    nh.emit(out)?;
+                }
+            }
+            Self::EncapType(v) => v.emit(out)?,
             Self::Uid(value)
             | Self::Expires(value)
             | Self::Iif(value)
             | Self::Oif(value)
             | Self::Priority(value)
             | Self::Table(value)
-            | Self::Mark(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Realm(v) => v.emit(buffer),
-            Self::MulticastExpires(value) => emit_u64(buffer, *value).unwrap(),
-            Self::IpProto(value) => buffer[0] = *value,
+            | Self::Mark(value) => append_u32(out, *value),
+            Self::Realm(v) => v.emit(out)?,
+            Self::MulticastExpires(value) => append_u64(out, *value),
+            Self::IpProto(value) => out.push(*value),
             Self::Sport(value) | Self::Dport(value) => {
-                buffer[..2].copy_from_slice(&value.to_be_bytes())
+                append_u16_be(out, *value)
             }
             // RTA_FLOWLABEL is a NLA_BE32 attribute while RTA_NH_ID is a
             // host endian one.
-            Self::Flowlabel(value) => emit_u32_be(buffer, *value).unwrap(),
-            Self::NhId(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Flowlabel(value) => append_u32_be(out, *value),
+            Self::NhId(value) => append_u32(out, *value),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -196,7 +162,27 @@ impl Nla for RouteAttribute {
             Self::NewDestinationAddress(_) => RTA_NEWDST,
             Self::Preference(_) => RTA_PREF,
             Self::EncapType(_) => RTA_ENCAP_TYPE,
-            Self::Encap(_) => RTA_ENCAP,
+            Self::Encap(encap) => {
+                // The kernel validates these encapsulation types with
+                // `nla_parse_nested()` which rejects a missing
+                // `NLA_F_NESTED` flag, `iproute2` always sets the flag on
+                // `RTA_ENCAP`.
+                if encap.iter().any(|e| {
+                    matches!(
+                        e,
+                        RouteLwTunnelEncap::Seg6(_)
+                            | RouteLwTunnelEncap::Xfrm(_)
+                            | RouteLwTunnelEncap::Rpl(_)
+                            | RouteLwTunnelEncap::Ioam6(_)
+                            | RouteLwTunnelEncap::Ip(RouteIpTunnel::Opts(_))
+                            | RouteLwTunnelEncap::Ip6(RouteIp6Tunnel::Opts(_))
+                    )
+                }) {
+                    RTA_ENCAP | NLA_F_NESTED
+                } else {
+                    RTA_ENCAP
+                }
+            }
             Self::Expires(_) => RTA_EXPIRES,
             Self::MulticastExpires(_) => RTA_EXPIRES,
             Self::Uid(_) => RTA_UID,
@@ -207,27 +193,6 @@ impl Nla for RouteAttribute {
             Self::Flowlabel(_) => RTA_FLOWLABEL,
             Self::NhId(_) => RTA_NH_ID,
             Self::Other(ref attr) => attr.kind(),
-        }
-    }
-
-    fn is_nested(&self) -> bool {
-        if let Self::Encap(encap) = self {
-            // The kernel validates these encapsulation types with
-            // `nla_parse_nested()` which rejects a missing `NLA_F_NESTED`
-            // flag, `iproute2` always sets the flag on `RTA_ENCAP`.
-            encap.iter().any(|e| {
-                matches!(
-                    e,
-                    RouteLwTunnelEncap::Seg6(_)
-                        | RouteLwTunnelEncap::Xfrm(_)
-                        | RouteLwTunnelEncap::Rpl(_)
-                        | RouteLwTunnelEncap::Ioam6(_)
-                        | RouteLwTunnelEncap::Ip(RouteIpTunnel::Opts(_))
-                        | RouteLwTunnelEncap::Ip6(RouteIp6Tunnel::Opts(_))
-                )
-            })
-        } else {
-            false
         }
     }
 }

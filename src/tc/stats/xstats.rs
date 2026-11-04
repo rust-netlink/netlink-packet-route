@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, Parseable, ParseableParametrized,
+    append_bytes, DecodeError, Emitable, EncodeError, NlaBuffer, Parseable,
+    ParseableParametrized,
 };
 
 use crate::tc::{TcFqCodelXstats, TcQdiscFqCodel};
@@ -14,17 +15,13 @@ pub enum TcXstats {
 }
 
 impl Emitable for TcXstats {
-    fn buffer_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::FqCodel(v) => v.buffer_len(),
-            Self::Other(v) => v.len(),
-        }
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        match self {
-            Self::FqCodel(v) => v.emit(buffer),
-            Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
+            Self::FqCodel(v) => v.emit(out),
+            Self::Other(v) => {
+                append_bytes(out, v.as_slice());
+                Ok(())
+            }
         }
     }
 }

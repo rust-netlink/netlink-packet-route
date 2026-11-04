@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_string, parse_u32, DecodeError, DefaultNla,
-    ErrorContext as _, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
+    EncodeError, ErrorContext as _, Nla, NlaBuffer, Parseable,
 };
 
 use crate::tc::{TcHandle, TcU32OptionFlags};
@@ -40,17 +40,21 @@ pub enum TcFilterBpfOption {
 }
 
 impl Nla for TcFilterBpfOption {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::ClassId(_)
-            | Self::ProgFd(_)
-            | Self::Flags(_)
-            | Self::FlagsGeneric(_)
-            | Self::ProgId(_) => 4,
-            Self::ProgName(name) => name.len() + 1,
-            Self::ProgTag(_) => TcFilterBpf::BPF_TAG_SIZE,
-            Self::Other(attr) => attr.value_len(),
+            Self::ClassId(i) => append_u32(out, (*i).into()),
+            Self::ProgFd(fd) => append_u32(out, *fd),
+            Self::ProgName(name) => {
+                append_bytes(out, name.as_bytes());
+                out.push(0);
+            }
+            Self::Flags(flags) => append_u32(out, flags.bits()),
+            Self::FlagsGeneric(flags_gen) => append_u32(out, flags_gen.bits()),
+            Self::ProgTag(tag) => append_bytes(out, tag),
+            Self::ProgId(id) => append_u32(out, *id),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
@@ -63,24 +67,6 @@ impl Nla for TcFilterBpfOption {
             Self::ProgTag(_) => TCA_BPF_TAG,
             Self::ProgId(_) => TCA_BPF_ID,
             Self::Other(attr) => attr.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::ClassId(i) => emit_u32(buffer, (*i).into()).unwrap(),
-            Self::ProgFd(fd) => emit_u32(buffer, *fd).unwrap(),
-            Self::ProgName(name) => {
-                buffer[..name.len()].copy_from_slice(name.as_bytes());
-                buffer[name.len()] = 0;
-            }
-            Self::Flags(flags) => emit_u32(buffer, flags.bits()).unwrap(),
-            Self::FlagsGeneric(flags_gen) => {
-                emit_u32(buffer, flags_gen.bits()).unwrap()
-            }
-            Self::ProgTag(tag) => buffer.copy_from_slice(tag),
-            Self::ProgId(id) => emit_u32(buffer, *id).unwrap(),
-            Self::Other(attr) => attr.emit_value(buffer),
         }
     }
 }

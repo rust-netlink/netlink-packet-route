@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::{
@@ -29,8 +28,8 @@ fn test_ipv4_tun_id() {
 
     assert_eq!(RuleMessage::parse(&raw).unwrap(), expected);
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 
@@ -56,8 +55,8 @@ fn test_ipv6_tun_id() {
 
     assert_eq!(RuleMessage::parse(&raw).unwrap(), expected);
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }
 

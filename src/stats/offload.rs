@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
-    Parseable, NLA_F_NESTED,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlasIterator, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -28,21 +28,15 @@ pub enum OffloadXstat {
 }
 
 impl Nla for OffloadXstat {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::CpuHit(v) => v.buffer_len(),
-            Self::L3Stats(v) => v.buffer_len(),
-            Self::HwStatsInfo(v) => v.buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::CpuHit(v) => v.emit(buffer),
-            Self::L3Stats(v) => v.emit(buffer),
-            Self::HwStatsInfo(v) => v.emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::CpuHit(v) => v.emit(out),
+            Self::HwStatsInfo(v) => v.emit(out),
+            Self::L3Stats(v) => v.emit(out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 
@@ -64,7 +58,7 @@ pub(crate) fn parse_offload_xstats_inner(
     let mut result = Vec::new();
     for nla in NlasIterator::new(payload) {
         let nla = nla.context("invalid NLA in offload xstats")?;
-        let kind = nla.kind() & !NLA_F_NESTED;
+        let kind = nla.kind();
         let val = nla.value();
         result.push(match kind {
             IFLA_OFFLOAD_XSTATS_CPU_HIT => OffloadXstat::CpuHit(
@@ -166,13 +160,10 @@ impl From<&HwStats64> for HwStats64Buffer {
 }
 
 impl Emitable for HwStats64 {
-    fn buffer_len(&self) -> usize {
-        size_of::<HwStats64Buffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = HwStats64Buffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -190,7 +181,7 @@ impl HwStatsInfo {
         for nla in NlasIterator::new(payload) {
             let nla = nla.context("invalid NLA in hw stats info")?;
             let val = nla.value();
-            match nla.kind() & !NLA_F_NESTED {
+            match nla.kind() {
                 IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST if !val.is_empty() => {
                     info.request = Some(val[0])
                 }
@@ -204,7 +195,7 @@ impl HwStatsInfo {
                         let inner = inner
                             .context("invalid NLA in hw stats info L3 stats")?;
                         let iv = inner.value();
-                        match inner.kind() & !NLA_F_NESTED {
+                        match inner.kind() {
                             IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST
                                 if !iv.is_empty() =>
                             {
@@ -227,44 +218,20 @@ impl HwStatsInfo {
 }
 
 impl Emitable for HwStatsInfo {
-    fn buffer_len(&self) -> usize {
-        // L3_STATS NLA header(4) + inner NLAs (8 bytes each: hdr(4) + u8 + 3
-        // pad)
-        let inner_count =
-            self.request.is_some() as usize + self.used.is_some() as usize;
-        if inner_count == 0 {
-            return 0;
-        }
-        4 + inner_count * 8
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let l3_len = self.buffer_len();
-        if l3_len == 0 {
-            return;
-        }
-        // L3_STATS NLA header
-        buffer[0..2].copy_from_slice(&(l3_len as u16).to_ne_bytes());
-        buffer[2..4].copy_from_slice(
-            &(IFLA_OFFLOAD_XSTATS_L3_STATS | NLA_F_NESTED).to_ne_bytes(),
-        );
-        let mut off = 4;
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        let mut inner = Vec::new();
         if let Some(v) = self.request {
-            buffer[off..off + 2].copy_from_slice(&5u16.to_ne_bytes());
-            buffer[off + 2..off + 4].copy_from_slice(
-                &IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST.to_ne_bytes(),
-            );
-            buffer[off + 4] = v;
-            buffer[off + 5..off + 8].fill(0);
-            off += 8;
+            DefaultNla::new(IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST, vec![v])
+                .emit(&mut inner)?;
         }
         if let Some(v) = self.used {
-            buffer[off..off + 2].copy_from_slice(&5u16.to_ne_bytes());
-            buffer[off + 2..off + 4].copy_from_slice(
-                &IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED.to_ne_bytes(),
-            );
-            buffer[off + 4] = v;
-            buffer[off + 5..off + 8].fill(0);
+            DefaultNla::new(IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED, vec![v])
+                .emit(&mut inner)?;
         }
+        if inner.is_empty() {
+            return Ok(());
+        }
+        DefaultNla::new(IFLA_OFFLOAD_XSTATS_L3_STATS | NLA_F_NESTED, inner)
+            .emit(out)
     }
 }

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32, emit_u64, parse_u16_be, parse_u32, parse_u64,
-    parse_u8, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16_be, append_u32, append_u64, parse_u16_be,
+    parse_u32, parse_u64, parse_u8, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_MACSEC_SCI: u16 = 1;
@@ -155,33 +156,12 @@ pub enum InfoMacSec {
 }
 
 impl Nla for InfoMacSec {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Sci(_) | Self::CipherSuite(_) => 8,
-            Self::Window(_) => 4,
-            Self::Port(_) => 2,
-            Self::IcvLen(_)
-            | Self::EncodingSa(_)
-            | Self::Encrypt(_)
-            | Self::Protect(_)
-            | Self::IncSci(_)
-            | Self::Es(_)
-            | Self::Scb(_)
-            | Self::ReplayProtect(_)
-            | Self::Validation(_)
-            | Self::Offload(_) => 1,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Sci(value) => emit_u64(buffer, *value).unwrap(),
-            Self::CipherSuite(value) => {
-                emit_u64(buffer, (*value).into()).unwrap()
-            }
-            Self::Window(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
+            Self::Sci(value) => append_u64(out, *value),
+            Self::CipherSuite(value) => append_u64(out, (*value).into()),
+            Self::Window(value) => append_u32(out, *value),
+            Self::Port(value) => append_u16_be(out, *value),
             Self::IcvLen(value)
             | Self::EncodingSa(value)
             | Self::Encrypt(value)
@@ -189,11 +169,12 @@ impl Nla for InfoMacSec {
             | Self::IncSci(value)
             | Self::Es(value)
             | Self::Scb(value)
-            | Self::ReplayProtect(value) => buffer[0] = *value,
-            Self::Offload(value) => buffer[0] = (*value).into(),
-            Self::Validation(value) => buffer[0] = (*value).into(),
-            Self::Other(nla) => nla.emit_value(buffer),
+            | Self::ReplayProtect(value) => out.push(*value),
+            Self::Offload(value) => out.push((*value).into()),
+            Self::Validation(value) => out.push((*value).into()),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{DefaultNla, Emitable, Nla, NlaBuffer, Parseable};
 
 use crate::{
@@ -48,6 +47,7 @@ mod mirror {
 
     /// Captured `TcActionMessage` examples used for testing.
     mod message {
+
         /// Capture of request message for
         ///
         /// ```bash
@@ -293,8 +293,8 @@ mod mirror {
 #[test]
 fn tc_action_message_attribute_parse_back_blank_actions() {
     let orig = Actions(vec![]);
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageAttribute::parse(
         &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
     )
@@ -308,8 +308,8 @@ fn tc_action_message_attribute_parse_back_example_action() {
         tab: 9999,
         attributes: vec![Kind("example".into())],
     }]);
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageAttribute::parse(
         &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
     )
@@ -333,8 +333,8 @@ fn tc_action_message_attribute_parse_back_multiple_example_action() {
             ],
         },
     ]);
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageAttribute::parse(
         &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
     )
@@ -345,8 +345,8 @@ fn tc_action_message_attribute_parse_back_multiple_example_action() {
 #[test]
 fn tc_action_message_flags_parse_back_default() {
     let orig = TcActionMessageFlagsWithSelector::default();
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageFlagsWithSelector::parse(
         &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
     )
@@ -361,8 +361,8 @@ fn tc_action_message_flags_parse_back_example_value() {
             | TcActionMessageFlags::TerseDump,
         selector: TcActionMessageFlags::LargeDump,
     };
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageFlagsWithSelector::parse(
         &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
     )
@@ -373,8 +373,8 @@ fn tc_action_message_flags_parse_back_example_value() {
 #[test]
 fn tc_action_message_parse_back_default() {
     let orig = TcActionMessage::default();
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessage::parse(buffer.as_slice()).unwrap();
     assert_eq!(orig, parsed);
 }
@@ -399,8 +399,8 @@ fn tc_action_message_parse_back_example_value() {
             )),
         ],
     };
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessage::parse(buffer.as_slice()).unwrap();
     assert_eq!(orig, parsed);
 }
@@ -413,8 +413,8 @@ fn tc_action_root_time_delta_native_byte_order() {
     let value = 0x12345678u32;
     let attr = RootTimeDelta(value);
 
-    let mut payload = vec![0u8; attr.value_len()];
-    attr.emit_value(&mut payload);
+    let mut payload = Vec::new();
+    attr.emit_value(&mut payload).unwrap();
     assert_eq!(payload, value.to_ne_bytes());
 
     let mut raw = Vec::new();

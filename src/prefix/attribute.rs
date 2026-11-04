@@ -3,8 +3,8 @@
 use std::net::Ipv6Addr;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use super::cache_info::CacheInfo;
@@ -20,20 +20,13 @@ pub enum PrefixAttribute {
 }
 
 impl Nla for PrefixAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
-            Self::Address(_) => 16,
-            Self::CacheInfo(ref cache_info) => cache_info.buffer_len(),
-            Self::Other(ref attr) => attr.value_len(),
+            Self::Address(ref addr) => append_bytes(out, &addr.octets()),
+            Self::CacheInfo(ref cache_info) => cache_info.emit(out)?,
+            Self::Other(ref attr) => append_bytes(out, attr.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match *self {
-            Self::Address(ref addr) => buffer.copy_from_slice(&addr.octets()),
-            Self::CacheInfo(ref cache_info) => cache_info.emit(buffer),
-            Self::Other(ref attr) => attr.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {

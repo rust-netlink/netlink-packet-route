@@ -3,8 +3,8 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, ErrorContext, Nla,
-    NlaBuffer, Parseable,
+    append_bytes, append_u32, parse_u32, parse_u8, DecodeError, DefaultNla,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_GTP_FD0: u16 = 1;
@@ -71,30 +71,36 @@ pub enum InfoGtp {
 }
 
 impl Nla for InfoGtp {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Fd0(_)
-            | Self::Fd1(_)
-            | Self::PdpHashsize(_)
-            | Self::Role(_) => 4,
-            Self::CreateSockets(_) | Self::RestartCount(_) => 1,
-            Self::Local(_) => 4,
-            Self::Local6(_) => 16,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Fd0(value) | Self::Fd1(value) | Self::PdpHashsize(value) => {
-                emit_u32(buffer, *value).unwrap()
+                append_u32(out, *value);
+                Ok(())
             }
-            Self::Role(role) => emit_u32(buffer, (*role).into()).unwrap(),
-            Self::CreateSockets(value) => buffer[0] = *value as u8,
-            Self::RestartCount(value) => buffer[0] = *value,
-            Self::Local(value) => buffer.copy_from_slice(&value.octets()),
-            Self::Local6(value) => buffer.copy_from_slice(&value.octets()),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Role(role) => {
+                append_u32(out, (*role).into());
+                Ok(())
+            }
+            Self::CreateSockets(value) => {
+                out.push(*value as u8);
+                Ok(())
+            }
+            Self::RestartCount(value) => {
+                out.push(*value);
+                Ok(())
+            }
+            Self::Local(value) => {
+                append_bytes(out, &value.octets());
+                Ok(())
+            }
+            Self::Local6(value) => {
+                append_bytes(out, &value.octets());
+                Ok(())
+            }
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 

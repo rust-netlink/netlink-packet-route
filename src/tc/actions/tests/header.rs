@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::Emitable;
 
 use crate::{tc::actions::TcActionMessageHeader, AddressFamily};
@@ -57,8 +56,8 @@ fn tc_action_message_header_parse_back_all_known_families() {
         AddressFamily::Mctp,
     ] {
         let orig = TcActionMessageHeader { family };
-        let mut buffer = vec![0; orig.buffer_len()];
-        orig.emit(&mut buffer);
+        let mut buffer = Vec::new();
+        orig.emit(&mut buffer).unwrap();
         let parsed = TcActionMessageHeader::parse(&buffer).unwrap();
         assert_eq!(orig, parsed);
     }
@@ -69,8 +68,8 @@ fn tc_action_message_header_parse_back_other() {
     let orig = TcActionMessageHeader {
         family: AddressFamily::Other(99),
     };
-    let mut buffer = vec![0; orig.buffer_len()];
-    orig.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageHeader::parse(&buffer).unwrap();
     assert_eq!(orig, parsed);
 }

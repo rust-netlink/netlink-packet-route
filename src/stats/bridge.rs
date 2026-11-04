@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
-    Parseable, NLA_F_NESTED,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlasIterator, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -29,7 +29,7 @@ pub(crate) fn parse_bridge_xstats(
     let mut result = Vec::new();
     for nla in NlasIterator::new(payload) {
         let nla = nla.context("invalid NLA in bridge xstats")?;
-        let kind = nla.kind() & !NLA_F_NESTED;
+        let kind = nla.kind();
         let val = nla.value();
         result.push(match kind {
             BRIDGE_XSTATS_MCAST => BridgeXstat::Mcast(
@@ -51,21 +51,15 @@ pub(crate) fn parse_bridge_xstats(
 }
 
 impl Nla for BridgeXstat {
-    fn value_len(&self) -> usize {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mcast(v) => v.buffer_len(),
-            Self::Stp(v) => v.buffer_len(),
-            Self::Vlan(v) => v.buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mcast(v) => v.emit(buffer),
-            Self::Stp(v) => v.emit(buffer),
-            Self::Vlan(v) => v.emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::Mcast(v) => v.emit(out),
+            Self::Stp(v) => v.emit(out),
+            Self::Vlan(v) => v.emit(out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 
@@ -242,13 +236,10 @@ impl From<&BridgeMcastStats> for BridgeMcastStatsBuffer {
 }
 
 impl Emitable for BridgeMcastStats {
-    fn buffer_len(&self) -> usize {
-        size_of::<BridgeMcastStatsBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = BridgeMcastStatsBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -319,13 +310,10 @@ impl From<&BridgeStpXstats> for BridgeStpXstatsBuffer {
 }
 
 impl Emitable for BridgeStpXstats {
-    fn buffer_len(&self) -> usize {
-        size_of::<BridgeStpXstatsBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = BridgeStpXstatsBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -398,12 +386,9 @@ impl From<&BridgeVlanXstats> for BridgeVlanXstatsBuffer {
 }
 
 impl Emitable for BridgeVlanXstats {
-    fn buffer_len(&self) -> usize {
-        size_of::<BridgeVlanXstatsBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = BridgeVlanXstatsBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

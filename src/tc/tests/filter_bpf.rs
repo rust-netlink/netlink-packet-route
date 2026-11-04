@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{Emitable, Parseable as _};
 
 use crate::{
@@ -107,8 +106,8 @@ fn test_get_filter_bpf() {
 
     assert_eq!(expected, TcMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }

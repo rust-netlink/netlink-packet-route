@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -59,12 +59,9 @@ impl From<&RouteMfcStats> for RouteMfcStatsBuffer {
 }
 
 impl Emitable for RouteMfcStats {
-    fn buffer_len(&self) -> usize {
-        size_of::<RouteMfcStatsBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = RouteMfcStatsBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

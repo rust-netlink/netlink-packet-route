@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
@@ -83,12 +82,7 @@ fn test_parsing_bond_xstats() {
 
     assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
-    assert_eq!(buf, raw);
-
-    // Non-zeroed buffer to verify emit zeros padding
-    let mut buf = vec![255; expected.buffer_len()];
-    expected.emit(&mut buf);
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
 }

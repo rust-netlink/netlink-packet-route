@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
@@ -92,9 +91,9 @@ fn test_bond_link_info() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -144,9 +143,9 @@ fn test_bond_port_link_info() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -253,9 +252,9 @@ fn test_parsing_link_bond_port_ad() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -328,8 +327,8 @@ fn test_bond_arp_validate() {
     };
 
     let packet = RouteNetlinkMessage::NewLink(expected);
-    let mut buf = vec![0u8; packet.buffer_len()];
-    packet.emit(&mut buf);
+    let mut buf = Vec::new();
+    packet.emit(&mut buf).unwrap();
 
     assert_eq!(raw, buf);
 }
@@ -522,9 +521,9 @@ fn test_bond_lacp_strict() {
 
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
+#[cfg(not(has_message_family))]
+use netlink_packet_core::EncodeErrorKind;
 use netlink_packet_core::{
-    DecodeError, Emitable, NetlinkDeserializable, NetlinkHeader,
-    NetlinkPayload, NetlinkSerializable, ParseableParametrized,
+    DecodeError, EncodeError, NetlinkDeserializable, NetlinkHeader,
+    NetlinkPayload, ParseableParametrized,
 };
 #[cfg(has_message_family)]
 use netlink_packet_core::{ErrorContext, Parseable};
@@ -766,169 +768,93 @@ impl RouteNetlinkMessage {
     }
 }
 
-impl Emitable for RouteNetlinkMessage {
-    fn buffer_len(&self) -> usize {
-        match *self {
+impl ::netlink_packet_core::Emitable for RouteNetlinkMessage {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        match self {
             #[cfg(feature = "link")]
-            Self::NewLink(ref msg)
-            | Self::DelLink(ref msg)
-            | Self::GetLink(ref msg)
-            | Self::SetLink(ref msg)
-            | Self::NewLinkProp(ref msg)
-            | Self::DelLinkProp(ref msg) => msg.buffer_len(),
+            Self::NewLink(msg)
+            | Self::DelLink(msg)
+            | Self::GetLink(msg)
+            | Self::SetLink(msg)
+            | Self::NewLinkProp(msg)
+            | Self::DelLinkProp(msg) => msg.emit(out),
 
             #[cfg(feature = "address")]
-            Self::NewAddress(ref msg)
-            | Self::DelAddress(ref msg)
-            | Self::GetAddress(ref msg) => msg.buffer_len(),
+            Self::NewAddress(msg)
+            | Self::DelAddress(msg)
+            | Self::GetAddress(msg) => msg.emit(out),
 
             #[cfg(feature = "addrlabel")]
-            Self::NewAddrLabel(ref msg)
-            | Self::DelAddrLabel(ref msg)
-            | Self::GetAddrLabel(ref msg) => msg.buffer_len(),
+            Self::NewAddrLabel(msg)
+            | Self::DelAddrLabel(msg)
+            | Self::GetAddrLabel(msg) => msg.emit(out),
 
             #[cfg(feature = "neighbour")]
-            Self::NewNeighbour(ref msg)
-            | Self::GetNeighbour(ref msg)
-            | Self::DelNeighbour(ref msg) => msg.buffer_len(),
+            Self::NewNeighbour(msg)
+            | Self::GetNeighbour(msg)
+            | Self::DelNeighbour(msg) => msg.emit(out),
 
             #[cfg(feature = "neighbour-table")]
-            Self::NewNeighbourTable(ref msg)
-            | Self::GetNeighbourTable(ref msg)
-            | Self::SetNeighbourTable(ref msg) => msg.buffer_len(),
+            Self::NewNeighbourTable(msg)
+            | Self::GetNeighbourTable(msg)
+            | Self::SetNeighbourTable(msg) => msg.emit(out),
 
             #[cfg(feature = "route")]
-            Self::NewRoute(ref msg)
-            | Self::DelRoute(ref msg)
-            | Self::GetRoute(ref msg) => msg.buffer_len(),
+            Self::NewRoute(msg) | Self::DelRoute(msg) | Self::GetRoute(msg) => {
+                msg.emit(out)
+            }
 
             #[cfg(feature = "prefix")]
-            Self::NewPrefix(ref msg) => msg.buffer_len(),
+            Self::NewPrefix(msg) => msg.emit(out),
 
             #[cfg(feature = "tc")]
-            Self::NewQueueDiscipline(ref msg)
-            | Self::DelQueueDiscipline(ref msg)
-            | Self::GetQueueDiscipline(ref msg)
-            | Self::NewTrafficClass(ref msg)
-            | Self::DelTrafficClass(ref msg)
-            | Self::GetTrafficClass(ref msg)
-            | Self::NewTrafficFilter(ref msg)
-            | Self::DelTrafficFilter(ref msg)
-            | Self::GetTrafficFilter(ref msg)
-            | Self::NewTrafficChain(ref msg)
-            | Self::DelTrafficChain(ref msg)
-            | Self::GetTrafficChain(ref msg) => msg.buffer_len(),
+            Self::NewQueueDiscipline(msg)
+            | Self::DelQueueDiscipline(msg)
+            | Self::GetQueueDiscipline(msg)
+            | Self::NewTrafficClass(msg)
+            | Self::DelTrafficClass(msg)
+            | Self::GetTrafficClass(msg)
+            | Self::NewTrafficFilter(msg)
+            | Self::DelTrafficFilter(msg)
+            | Self::GetTrafficFilter(msg)
+            | Self::NewTrafficChain(msg)
+            | Self::DelTrafficChain(msg)
+            | Self::GetTrafficChain(msg) => msg.emit(out),
 
-            #[cfg(feature = "nsid")]
-            Self::NewNsId(ref msg)
-            | Self::DelNsId(ref msg)
-            | Self::GetNsId(ref msg) => msg.buffer_len(),
+            #[cfg(feature = "tc")]
+            Self::NewTrafficAction(msg)
+            | Self::DelTrafficAction(msg)
+            | Self::GetTrafficAction(msg) => msg.emit(out),
 
             #[cfg(feature = "stats")]
-            Self::NewStats(ref msg) | Self::GetStats(ref msg) => {
-                msg.buffer_len()
+            Self::NewStats(msg) | Self::GetStats(msg) => msg.emit(out),
+
+            #[cfg(feature = "nsid")]
+            Self::NewNsId(msg) | Self::DelNsId(msg) | Self::GetNsId(msg) => {
+                msg.emit(out)
             }
 
             #[cfg(feature = "rule")]
-            Self::NewRule(ref msg)
-            | Self::DelRule(ref msg)
-            | Self::GetRule(ref msg) => msg.buffer_len(),
-
-            #[cfg(feature = "tc")]
-            Self::NewTrafficAction(ref msg)
-            | Self::DelTrafficAction(ref msg)
-            | Self::GetTrafficAction(ref msg) => msg.buffer_len(),
-        }
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        #[cfg(not(has_message_family))]
-        let _ = buffer;
-        match *self {
-            #[cfg(feature = "link")]
-            Self::NewLink(ref msg)
-            | Self::DelLink(ref msg)
-            | Self::GetLink(ref msg)
-            | Self::SetLink(ref msg)
-            | Self::NewLinkProp(ref msg)
-            | Self::DelLinkProp(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "address")]
-            Self::NewAddress(ref msg)
-            | Self::DelAddress(ref msg)
-            | Self::GetAddress(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "addrlabel")]
-            Self::NewAddrLabel(ref msg)
-            | Self::DelAddrLabel(ref msg)
-            | Self::GetAddrLabel(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "neighbour")]
-            Self::GetNeighbour(ref msg)
-            | Self::NewNeighbour(ref msg)
-            | Self::DelNeighbour(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "neighbour-table")]
-            Self::GetNeighbourTable(ref msg)
-            | Self::NewNeighbourTable(ref msg)
-            | Self::SetNeighbourTable(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "route")]
-            Self::NewRoute(ref msg)
-            | Self::DelRoute(ref msg)
-            | Self::GetRoute(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "prefix")]
-            Self::NewPrefix(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "tc")]
-            Self::NewQueueDiscipline(ref msg)
-            | Self::DelQueueDiscipline(ref msg)
-            | Self::GetQueueDiscipline(ref msg)
-            | Self::NewTrafficClass(ref msg)
-            | Self::DelTrafficClass(ref msg)
-            | Self::GetTrafficClass(ref msg)
-            | Self::NewTrafficFilter(ref msg)
-            | Self::DelTrafficFilter(ref msg)
-            | Self::GetTrafficFilter(ref msg)
-            | Self::NewTrafficChain(ref msg)
-            | Self::DelTrafficChain(ref msg)
-            | Self::GetTrafficChain(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "nsid")]
-            Self::NewNsId(ref msg)
-            | Self::DelNsId(ref msg)
-            | Self::GetNsId(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "stats")]
-            Self::NewStats(ref msg) | Self::GetStats(ref msg) => {
-                msg.emit(buffer)
+            Self::NewRule(msg) | Self::DelRule(msg) | Self::GetRule(msg) => {
+                msg.emit(out)
             }
 
-            #[cfg(feature = "rule")]
-            Self::NewRule(ref msg)
-            | Self::DelRule(ref msg)
-            | Self::GetRule(ref msg) => msg.emit(buffer),
-
-            #[cfg(feature = "tc")]
-            Self::NewTrafficAction(ref msg)
-            | Self::DelTrafficAction(ref msg)
-            | Self::GetTrafficAction(ref msg) => msg.emit(buffer),
+            #[cfg(not(has_message_family))]
+            _ => {
+                let _ = out;
+                Err(EncodeError::new(
+                    EncodeErrorKind::InvalidValue,
+                    "no message family feature is enabled: cannot encode \
+                     RouteNetlinkMessage",
+                ))
+            }
         }
     }
 }
 
-impl NetlinkSerializable for RouteNetlinkMessage {
+impl ::netlink_packet_core::NetlinkSerializable for RouteNetlinkMessage {
     fn message_type(&self) -> u16 {
         self.message_type()
-    }
-
-    fn buffer_len(&self) -> usize {
-        <Self as Emitable>::buffer_len(self)
-    }
-
-    fn serialize(&self, buffer: &mut [u8]) {
-        self.emit(buffer)
     }
 }
 
@@ -945,5 +871,74 @@ impl NetlinkDeserializable for RouteNetlinkMessage {
 impl From<RouteNetlinkMessage> for NetlinkPayload<RouteNetlinkMessage> {
     fn from(message: RouteNetlinkMessage) -> Self {
         NetlinkPayload::InnerMessage(message)
+    }
+}
+
+#[cfg(all(test, feature = "route"))]
+mod emit_tests {
+    use netlink_packet_core::{
+        DefaultNla, Emitable, NetlinkMessage, NLA_MAX_VALUE_LEN,
+    };
+
+    use super::RouteNetlinkMessage;
+    use crate::route::{RouteAttribute, RouteMessage};
+
+    fn emit<T: Emitable>(value: &T) -> Vec<u8> {
+        let mut out = Vec::new();
+        value.emit(&mut out).unwrap();
+        out
+    }
+
+    #[test]
+    fn valid_route_message_round_trips() {
+        let message = RouteNetlinkMessage::NewRoute(RouteMessage::default());
+        let buffer = emit(&message);
+        let netlink = NetlinkMessage::new(
+            netlink_packet_core::NetlinkHeader::default(),
+            netlink_packet_core::NetlinkPayload::InnerMessage(message),
+        );
+        let full = emit(&netlink);
+        let header_len = emit(&netlink.header).len();
+        assert_eq!(&full[header_len..], buffer);
+        assert_eq!(netlink.header.length, 0);
+    }
+
+    #[test]
+    fn oversized_raw_attribute_returns_error() {
+        let mut message = RouteMessage::default();
+        message
+            .attributes
+            .push(RouteAttribute::Other(DefaultNla::new(
+                1,
+                vec![0; NLA_MAX_VALUE_LEN + 1],
+            )));
+        let mut out = Vec::new();
+        let error = RouteNetlinkMessage::NewRoute(message)
+            .emit(&mut out)
+            .unwrap_err();
+        assert!(error.is_too_large(), "unexpected error: {error}");
+    }
+}
+
+#[cfg(all(test, feature = "link", feature = "link-info"))]
+mod emit_nested_tests {
+    use netlink_packet_core::{Emitable, NLA_MAX_VALUE_LEN};
+
+    use super::RouteNetlinkMessage;
+    use crate::link::{InfoData, LinkAttribute, LinkInfo, LinkMessage};
+
+    #[test]
+    fn oversized_nested_attribute_returns_error() {
+        let mut message = LinkMessage::default();
+        message
+            .attributes
+            .push(LinkAttribute::LinkInfo(vec![LinkInfo::Data(
+                InfoData::Other(vec![0; NLA_MAX_VALUE_LEN + 1]),
+            )]));
+        let mut out = Vec::new();
+        let error = RouteNetlinkMessage::NewLink(message)
+            .emit(&mut out)
+            .unwrap_err();
+        assert!(error.is_too_large(), "unexpected error: {error}");
     }
 }

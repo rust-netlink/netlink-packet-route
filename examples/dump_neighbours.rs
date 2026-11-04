@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
+    Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP,
+    NLM_F_REQUEST,
 };
 use netlink_packet_route::{
     neighbour::{NeighbourAddress, NeighbourAttribute, NeighbourMessage},
@@ -17,19 +18,15 @@ fn main() {
     let mut nl_hdr = NetlinkHeader::default();
     nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
 
-    let mut req = NetlinkMessage::new(
+    let req = NetlinkMessage::new(
         nl_hdr,
         NetlinkPayload::from(RouteNetlinkMessage::GetNeighbour(
             NeighbourMessage::default(),
         )),
     );
-    // IMPORTANT: call `finalize()` to automatically set the
-    // `message_type` and `length` fields to the appropriate values in
-    // the netlink header.
-    req.finalize();
 
-    let mut buf = vec![0; req.header.length as usize];
-    req.serialize(&mut buf[..]);
+    let mut buf = Vec::new();
+    req.emit(&mut buf).unwrap();
 
     println!(">>> {req:?}");
     socket.send(&buf[..], 0).unwrap();

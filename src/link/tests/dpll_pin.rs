@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Nla, NlaBuffer, Parseable};
 
 use crate::link::dpll_pin::DpllPin;
 
@@ -22,11 +21,10 @@ fn parse_dpll_pin_id() {
 #[test]
 fn emit_dpll_pin_id() {
     let nla = DpllPin::PinId(42);
-    assert_eq!(nla.buffer_len(), 8);
-
-    let mut buf = vec![0u8; 8];
-    nla.emit(&mut buf);
-    assert_eq!(&buf[..], &DPLL_PIN_ID[..]);
+    let mut buf = Vec::new();
+    nla.emit(&mut buf).unwrap();
+    assert_eq!(buf.len(), 8);
+    assert_eq!(buf.as_slice(), &DPLL_PIN_ID[..]);
 }
 
 #[test]

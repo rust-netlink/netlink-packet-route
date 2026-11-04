@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
@@ -54,9 +53,9 @@ fn test_ipv4_src_dst_blackhole() {
     };
     assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
@@ -105,9 +104,9 @@ fn test_ipv6_src_dst_goto() {
     };
     assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
 
-    let mut buf = vec![0; expected.buffer_len()];
+    let mut buf = Vec::new();
 
-    expected.emit(&mut buf);
+    expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
 }
