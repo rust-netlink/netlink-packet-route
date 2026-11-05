@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
         flags::RouteFlags, RouteAddress, RouteAttribute, RouteHeader,
         RouteMessage, RouteProtocol, RouteScope, RouteType,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // nlmon capture(netlink message header removed) against command:
@@ -49,7 +48,7 @@ fn test_ipv4_route_get_ip_proto_ports() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -90,7 +89,7 @@ fn test_ipv4_route_get_new_destination_address() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -136,7 +135,7 @@ fn test_ipv6_route_get_new_destination_address() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -181,7 +180,7 @@ fn test_ipv6_route_get_ip_proto_ports_flowlabel() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

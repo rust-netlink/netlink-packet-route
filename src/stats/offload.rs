@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlasIterator,
-    Parseable, NLA_F_NESTED,
+    append_bytes, append_u16, append_u8, DecodeError, DefaultNla, Emitable,
+    EncodeError, ErrorContext, Nla, NlasIterator, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -28,25 +28,25 @@ pub enum OffloadXstat {
 }
 
 impl Nla for OffloadXstat {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::CpuHit(v) => v.buffer_len(),
-            Self::L3Stats(v) => v.buffer_len(),
-            Self::HwStatsInfo(v) => v.buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::CpuHit(v) => v.emit(buffer),
-            Self::L3Stats(v) => v.emit(buffer),
-            Self::HwStatsInfo(v) => v.emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::CpuHit(v) => v.emit_into(out),
+            Self::HwStatsInfo(v) => v.emit_into(out),
+            Self::L3Stats(v) => v.emit_into(out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <OffloadXstat>::kind(self)
+    }
+}
+
+impl OffloadXstat {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::CpuHit(_) => IFLA_OFFLOAD_XSTATS_CPU_HIT,
             Self::HwStatsInfo(_) => {
@@ -149,6 +149,7 @@ impl HwStats64 {
     }
 }
 
+#[allow(dead_code)]
 impl From<&HwStats64> for HwStats64Buffer {
     fn from(value: &HwStats64) -> Self {
         Self {
@@ -166,13 +167,10 @@ impl From<&HwStats64> for HwStats64Buffer {
 }
 
 impl Emitable for HwStats64 {
-    fn buffer_len(&self) -> usize {
-        size_of::<HwStats64Buffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = HwStats64Buffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -227,44 +225,30 @@ impl HwStatsInfo {
 }
 
 impl Emitable for HwStatsInfo {
-    fn buffer_len(&self) -> usize {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         // L3_STATS NLA header(4) + inner NLAs (8 bytes each: hdr(4) + u8 + 3
         // pad)
         let inner_count =
             self.request.is_some() as usize + self.used.is_some() as usize;
         if inner_count == 0 {
-            return 0;
+            return Ok(());
         }
-        4 + inner_count * 8
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let l3_len = self.buffer_len();
-        if l3_len == 0 {
-            return;
-        }
+        let l3_len = 4 + inner_count * 8;
         // L3_STATS NLA header
-        buffer[0..2].copy_from_slice(&(l3_len as u16).to_ne_bytes());
-        buffer[2..4].copy_from_slice(
-            &(IFLA_OFFLOAD_XSTATS_L3_STATS | NLA_F_NESTED).to_ne_bytes(),
-        );
-        let mut off = 4;
+        append_u16(out, l3_len as u16);
+        append_u16(out, IFLA_OFFLOAD_XSTATS_L3_STATS | NLA_F_NESTED);
         if let Some(v) = self.request {
-            buffer[off..off + 2].copy_from_slice(&5u16.to_ne_bytes());
-            buffer[off + 2..off + 4].copy_from_slice(
-                &IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST.to_ne_bytes(),
-            );
-            buffer[off + 4] = v;
-            buffer[off + 5..off + 8].fill(0);
-            off += 8;
+            append_u16(out, 5);
+            append_u16(out, IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST);
+            append_u8(out, v);
+            append_bytes(out, &[0, 0, 0]);
         }
         if let Some(v) = self.used {
-            buffer[off..off + 2].copy_from_slice(&5u16.to_ne_bytes());
-            buffer[off + 2..off + 4].copy_from_slice(
-                &IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED.to_ne_bytes(),
-            );
-            buffer[off + 4] = v;
-            buffer[off + 5..off + 8].fill(0);
+            append_u16(out, 5);
+            append_u16(out, IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED);
+            append_u8(out, v);
+            append_bytes(out, &[0, 0, 0]);
         }
+        Ok(())
     }
 }

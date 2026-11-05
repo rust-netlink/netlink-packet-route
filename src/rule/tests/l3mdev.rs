@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::RouteProtocol,
@@ -8,7 +7,7 @@ use crate::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
         RuleUidRange,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -47,7 +46,7 @@ fn test_ipv4_l3mdev() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -93,7 +92,7 @@ fn test_ipv6_l3mdev_uid() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

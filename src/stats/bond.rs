@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u64, parse_u64, DecodeError, DefaultNla, Emitable, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
+    append_bytes, append_u64, emit_nlas_into, parse_u64, DecodeError,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
+    Parseable, NLA_F_NESTED,
 };
 
 const BOND_XSTATS_3AD: u16 = 1;
@@ -16,21 +17,23 @@ pub enum BondXstat {
 }
 
 impl Nla for BondXstat {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::ThreeAd(v) => v.as_slice().buffer_len(),
-            Self::Other(v) => v.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::ThreeAd(v) => v.as_slice().emit(buffer),
-            Self::Other(v) => v.emit_value(buffer),
+            Self::ThreeAd(v) => emit_nlas_into(v, out),
+            Self::Other(v) => {
+                append_bytes(out, v.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <BondXstat>::kind(self)
+    }
+}
+
+impl BondXstat {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::ThreeAd(_) => BOND_XSTATS_3AD | NLA_F_NESTED,
             Self::Other(v) => v.kind(),
@@ -65,14 +68,7 @@ pub enum Bond3adStats {
 }
 
 impl Nla for Bond3adStats {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Other(v) => v.value_len(),
-            _ => 8,
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::LacpduRx(d)
             | Self::LacpduTx(d)
@@ -82,12 +78,19 @@ impl Nla for Bond3adStats {
             | Self::MarkerTx(d)
             | Self::MarkerRespRx(d)
             | Self::MarkerRespTx(d)
-            | Self::MarkerUnknownRx(d) => emit_u64(buffer, *d).unwrap(),
-            Self::Other(v) => v.emit_value(buffer),
+            | Self::MarkerUnknownRx(d) => append_u64(out, *d),
+            Self::Other(v) => append_bytes(out, v.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Bond3adStats>::kind(self)
+    }
+}
+
+impl Bond3adStats {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::LacpduRx(_) => BOND_3AD_STAT_LACPDU_RX,
             Self::LacpduTx(_) => BOND_3AD_STAT_LACPDU_TX,

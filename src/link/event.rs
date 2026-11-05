@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, Emitable, ErrorContext, Parseable,
+    append_u32, parse_u32, DecodeError, Emitable, EncodeError, ErrorContext,
+    Parseable,
 };
 
 const IFLA_EVENT_NONE: u32 = 0;
@@ -41,6 +42,7 @@ impl From<u32> for LinkEvent {
     }
 }
 
+#[allow(dead_code)]
 impl From<LinkEvent> for u32 {
     fn from(v: LinkEvent) -> u32 {
         match v {
@@ -65,11 +67,8 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for LinkEvent {
 }
 
 impl Emitable for LinkEvent {
-    fn buffer_len(&self) -> usize {
-        4
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        emit_u32(buffer, u32::from(*self)).unwrap();
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u32(out, u32::from(*self));
+        Ok(())
     }
 }

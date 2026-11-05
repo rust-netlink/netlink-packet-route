@@ -6,12 +6,13 @@ use std::{
 };
 
 use netlink_packet_core::{
-    emit_u16_be, emit_u32_be, parse_u16_be, parse_u32_be, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16_be, append_u32_be, parse_u16_be, parse_u32_be,
+    parse_u8, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
-use super::{TcActionGeneric, TcActionGenericBuffer, Tcf, TcfBuffer};
+use super::{TcActionGeneric, TcActionGenericBuffer, Tcf};
 /// set tunnel key
 ///
 /// The set_tunnel action allows to set tunnel encap applied
@@ -58,39 +59,32 @@ pub enum TcActionTunnelKeyOption {
 }
 
 impl Nla for TcActionTunnelKeyOption {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Tm(_) => size_of::<TcfBuffer>(),
-            Self::Parms(_) => size_of::<TcTunnelKeyBuffer>(),
-            Self::EncIpv4Src(_) | Self::EncIpv4Dst(_) => 4,
-            Self::EncIpv6Src(_) | Self::EncIpv6Dst(_) => 16,
-            Self::EncKeyId(_) => 4,
-            Self::EncDstPort(_) => 2,
-            Self::EncTos(_) | Self::EncTtl(_) => 1,
-            Self::NoCsum(_) => 1,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Tm(p) => p.emit(buffer),
-            Self::Parms(p) => p.emit(buffer),
+            Self::Tm(p) => p.emit_into(out)?,
+            Self::Parms(p) => p.emit_into(out)?,
             Self::EncIpv4Src(ip) | Self::EncIpv4Dst(ip) => {
-                buffer.copy_from_slice(&ip.octets())
+                append_bytes(out, &ip.octets())
             }
             Self::EncIpv6Src(ip) | Self::EncIpv6Dst(ip) => {
-                buffer.copy_from_slice(&ip.octets())
+                append_bytes(out, &ip.octets())
             }
-            Self::EncKeyId(i) => emit_u32_be(buffer, *i).unwrap(),
-            Self::EncDstPort(i) => emit_u16_be(buffer, *i).unwrap(),
-            Self::EncTos(i) => buffer[0] = *i,
-            Self::EncTtl(i) => buffer[0] = *i,
-            Self::NoCsum(i) => buffer[0] = *i as u8,
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::EncKeyId(i) => append_u32_be(out, *i),
+            Self::EncDstPort(i) => append_u16_be(out, *i),
+            Self::EncTos(i) | Self::EncTtl(i) => out.push(*i),
+            Self::NoCsum(i) => out.push(*i as u8),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
+
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl TcActionTunnelKeyOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Tm(_) => TCA_TUNNEL_KEY_TM,
             Self::Parms(_) => TCA_TUNNEL_KEY_PARMS,
@@ -182,6 +176,7 @@ pub struct TcTunnelKeyBuffer {
     t_action: i32,
 }
 
+#[allow(dead_code)]
 impl TcTunnelKey {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -200,6 +195,7 @@ impl TcTunnelKey {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcTunnelKey> for TcTunnelKeyBuffer {
     fn from(key: &TcTunnelKey) -> Self {
         Self {
@@ -210,12 +206,9 @@ impl From<&TcTunnelKey> for TcTunnelKeyBuffer {
 }
 
 impl Emitable for TcTunnelKey {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcTunnelKeyBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcTunnelKeyBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

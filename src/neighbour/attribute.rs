@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, parse_u16, parse_u16_be, parse_u32,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
-    ParseableParametrized,
+    append_bytes, append_u16, append_u16_be, append_u32, parse_u16,
+    parse_u16_be, parse_u32, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use super::{NeighbourAddress, NeighbourCacheInfo, NeighbourExtFlags};
@@ -46,46 +46,50 @@ pub enum NeighbourAttribute {
 }
 
 impl Nla for NeighbourAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::LinkLayerAddress(bytes) => bytes.len(),
-            Self::Destination(v) => v.buffer_len(),
-            Self::CacheInfo(v) => v.buffer_len(),
-            Self::Vlan(_) | Self::Port(_) => 2,
-            Self::Protocol(v) => v.buffer_len(),
-            Self::Probes(_)
-            | Self::LinkNetNsId(_)
-            | Self::Controller(_)
-            | Self::Vni(_)
-            | Self::IfIndex(_)
-            | Self::SourceVni(_)
-            | Self::ExtFlags(_) => 4,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Destination(v) => v.emit(buffer),
+            Self::Destination(v) => v.emit_into(out),
             Self::LinkLayerAddress(bytes) => {
-                buffer.copy_from_slice(bytes.as_slice())
+                append_bytes(out, bytes.as_slice());
+                Ok(())
             }
-            Self::CacheInfo(v) => v.emit(buffer),
-            Self::Vlan(value) => emit_u16(buffer, *value).unwrap(),
-            Self::Port(value) => emit_u16_be(buffer, *value).unwrap(),
+            Self::CacheInfo(v) => v.emit_into(out),
+            Self::Vlan(value) => {
+                append_u16(out, *value);
+                Ok(())
+            }
+            Self::Port(value) => {
+                append_u16_be(out, *value);
+                Ok(())
+            }
             Self::Probes(value)
             | Self::LinkNetNsId(value)
             | Self::Controller(value)
             | Self::Vni(value)
             | Self::IfIndex(value)
-            | Self::SourceVni(value) => emit_u32(buffer, *value).unwrap(),
-            Self::ExtFlags(v) => emit_u32(buffer, v.bits()).unwrap(),
-            Self::Protocol(v) => v.emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
+            | Self::SourceVni(value) => {
+                append_u32(out, *value);
+                Ok(())
+            }
+            Self::ExtFlags(v) => {
+                append_u32(out, v.bits());
+                Ok(())
+            }
+            Self::Protocol(v) => v.emit_into(out),
+            Self::Other(attr) => {
+                append_bytes(out, attr.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl NeighbourAttribute {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Destination(_) => NDA_DST,
             Self::LinkLayerAddress(_) => NDA_LLADDR,

@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::RouteProtocol,
     rule::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -47,7 +46,7 @@ fn test_ipv4_fwmark_suppress_prefixlength() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -91,7 +90,7 @@ fn test_ipv6_fwmark_suppress_ifgroup() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

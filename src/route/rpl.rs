@@ -3,8 +3,8 @@
 use std::{fmt::Debug, net::Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::ip::parse_ipv6_addr;
@@ -56,25 +56,26 @@ impl RplSrh {
 }
 
 impl Nla for RplSrh {
-    fn value_len(&self) -> usize {
-        RPL_SRH_FIXED_LEN + RPL_SEGMENT_LEN * self.segments.len()
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        out.push(self.next_header);
+        out.push(self.hdr_len());
+        out.push(self.routing_type);
+        out.push(self.segments_left);
+        append_u32(out, self.cmpr_fields());
+        for segment in &self.segments {
+            append_bytes(out, &segment.octets());
+        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
-        RPL_IPTUNNEL_SRH
+        <Self>::kind(self)
     }
+}
 
-    fn emit_value(&self, buffer: &mut [u8]) {
-        buffer[0] = self.next_header;
-        buffer[1] = self.hdr_len();
-        buffer[2] = self.routing_type;
-        buffer[3] = self.segments_left;
-        emit_u32(&mut buffer[4..8], self.cmpr_fields()).unwrap();
-        for (i, segment) in self.segments.iter().enumerate() {
-            let start = RPL_SRH_FIXED_LEN + RPL_SEGMENT_LEN * i;
-            buffer[start..start + RPL_SEGMENT_LEN]
-                .copy_from_slice(&segment.octets());
-        }
+impl RplSrh {
+    pub(crate) fn kind(&self) -> u16 {
+        RPL_IPTUNNEL_SRH
     }
 }
 
@@ -170,27 +171,26 @@ impl std::fmt::Display for RouteRplIpTunnel {
 }
 
 impl Nla for RouteRplIpTunnel {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Unspecified => 0,
-            Self::Srh(srh) => srh.value_len(),
-            Self::Other(other) => other.value_len(),
+            Self::Unspecified => {}
+            Self::Srh(srh) => srh.emit_value_into(out)?,
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteRplIpTunnel {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Unspecified => RPL_IPTUNNEL_UNSPEC,
             Self::Srh(srh) => srh.kind(),
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Unspecified => {}
-            Self::Srh(srh) => srh.emit_value(buffer),
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }

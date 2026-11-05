@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{NlaBuffer, Parseable};
 
 use crate::{
     tc::{
@@ -12,7 +11,7 @@ use crate::{
         TcMessage, TcMirror, TcMirrorActionType, TcOption, TcStats2,
         TcStatsBasic, TcStatsQueue, Tcf,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 /*
@@ -256,7 +255,7 @@ fn test_get_filter_flower_mac_ipv4() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -354,7 +353,7 @@ fn test_get_filter_flower_ipv6_ports() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -415,7 +414,7 @@ fn test_get_filter_flower_ipv4_tcp_portrange() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -472,7 +471,7 @@ fn test_get_filter_flower_ipv4_icmp() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -529,7 +528,7 @@ fn test_get_filter_flower_ipv6_icmp() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -600,7 +599,7 @@ fn test_get_filter_flower_ct() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -684,7 +683,7 @@ fn test_get_filter_flower_arp() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -743,7 +742,7 @@ fn test_get_filter_flower_vlan() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -798,7 +797,7 @@ fn test_get_filter_flower_mpls_uc_single() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -871,7 +870,7 @@ fn test_get_filter_flower_mpls_uc_lse() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -966,7 +965,7 @@ fn test_get_filter_flower_ipv4_enc() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -1065,7 +1064,7 @@ fn test_get_filter_flower_ipv6_enc() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -1090,6 +1089,6 @@ fn test_parse_flower_indev() {
     assert_eq!(TcFilterFlowerOption::parse(&buf).unwrap(), expected);
 
     let mut out = vec![0; expected.buffer_len()];
-    expected.emit(&mut out);
+    expected.emit_slice(&mut out);
     assert_eq!(out, raw);
 }

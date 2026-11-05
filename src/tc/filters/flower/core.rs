@@ -3,10 +3,10 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use netlink_packet_core::{
-    emit_u16, emit_u16_be, emit_u32, emit_u32_be, parse_mac, parse_string,
-    parse_u16, parse_u16_be, parse_u32, parse_u32_be, parse_u8, DecodeError,
-    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable, NLA_F_NESTED,
+    append_bytes, append_u16, append_u16_be, append_u32, append_u32_be,
+    emit_nlas_into, parse_mac, parse_string, parse_u16, parse_u16_be,
+    parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
 };
 
 use super::TcFilterFlowerMplsOption;
@@ -252,131 +252,32 @@ impl TcFilterFlower {
 }
 
 impl Nla for TcFilterFlowerOption {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::ClassId(_) => 4,
-            Self::InDev(name) => name.len() + 1,
-            Self::Actions(acts) => acts.as_slice().buffer_len(),
-            Self::EthDst(_)
-            | Self::EthDstMask(_)
-            | Self::EthSrc(_)
-            | Self::EthSrcMask(_) => 6,
-            Self::EthType(_) => 2,
-            Self::IpProto(_) => 1,
-            Self::IpTtl(_)
-            | Self::IpTtlMask(_)
-            | Self::IpTos(_)
-            | Self::IpTosMask(_) => 1,
-            Self::Ipv4Src(_)
-            | Self::Ipv4SrcMask(_)
-            | Self::Ipv4Dst(_)
-            | Self::Ipv4DstMask(_) => 4,
-            Self::Ipv6Src(_)
-            | Self::Ipv6SrcMask(_)
-            | Self::Ipv6Dst(_)
-            | Self::Ipv6DstMask(_) => 16,
-            Self::TcpDst(_)
-            | Self::TcpSrc(_)
-            | Self::UdpDst(_)
-            | Self::UdpSrc(_)
-            | Self::SctpDst(_)
-            | Self::SctpSrc(_)
-            | Self::TcpDstMask(_)
-            | Self::TcpSrcMask(_)
-            | Self::UdpDstMask(_)
-            | Self::UdpSrcMask(_)
-            | Self::SctpDstMask(_)
-            | Self::SctpSrcMask(_) => 2,
-            Self::Icmpv4Code(_)
-            | Self::Icmpv4CodeMask(_)
-            | Self::Icmpv4Type(_)
-            | Self::Icmpv4TypeMask(_)
-            | Self::Icmpv6Code(_)
-            | Self::Icmpv6CodeMask(_)
-            | Self::Icmpv6Type(_)
-            | Self::Icmpv6TypeMask(_) => 1,
-            Self::ArpSip(_)
-            | Self::ArpSipMask(_)
-            | Self::ArpTip(_)
-            | Self::ArpTipMask(_) => 4,
-            Self::ArpOp(_) | Self::ArpOpMask(_) => 1,
-            Self::ArpSha(_)
-            | Self::ArpShaMask(_)
-            | Self::ArpTha(_)
-            | Self::ArpThaMask(_) => 6,
-            Self::MplsTtl(_) | Self::MplsBos(_) | Self::MplsTc(_) => 1,
-            Self::MplsLabel(_) => 4,
-            Self::TcpFlags(_) | Self::TcpFlagsMask(_) => 2,
-            Self::KeyFlags(_) | Self::KeyFlagsMask(_) => 4,
-
-            Self::Flags(_) => 4,
-            Self::VlanId(_) => 2,
-            Self::VlanPrio(_) => 1,
-            Self::VlanEthType(_) => 2,
-            Self::CvlanId(_) => 2,
-            Self::CvlanPrio(_) => 1,
-            Self::CvlanEthType(_) => 2,
-            Self::EncKeyId(_) => 4,
-            Self::EncKeyUdpSrcPort(_)
-            | Self::EncKeyUdpSrcPortMask(_)
-            | Self::EncKeyUdpDstPort(_)
-            | Self::EncKeyUdpDstPortMask(_) => 2,
-            Self::EncKeyIpTtl(_)
-            | Self::EncKeyIpTtlMask(_)
-            | Self::EncKeyIpTos(_)
-            | Self::EncKeyIpTosMask(_) => 1,
-            Self::EncKeyIpv4Src(_)
-            | Self::EncKeyIpv4SrcMask(_)
-            | Self::EncKeyIpv4Dst(_)
-            | Self::EncKeyIpv4DstMask(_) => 4,
-            Self::EncKeyIpv6Src(_)
-            | Self::EncKeyIpv6SrcMask(_)
-            | Self::EncKeyIpv6Dst(_)
-            | Self::EncKeyIpv6DstMask(_) => 16,
-            Self::InHwCount(_) => 4,
-            Self::PortSrcMin(_)
-            | Self::PortSrcMax(_)
-            | Self::PortDstMin(_)
-            | Self::PortDstMax(_) => 2,
-            Self::CtState(_)
-            | Self::CtStateMask(_)
-            | Self::CtZone(_)
-            | Self::CtZoneMask(_) => 2,
-            Self::CtMark(_) | Self::CtMarkMask(_) => 4,
-            Self::CtLabels(_) | Self::CtLabelsMask(_) => 16,
-            Self::MplsOpts(attr) => attr.as_slice().buffer_len(),
-            Self::KeyHash(_) | Self::KeyHashMask(_) => 4,
-
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::ClassId(i) => emit_u32(buffer, *i).unwrap(),
+            Self::ClassId(i) => append_u32(out, *i),
             Self::InDev(name) => {
-                buffer[..name.len()].copy_from_slice(name.as_bytes());
-                buffer[name.len()] = 0;
+                append_bytes(out, name.as_bytes());
+                out.push(0);
             }
-            Self::Actions(acts) => acts.as_slice().emit(buffer),
+            Self::Actions(acts) => emit_nlas_into(acts, out)?,
             Self::EthDst(b)
             | Self::EthDstMask(b)
             | Self::EthSrc(b)
-            | Self::EthSrcMask(b) => buffer.copy_from_slice(b.as_slice()),
-            Self::EthType(i) => emit_u16_be(buffer, *i).unwrap(),
-            Self::IpProto(i) => buffer[0] = *i,
-            Self::IpTtl(i)
+            | Self::EthSrcMask(b) => append_bytes(out, b.as_slice()),
+            Self::EthType(i) => append_u16_be(out, *i),
+            Self::IpProto(i)
+            | Self::IpTtl(i)
             | Self::IpTtlMask(i)
             | Self::IpTos(i)
-            | Self::IpTosMask(i) => buffer[0] = *i,
+            | Self::IpTosMask(i) => out.push(*i),
             Self::Ipv4Src(ip)
             | Self::Ipv4SrcMask(ip)
             | Self::Ipv4Dst(ip)
-            | Self::Ipv4DstMask(ip) => buffer.copy_from_slice(&ip.octets()),
+            | Self::Ipv4DstMask(ip) => append_bytes(out, &ip.octets()),
             Self::Ipv6Src(ip)
             | Self::Ipv6SrcMask(ip)
             | Self::Ipv6Dst(ip)
-            | Self::Ipv6DstMask(ip) => buffer.copy_from_slice(&ip.octets()),
+            | Self::Ipv6DstMask(ip) => append_bytes(out, &ip.octets()),
             Self::TcpSrc(i)
             | Self::TcpDst(i)
             | Self::UdpSrc(i)
@@ -388,7 +289,7 @@ impl Nla for TcFilterFlowerOption {
             | Self::UdpSrcMask(i)
             | Self::UdpDstMask(i)
             | Self::SctpSrcMask(i)
-            | Self::SctpDstMask(i) => emit_u16_be(buffer, *i).unwrap(),
+            | Self::SctpDstMask(i) => append_u16_be(out, *i),
             Self::Icmpv4Code(i)
             | Self::Icmpv4CodeMask(i)
             | Self::Icmpv4Type(i)
@@ -396,78 +297,73 @@ impl Nla for TcFilterFlowerOption {
             | Self::Icmpv6Code(i)
             | Self::Icmpv6CodeMask(i)
             | Self::Icmpv6Type(i)
-            | Self::Icmpv6TypeMask(i) => buffer[0] = *i,
+            | Self::Icmpv6TypeMask(i) => out.push(*i),
             Self::ArpSip(ip)
             | Self::ArpSipMask(ip)
             | Self::ArpTip(ip)
-            | Self::ArpTipMask(ip) => buffer.copy_from_slice(&ip.octets()),
-            Self::ArpOp(i) | Self::ArpOpMask(i) => buffer[0] = *i,
+            | Self::ArpTipMask(ip) => append_bytes(out, &ip.octets()),
+            Self::ArpOp(i) | Self::ArpOpMask(i) => out.push(*i),
             Self::ArpSha(b)
             | Self::ArpShaMask(b)
             | Self::ArpTha(b)
-            | Self::ArpThaMask(b) => buffer.copy_from_slice(b.as_slice()),
-            Self::MplsTtl(i) => buffer[0] = *i,
-            Self::MplsBos(i) => buffer[0] = *i & 0x01,
-            Self::MplsTc(i) => buffer[0] = *i & 0x07,
-            Self::MplsLabel(i) => emit_u32(buffer, *i & 0xFFFFF).unwrap(),
-            Self::TcpFlags(i) | Self::TcpFlagsMask(i) => {
-                emit_u16_be(buffer, *i).unwrap()
-            }
-            Self::KeyFlags(i) | Self::KeyFlagsMask(i) => {
-                emit_u32_be(buffer, *i).unwrap()
-            }
-            Self::Flags(i) => emit_u32(buffer, *i).unwrap(),
-            Self::VlanId(i) => emit_u16(buffer, *i).unwrap(),
-            Self::VlanPrio(i) => buffer[0] = *i,
-            Self::VlanEthType(i) => emit_u16_be(buffer, *i).unwrap(),
-            Self::CvlanId(i) => emit_u16(buffer, *i).unwrap(),
-            Self::CvlanPrio(i) => buffer[0] = *i,
-            Self::CvlanEthType(i) => emit_u16_be(buffer, *i).unwrap(),
-            Self::EncKeyId(i) => emit_u32_be(buffer, *i).unwrap(),
+            | Self::ArpThaMask(b) => append_bytes(out, b.as_slice()),
+            Self::MplsTtl(i) => out.push(*i),
+            Self::MplsBos(i) => out.push(*i & 0x01),
+            Self::MplsTc(i) => out.push(*i & 0x07),
+            Self::MplsLabel(i) => append_u32(out, *i & 0xFFFFF),
+            Self::TcpFlags(i) | Self::TcpFlagsMask(i) => append_u16_be(out, *i),
+            Self::KeyFlags(i) | Self::KeyFlagsMask(i) => append_u32_be(out, *i),
+            Self::Flags(i) => append_u32(out, *i),
+            Self::VlanId(i) => append_u16(out, *i),
+            Self::VlanPrio(i) => out.push(*i),
+            Self::VlanEthType(i) => append_u16_be(out, *i),
+            Self::CvlanId(i) => append_u16(out, *i),
+            Self::CvlanPrio(i) => out.push(*i),
+            Self::CvlanEthType(i) => append_u16_be(out, *i),
+            Self::EncKeyId(i) => append_u32_be(out, *i),
             Self::EncKeyIpTtl(i)
             | Self::EncKeyIpTtlMask(i)
             | Self::EncKeyIpTos(i)
-            | Self::EncKeyIpTosMask(i) => buffer[0] = *i,
+            | Self::EncKeyIpTosMask(i) => out.push(*i),
             Self::EncKeyUdpSrcPort(i)
             | Self::EncKeyUdpSrcPortMask(i)
             | Self::EncKeyUdpDstPort(i)
-            | Self::EncKeyUdpDstPortMask(i) => emit_u16_be(buffer, *i).unwrap(),
+            | Self::EncKeyUdpDstPortMask(i) => append_u16_be(out, *i),
             Self::EncKeyIpv4Src(ip)
             | Self::EncKeyIpv4SrcMask(ip)
             | Self::EncKeyIpv4Dst(ip)
-            | Self::EncKeyIpv4DstMask(ip) => {
-                buffer.copy_from_slice(&ip.octets())
-            }
+            | Self::EncKeyIpv4DstMask(ip) => append_bytes(out, &ip.octets()),
             Self::EncKeyIpv6Src(ip)
             | Self::EncKeyIpv6SrcMask(ip)
             | Self::EncKeyIpv6Dst(ip)
-            | Self::EncKeyIpv6DstMask(ip) => {
-                buffer.copy_from_slice(&ip.octets())
-            }
-            Self::InHwCount(i) => emit_u32(buffer, *i).unwrap(),
+            | Self::EncKeyIpv6DstMask(ip) => append_bytes(out, &ip.octets()),
+            Self::InHwCount(i) => append_u32(out, *i),
             Self::PortSrcMin(i)
             | Self::PortSrcMax(i)
             | Self::PortDstMin(i)
-            | Self::PortDstMax(i) => emit_u16_be(buffer, *i).unwrap(),
+            | Self::PortDstMax(i) => append_u16_be(out, *i),
             Self::CtState(i)
             | Self::CtStateMask(i)
             | Self::CtZone(i)
-            | Self::CtZoneMask(i) => emit_u16(buffer, *i).unwrap(),
-            Self::CtMark(i) | Self::CtMarkMask(i) => {
-                emit_u32(buffer, *i).unwrap()
-            }
+            | Self::CtZoneMask(i) => append_u16(out, *i),
+            Self::CtMark(i) | Self::CtMarkMask(i) => append_u32(out, *i),
             Self::CtLabels(b) | Self::CtLabelsMask(b) => {
-                buffer.copy_from_slice(b.as_slice())
+                append_bytes(out, b.as_slice())
             }
-            Self::MplsOpts(attr) => attr.as_slice().emit(buffer),
-            Self::KeyHash(i) | Self::KeyHashMask(i) => {
-                emit_u32(buffer, *i).unwrap()
-            }
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::MplsOpts(attr) => emit_nlas_into(attr, out)?,
+            Self::KeyHash(i) | Self::KeyHashMask(i) => append_u32(out, *i),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl TcFilterFlowerOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::ClassId(_) => TCA_FLOWER_CLASSID,
             Self::InDev(_) => TCA_FLOWER_INDEV,

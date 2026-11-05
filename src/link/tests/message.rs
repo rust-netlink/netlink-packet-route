@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, NlasIterator, ParseableParametrized};
+use netlink_packet_core::{NlasIterator, ParseableParametrized};
 
 use crate::{
     link::{
         link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
         LinkMessage, LinkMode, State,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 static LINK_MSG: [u8; 96] = [
@@ -67,7 +66,7 @@ fn link_message_packet_header_build() {
             | LinkFlags::Up,
         change_mask: LinkFlags::empty(),
     };
-    header.emit(&mut buf);
+    header.emit_slice(&mut buf);
     assert_eq!(&buf[..], &LINK_MSG[0..16]);
 }
 
@@ -190,7 +189,7 @@ fn link_message_emit() {
     let mut buf = [0; 96];
 
     assert_eq!(packet.buffer_len(), 96);
-    packet.emit(&mut buf[..]);
+    packet.emit_slice(&mut buf[..]);
 
     assert_eq!(buf, &LINK_MSG[..96]);
 }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv6Addr;
 
 use netlink_packet_core::{
-    DefaultNla, Emitable, NlaBuffer, Parseable, ParseableParametrized,
+    DefaultNla, NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use crate::{
@@ -19,7 +18,7 @@ use crate::{
         LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkProtoInfoBridge,
         LinkXdp, Map, State, Stats, Stats64, VlanProtocol, XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -430,7 +429,7 @@ fn test_parse_link_bridge_no_extention_mask() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -782,7 +781,7 @@ fn test_parse_link_bridge_stp_mode() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -817,7 +816,7 @@ fn test_parse_link_bridge_port_neigh_forward_grat() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -955,7 +954,7 @@ fn test_bridge_port_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -1084,7 +1083,7 @@ fn test_bridge_boolean_options() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -1126,7 +1125,7 @@ fn test_bridge_boolean_options_fdb_local_vlan_0() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -1252,7 +1251,7 @@ fn test_bridge_fdb_max_learned() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -1603,7 +1602,7 @@ fn test_bridge_netns_immutable() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 }
 
 #[test]

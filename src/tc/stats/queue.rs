@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 /// Queuing statistics
@@ -41,6 +41,7 @@ pub struct TcStatsQueueBuffer {
     overlimits: u32,
 }
 
+#[allow(dead_code)]
 impl TcStatsQueue {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -60,6 +61,7 @@ impl TcStatsQueue {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcStatsQueue> for TcStatsQueueBuffer {
     fn from(value: &TcStatsQueue) -> Self {
         Self {
@@ -73,12 +75,9 @@ impl From<&TcStatsQueue> for TcStatsQueueBuffer {
 }
 
 impl Emitable for TcStatsQueue {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcStatsQueueBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcStatsQueueBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

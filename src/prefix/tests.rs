@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv6Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
-use crate::prefix::{
-    attribute::PrefixAttribute, cache_info::CacheInfo, header::PrefixHeader,
-    PrefixMessage,
+use crate::{
+    prefix::{
+        attribute::PrefixAttribute, cache_info::CacheInfo,
+        header::PrefixHeader, PrefixMessage,
+    },
+    TestEmit, TestNla,
 };
 
 #[test]
@@ -53,6 +55,6 @@ fn test_new_prefix() {
     assert_eq!(expected, actual);
 
     let mut buf = vec![0; 44];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(data, buf);
 }

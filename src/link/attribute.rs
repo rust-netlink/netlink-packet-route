@@ -3,9 +3,10 @@
 use std::{mem::size_of, os::unix::io::RawFd};
 
 use netlink_packet_core::{
-    emit_i32, emit_u32, parse_i32, parse_string, parse_u32, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, ParseableParametrized, NLA_F_NESTED,
+    append_bytes, append_i32, append_u32, emit_nlas_into, parse_i32,
+    parse_string, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
+    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ParseableParametrized, NLA_F_NESTED,
 };
 
 #[cfg(all(
@@ -200,114 +201,26 @@ pub enum LinkAttribute {
 }
 
 impl Nla for LinkAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             #[cfg(feature = "link-sriov")]
-            Self::VfInfoList(v) => v.as_slice().buffer_len(),
+            Self::VfInfoList(v) => emit_nlas_into(v, out)?,
             #[cfg(feature = "link-sriov")]
-            Self::VfPorts(v) => v.as_slice().buffer_len(),
+            Self::VfPorts(v) => emit_nlas_into(v, out)?,
             #[cfg(feature = "link-sriov")]
-            Self::PortSelf(v) => v.buffer_len(),
-            Self::PhysPortId(v) => v.buffer_len(),
-            Self::PhysSwitchId(v) => v.buffer_len(),
-            Self::Event(v) => v.buffer_len(),
-            Self::ProtoInfoBridge(v) => v.as_slice().buffer_len(),
-            Self::ProtoInfoInet6(v) => v.as_slice().buffer_len(),
-            Self::ProtoDownReason(v) => v.as_slice().buffer_len(),
-
+            Self::PortSelf(v) => v.emit_nla_into(out)?,
+            Self::PhysPortId(v) => v.emit_into(out)?,
+            Self::PhysSwitchId(v) => v.emit_into(out)?,
+            Self::Event(v) => v.emit_into(out)?,
+            Self::ProtoInfoBridge(v) => emit_nlas_into(v, out)?,
+            Self::ProtoInfoInet6(v) => emit_nlas_into(v, out)?,
+            Self::ProtoDownReason(v) => emit_nlas_into(v, out)?,
             Self::Address(bytes)
             | Self::Broadcast(bytes)
-            | Self::PermAddress(bytes) => bytes.len(),
+            | Self::PermAddress(bytes) => append_bytes(out, bytes.as_slice()),
 
             #[cfg(feature = "link-af-spec")]
-            Self::AfSpecUnknown(bytes) => bytes.len(),
-
-            Self::IfName(string)
-            | Self::Qdisc(string)
-            | Self::IfAlias(string)
-            | Self::PhysPortName(string)
-            | Self::ParentDevName(string)
-            | Self::ParentDevBusName(string) => string.len() + 1,
-
-            Self::Mode(_) => 1,
-            Self::Carrier(_) | Self::ProtoDown(_) => 1,
-
-            Self::NetnsImmutable(_) => 1,
-
-            Self::Mtu(_)
-            | Self::NewNetnsId(_)
-            | Self::IfNetnsId(_)
-            | Self::Link(_)
-            | Self::Controller(_)
-            | Self::TxQueueLen(_)
-            | Self::NetNsPid(_)
-            | Self::NumVf(_)
-            | Self::Group(_)
-            | Self::NetNsFd(_)
-            | Self::ExtMask(_)
-            | Self::Promiscuity(_)
-            | Self::NumTxQueues(_)
-            | Self::NumRxQueues(_)
-            | Self::CarrierChanges(_)
-            | Self::GsoMaxSegs(_)
-            | Self::GsoMaxSize(_)
-            | Self::LinkNetNsId(_)
-            | Self::MinMtu(_)
-            | Self::CarrierUpCount(_)
-            | Self::CarrierDownCount(_)
-            | Self::NewIfIndex(_)
-            | Self::MaxMtu(_)
-            | Self::GroMaxSize(_)
-            | Self::TsoMaxSize(_)
-            | Self::TsoMaxSegs(_)
-            | Self::AllMulticast(_)
-            | Self::GsoIpv4MaxSize(_)
-            | Self::GroIpv4MaxSize(_) => 4,
-
-            Self::OperState(_) => 1,
-            Self::Stats(_) => size_of::<StatsBuffer>(),
-            Self::Stats64(_) => size_of::<Stats64Buffer>(),
-            Self::Map(nla) => nla.buffer_len(),
-            #[cfg(feature = "link-info")]
-            Self::LinkInfo(nlas) => nlas.as_slice().buffer_len(),
-            Self::Xdp(nlas) => nlas.as_slice().buffer_len(),
-            Self::PropList(nlas) => nlas.as_slice().buffer_len(),
-            #[cfg(feature = "link-af-spec")]
-            Self::AfSpecUnspec(nlas) => nlas.as_slice().buffer_len(),
-            #[cfg(feature = "link-af-spec")]
-            Self::AfSpecBridge(nlas) => nlas.as_slice().buffer_len(),
-            Self::DevlinkPort(nlas) => nlas.as_slice().buffer_len(),
-            Self::DpllPin(nlas) => nlas.as_slice().buffer_len(),
-            Self::ProtoInfoUnknown(attr) => attr.value_len(),
-            Self::Wireless(v) => v.buffer_len(),
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            #[cfg(feature = "link-sriov")]
-            Self::VfInfoList(v) => v.as_slice().emit(buffer),
-            #[cfg(feature = "link-sriov")]
-            Self::VfPorts(v) => v.as_slice().emit(buffer),
-            #[cfg(feature = "link-sriov")]
-            Self::PortSelf(v) => v.emit(buffer),
-            Self::PhysPortId(v) => v.emit(buffer),
-            Self::PhysSwitchId(v) => v.emit(buffer),
-            Self::Event(v) => v.emit(buffer),
-            Self::ProtoInfoBridge(v) => v.as_slice().emit(buffer),
-            Self::ProtoInfoInet6(v) => v.as_slice().emit(buffer),
-            Self::ProtoDownReason(v) => v.as_slice().emit(buffer),
-            Self::Address(bytes)
-            | Self::Broadcast(bytes)
-            | Self::PermAddress(bytes) => {
-                buffer.copy_from_slice(bytes.as_slice())
-            }
-
-            #[cfg(feature = "link-af-spec")]
-            Self::AfSpecUnknown(bytes) => {
-                buffer.copy_from_slice(bytes.as_slice())
-            }
+            Self::AfSpecUnknown(bytes) => append_bytes(out, bytes.as_slice()),
 
             Self::IfName(string)
             | Self::Qdisc(string)
@@ -315,14 +228,14 @@ impl Nla for LinkAttribute {
             | Self::PhysPortName(string)
             | Self::ParentDevName(string)
             | Self::ParentDevBusName(string) => {
-                buffer[..string.len()].copy_from_slice(string.as_bytes());
-                buffer[string.len()] = 0;
+                append_bytes(out, string.as_bytes());
+                out.push(0);
             }
-            Self::Mode(v) => buffer[0] = (*v).into(),
+            Self::Mode(v) => out.push((*v).into()),
 
-            Self::Carrier(val) | Self::ProtoDown(val) => buffer[0] = *val,
+            Self::Carrier(val) | Self::ProtoDown(val) => out.push(*val),
 
-            Self::NetnsImmutable(val) => buffer[0] = u8::from(*val),
+            Self::NetnsImmutable(val) => out.push(u8::from(*val)),
 
             Self::Mtu(value)
             | Self::Link(value)
@@ -346,40 +259,46 @@ impl Nla for LinkAttribute {
             | Self::TsoMaxSegs(value)
             | Self::AllMulticast(value)
             | Self::GsoIpv4MaxSize(value)
-            | Self::GroIpv4MaxSize(value) => emit_u32(buffer, *value).unwrap(),
+            | Self::GroIpv4MaxSize(value) => append_u32(out, *value),
 
             Self::ExtMask(value) => {
-                emit_u32(buffer, u32::from(&VecLinkExtentMask(value.to_vec())))
-                    .unwrap()
+                append_u32(out, u32::from(&VecLinkExtentMask(value.to_vec())))
             }
 
             Self::LinkNetNsId(v)
             | Self::NetNsFd(v)
             | Self::NewNetnsId(v)
             | Self::NewIfIndex(v)
-            | Self::IfNetnsId(v) => emit_i32(buffer, *v).unwrap(),
-            Self::Stats(nla) => nla.emit(buffer),
-            Self::Map(nla) => nla.emit(buffer),
-            Self::Stats64(nla) => nla.emit(buffer),
-            Self::OperState(state) => buffer[0] = (*state).into(),
+            | Self::IfNetnsId(v) => append_i32(out, *v),
+            Self::Stats(nla) => nla.emit_into(out)?,
+            Self::Map(nla) => nla.emit_into(out)?,
+            Self::Stats64(nla) => nla.emit_into(out)?,
+            Self::OperState(state) => out.push((*state).into()),
             #[cfg(feature = "link-info")]
-            Self::LinkInfo(nlas) => nlas.as_slice().emit(buffer),
-            Self::Xdp(nlas) => nlas.as_slice().emit(buffer),
-            Self::PropList(nlas) => nlas.as_slice().emit(buffer),
+            Self::LinkInfo(nlas) => emit_nlas_into(nlas, out)?,
+            Self::Xdp(nlas) => emit_nlas_into(nlas, out)?,
+            Self::PropList(nlas) => emit_nlas_into(nlas, out)?,
             #[cfg(feature = "link-af-spec")]
-            Self::AfSpecUnspec(nlas) => nlas.as_slice().emit(buffer),
+            Self::AfSpecUnspec(nlas) => emit_nlas_into(nlas, out)?,
             #[cfg(feature = "link-af-spec")]
-            Self::AfSpecBridge(nlas) => nlas.as_slice().emit(buffer),
-            Self::DevlinkPort(nlas) => nlas.as_slice().emit(buffer),
-            Self::DpllPin(nlas) => nlas.as_slice().emit(buffer),
-            Self::Wireless(v) => v.emit(buffer),
+            Self::AfSpecBridge(nlas) => emit_nlas_into(nlas, out)?,
+            Self::DevlinkPort(nlas) => emit_nlas_into(nlas, out)?,
+            Self::DpllPin(nlas) => emit_nlas_into(nlas, out)?,
+            Self::Wireless(v) => v.emit_into(out)?,
             Self::ProtoInfoUnknown(attr) | Self::Other(attr) => {
-                attr.emit_value(buffer)
+                append_bytes(out, attr.value())
             }
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl LinkAttribute {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             #[cfg(feature = "link-sriov")]
             Self::VfInfoList(_) => IFLA_VFINFO_LIST,

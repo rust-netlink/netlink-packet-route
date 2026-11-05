@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, emit_u32_be, emit_u64, parse_u16, parse_u16_be, parse_u32,
-    parse_u32_be, parse_u64, parse_u8, DecodeError, DefaultNla, Emitable,
+    append_bytes, append_u16_be, append_u32, append_u32_be, append_u64,
+    emit_nlas_into, parse_u16, parse_u16_be, parse_u32, parse_u32_be,
+    parse_u64, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
     ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
     ParseableParametrized,
 };
@@ -15,7 +16,6 @@ use super::{
     RouteLwTunnelEncap, RouteMetric, RouteMfcStats, RouteMplsTtlPropagation,
     RouteNextHop, RoutePreference, RouteRealm, RouteType, RouteVia,
 };
-
 const RTA_DST: u16 = 1;
 const RTA_SRC: u16 = 2;
 const RTA_IIF: u16 = 3;
@@ -93,89 +93,8 @@ pub enum RouteAttribute {
     Other(DefaultNla),
 }
 
-impl Nla for RouteAttribute {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Destination(addr)
-            | Self::PrefSource(addr)
-            | Self::Gateway(addr)
-            | Self::Source(addr) => addr.buffer_len(),
-            Self::Via(v) => v.buffer_len(),
-            Self::NewDestination(v) => VecMplsLabel(v.clone()).buffer_len(),
-            Self::NewDestinationAddress(v) => v.buffer_len(),
-            Self::Encap(v) => v.as_slice().buffer_len(),
-            Self::TtlPropagate(_) => 1,
-            Self::CacheInfo(cache_info) => cache_info.buffer_len(),
-            Self::MfcStats(stats) => stats.buffer_len(),
-            Self::Metrics(metrics) => metrics.as_slice().buffer_len(),
-            Self::MultiPath(next_hops) => {
-                next_hops.iter().map(|nh| nh.buffer_len()).sum()
-            }
-            Self::Preference(_) => 1,
-            Self::EncapType(v) => v.buffer_len(),
-            Self::Realm(v) => v.buffer_len(),
-            Self::Uid(_)
-            | Self::Expires(_)
-            | Self::Iif(_)
-            | Self::Oif(_)
-            | Self::Priority(_)
-            | Self::Table(_)
-            | Self::Mark(_) => 4,
-            Self::MulticastExpires(_) => 8,
-            Self::IpProto(_) => 1,
-            Self::Sport(_) | Self::Dport(_) => 2,
-            Self::Flowlabel(_) | Self::NhId(_) => 4,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Destination(addr)
-            | Self::PrefSource(addr)
-            | Self::Source(addr)
-            | Self::Gateway(addr) => addr.emit(buffer),
-            Self::Via(v) => v.emit(buffer),
-            Self::NewDestination(v) => VecMplsLabel(v.to_vec()).emit(buffer),
-            Self::NewDestinationAddress(v) => v.emit(buffer),
-
-            Self::Encap(nlas) => nlas.as_slice().emit(buffer),
-            Self::TtlPropagate(v) => buffer[0] = u8::from(*v),
-            Self::Preference(p) => buffer[0] = (*p).into(),
-            Self::CacheInfo(cache_info) => cache_info.emit(buffer),
-            Self::MfcStats(stats) => stats.emit(buffer),
-            Self::Metrics(metrics) => metrics.as_slice().emit(buffer),
-            Self::MultiPath(next_hops) => {
-                let mut offset = 0;
-                for nh in next_hops {
-                    let len = nh.buffer_len();
-                    nh.emit(&mut buffer[offset..offset + len]);
-                    offset += len
-                }
-            }
-            Self::EncapType(v) => v.emit(buffer),
-            Self::Uid(value)
-            | Self::Expires(value)
-            | Self::Iif(value)
-            | Self::Oif(value)
-            | Self::Priority(value)
-            | Self::Table(value)
-            | Self::Mark(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Realm(v) => v.emit(buffer),
-            Self::MulticastExpires(value) => emit_u64(buffer, *value).unwrap(),
-            Self::IpProto(value) => buffer[0] = *value,
-            Self::Sport(value) | Self::Dport(value) => {
-                buffer[..2].copy_from_slice(&value.to_be_bytes())
-            }
-            // RTA_FLOWLABEL is a NLA_BE32 attribute while RTA_NH_ID is a
-            // host endian one.
-            Self::Flowlabel(value) => emit_u32_be(buffer, *value).unwrap(),
-            Self::NhId(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Other(attr) => attr.emit_value(buffer),
-        }
-    }
-
-    fn kind(&self) -> u16 {
+impl RouteAttribute {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Destination(_) => RTA_DST,
             Self::Source(_) => RTA_SRC,
@@ -210,7 +129,7 @@ impl Nla for RouteAttribute {
         }
     }
 
-    fn is_nested(&self) -> bool {
+    fn is_nested_inner(&self) -> bool {
         if let Self::Encap(encap) = self {
             // The kernel validates these encapsulation types with
             // `nla_parse_nested()` which rejects a missing `NLA_F_NESTED`
@@ -229,6 +148,64 @@ impl Nla for RouteAttribute {
         } else {
             false
         }
+    }
+}
+
+impl Nla for RouteAttribute {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        match self {
+            Self::Destination(addr)
+            | Self::PrefSource(addr)
+            | Self::Source(addr)
+            | Self::Gateway(addr) => addr.emit_into(out)?,
+            Self::Via(v) => v.emit_into(out)?,
+            Self::NewDestination(v) => {
+                for label in v {
+                    label.emit_into(out)?;
+                }
+            }
+            Self::NewDestinationAddress(v) => v.emit_into(out)?,
+
+            Self::Encap(nlas) => emit_nlas_into(nlas, out)?,
+            Self::TtlPropagate(v) => out.push(u8::from(*v)),
+            Self::Preference(p) => out.push((*p).into()),
+            Self::CacheInfo(cache_info) => cache_info.emit_into(out)?,
+            Self::MfcStats(stats) => stats.emit_into(out)?,
+            Self::Metrics(metrics) => emit_nlas_into(metrics, out)?,
+            Self::MultiPath(next_hops) => {
+                for nh in next_hops {
+                    nh.emit_into(out)?;
+                }
+            }
+            Self::EncapType(v) => v.emit_into(out)?,
+            Self::Uid(value)
+            | Self::Expires(value)
+            | Self::Iif(value)
+            | Self::Oif(value)
+            | Self::Priority(value)
+            | Self::Table(value)
+            | Self::Mark(value) => append_u32(out, *value),
+            Self::Realm(v) => v.emit_into(out)?,
+            Self::MulticastExpires(value) => append_u64(out, *value),
+            Self::IpProto(value) => out.push(*value),
+            Self::Sport(value) | Self::Dport(value) => {
+                append_u16_be(out, *value)
+            }
+            // RTA_FLOWLABEL is a NLA_BE32 attribute while RTA_NH_ID is a
+            // host endian one.
+            Self::Flowlabel(value) => append_u32_be(out, *value),
+            Self::NhId(value) => append_u32(out, *value),
+            Self::Other(attr) => append_bytes(out, attr.value()),
+        }
+        Ok(())
+    }
+
+    fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+
+    fn is_nested(&self) -> bool {
+        self.is_nested_inner()
     }
 }
 

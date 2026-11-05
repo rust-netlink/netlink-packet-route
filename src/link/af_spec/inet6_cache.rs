@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -33,6 +33,7 @@ pub struct Inet6CacheInfoBuffer {
     retrans_time: i32,
 }
 
+#[allow(dead_code)]
 impl Inet6CacheInfo {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -51,6 +52,7 @@ impl Inet6CacheInfo {
     }
 }
 
+#[allow(dead_code)]
 impl From<&Inet6CacheInfo> for Inet6CacheInfoBuffer {
     fn from(cache_info: &Inet6CacheInfo) -> Self {
         Self {
@@ -63,12 +65,9 @@ impl From<&Inet6CacheInfo> for Inet6CacheInfoBuffer {
 }
 
 impl Emitable for Inet6CacheInfo {
-    fn buffer_len(&self) -> usize {
-        LINK_INET6_CACHE_INFO_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = Inet6CacheInfoBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

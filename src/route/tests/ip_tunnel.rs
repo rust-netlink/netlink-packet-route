@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv4Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
@@ -10,7 +9,7 @@ use crate::{
         RouteIpTunnelFlags, RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage,
         RouteProtocol, RouteScope, RouteType,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -74,7 +73,7 @@ fn test_ip_tunnel() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

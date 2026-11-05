@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     tc::{
@@ -8,7 +7,7 @@ use crate::{
         TcMessage, TcOption, TcQdiscFqCodelOption, TcStats, TcStats2,
         TcStatsBasic, TcStatsQueue, TcXstats,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -190,7 +189,7 @@ fn test_get_qdisc_fq_codel() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv6Addr;
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Parseable};
 
 use crate::{
     link::{
@@ -11,7 +10,7 @@ use crate::{
         LinkAttribute, LinkFlags, LinkHeader, LinkInfo, LinkLayerType,
         LinkMessage, LinkMode, LinkXdp, Map, State, XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 /// nlmon capture of kernel reply of `ip link show cn`
@@ -263,6 +262,6 @@ fn test_parsing_link_wireguard() {
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

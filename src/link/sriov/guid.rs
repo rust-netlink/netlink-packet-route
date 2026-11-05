@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 // `struct ifla_vf_guid` is `{ __u32 vf; __u64 guid; }` with the compiler
@@ -42,6 +42,7 @@ pub struct VfInfoGuidBuffer {
     guid: u64,
 }
 
+#[allow(dead_code)]
 impl VfInfoGuid {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -52,6 +53,7 @@ impl VfInfoGuid {
     }
 }
 
+#[allow(dead_code)]
 impl From<&VfInfoGuid> for VfInfoGuidBuffer {
     fn from(guid: &VfInfoGuid) -> Self {
         Self {
@@ -64,12 +66,8 @@ impl From<&VfInfoGuid> for VfInfoGuidBuffer {
 }
 
 impl Emitable for VfInfoGuid {
-    fn buffer_len(&self) -> usize {
-        VF_INFO_GUID_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = VfInfoGuidBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_bytes(out, VfInfoGuidBuffer::from(self).as_bytes());
+        Ok(())
     }
 }

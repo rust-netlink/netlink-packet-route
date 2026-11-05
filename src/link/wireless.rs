@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u16, parse_u16, DecodeError, Emitable, Parseable,
+    append_bytes, append_u16, parse_u16, DecodeError, Emitable, EncodeError,
+    Parseable,
 };
 
 const IWEVASSOCREQIE: u16 = 0x8C07;
@@ -45,31 +46,22 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for WirelessEvent {
 }
 
 impl Emitable for WirelessEvent {
-    fn buffer_len(&self) -> usize {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::AssociateRequest(v) | Self::AssociateResponse(v) => {
-                IW_HEADER_LEN + v.len()
-            }
-            Self::Other(v) => v.len(),
-        }
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer.fill(0);
-        match self {
-            Self::Other(v) => buffer.copy_from_slice(v),
+            Self::Other(v) => append_bytes(out, v),
             Self::AssociateRequest(v) => {
-                emit_u16(buffer, self.buffer_len() as u16).unwrap();
-                emit_u16(&mut buffer[2..4], IWEVASSOCREQIE).unwrap();
-                buffer[IW_HEADER_LEN..v.len() + IW_HEADER_LEN]
-                    .copy_from_slice(v.as_slice());
+                append_u16(out, (IW_HEADER_LEN + v.len()) as u16);
+                append_u16(out, IWEVASSOCREQIE);
+                append_bytes(out, &[0u8; IW_HEADER_LEN - 4]);
+                append_bytes(out, v);
             }
             Self::AssociateResponse(v) => {
-                emit_u16(buffer, self.buffer_len() as u16).unwrap();
-                emit_u16(&mut buffer[2..4], IWEVASSOCRESPIE).unwrap();
-                buffer[IW_HEADER_LEN..v.len() + IW_HEADER_LEN]
-                    .copy_from_slice(v.as_slice());
+                append_u16(out, (IW_HEADER_LEN + v.len()) as u16);
+                append_u16(out, IWEVASSOCRESPIE);
+                append_bytes(out, &[0u8; IW_HEADER_LEN - 4]);
+                append_bytes(out, v);
             }
         }
+        Ok(())
     }
 }

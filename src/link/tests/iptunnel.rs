@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
 };
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
@@ -13,7 +12,7 @@ use crate::{
         LinkFlags, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
         TunnelEncapFlags, TunnelEncapType,
     },
-    AddressFamily, IpProtocol,
+    AddressFamily, IpProtocol, TestEmit, TestNla,
 };
 
 #[test]
@@ -73,7 +72,7 @@ fn test_iptunnel_ipip_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -141,7 +140,7 @@ fn test_iptunnel_ipip6_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -209,7 +208,7 @@ fn test_iptunnel_ip6ip6_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -273,7 +272,7 @@ fn test_iptunnel_sit_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

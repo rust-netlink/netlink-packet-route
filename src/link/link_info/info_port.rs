@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_string, DecodeError, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, emit_nlas_into, parse_string, DecodeError, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use super::{
@@ -45,18 +45,7 @@ impl std::fmt::Display for InfoPortKind {
 }
 
 impl Nla for InfoPortKind {
-    fn value_len(&self) -> usize {
-        let len = match self {
-            Self::Bond => BOND.len(),
-            Self::Bridge => BRIDGE.len(),
-            Self::Vrf => VRF.len(),
-            Self::Team => TEAM.len(),
-            Self::Other(s) => s.len(),
-        };
-        len + 1
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let s = match self {
             Self::Bond => BOND,
             Self::Bridge => BRIDGE,
@@ -64,11 +53,18 @@ impl Nla for InfoPortKind {
             Self::Team => TEAM,
             Self::Other(s) => s.as_str(),
         };
-        buffer[..s.len()].copy_from_slice(s.as_bytes());
-        buffer[s.len()] = 0;
+        append_bytes(out, s.as_bytes());
+        out.push(0);
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoPortKind {
+    pub(crate) fn kind(&self) -> u16 {
         IFLA_INFO_PORT_KIND
     }
 }
@@ -107,27 +103,24 @@ pub enum InfoPortData {
 }
 
 impl Nla for InfoPortData {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::BondPort(nlas) => nlas.as_slice().buffer_len(),
-            Self::BridgePort(nlas) => nlas.as_slice().buffer_len(),
-            Self::VrfPort(nlas) => nlas.as_slice().buffer_len(),
-            Self::TeamPort(nlas) => nlas.as_slice().buffer_len(),
-            Self::Other(bytes) => bytes.len(),
+            Self::BondPort(nlas) => emit_nlas_into(nlas, out)?,
+            Self::BridgePort(nlas) => emit_nlas_into(nlas, out)?,
+            Self::VrfPort(nlas) => emit_nlas_into(nlas, out)?,
+            Self::TeamPort(nlas) => emit_nlas_into(nlas, out)?,
+            Self::Other(bytes) => append_bytes(out, bytes),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::BondPort(nlas) => nlas.as_slice().emit(buffer),
-            Self::BridgePort(nlas) => nlas.as_slice().emit(buffer),
-            Self::VrfPort(nlas) => nlas.as_slice().emit(buffer),
-            Self::TeamPort(nlas) => nlas.as_slice().emit(buffer),
-            Self::Other(bytes) => buffer.copy_from_slice(bytes),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoPortData {
+    pub(crate) fn kind(&self) -> u16 {
         IFLA_INFO_PORT_DATA
     }
 }

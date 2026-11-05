@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use std::{fmt::Debug, mem::size_of};
+use std::fmt::Debug;
 
 use netlink_packet_core::{
-    emit_u32, emit_u32_be, parse_u16_be, parse_u32, parse_u32_be, parse_u8,
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, NLA_F_NESTED,
+    append_bytes, append_u32, append_u32_be, emit_nlas_into, parse_u16_be,
+    parse_u32, parse_u32_be, parse_u8, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
 };
 
 // `LWTUNNEL_IP_OPTS` and its `LWTUNNEL_IP6_OPTS` twin share the same
@@ -89,24 +89,24 @@ pub enum RouteLwTunnelOpt {
 }
 
 impl Nla for RouteVxlanOpt {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Gbp(_) => size_of::<u32>(),
-            Self::Other(other) => other.value_len(),
+            Self::Gbp(gbp) => append_u32(out, *gbp),
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteVxlanOpt {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Gbp(_) => LWTUNNEL_IP_OPT_VXLAN_GBP,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Gbp(gbp) => emit_u32(buffer, *gbp).unwrap(),
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }
@@ -128,31 +128,30 @@ where
 }
 
 impl Nla for RouteErspanOpt {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Ver(_) | Self::Dir(_) | Self::Hwid(_) => size_of::<u8>(),
-            Self::Index(_) => size_of::<u32>(),
-            Self::Other(other) => other.value_len(),
+            Self::Ver(value) | Self::Dir(value) | Self::Hwid(value) => {
+                out.push(*value)
+            }
+            Self::Index(index) => append_u32_be(out, *index),
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteErspanOpt {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Ver(_) => LWTUNNEL_IP_OPT_ERSPAN_VER,
             Self::Index(_) => LWTUNNEL_IP_OPT_ERSPAN_INDEX,
             Self::Dir(_) => LWTUNNEL_IP_OPT_ERSPAN_DIR,
             Self::Hwid(_) => LWTUNNEL_IP_OPT_ERSPAN_HWID,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Ver(value) | Self::Dir(value) | Self::Hwid(value) => {
-                buffer[0] = *value;
-            }
-            Self::Index(index) => emit_u32_be(buffer, *index).unwrap(),
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }
@@ -261,16 +260,25 @@ fn geneve_nlas(opts: &[RouteGeneveOpt]) -> Vec<DefaultNla> {
 }
 
 impl Nla for RouteLwTunnelOpt {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Geneve(opts) => geneve_nlas(opts).as_slice().buffer_len(),
-            Self::Vxlan(opts) => opts.as_slice().buffer_len(),
-            Self::Erspan(opts) => opts.as_slice().buffer_len(),
-            Self::Other(other) => other.value_len(),
+            Self::Geneve(opts) => {
+                emit_nlas_into(&geneve_nlas(opts), out)?;
+            }
+            Self::Vxlan(opts) => emit_nlas_into(opts, out)?,
+            Self::Erspan(opts) => emit_nlas_into(opts, out)?,
+            Self::Other(other) => append_bytes(out, other.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl RouteLwTunnelOpt {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             // The kernel validates these attributes with `nla_parse_nested()`
             // which requires the `NLA_F_NESTED` flag.
@@ -278,15 +286,6 @@ impl Nla for RouteLwTunnelOpt {
             Self::Vxlan(_) => LWTUNNEL_IP_OPTS_VXLAN | NLA_F_NESTED,
             Self::Erspan(_) => LWTUNNEL_IP_OPTS_ERSPAN | NLA_F_NESTED,
             Self::Other(other) => other.kind(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Geneve(opts) => geneve_nlas(opts).as_slice().emit(buffer),
-            Self::Vxlan(opts) => opts.as_slice().emit(buffer),
-            Self::Erspan(opts) => opts.as_slice().emit(buffer),
-            Self::Other(other) => other.emit_value(buffer),
         }
     }
 }

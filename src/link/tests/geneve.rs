@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
 };
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
         link_flag::LinkFlags, GeneveDf, InfoData, InfoGeneve, InfoKind,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -61,7 +60,7 @@ fn test_geneve_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -113,7 +112,7 @@ fn test_geneve_link_local() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -171,7 +170,7 @@ fn test_geneve_link_local6() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

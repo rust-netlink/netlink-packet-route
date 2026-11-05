@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u64, parse_u64, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, append_u64, parse_u64, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_VF_STATS_RX_PACKETS: u16 = 0;
@@ -30,14 +30,7 @@ pub enum VfStats {
 }
 
 impl Nla for VfStats {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Other(v) => v.value_len(),
-            _ => 8,
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::RxPackets(v)
             | Self::TxPackets(v)
@@ -46,12 +39,19 @@ impl Nla for VfStats {
             | Self::Broadcast(v)
             | Self::Multicast(v)
             | Self::RxDropped(v)
-            | Self::TxDropped(v) => emit_u64(buffer, *v).unwrap(),
-            Self::Other(attr) => attr.emit_value(buffer),
+            | Self::TxDropped(v) => append_u64(out, *v),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <VfStats>::kind(self)
+    }
+}
+
+impl VfStats {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::RxPackets(_) => IFLA_VF_STATS_RX_PACKETS,
             Self::TxPackets(_) => IFLA_VF_STATS_TX_PACKETS,

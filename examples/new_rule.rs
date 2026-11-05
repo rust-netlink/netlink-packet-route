@@ -34,15 +34,13 @@ fn main() {
     let mut nl_hdr = NetlinkHeader::default();
     nl_hdr.flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK;
 
-    let mut msg = NetlinkMessage::new(
+    let msg = NetlinkMessage::new(
         nl_hdr,
         NetlinkPayload::from(RouteNetlinkMessage::NewRule(rule_msg)),
     );
 
-    msg.finalize();
-    let mut buf = vec![0; 1024 * 8];
-
-    msg.serialize(&mut buf[..msg.buffer_len()]);
+    let mut buf = Vec::new();
+    msg.serialize_into(&mut buf).unwrap();
 
     println!(">>> {msg:?}");
 

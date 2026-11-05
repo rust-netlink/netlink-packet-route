@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
 };
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     neighbour::{
@@ -13,7 +12,7 @@ use crate::{
         NeighbourExtFlags, NeighbourHeader, NeighbourMessage, NeighbourState,
     },
     route::{RouteProtocol, RouteType},
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // wireshark capture(netlink message header removed) of nlmon against command:
@@ -57,7 +56,7 @@ fn test_ipv4_neighbour_show() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -106,7 +105,7 @@ fn test_ipv6_neighbour_show() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -157,7 +156,7 @@ fn test_ipv4_neighbour_protocol_show() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -190,7 +189,7 @@ fn test_ipv4_neighbour_add_ext_flags() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -234,7 +233,7 @@ fn test_ipv4_neighbour_show_ext_flags() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

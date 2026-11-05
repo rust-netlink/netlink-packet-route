@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use crate::{
     address::{AddressProtocol, AddressScope},
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]

@@ -11,8 +11,8 @@ use netlink_packet_core::ErrorContext;
 /// until the first match occurs, and then the associated action is
 /// performed.
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, Emitable, Parseable,
-    {DefaultNla, Nla, NlaBuffer, NlasIterator},
+    append_bytes, append_u32, emit_nlas_into, parse_u32, DecodeError,
+    DefaultNla, Emitable, EncodeError, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -57,41 +57,31 @@ pub enum TcFilterU32Option {
 }
 
 impl Nla for TcFilterU32Option {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Police(b)
             | Self::Indev(b)
             | Self::Pnct(b)
-            | Self::Mark(b) => b.len(),
-            Self::Hash(_)
-            | Self::Link(_)
-            | Self::Divisor(_)
-            | Self::Flags(_) => 4,
-            Self::ClassId(_) => 4,
-            Self::Selector(s) => s.buffer_len(),
-            Self::Action(acts) => acts.as_slice().buffer_len(),
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Police(b)
-            | Self::Indev(b)
-            | Self::Pnct(b)
-            | Self::Mark(b) => buffer.copy_from_slice(b.as_slice()),
+            | Self::Mark(b) => append_bytes(out, b.as_slice()),
             Self::Hash(i) | Self::Link(i) | Self::Divisor(i) => {
-                emit_u32(buffer, *i).unwrap()
+                append_u32(out, *i);
             }
-            Self::Flags(f) => emit_u32(buffer, f.bits()).unwrap(),
-            Self::ClassId(i) => emit_u32(buffer, (*i).into()).unwrap(),
-            Self::Selector(s) => s.emit(buffer),
-            Self::Action(acts) => acts.as_slice().emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Flags(f) => append_u32(out, f.bits()),
+            Self::ClassId(i) => append_u32(out, (*i).into()),
+            Self::Selector(s) => s.emit_into(out)?,
+            Self::Action(acts) => emit_nlas_into(acts, out)?,
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl TcFilterU32Option {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::ClassId(_) => TCA_U32_CLASSID,
             Self::Hash(_) => TCA_U32_HASH,
@@ -223,6 +213,7 @@ impl TcU32SelectorBuffer {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcU32Selector> for TcU32SelectorBuffer {
     fn from(selector: &TcU32Selector) -> Self {
         Self {
@@ -242,22 +233,13 @@ impl From<&TcU32Selector> for TcU32SelectorBuffer {
 }
 
 impl Emitable for TcU32Selector {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcU32SelectorBuffer>()
-            + (self.nkeys as usize * size_of::<TcU32KeyBuffer>())
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcU32SelectorBuffer::from(self);
-        let sel_len = size_of::<TcU32SelectorBuffer>();
-        let key_len = size_of::<TcU32KeyBuffer>();
-        buffer[..sel_len].copy_from_slice(raw.as_bytes());
-        for (i, k) in self.keys.iter().enumerate() {
-            k.emit(
-                &mut buffer
-                    [(sel_len + i * key_len)..(sel_len + (i + 1) * key_len)],
-            );
+        append_bytes(out, raw.as_bytes());
+        for k in &self.keys {
+            k.emit_into(out)?;
         }
+        Ok(())
     }
 }
 
@@ -323,6 +305,7 @@ pub struct TcU32KeyBuffer {
     offmask: i32,
 }
 
+#[allow(dead_code)]
 impl From<&TcU32Key> for TcU32KeyBuffer {
     fn from(key: &TcU32Key) -> Self {
         Self {
@@ -335,12 +318,10 @@ impl From<&TcU32Key> for TcU32KeyBuffer {
 }
 
 impl Emitable for TcU32Key {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcU32KeyBuffer>()
-    }
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcU32KeyBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 

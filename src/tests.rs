@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-// This file only contains testing parsing RouteNetlinkMessage, not focusing on
-// detailed sub-component parsing. Each component has its own test module.
-
-use netlink_packet_core::{
-    Emitable, NetlinkHeader, NetlinkMessage, NetlinkPayload,
-};
+// This file only contains testing parsing RouteNetlinkMessage, not
+// focusing on detailed sub-component parsing. Each component has its own
+// test module.
+use netlink_packet_core::{NetlinkHeader, NetlinkMessage, NetlinkPayload};
 
 use crate::{
     link::{LinkAttribute, LinkExtentMask, LinkMessage},
-    RouteNetlinkMessage,
+    RouteNetlinkMessage, TestEmit, TestNla,
 };
 
 // wireshark capture of nlmon against command:
@@ -44,13 +41,7 @@ fn test_get_link() {
     );
 
     assert_eq!(NetlinkMessage::deserialize(&raw).unwrap(), expected);
-    let mut buffer = vec![0; expected.buffer_len()];
-    expected.emit(&mut buffer);
-    assert_eq!(buffer.as_slice(), raw);
-
-    // Use a non zeroed buffer as well to check the emit function zeros all the
-    // padding bytes properly.
-    let mut buffer = vec![255; expected.buffer_len()];
-    expected.emit(&mut buffer);
+    let mut buffer = Vec::new();
+    expected.serialize_into(&mut buffer).unwrap();
     assert_eq!(buffer.as_slice(), raw);
 }

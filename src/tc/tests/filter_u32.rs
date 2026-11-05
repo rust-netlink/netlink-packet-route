@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv4Addr;
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     tc::{
@@ -10,7 +9,7 @@ use crate::{
         TcAttribute, TcFilterU32Option, TcHandle, TcHeader, TcMessage,
         TcOption, TcU32Key, TcU32Selector, TcU32SelectorBuffer,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -105,7 +104,7 @@ fn test_get_filter_u32() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -182,7 +181,7 @@ fn test_get_filter_u32_offset_and_hash_mask() {
     assert_eq!(selector.keys[0].val, 0x1234_5678);
 
     let mut buf = vec![0; message.buffer_len()];
-    message.emit(&mut buf);
+    message.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -238,6 +237,6 @@ fn test_get_filter_u32_negative_offsets() {
     assert_eq!(selector.keys[0].val, 0x1234_5678);
 
     let mut buf = vec![0; message.buffer_len()];
-    message.emit(&mut buf);
+    message.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

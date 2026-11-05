@@ -105,6 +105,7 @@ mod tests {
     use std::str::FromStr;
 
     use super::NeighbourState;
+    use crate::{TestEmit, TestNla};
 
     #[test]
     fn test_neighbour_state_decoding() {

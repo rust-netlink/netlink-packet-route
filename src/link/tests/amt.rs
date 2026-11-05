@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{IpAddr, Ipv4Addr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
         link_flag::LinkFlags, AmtMode, InfoAmt, InfoData, InfoKind,
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // nlmon capture of :
@@ -76,7 +75,7 @@ fn test_parsing_link_amt_gateway() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -134,7 +133,7 @@ fn test_parsing_link_amt_relay() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -186,7 +185,7 @@ fn test_parsing_link_amt_minimal() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

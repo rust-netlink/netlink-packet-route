@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{RouteProtocol, RouteRealm},
@@ -8,7 +7,7 @@ use crate::{
         flags::RuleFlags, RuleAction, RuleAttribute, RuleHeader, RuleMessage,
         RulePortRange,
     },
-    AddressFamily, IpProtocol,
+    AddressFamily, IpProtocol, TestEmit, TestNla,
 };
 
 // Setup:
@@ -61,7 +60,7 @@ fn test_ipv4_tcp_sport_dport_realm() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -117,7 +116,7 @@ fn test_ipv4_udp_sport_range_dport_range_reals_src_dst() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_u32, DecodeError, Emitable, EncodeError};
 
 const RULE_REALM_LEN: usize = 4;
 
@@ -10,6 +10,7 @@ pub struct RouteRealm {
     pub destination: u16,
 }
 
+#[allow(dead_code)]
 impl RouteRealm {
     pub(crate) fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         if buf.len() == RULE_REALM_LEN {
@@ -28,12 +29,9 @@ impl RouteRealm {
 }
 
 impl Emitable for RouteRealm {
-    fn buffer_len(&self) -> usize {
-        RULE_REALM_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let all = ((self.source as u32) << 16) | self.destination as u32;
-        buffer.copy_from_slice(&all.to_ne_bytes());
+        append_u32(out, all);
+        Ok(())
     }
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const MAX_ADDR_LEN: usize = 32;
@@ -46,6 +46,7 @@ pub struct VfInfoMacBuffer {
     mac: [u8; MAX_ADDR_LEN],
 }
 
+#[allow(dead_code)]
 impl VfInfoMac {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -56,6 +57,7 @@ impl VfInfoMac {
     }
 }
 
+#[allow(dead_code)]
 impl From<&VfInfoMac> for VfInfoMacBuffer {
     fn from(mac: &VfInfoMac) -> Self {
         Self {
@@ -66,12 +68,8 @@ impl From<&VfInfoMac> for VfInfoMacBuffer {
 }
 
 impl Emitable for VfInfoMac {
-    fn buffer_len(&self) -> usize {
-        VF_INFO_MAC_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = VfInfoMacBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_bytes(out, VfInfoMacBuffer::from(self).as_bytes());
+        Ok(())
     }
 }

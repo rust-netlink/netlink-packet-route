@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
         link_flag::LinkFlags, LinkAttribute, LinkHeader, LinkLayerType,
         LinkMessage, Prop,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -43,7 +42,7 @@ fn test_wlan0_with_prop_altname() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

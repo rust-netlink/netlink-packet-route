@@ -1,21 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-/// Nat action
-///
-/// The nat action maps one IP prefix to another
-use std::mem::size_of;
-use std::net::Ipv4Addr;
+use std::{mem::size_of, net::Ipv4Addr};
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, Nla, NlaBuffer, Parseable,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, Nla,
+    NlaBuffer, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{
     nat_flag::TcNatFlags, TcActionGeneric, TcActionGenericBuffer, Tcf,
-    TcfBuffer,
 };
-
 const TCA_NAT_PARMS: u16 = 1;
 const TCA_NAT_TM: u16 = 2;
 
@@ -41,22 +36,22 @@ pub enum TcActionNatOption {
 }
 
 impl Nla for TcActionNatOption {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Tm(_) => size_of::<TcfBuffer>(),
-            Self::Parms(v) => v.buffer_len(),
-            Self::Other(attr) => attr.value_len(),
+            Self::Tm(p) => p.emit_into(out)?,
+            Self::Parms(p) => p.emit_into(out)?,
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Tm(p) => p.emit(buffer),
-            Self::Parms(p) => p.emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
-        }
-    }
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl TcActionNatOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Tm(_) => TCA_NAT_TM,
             Self::Parms(_) => TCA_NAT_PARMS,
@@ -126,6 +121,7 @@ pub struct TcNatBuffer {
     flags: u32,
 }
 
+#[allow(dead_code)]
 impl TcNat {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = TcNatBuffer::ref_from_prefix(payload).map_err(|_| {
@@ -146,6 +142,7 @@ impl TcNat {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcNat> for TcNatBuffer {
     fn from(nat: &TcNat) -> Self {
         Self {
@@ -159,12 +156,9 @@ impl From<&TcNat> for TcNatBuffer {
 }
 
 impl Emitable for TcNat {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcNatBuffer>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcNatBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

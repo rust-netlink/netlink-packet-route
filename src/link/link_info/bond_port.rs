@@ -2,8 +2,9 @@
 
 use bitflags::bitflags;
 use netlink_packet_core::{
-    emit_i32, emit_u16, emit_u32, parse_i32, parse_u16, parse_u32, parse_u8,
-    DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_i32, append_u16, append_u32, parse_i32, parse_u16,
+    parse_u32, parse_u8, DecodeError, DefaultNla, EncodeError, ErrorContext,
+    Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_BOND_PORT_STATE_ACTIVE: u8 = 0;
@@ -250,50 +251,70 @@ pub enum InfoBondPort {
 }
 
 impl Nla for InfoBondPort {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::QueueId(_)
-            | Self::AdAggregatorId(_)
-            | Self::ActorPortPrio(_)
-            // The kernel stores `partner_oper.port_state` as u8, but emits
-            // it with nla_put_u16().
-            | Self::AdPartnerOperPortState(_) => 2,
-            Self::LinkFailureCount(_) | Self::Prio(_) => 4,
-            Self::PermHwaddr(ref bytes) => bytes.len(),
-            Self::MiiStatus(_)
-            | Self::BondPortState(_)
-            | Self::AdActorOperPortState(_)
-            | Self::AdChurnActorState(_)
-            | Self::AdChurnPartnerState(_) => 1,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::QueueId(ref value) => emit_u16(buffer, *value).unwrap(),
+            Self::QueueId(ref value) => {
+                append_u16(out, *value);
+                Ok(())
+            }
             Self::AdAggregatorId(ref value) => {
-                emit_u16(buffer, *value).unwrap()
+                append_u16(out, *value);
+                Ok(())
             }
-            Self::ActorPortPrio(ref value) => emit_u16(buffer, *value).unwrap(),
+            Self::ActorPortPrio(ref value) => {
+                append_u16(out, *value);
+                Ok(())
+            }
             Self::PermHwaddr(ref bytes) => {
-                buffer.copy_from_slice(bytes.as_slice())
+                append_bytes(out, bytes.as_slice());
+                Ok(())
             }
-            Self::Prio(ref value) => emit_i32(buffer, *value).unwrap(),
-            Self::LinkFailureCount(value) => emit_u32(buffer, *value).unwrap(),
-            Self::MiiStatus(state) => buffer[0] = (*state).into(),
-            Self::BondPortState(state) => buffer[0] = (*state).into(),
-            Self::AdActorOperPortState(state) => buffer[0] = state.bits(),
+            Self::Prio(ref value) => {
+                append_i32(out, *value);
+                Ok(())
+            }
+            Self::LinkFailureCount(value) => {
+                append_u32(out, *value);
+                Ok(())
+            }
+            Self::MiiStatus(state) => {
+                out.push((*state).into());
+                Ok(())
+            }
+            Self::BondPortState(state) => {
+                out.push((*state).into());
+                Ok(())
+            }
+            Self::AdActorOperPortState(state) => {
+                out.push(state.bits());
+                Ok(())
+            }
             Self::AdPartnerOperPortState(state) => {
-                emit_u16(buffer, u16::from(state.bits())).unwrap()
+                append_u16(out, u16::from(state.bits()));
+                Ok(())
             }
-            Self::AdChurnActorState(state) => buffer[0] = u8::from(*state),
-            Self::AdChurnPartnerState(state) => buffer[0] = u8::from(*state),
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::AdChurnActorState(state) => {
+                out.push(u8::from(*state));
+                Ok(())
+            }
+            Self::AdChurnPartnerState(state) => {
+                out.push(u8::from(*state));
+                Ok(())
+            }
+            Self::Other(nla) => {
+                append_bytes(out, nla.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <InfoBondPort>::kind(self)
+    }
+}
+
+impl InfoBondPort {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::LinkFailureCount(_) => IFLA_BOND_PORT_LINK_FAILURE_COUNT,
             Self::MiiStatus(_) => IFLA_BOND_PORT_MII_STATUS,

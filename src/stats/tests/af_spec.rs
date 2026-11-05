@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     stats::{
         AfSpecStat, AfSpecStats, MplsLinkStats, StatsAttribute,
         StatsFilterMask, StatsHeader, StatsMessage,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Synthetic data matching kernel layout: RTM_NEWSTATS for lo
@@ -47,6 +46,6 @@ fn test_parsing_af_spec_mpls() {
     assert_eq!(expected, StatsMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

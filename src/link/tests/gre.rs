@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Parseable};
 
 use crate::{
     link::{
@@ -10,7 +9,7 @@ use crate::{
         InfoGre6, InfoKind, LinkAttribute, LinkFlags, LinkHeader, LinkInfo,
         LinkLayerType, LinkMessage,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -55,7 +54,7 @@ fn test_create_gre6_external() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -100,7 +99,7 @@ fn test_create_gre6tap_external() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -231,7 +230,7 @@ fn test_create_gre6() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -357,7 +356,7 @@ fn test_create_gre6_with_link() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -486,7 +485,7 @@ fn test_create_gre6tap() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -529,7 +528,7 @@ fn test_create_gre_external() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -573,7 +572,7 @@ fn test_create_gretap_external() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -683,7 +682,7 @@ fn test_create_gre() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -793,7 +792,7 @@ fn test_create_gre_with_link() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -904,7 +903,7 @@ fn test_create_gretap() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -1021,7 +1020,7 @@ fn test_create_erspan_v1() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -1144,7 +1143,7 @@ fn test_create_erspan_v2() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -1271,7 +1270,7 @@ fn test_create_ip6erspan_v1() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -1404,7 +1403,7 @@ fn test_create_ip6erspan_v2() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -1468,6 +1467,6 @@ fn test_parsing_gretap_with_fou_encap() {
     };
     assert_eq!(LinkMessage::parse(&raw).unwrap(), expected);
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

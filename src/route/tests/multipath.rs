@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv4Addr;
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
@@ -10,7 +9,7 @@ use crate::{
         RouteMessage, RouteMfcStats, RouteNextHop, RouteNextHopFlags,
         RouteProtocol, RouteScope, RouteType,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // wireshark capture(netlink message header removed) of nlmon against command:
@@ -76,7 +75,7 @@ fn test_route_multipath_two_nexthops() {
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -153,6 +152,6 @@ fn test_route_multipath_zero_nexthops() {
     assert_eq!(expected, RouteMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

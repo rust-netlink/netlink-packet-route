@@ -5,8 +5,8 @@ use netlink_packet_core::ErrorContext;
 ///
 /// Matches all packets and performs an action on them.
 use netlink_packet_core::{
-    emit_u32, parse_u32, DecodeError, DefaultNla, Emitable, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, append_u32, emit_nlas_into, parse_u32, DecodeError,
+    DefaultNla, EncodeError, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use crate::tc::{TcAction, TcHandle};
@@ -34,27 +34,24 @@ pub enum TcFilterMatchAllOption {
 }
 
 impl Nla for TcFilterMatchAllOption {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Pnct(b) => b.len(),
-            Self::ClassId(_) => 4,
-            Self::Flags(_) => 4,
-            Self::Action(acts) => acts.as_slice().buffer_len(),
-            Self::Other(attr) => attr.value_len(),
+            Self::Pnct(b) => append_bytes(out, b.as_slice()),
+            Self::ClassId(i) => append_u32(out, (*i).into()),
+            Self::Flags(i) => append_u32(out, *i),
+            Self::Action(acts) => emit_nlas_into(acts, out)?,
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Pnct(b) => buffer.copy_from_slice(b.as_slice()),
-            Self::ClassId(i) => emit_u32(buffer, (*i).into()).unwrap(),
-            Self::Flags(i) => emit_u32(buffer, *i).unwrap(),
-            Self::Action(acts) => acts.as_slice().emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl TcFilterMatchAllOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::ClassId(_) => TCA_MATCHALL_CLASSID,
             Self::Action(_) => TCA_MATCHALL_ACT,

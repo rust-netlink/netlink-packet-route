@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, Emitable, NlaBuffer, ParseableParametrized,
+    append_bytes, DecodeError, Emitable, EncodeError, NlaBuffer,
+    ParseableParametrized,
 };
 
 use crate::link::InfoKind;
@@ -15,16 +16,11 @@ pub enum LinkXstats {
 }
 
 impl Emitable for LinkXstats {
-    fn buffer_len(&self) -> usize {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Other(v) => v.len(),
+            Self::Other(v) => append_bytes(out, v.as_slice()),
         }
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
-        }
+        Ok(())
     }
 }
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    append_bytes, emit_nlas_into, DecodeError, DefaultNla, Emitable,
+    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use crate::link::{
@@ -45,15 +45,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
 pub struct LinkVfInfo(pub Vec<VfInfo>);
 
 impl Nla for LinkVfInfo {
-    fn value_len(&self) -> usize {
-        self.0.as_slice().buffer_len()
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        self.0.as_slice().emit(buffer)
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        emit_nlas_into(&self.0, out)
     }
 
     fn kind(&self) -> u16 {
+        <LinkVfInfo>::kind(self)
+    }
+}
+
+impl LinkVfInfo {
+    pub(crate) fn kind(&self) -> u16 {
         IFLA_VF_INFO
     }
 }
@@ -105,45 +107,33 @@ pub enum VfInfo {
 }
 
 impl Nla for VfInfo {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Mac(v) => v.buffer_len(),
-            Self::Vlan(v) => v.buffer_len(),
-            Self::Broadcast(v) => v.buffer_len(),
-            Self::Rate(v) => v.buffer_len(),
-            Self::TxRate(v) => v.buffer_len(),
-            Self::SpoofCheck(v) => v.buffer_len(),
-            Self::LinkState(v) => v.buffer_len(),
-            Self::RssQueryEn(v) => v.buffer_len(),
-            Self::Trust(v) => v.buffer_len(),
-            Self::IbNodeGuid(v) => v.buffer_len(),
-            Self::IbPortGuid(v) => v.buffer_len(),
-            Self::VlanList(v) => v.as_slice().buffer_len(),
-            Self::Stats(v) => v.as_slice().buffer_len(),
-            Self::Other(v) => v.value_len(),
+            Self::Mac(v) => v.emit_into(out)?,
+            Self::Vlan(v) => v.emit_into(out)?,
+            Self::Broadcast(v) => v.emit_into(out)?,
+            Self::Rate(v) => v.emit_into(out)?,
+            Self::TxRate(v) => v.emit_into(out)?,
+            Self::SpoofCheck(v) => v.emit_into(out)?,
+            Self::LinkState(v) => v.emit_into(out)?,
+            Self::RssQueryEn(v) => v.emit_into(out)?,
+            Self::Trust(v) => v.emit_into(out)?,
+            Self::IbNodeGuid(v) => v.emit_into(out)?,
+            Self::IbPortGuid(v) => v.emit_into(out)?,
+            Self::VlanList(v) => emit_nlas_into(v, out)?,
+            Self::Stats(v) => emit_nlas_into(v, out)?,
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Mac(v) => v.emit(buffer),
-            Self::Vlan(v) => v.emit(buffer),
-            Self::Broadcast(v) => v.emit(buffer),
-            Self::Rate(v) => v.emit(buffer),
-            Self::TxRate(v) => v.emit(buffer),
-            Self::SpoofCheck(v) => v.emit(buffer),
-            Self::LinkState(v) => v.emit(buffer),
-            Self::RssQueryEn(v) => v.emit(buffer),
-            Self::Trust(v) => v.emit(buffer),
-            Self::IbNodeGuid(v) => v.emit(buffer),
-            Self::IbPortGuid(v) => v.emit(buffer),
-            Self::VlanList(v) => v.as_slice().emit(buffer),
-            Self::Stats(v) => v.as_slice().emit(buffer),
-            Self::Other(attr) => attr.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <VfInfo>::kind(self)
+    }
+}
+
+impl VfInfo {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Mac(_) => IFLA_VF_MAC,
             Self::Vlan(_) => IFLA_VF_VLAN,

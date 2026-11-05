@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::{net::Ipv6Addr, str::FromStr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     route::{
@@ -11,7 +10,7 @@ use crate::{
         RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage, RoutePreference,
         RouteProtocol, RouteScope, RouteType, Seg6Header,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // Setup:
@@ -70,7 +69,7 @@ fn test_encap() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -159,7 +158,7 @@ fn test_encap_tunsrc() {
     // message carries the flag required by the kernel.
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }
@@ -243,7 +242,7 @@ fn test_encap_hmac() {
     // message carries the flag required by the kernel.
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(expected, RouteMessage::parse(&buf).unwrap());
 }
@@ -310,7 +309,7 @@ fn test_encap_tunsrc_lookup_request() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -373,7 +372,7 @@ fn test_inline() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

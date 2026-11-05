@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_string, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, parse_string, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_ALT_IFNAME: u16 = 53;
@@ -15,24 +15,24 @@ pub enum Prop {
 }
 
 impl Nla for Prop {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::AltIfName(ref string) => string.len() + 1,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::AltIfName(ref string) => {
-                buffer[..string.len()].copy_from_slice(string.as_bytes());
-                buffer[string.len()] = 0;
+                append_bytes(out, string.as_bytes());
+                out.push(0);
             }
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl Prop {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::AltIfName(_) => IFLA_ALT_IFNAME,
             Self::Other(nla) => nla.kind(),

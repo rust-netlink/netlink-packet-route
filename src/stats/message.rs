@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
+use netlink_packet_core::{
+    emit_nlas_into, DecodeError, Emitable, EncodeError, ErrorContext, Parseable,
+};
 
 use crate::stats::{
     attribute::VecStatsAttribute, header::STATS_HEADER_LEN, StatsAttribute,
@@ -14,6 +16,7 @@ pub struct StatsMessage {
     pub attributes: Vec<StatsAttribute>,
 }
 
+#[allow(dead_code)]
 impl Parseable<[u8]> for StatsMessage {
     fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         Ok(Self {
@@ -27,14 +30,8 @@ impl Parseable<[u8]> for StatsMessage {
 }
 
 impl Emitable for StatsMessage {
-    fn buffer_len(&self) -> usize {
-        self.header.buffer_len() + self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        self.header.emit(buffer);
-        self.attributes
-            .as_slice()
-            .emit(&mut buffer[self.header.buffer_len()..]);
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        self.header.emit_into(out)?;
+        emit_nlas_into(&self.attributes, out)
     }
 }

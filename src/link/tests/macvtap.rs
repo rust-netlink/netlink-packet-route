@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
@@ -11,7 +10,7 @@ use crate::{
         MacVtapMacAddressMode, MacVtapMode, Map, State, Stats, Stats64,
         XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -338,7 +337,7 @@ fn test_macvtap_link_info() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -380,7 +379,7 @@ fn test_macvtap_modify_mac_addr_mode() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

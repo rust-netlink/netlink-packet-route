@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, Parseable,
 };
 
 use super::super::LinkMessage;
@@ -19,21 +20,21 @@ pub enum InfoVxcan {
 }
 
 impl Nla for InfoVxcan {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
-            Self::Peer(ref message) => message.buffer_len(),
-            Self::Other(ref attr) => attr.value_len(),
+            Self::Peer(ref message) => message.emit_into(out)?,
+            Self::Other(ref attr) => append_bytes(out, attr.value()),
         }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match *self {
-            Self::Peer(ref message) => message.emit(buffer),
-            Self::Other(ref attr) => attr.emit_value(buffer),
-        }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl InfoVxcan {
+    pub(crate) fn kind(&self) -> u16 {
         match *self {
             Self::Peer(_) => VXCAN_INFO_PEER,
             Self::Other(ref attr) => attr.kind(),

@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::{IpAddr, Ipv4Addr};
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     address::{
         AddressAttribute, AddressFlags, AddressHeader, AddressHeaderFlags,
         AddressMessage, AddressScope, CacheInfo,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 // TODO(Gris Ge): Need test for `AddressAttribute::Broadcast`
@@ -50,7 +49,7 @@ fn test_ipv4_get_loopback_address() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, ErrorContext, Parseable};
+use netlink_packet_core::{
+    emit_nlas_into, DecodeError, Emitable, EncodeError, ErrorContext, Parseable,
+};
 
 use super::{
     attribute::VecTcAttribute, header::TC_HEADER_LEN, TcAttribute, TcHeader,
@@ -13,6 +15,7 @@ pub struct TcMessage {
     pub attributes: Vec<TcAttribute>,
 }
 
+#[allow(dead_code)]
 impl TcMessage {
     pub fn into_parts(self) -> (TcHeader, Vec<TcAttribute>) {
         (self.header, self.attributes)
@@ -34,6 +37,7 @@ impl TcMessage {
     }
 }
 
+#[allow(dead_code)]
 impl Parseable<[u8]> for TcMessage {
     fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         let header = TcHeader::parse(buf)
@@ -48,14 +52,8 @@ impl Parseable<[u8]> for TcMessage {
 }
 
 impl Emitable for TcMessage {
-    fn buffer_len(&self) -> usize {
-        self.header.buffer_len() + self.attributes.as_slice().buffer_len()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        self.header.emit(buffer);
-        self.attributes
-            .as_slice()
-            .emit(&mut buffer[self.header.buffer_len()..]);
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        self.header.emit_into(out)?;
+        emit_nlas_into(&self.attributes, out)
     }
 }

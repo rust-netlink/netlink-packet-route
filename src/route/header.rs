@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable, Parseable};
+use netlink_packet_core::{
+    append_bytes, DecodeError, Emitable, EncodeError, Parseable,
+};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use super::{super::AddressFamily, flags::RouteFlags};
@@ -56,11 +58,13 @@ pub struct RouteHeader {
     pub flags: RouteFlags,
 }
 
+#[allow(dead_code)]
 impl RouteHeader {
     pub const RT_TABLE_MAIN: u8 = 254;
     pub const RT_TABLE_UNSPEC: u8 = 0;
 }
 
+#[allow(dead_code)]
 impl RouteHeader {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -82,13 +86,10 @@ impl RouteHeader {
 }
 
 impl Emitable for RouteHeader {
-    fn buffer_len(&self) -> usize {
-        ROUTE_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = RouteMessageBuffer::from(self);
-        buffer[..ROUTE_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -251,6 +252,7 @@ impl std::fmt::Display for RouteProtocol {
     }
 }
 
+#[allow(dead_code)]
 impl Parseable<[u8]> for RouteProtocol {
     fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         if buf.len() == 1 {
@@ -264,12 +266,9 @@ impl Parseable<[u8]> for RouteProtocol {
 }
 
 impl Emitable for RouteProtocol {
-    fn buffer_len(&self) -> usize {
-        1
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        buffer[0] = u8::from(*self);
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        out.push(u8::from(*self));
+        Ok(())
     }
 }
 

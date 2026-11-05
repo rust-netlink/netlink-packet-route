@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    parse_string, DecodeError, DefaultNla, ErrorContext, Nla, NlaBuffer,
-    Parseable,
+    append_bytes, parse_string, DecodeError, DefaultNla, EncodeError,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_BATADV_ALGO_NAME: u16 = 1;
@@ -15,25 +15,24 @@ pub enum InfoBatAdv {
 }
 
 impl Nla for InfoBatAdv {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::AlgoName(v) => v.len() + 1,
-            Self::Other(nla) => nla.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::AlgoName(v) => {
-                let s = v.as_bytes();
-                buffer[..s.len()].copy_from_slice(s);
-                buffer[s.len()] = 0;
+                append_bytes(out, v.as_bytes());
+                out.push(0);
             }
-            Self::Other(nla) => nla.emit_value(buffer),
+            Self::Other(nla) => append_bytes(out, nla.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <InfoBatAdv>::kind(self)
+    }
+}
+
+impl InfoBatAdv {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::AlgoName(_) => IFLA_BATADV_ALGO_NAME,
             Self::Other(nla) => nla.kind(),

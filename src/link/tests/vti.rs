@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv4Addr;
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Parseable};
 
 use crate::{
     link::{
@@ -12,7 +11,7 @@ use crate::{
         LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
         LinkMode, LinkXdp, Map, State, XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -214,7 +213,7 @@ fn test_parsing_link_vti() {
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -438,6 +437,6 @@ fn test_parsing_link_vti6() {
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

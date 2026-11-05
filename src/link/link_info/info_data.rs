@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    DecodeError, Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable, ParseableParametrized,
+    append_bytes, emit_nlas_into, DecodeError, EncodeError, ErrorContext, Nla,
+    NlaBuffer, NlasIterator, Parseable, ParseableParametrized,
 };
 
 use super::super::{
@@ -57,89 +57,57 @@ pub enum InfoData {
 }
 
 impl Nla for InfoData {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Can(nlas) => nlas.as_slice().buffer_len(),
-            Self::Bond(nlas) => nlas.as_slice().buffer_len(),
-            Self::Bridge(nlas) => nlas.as_slice().buffer_len(),
-            Self::Vlan(nlas) => nlas.as_slice().buffer_len(),
-            Self::Veth(msg) => msg.buffer_len(),
-            Self::IpVlan(nlas) => nlas.as_slice().buffer_len(),
-            Self::IpVtap(nlas) => nlas.as_slice().buffer_len(),
-            Self::Ipoib(nlas) => nlas.as_slice().buffer_len(),
-            Self::MacVlan(nlas) => nlas.as_slice().buffer_len(),
-            Self::MacVtap(nlas) => nlas.as_slice().buffer_len(),
-            Self::Vrf(nlas) => nlas.as_slice().buffer_len(),
-            Self::Vxlan(nlas) => nlas.as_slice().buffer_len(),
-            Self::Xfrm(nlas) => nlas.as_slice().buffer_len(),
-            Self::MacSec(nlas) => nlas.as_slice().buffer_len(),
-            Self::Hsr(nlas) => nlas.as_slice().buffer_len(),
-            Self::Tun(nlas) => nlas.as_slice().buffer_len(),
-            Self::GreTap(nlas) => nlas.as_slice().buffer_len(),
-            Self::GreTap6(nlas) => nlas.as_slice().buffer_len(),
-            Self::GreTun(nlas) => nlas.as_slice().buffer_len(),
-            Self::GreTun6(nlas) => nlas.as_slice().buffer_len(),
-            Self::Vti(nlas) => nlas.as_slice().buffer_len(),
-            Self::Gtp(nlas) => nlas.as_slice().buffer_len(),
-            Self::Geneve(nlas) => nlas.as_slice().buffer_len(),
-            Self::IpTunnel(nlas) => nlas.as_slice().buffer_len(),
-            Self::Netkit(nlas) => nlas.as_slice().buffer_len(),
-            Self::Vxcan(nlas) => nlas.buffer_len(),
-            Self::Amt(nlas) => nlas.as_slice().buffer_len(),
-            Self::BatAdv(nlas) => nlas.as_slice().buffer_len(),
-            Self::BareUdp(nlas) => nlas.as_slice().buffer_len(),
-            Self::Dsa(nlas) => nlas.as_slice().buffer_len(),
-            Self::Wwan(nlas) => nlas.as_slice().buffer_len(),
-            Self::RmNet(nlas) => nlas.as_slice().buffer_len(),
-            Self::ErSpan(nlas) => nlas.as_slice().buffer_len(),
-            Self::Ip6ErSpan(nlas) => nlas.as_slice().buffer_len(),
-            Self::Wireguard(nlas) => nlas.as_slice().buffer_len(),
-            Self::Other(v) => v.len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Can(nlas) => nlas.as_slice().emit(buffer),
-            Self::Bond(nlas) => nlas.as_slice().emit(buffer),
-            Self::Bridge(nlas) => nlas.as_slice().emit(buffer),
-            Self::Vlan(nlas) => nlas.as_slice().emit(buffer),
-            Self::Veth(msg) => msg.emit(buffer),
-            Self::IpVlan(nlas) => nlas.as_slice().emit(buffer),
-            Self::IpVtap(nlas) => nlas.as_slice().emit(buffer),
-            Self::Ipoib(nlas) => nlas.as_slice().emit(buffer),
-            Self::MacVlan(nlas) => nlas.as_slice().emit(buffer),
-            Self::MacVtap(nlas) => nlas.as_slice().emit(buffer),
-            Self::Vrf(nlas) => nlas.as_slice().emit(buffer),
-            Self::Vxlan(nlas) => nlas.as_slice().emit(buffer),
-            Self::Xfrm(nlas) => nlas.as_slice().emit(buffer),
-            Self::MacSec(nlas) => nlas.as_slice().emit(buffer),
-            Self::Hsr(nlas) => nlas.as_slice().emit(buffer),
-            Self::Tun(nlas) => nlas.as_slice().emit(buffer),
-            Self::GreTap(nlas) => nlas.as_slice().emit(buffer),
-            Self::GreTap6(nlas) => nlas.as_slice().emit(buffer),
-            Self::GreTun(nlas) => nlas.as_slice().emit(buffer),
-            Self::GreTun6(nlas) => nlas.as_slice().emit(buffer),
-            Self::Vti(nlas) => nlas.as_slice().emit(buffer),
-            Self::Gtp(nlas) => nlas.as_slice().emit(buffer),
-            Self::Geneve(nlas) => nlas.as_slice().emit(buffer),
-            Self::IpTunnel(nlas) => nlas.as_slice().emit(buffer),
-            Self::Netkit(nlas) => nlas.as_slice().emit(buffer),
-            Self::Vxcan(msg) => msg.emit(buffer),
-            Self::Amt(nlas) => nlas.as_slice().emit(buffer),
-            Self::BatAdv(nlas) => nlas.as_slice().emit(buffer),
-            Self::BareUdp(nlas) => nlas.as_slice().emit(buffer),
-            Self::Dsa(nlas) => nlas.as_slice().emit(buffer),
-            Self::Wwan(nlas) => nlas.as_slice().emit(buffer),
-            Self::RmNet(nlas) => nlas.as_slice().emit(buffer),
-            Self::ErSpan(nlas) => nlas.as_slice().emit(buffer),
-            Self::Ip6ErSpan(nlas) => nlas.as_slice().emit(buffer),
-            Self::Wireguard(nlas) => nlas.as_slice().emit(buffer),
-            Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
+            Self::Can(nlas) => emit_nlas_into(nlas, out),
+            Self::Bond(nlas) => emit_nlas_into(nlas, out),
+            Self::Bridge(nlas) => emit_nlas_into(nlas, out),
+            Self::Vlan(nlas) => emit_nlas_into(nlas, out),
+            Self::Veth(msg) => msg.emit_nla_into(out),
+            Self::IpVlan(nlas) => emit_nlas_into(nlas, out),
+            Self::IpVtap(nlas) => emit_nlas_into(nlas, out),
+            Self::Ipoib(nlas) => emit_nlas_into(nlas, out),
+            Self::MacVlan(nlas) => emit_nlas_into(nlas, out),
+            Self::MacVtap(nlas) => emit_nlas_into(nlas, out),
+            Self::Vrf(nlas) => emit_nlas_into(nlas, out),
+            Self::Vxlan(nlas) => emit_nlas_into(nlas, out),
+            Self::Xfrm(nlas) => emit_nlas_into(nlas, out),
+            Self::MacSec(nlas) => emit_nlas_into(nlas, out),
+            Self::Hsr(nlas) => emit_nlas_into(nlas, out),
+            Self::Tun(nlas) => emit_nlas_into(nlas, out),
+            Self::GreTap(nlas) => emit_nlas_into(nlas, out),
+            Self::GreTap6(nlas) => emit_nlas_into(nlas, out),
+            Self::GreTun(nlas) => emit_nlas_into(nlas, out),
+            Self::GreTun6(nlas) => emit_nlas_into(nlas, out),
+            Self::Vti(nlas) => emit_nlas_into(nlas, out),
+            Self::Gtp(nlas) => emit_nlas_into(nlas, out),
+            Self::Geneve(nlas) => emit_nlas_into(nlas, out),
+            Self::IpTunnel(nlas) => emit_nlas_into(nlas, out),
+            Self::Netkit(nlas) => emit_nlas_into(nlas, out),
+            Self::Vxcan(msg) => msg.emit_nla_into(out),
+            Self::Amt(nlas) => emit_nlas_into(nlas, out),
+            Self::BatAdv(nlas) => emit_nlas_into(nlas, out),
+            Self::BareUdp(nlas) => emit_nlas_into(nlas, out),
+            Self::Dsa(nlas) => emit_nlas_into(nlas, out),
+            Self::Wwan(nlas) => emit_nlas_into(nlas, out),
+            Self::RmNet(nlas) => emit_nlas_into(nlas, out),
+            Self::ErSpan(nlas) => emit_nlas_into(nlas, out),
+            Self::Ip6ErSpan(nlas) => emit_nlas_into(nlas, out),
+            Self::Wireguard(nlas) => emit_nlas_into(nlas, out),
+            Self::Other(v) => {
+                append_bytes(out, v.as_slice());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <InfoData>::kind(self)
+    }
+}
+
+impl InfoData {
+    pub(crate) fn kind(&self) -> u16 {
         IFLA_INFO_DATA
     }
 }

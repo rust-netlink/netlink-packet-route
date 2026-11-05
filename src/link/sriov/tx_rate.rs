@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const VF_INFO_TX_RATE_LEN: usize = 8;
@@ -35,6 +35,7 @@ pub struct VfInfoTxRateBuffer {
     rate: u32,
 }
 
+#[allow(dead_code)]
 impl VfInfoTxRate {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
@@ -51,6 +52,7 @@ impl VfInfoTxRate {
     }
 }
 
+#[allow(dead_code)]
 impl From<&VfInfoTxRate> for VfInfoTxRateBuffer {
     fn from(rate: &VfInfoTxRate) -> Self {
         Self {
@@ -61,12 +63,8 @@ impl From<&VfInfoTxRate> for VfInfoTxRateBuffer {
 }
 
 impl Emitable for VfInfoTxRate {
-    fn buffer_len(&self) -> usize {
-        VF_INFO_TX_RATE_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
-        let raw = VfInfoTxRateBuffer::from(self);
-        buffer.copy_from_slice(raw.as_bytes());
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_bytes(out, VfInfoTxRateBuffer::from(self).as_bytes());
+        Ok(())
     }
 }

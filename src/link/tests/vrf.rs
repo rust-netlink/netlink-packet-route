@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 use std::net::Ipv6Addr;
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::Parseable;
 
 use crate::{
     link::{
@@ -13,7 +12,7 @@ use crate::{
         LinkHeader, LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkXdp,
         Map, State, Stats, Stats64, XdpAttached,
     },
-    AddressFamily,
+    AddressFamily, TestEmit, TestNla,
 };
 
 #[test]
@@ -47,7 +46,7 @@ fn test_parsing_link_vrf() {
 
     let mut buf = vec![0; expected.buffer_len()];
 
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
 
     assert_eq!(buf, raw);
 }
@@ -353,6 +352,6 @@ fn test_link_info_with_ifla_vrf_port_table() {
     // FIXME: the packet we write is not a perfect match with the
     // packet we received from the kernel.
     //
-    // link.emit(&mut buf[..]);
+    // link.emit_slice(&mut buf[..]);
     // assert_eq!(data, buf);
 }

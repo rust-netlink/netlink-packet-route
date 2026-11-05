@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use netlink_packet_core::{DecodeError, Emitable};
+use netlink_packet_core::{append_bytes, DecodeError, Emitable, EncodeError};
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::AddressFamily;
@@ -32,6 +32,7 @@ pub struct TcActionMessageHeader {
     pub family: AddressFamily,
 }
 
+#[allow(dead_code)]
 impl TcActionMessageHeader {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = TcActionMessageBuffer::ref_from_prefix(payload)
@@ -44,6 +45,7 @@ impl TcActionMessageHeader {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcActionMessageHeader> for TcActionMessageBuffer {
     fn from(header: &TcActionMessageHeader) -> Self {
         Self {
@@ -55,12 +57,9 @@ impl From<&TcActionMessageHeader> for TcActionMessageBuffer {
 }
 
 impl Emitable for TcActionMessageHeader {
-    fn buffer_len(&self) -> usize {
-        TCA_HEADER_LEN
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcActionMessageBuffer::from(self);
-        buffer[..TCA_HEADER_LEN].copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }

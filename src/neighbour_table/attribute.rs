@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    emit_u32, emit_u64, parse_string, parse_u32, parse_u64, DecodeError,
-    DefaultNla, Emitable, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable,
+    append_bytes, append_u32, append_u64, emit_nlas_into, parse_string,
+    parse_u32, parse_u64, DecodeError, DefaultNla, Emitable, EncodeError,
+    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
 };
 
 use super::{
@@ -35,39 +35,40 @@ pub enum NeighbourTableAttribute {
 }
 
 impl Nla for NeighbourTableAttribute {
-    fn value_len(&self) -> usize {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Parms(v) => v.as_slice().buffer_len(),
-            Self::Stats(v) => v.buffer_len(),
-            Self::Config(v) => v.buffer_len(),
-            // strings: +1 because we need to append a nul byte
-            Self::Name(s) => s.len() + 1,
-            Self::Threshold1(_) | Self::Threshold2(_) | Self::Threshold3(_) => {
-                4
-            }
-            Self::GcInterval(_) => 8,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
-        match self {
-            Self::Parms(v) => v.as_slice().emit(buffer),
-            Self::Stats(v) => v.emit(buffer),
-            Self::Config(v) => v.emit(buffer),
+            Self::Parms(v) => emit_nlas_into(v.as_slice(), out),
+            Self::Stats(v) => v.emit_into(out),
+            Self::Config(v) => v.emit_into(out),
             Self::Name(string) => {
-                buffer[..string.len()].copy_from_slice(string.as_bytes());
-                buffer[string.len()] = 0;
+                append_bytes(out, string.as_bytes());
+                out.push(0);
+                Ok(())
             }
-            Self::GcInterval(value) => emit_u64(buffer, *value).unwrap(),
+            Self::GcInterval(value) => {
+                append_u64(out, *value);
+                Ok(())
+            }
             Self::Threshold1(value)
             | Self::Threshold2(value)
-            | Self::Threshold3(value) => emit_u32(buffer, *value).unwrap(),
-            Self::Other(attr) => attr.emit_value(buffer),
+            | Self::Threshold3(value) => {
+                append_u32(out, *value);
+                Ok(())
+            }
+            Self::Other(attr) => {
+                append_bytes(out, attr.value());
+                Ok(())
+            }
         }
     }
 
     fn kind(&self) -> u16 {
+        <Self>::kind(self)
+    }
+}
+
+impl NeighbourTableAttribute {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Name(_) => NDTA_NAME,
             Self::Config(_) => NDTA_CONFIG,

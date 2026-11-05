@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
+use netlink_packet_core::{DefaultNla, Parseable};
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
-
-use crate::link::{
-    link_flag::LinkFlags, CanBitTiming, CanBitTimingConst, CanClock,
-    CanCtrlMode, CanCtrlModeExt, CanCtrlModeFlags, CanTdc, InfoCan, InfoData,
-    InfoKind, LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkXstats,
+use crate::{
+    link::{
+        link_flag::LinkFlags, CanBitTiming, CanBitTimingConst, CanClock,
+        CanCtrlMode, CanCtrlModeExt, CanCtrlModeFlags, CanTdc, InfoCan,
+        InfoData, InfoKind, LinkAttribute, LinkHeader, LinkInfo, LinkLayerType,
+        LinkMessage, LinkXstats,
+    },
+    TestEmit, TestNla,
 };
 
 // nlmon capture of packet sent by
@@ -60,7 +62,7 @@ fn test_parsing_link_can_add() {
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }
 
@@ -239,6 +241,6 @@ fn test_parsing_link_can_fd_tdc() {
     assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
 
     let mut buf = vec![0; expected.buffer_len()];
-    expected.emit(&mut buf);
+    expected.emit_slice(&mut buf);
     assert_eq!(buf, raw);
 }

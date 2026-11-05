@@ -3,8 +3,8 @@
 use std::mem::size_of;
 
 use netlink_packet_core::{
-    emit_u32, parse_u32, parse_u8, DecodeError, DefaultNla, Emitable,
-    ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u32, append_u8, parse_u32, parse_u8, DecodeError,
+    DefaultNla, Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -53,31 +53,20 @@ impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for TcFqCodelXstats {
 }
 
 impl Emitable for TcFqCodelXstats {
-    fn buffer_len(&self) -> usize {
-        match self {
-            Self::Qdisc(_) => {
-                size_of::<TcFqCodelQdStatsBuffer>() + size_of::<u32>()
-            }
-            Self::Class(_) => {
-                size_of::<TcFqCodelClStatsBuffer>() + size_of::<u32>()
-            }
-            Self::Other(v) => v.len(),
-        }
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Qdisc(v) => {
-                buffer[0..4]
-                    .copy_from_slice(&TCA_FQ_CODEL_XSTATS_QDISC.to_ne_bytes());
-                v.emit(&mut buffer[4..]);
+                append_u32(out, TCA_FQ_CODEL_XSTATS_QDISC);
+                v.emit_into(out)
             }
             Self::Class(v) => {
-                buffer[0..4]
-                    .copy_from_slice(&TCA_FQ_CODEL_XSTATS_CLASS.to_ne_bytes());
-                v.emit(&mut buffer[4..]);
+                append_u32(out, TCA_FQ_CODEL_XSTATS_CLASS);
+                v.emit_into(out)
             }
-            Self::Other(v) => buffer.copy_from_slice(v.as_slice()),
+            Self::Other(v) => {
+                append_bytes(out, v.as_slice());
+                Ok(())
+            }
         }
     }
 }
@@ -143,6 +132,7 @@ impl TcFqCodelQdStats {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcFqCodelQdStats> for TcFqCodelQdStatsBuffer {
     fn from(value: &TcFqCodelQdStats) -> Self {
         Self {
@@ -160,14 +150,10 @@ impl From<&TcFqCodelQdStats> for TcFqCodelQdStatsBuffer {
 }
 
 impl Emitable for TcFqCodelQdStats {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcFqCodelQdStatsBuffer>() + size_of::<u32>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcFqCodelQdStatsBuffer::from(self);
-        buffer[..size_of::<TcFqCodelQdStatsBuffer>()]
-            .copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -203,6 +189,7 @@ pub struct TcFqCodelClStatsBuffer {
     drop_next: i32,
 }
 
+#[allow(dead_code)]
 impl TcFqCodelClStats {
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) = TcFqCodelClStatsBuffer::ref_from_prefix(payload)
@@ -223,6 +210,7 @@ impl TcFqCodelClStats {
     }
 }
 
+#[allow(dead_code)]
 impl From<&TcFqCodelClStats> for TcFqCodelClStatsBuffer {
     fn from(value: &TcFqCodelClStats) -> Self {
         Self {
@@ -237,14 +225,10 @@ impl From<&TcFqCodelClStats> for TcFqCodelClStatsBuffer {
 }
 
 impl Emitable for TcFqCodelClStats {
-    fn buffer_len(&self) -> usize {
-        size_of::<TcFqCodelClStatsBuffer>() + size_of::<u32>()
-    }
-
-    fn emit(&self, buffer: &mut [u8]) {
+    fn emit_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let raw = TcFqCodelClStatsBuffer::from(self);
-        buffer[..size_of::<TcFqCodelClStatsBuffer>()]
-            .copy_from_slice(raw.as_bytes());
+        append_bytes(out, raw.as_bytes());
+        Ok(())
     }
 }
 
@@ -278,23 +262,7 @@ pub enum TcQdiscFqCodelOption {
 }
 
 impl Nla for TcQdiscFqCodelOption {
-    fn value_len(&self) -> usize {
-        match self {
-            Self::Target(_)
-            | Self::Limit(_)
-            | Self::Interval(_)
-            | Self::Ecn(_)
-            | Self::Flows(_)
-            | Self::Quantum(_)
-            | Self::CeThreshold(_)
-            | Self::DropBatchSize(_)
-            | Self::MemoryLimit(_) => 4,
-            Self::CeThresholdSelector(_) | Self::CeThresholdMask(_) => 1,
-            Self::Other(attr) => attr.value_len(),
-        }
-    }
-
-    fn emit_value(&self, buffer: &mut [u8]) {
+    fn emit_value_into(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Target(d)
             | Self::Limit(d)
@@ -304,15 +272,22 @@ impl Nla for TcQdiscFqCodelOption {
             | Self::Quantum(d)
             | Self::CeThreshold(d)
             | Self::DropBatchSize(d)
-            | Self::MemoryLimit(d) => emit_u32(buffer, *d).unwrap(),
+            | Self::MemoryLimit(d) => append_u32(out, *d),
             Self::CeThresholdSelector(d) | Self::CeThresholdMask(d) => {
-                buffer[0] = *d
+                append_u8(out, *d)
             }
-            Self::Other(attr) => attr.emit_value(buffer),
+            Self::Other(attr) => append_bytes(out, attr.value()),
         }
+        Ok(())
     }
 
     fn kind(&self) -> u16 {
+        <TcQdiscFqCodelOption>::kind(self)
+    }
+}
+
+impl TcQdiscFqCodelOption {
+    pub(crate) fn kind(&self) -> u16 {
         match self {
             Self::Target(_) => TCA_FQ_CODEL_TARGET,
             Self::Limit(_) => TCA_FQ_CODEL_LIMIT,
