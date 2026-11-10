@@ -63,7 +63,7 @@ fn test_ipv6_tun_id() {
 #[test]
 fn test_tun_id_invalid_length() {
     let raw = [0x08, 0x00, 0x0c, 0x00, 0x11, 0x22, 0x33, 0x44];
-    let nla = NlaBuffer::new_checked(&raw[..]).unwrap();
+    let nla = NlaBuffer::new(&raw[..]).unwrap();
 
     assert!(RuleAttribute::parse(&nla).is_err());
 }

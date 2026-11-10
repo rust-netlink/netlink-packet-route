@@ -3,7 +3,7 @@
 use netlink_packet_core::{
     append_bytes, append_u16, append_u16_be, append_u32, parse_u16,
     parse_u16_be, parse_u32, DecodeError, DefaultNla, Emitable, EncodeError,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::link::VlanProtocol;
@@ -110,10 +110,8 @@ impl Nla for VlanQosMapping {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VlanQosMapping
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for VlanQosMapping {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VLAN_QOS_MAPPING => {
@@ -134,9 +132,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
     }
 }
 
-fn parse_mappings(payload: &[u8]) -> Result<Vec<VlanQosMapping>, DecodeError> {
+fn parse_mappings(
+    buf: &NlaBuffer<'_>,
+) -> Result<Vec<VlanQosMapping>, DecodeError> {
     let mut mappings = Vec::new();
-    for nla in NlasIterator::new(payload) {
+    for nla in buf.nlas() {
         let nla = nla?;
         let parsed = VlanQosMapping::parse(&nla)?;
         mappings.push(parsed);
@@ -144,8 +144,8 @@ fn parse_mappings(payload: &[u8]) -> Result<Vec<VlanQosMapping>, DecodeError> {
     Ok(mappings)
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoVlan {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VLAN_ID => Self::Id(
@@ -164,11 +164,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoVlan {
                 ))
             }
             IFLA_VLAN_EGRESS_QOS => Self::EgressQos(
-                parse_mappings(payload)
+                parse_mappings(buf)
                     .context("failed to parse IFLA_VLAN_EGRESS_QOS")?,
             ),
             IFLA_VLAN_INGRESS_QOS => Self::IngressQos(
-                parse_mappings(payload)
+                parse_mappings(buf)
                     .context("failed to parse IFLA_VLAN_INGRESS_QOS")?,
             ),
             IFLA_VLAN_PROTOCOL => Self::Protocol(

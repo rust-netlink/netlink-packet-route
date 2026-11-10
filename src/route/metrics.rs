@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
-    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const RTAX_LOCK: u16 = 1;
@@ -101,8 +101,8 @@ impl Nla for RouteMetric {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for RouteMetric {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteMetric {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             RTAX_LOCK => Self::Lock(
@@ -162,18 +162,5 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for RouteMetric {
                     .context("invalid NLA value (unknown type) value")?,
             ),
         })
-    }
-}
-
-pub(crate) struct VecRouteMetric(pub(crate) Vec<RouteMetric>);
-
-impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for VecRouteMetric {
-    fn parse(payload: &T) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        for nla in NlasIterator::new(payload) {
-            let nla = nla.context("Invalid RTA_METRICS")?;
-            nlas.push(RouteMetric::parse(&nla).context("Invalid RTA_METRICS")?);
-        }
-        Ok(Self(nlas))
     }
 }

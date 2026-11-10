@@ -97,7 +97,10 @@ fn get_tunnel_key_vxlan_action_ipv4() {
         ],
     };
 
-    assert_eq!(expected, TcAction::parse(&NlaBuffer::new(&raw)).unwrap());
+    assert_eq!(
+        expected,
+        TcAction::parse(&NlaBuffer::new(&raw).unwrap()).unwrap()
+    );
 
     let mut buf = Vec::new();
 
@@ -196,7 +199,10 @@ fn test_action_tunnel_key_vxlan_ipv6() {
         ],
     };
 
-    assert_eq!(expected, TcAction::parse(&NlaBuffer::new(&raw)).unwrap());
+    assert_eq!(
+        expected,
+        TcAction::parse(&NlaBuffer::new(&raw).unwrap()).unwrap()
+    );
 
     let mut buf = Vec::new();
 

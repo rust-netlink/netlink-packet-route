@@ -5,7 +5,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use netlink_packet_core::{
     append_bytes, append_i32, append_u32, parse_i32, parse_string, parse_u32,
     parse_u8, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 
 use crate::address::{AddressFlags, CacheInfo};
@@ -91,10 +91,8 @@ impl Nla for AddressAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for AddressAttribute
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for AddressAttribute {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFA_ADDRESS => {
@@ -191,18 +189,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .with_context(|| format!("unknown NLA type {kind}"))?,
             ),
         })
-    }
-}
-
-pub(crate) struct VecAddressAttribute(pub(crate) Vec<AddressAttribute>);
-
-impl Parseable<[u8]> for VecAddressAttribute {
-    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
-        let mut attributes = vec![];
-        for nla_buf in NlasIterator::new(buf) {
-            attributes.push(AddressAttribute::parse(&nla_buf?)?);
-        }
-        Ok(Self(attributes))
     }
 }
 

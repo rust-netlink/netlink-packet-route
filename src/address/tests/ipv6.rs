@@ -28,7 +28,7 @@ fn test_addr_flag_stable_privacy() {
         0x80, 0x08, 0x00, 0x00, // IFA_F_PERMANENT | IFA_F_STABLE_PRIVACY
     ];
 
-    let nla_buffer = NlaBuffer::new_checked(&raw).unwrap();
+    let nla_buffer = NlaBuffer::new(&raw).unwrap();
     let parsed = AddressAttribute::parse(&nla_buffer).unwrap();
     assert_eq!(parsed, nla);
 

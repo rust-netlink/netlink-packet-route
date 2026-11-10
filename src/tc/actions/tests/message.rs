@@ -296,7 +296,7 @@ fn tc_action_message_attribute_parse_back_blank_actions() {
     let mut buffer = Vec::new();
     orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageAttribute::parse(
-        &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
+        &NlaBuffer::new(buffer.as_slice()).unwrap(),
     )
     .unwrap();
     assert_eq!(orig, parsed);
@@ -311,7 +311,7 @@ fn tc_action_message_attribute_parse_back_example_action() {
     let mut buffer = Vec::new();
     orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageAttribute::parse(
-        &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
+        &NlaBuffer::new(buffer.as_slice()).unwrap(),
     )
     .unwrap();
     assert_eq!(orig, parsed);
@@ -336,7 +336,7 @@ fn tc_action_message_attribute_parse_back_multiple_example_action() {
     let mut buffer = Vec::new();
     orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageAttribute::parse(
-        &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
+        &NlaBuffer::new(buffer.as_slice()).unwrap(),
     )
     .unwrap();
     assert_eq!(orig, parsed);
@@ -348,7 +348,7 @@ fn tc_action_message_flags_parse_back_default() {
     let mut buffer = Vec::new();
     orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageFlagsWithSelector::parse(
-        &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
+        &NlaBuffer::new(buffer.as_slice()).unwrap(),
     )
     .unwrap();
     assert_eq!(orig, parsed);
@@ -364,7 +364,7 @@ fn tc_action_message_flags_parse_back_example_value() {
     let mut buffer = Vec::new();
     orig.emit(&mut buffer).unwrap();
     let parsed = TcActionMessageFlagsWithSelector::parse(
-        &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
+        &NlaBuffer::new(buffer.as_slice()).unwrap(),
     )
     .unwrap();
     assert_eq!(orig, parsed);
@@ -421,7 +421,7 @@ fn tc_action_root_time_delta_native_byte_order() {
     raw.extend_from_slice(&8u16.to_ne_bytes());
     raw.extend_from_slice(&attr.kind().to_ne_bytes());
     raw.extend_from_slice(&value.to_ne_bytes());
-    let buf = NlaBuffer::new_checked(&raw).unwrap();
+    let buf = NlaBuffer::new(&raw).unwrap();
     assert_eq!(
         TcActionMessageAttribute::parse(&buf).unwrap(),
         RootTimeDelta(value)

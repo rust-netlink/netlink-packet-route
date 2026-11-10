@@ -4,7 +4,7 @@ use std::mem::size_of;
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -138,13 +138,13 @@ impl Emitable for AfSpecStats {
 }
 
 impl AfSpecStats {
-    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+    pub fn parse(buf: &NlaBuffer<'_>) -> Result<Self, DecodeError> {
         let mut entries = Vec::new();
-        for nla in NlasIterator::new(payload) {
+        for nla in buf.nlas() {
             let nla = nla.context("invalid NLA in AF_SPEC stats")?;
             let family = nla.kind();
             if family == AF_MPLS {
-                entries.push(AfSpecStat::Mpls(parse_mpls_stats(nla.value())?));
+                entries.push(AfSpecStat::Mpls(parse_mpls_stats(&nla)?));
             } else {
                 entries.push(AfSpecStat::Other(DefaultNla::parse(&nla)?));
             }
@@ -153,8 +153,8 @@ impl AfSpecStats {
     }
 }
 
-fn parse_mpls_stats(payload: &[u8]) -> Result<MplsLinkStats, DecodeError> {
-    for nla in NlasIterator::new(payload) {
+fn parse_mpls_stats(buf: &NlaBuffer<'_>) -> Result<MplsLinkStats, DecodeError> {
+    for nla in buf.nlas() {
         let nla = nla.context("invalid NLA in MPLS stats")?;
         let kind = nla.kind();
         if kind == MPLS_STATS_LINK {

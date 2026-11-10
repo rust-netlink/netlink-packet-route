@@ -8,8 +8,7 @@ use netlink_packet_core::{
 };
 
 use super::{
-    super::AddressFamily, lwtunnel::VecRouteLwTunnelEncap,
-    metrics::VecRouteMetric, mpls::VecMplsLabel,
+    super::AddressFamily, mpls::VecMplsLabel,
     next_hops::parse_multipath_next_hops, MplsLabel, RouteAddress,
     RouteCacheInfo, RouteIp6Tunnel, RouteIpTunnel, RouteLwEnCapType,
     RouteLwTunnelEncap, RouteMetric, RouteMfcStats, RouteMplsTtlPropagation,
@@ -197,14 +196,14 @@ impl Nla for RouteAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized>
+impl<'a>
     ParseableParametrized<
-        NlaBuffer<&'a T>,
+        NlaBuffer<'a>,
         (AddressFamily, RouteType, RouteLwEnCapType),
     > for RouteAttribute
 {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         (address_family, route_type, encap_type): (
             AddressFamily,
             RouteType,
@@ -257,7 +256,10 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
 
             RTA_PREF => Self::Preference(parse_u8(payload)?.into()),
             RTA_ENCAP => Self::Encap(
-                VecRouteLwTunnelEncap::parse_with_param(buf, encap_type)?.0,
+                Vec::<RouteLwTunnelEncap>::parse_with_param(buf, encap_type)
+                    .with_context(|| {
+                        format!("Invalid RTA_ENCAP for kind: {encap_type}")
+                    })?,
             ),
             RTA_EXPIRES => {
                 if route_type == RouteType::Multicast {
@@ -314,9 +316,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .context("invalid RTA_MFC_STATS value")?,
             ),
             RTA_METRICS => Self::Metrics(
-                VecRouteMetric::parse(payload)
-                    .context("invalid RTA_METRICS value")?
-                    .0,
+                Vec::<RouteMetric>::parse(buf)
+                    .context("invalid RTA_METRICS value")?,
             ),
             RTA_MULTIPATH => Self::MultiPath(
                 parse_multipath_next_hops(

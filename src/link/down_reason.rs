@@ -16,10 +16,8 @@ pub enum LinkProtocolDownReason {
     Other(DefaultNla),
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for LinkProtocolDownReason
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for LinkProtocolDownReason {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_PROTO_DOWN_REASON_MASK => {

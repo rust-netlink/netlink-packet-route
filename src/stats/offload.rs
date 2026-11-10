@@ -4,7 +4,7 @@ use std::mem::size_of;
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlasIterator, Parseable, NLA_F_NESTED,
+    Nla, NlaBuffer, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -53,10 +53,10 @@ impl Nla for OffloadXstat {
 }
 
 pub(crate) fn parse_offload_xstats_inner(
-    payload: &[u8],
+    buf: &NlaBuffer<'_>,
 ) -> Result<Vec<OffloadXstat>, DecodeError> {
     let mut result = Vec::new();
-    for nla in NlasIterator::new(payload) {
+    for nla in buf.nlas() {
         let nla = nla.context("invalid NLA in offload xstats")?;
         let kind = nla.kind();
         let val = nla.value();
@@ -65,7 +65,7 @@ pub(crate) fn parse_offload_xstats_inner(
                 Stats64::parse(val).context("invalid cpu hit stats")?,
             ),
             IFLA_OFFLOAD_XSTATS_HW_S_INFO => OffloadXstat::HwStatsInfo(
-                HwStatsInfo::parse(val).context("invalid hw stats info")?,
+                HwStatsInfo::parse(&nla).context("invalid hw stats info")?,
             ),
             IFLA_OFFLOAD_XSTATS_L3_STATS => OffloadXstat::L3Stats(
                 HwStats64::parse(val).context("invalid l3 stats")?,
@@ -176,9 +176,9 @@ pub struct HwStatsInfo {
 }
 
 impl HwStatsInfo {
-    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+    pub fn parse(buf: &NlaBuffer<'_>) -> Result<Self, DecodeError> {
         let mut info = HwStatsInfo::default();
-        for nla in NlasIterator::new(payload) {
+        for nla in buf.nlas() {
             let nla = nla.context("invalid NLA in hw stats info")?;
             let val = nla.value();
             match nla.kind() {
@@ -191,7 +191,7 @@ impl HwStatsInfo {
                 // L3_STATS is nested inside HW_S_INFO; descend to find
                 // request/used
                 IFLA_OFFLOAD_XSTATS_L3_STATS => {
-                    for inner in NlasIterator::new(val) {
+                    for inner in nla.nlas() {
                         let inner = inner
                             .context("invalid NLA in hw stats info L3 stats")?;
                         let iv = inner.value();

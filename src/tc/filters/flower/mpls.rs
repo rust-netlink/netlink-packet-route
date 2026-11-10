@@ -2,8 +2,8 @@
 
 use netlink_packet_core::{
     append_bytes, append_u32, parse_u32, parse_u8, DecodeError, DefaultNla,
-    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable, NLA_F_NESTED,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
+    NLA_F_NESTED,
 };
 
 macro_rules! nla_err {
@@ -51,14 +51,12 @@ impl Nla for TcFilterFlowerMplsOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcFilterFlowerMplsOption
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcFilterFlowerMplsOption {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         Ok(match buf.kind() {
             TCA_FLOWER_KEY_MPLS_OPT_LSE => {
                 let mut nlas = vec![];
-                for nla in NlasIterator::new(buf.value()) {
+                for nla in buf.nlas() {
                     let nla =
                         nla.context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE))?;
                     nlas.push(
@@ -121,10 +119,8 @@ impl Nla for TcFilterFlowerMplsLseOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcFilterFlowerMplsLseOption
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcFilterFlowerMplsLseOption {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_FLOWER_KEY_MPLS_OPT_LSE_DEPTH => Self::LseDepth(

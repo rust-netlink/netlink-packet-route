@@ -2,8 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, append_i32, append_u32, parse_i32, parse_u32, DecodeError,
-    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const NETNSA_NSID: u16 = 1;
@@ -48,10 +47,8 @@ impl Nla for NsidAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for NsidAttribute
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for NsidAttribute {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             NETNSA_NSID => {
@@ -74,17 +71,5 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                     .with_context(|| format!("unknown NLA type {kind}"))?,
             ),
         })
-    }
-}
-
-pub(crate) struct VecNsidAttribute(pub(crate) Vec<NsidAttribute>);
-
-impl Parseable<[u8]> for VecNsidAttribute {
-    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
-        let mut attributes = vec![];
-        for nla_buf in NlasIterator::new(buf) {
-            attributes.push(NsidAttribute::parse(&nla_buf?)?);
-        }
-        Ok(Self(attributes))
     }
 }

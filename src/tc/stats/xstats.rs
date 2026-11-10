@@ -26,12 +26,9 @@ impl Emitable for TcXstats {
     }
 }
 
-impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcXstats
-where
-    T: AsRef<[u8]> + ?Sized,
-{
+impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcXstats {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: &str,
     ) -> Result<TcXstats, DecodeError> {
         Ok(match kind {

@@ -4,10 +4,7 @@ use netlink_packet_core::{
     DecodeError, Emitable, EncodeError, ErrorContext, Parseable,
 };
 
-use crate::stats::{
-    attribute::VecStatsAttribute, header::STATS_HEADER_LEN, StatsAttribute,
-    StatsHeader,
-};
+use crate::stats::{header::STATS_HEADER_LEN, StatsAttribute, StatsHeader};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -21,9 +18,8 @@ impl Parseable<[u8]> for StatsMessage {
         Ok(Self {
             header: StatsHeader::parse(buf)
                 .context("failed to parse stats message header")?,
-            attributes: VecStatsAttribute::parse(&buf[STATS_HEADER_LEN..])
-                .context("failed to parse stats message NLAs")?
-                .0,
+            attributes: Vec::<StatsAttribute>::parse(&buf[STATS_HEADER_LEN..])
+                .context("failed to parse stats message NLAs")?,
         })
     }
 }

@@ -26,10 +26,8 @@ impl Nla for InfoWireguard {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for InfoWireguard
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoWireguard {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         #[allow(clippy::match_single_binding)]
         Ok(match buf.kind() {
             kind => Self::Other(DefaultNla::parse(buf).with_context(|| {

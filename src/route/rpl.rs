@@ -73,11 +73,8 @@ impl Nla for RplSrh {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RplSrh
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RplSrh {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         if payload.len() < RPL_SRH_FIXED_LEN {
             return Err(DecodeError::from(format!(
@@ -183,11 +180,8 @@ impl Nla for RouteRplIpTunnel {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteRplIpTunnel
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteRplIpTunnel {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         Ok(match buf.kind() {
             RPL_IPTUNNEL_UNSPEC => Self::Unspecified,
             RPL_IPTUNNEL_SRH => match RplSrh::parse(buf) {

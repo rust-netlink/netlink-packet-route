@@ -2,13 +2,13 @@
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 
 use super::{
     af_spec::AfSpecStats,
     offload::{parse_offload_xstats_inner, OffloadXstat},
-    xstats::{LinkXstatGroup, VecLinkXstats},
+    xstats::LinkXstatGroup,
 };
 use crate::link::Stats64;
 
@@ -55,10 +55,8 @@ impl Nla for StatsAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for StatsAttribute
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for StatsAttribute {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_STATS_LINK_64 => Self::Link64(
@@ -68,27 +66,23 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             IFLA_STATS_LINK_XSTATS => {
                 let err = "invalid IFLA_STATS_LINK_XSTATS value";
                 Self::LinkXstats(
-                    VecLinkXstats::parse(&NlaBuffer::new(payload))
-                        .context(err)?
-                        .0,
+                    Vec::<LinkXstatGroup>::parse(buf).context(err)?,
                 )
             }
             IFLA_STATS_LINK_XSTATS_SLAVE => {
                 let err = "invalid IFLA_STATS_LINK_XSTATS_SLAVE value";
                 Self::LinkXstatsPort(
-                    VecLinkXstats::parse(&NlaBuffer::new(payload))
-                        .context(err)?
-                        .0,
+                    Vec::<LinkXstatGroup>::parse(buf).context(err)?,
                 )
             }
             IFLA_STATS_LINK_OFFLOAD_XSTATS => {
                 let err = "invalid IFLA_STATS_LINK_OFFLOAD_XSTATS value";
                 Self::LinkOffloadXstats(
-                    parse_offload_xstats_inner(payload).context(err)?,
+                    parse_offload_xstats_inner(buf).context(err)?,
                 )
             }
             IFLA_STATS_AF_SPEC => Self::AfSpec(
-                AfSpecStats::parse(payload).context("invalid AF_SPEC stats")?,
+                AfSpecStats::parse(buf).context("invalid AF_SPEC stats")?,
             ),
             kind => {
                 Self::Other(DefaultNla::parse(buf).with_context(|| {
@@ -96,17 +90,5 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 })?)
             }
         })
-    }
-}
-
-pub(crate) struct VecStatsAttribute(pub(crate) Vec<StatsAttribute>);
-
-impl Parseable<[u8]> for VecStatsAttribute {
-    fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
-        let mut attributes = vec![];
-        for nla_buf in NlasIterator::new(buf) {
-            attributes.push(StatsAttribute::parse(&nla_buf?)?);
-        }
-        Ok(Self(attributes))
     }
 }

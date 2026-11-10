@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, EncodeError, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable, ParseableParametrized,
+    NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use super::{
@@ -57,12 +57,9 @@ impl Nla for TcOption {
     }
 }
 
-impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcOption
-where
-    T: AsRef<[u8]> + ?Sized,
-{
+impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcOption {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: &str,
     ) -> Result<Self, DecodeError> {
         Ok(match kind {
@@ -100,12 +97,9 @@ where
 
 pub(crate) struct VecTcOption(pub(crate) Vec<TcOption>);
 
-impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for VecTcOption
-where
-    T: AsRef<[u8]> + ?Sized,
-{
+impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for VecTcOption {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: &str,
     ) -> Result<VecTcOption, DecodeError> {
         Ok(match kind {
@@ -116,7 +110,7 @@ where
             | TcQdiscFqCodel::KIND
             | TcFilterBpf::KIND => {
                 let mut nlas = vec![];
-                for nla in NlasIterator::new(buf.value()) {
+                for nla in buf.nlas() {
                     let nla = nla.with_context(|| {
                         format!("Invalid TCA_OPTIONS for kind: {kind}")
                     })?;

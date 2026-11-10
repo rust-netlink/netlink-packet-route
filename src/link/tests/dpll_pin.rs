@@ -13,7 +13,7 @@ static DPLL_PIN_ID: [u8; 8] = [
 
 #[test]
 fn parse_dpll_pin_id() {
-    let nla = NlaBuffer::new_checked(&DPLL_PIN_ID[..]).unwrap();
+    let nla = NlaBuffer::new(&DPLL_PIN_ID[..]).unwrap();
     let parsed = DpllPin::parse(&nla).unwrap();
     assert_eq!(parsed, DpllPin::PinId(42));
 }
@@ -36,7 +36,7 @@ fn parse_unknown_dpll_pin_attr() {
         0xde, 0xad, // value bytes
         0x00, 0x00, // padding
     ];
-    let nla = NlaBuffer::new_checked(&raw[..]).unwrap();
+    let nla = NlaBuffer::new(&raw[..]).unwrap();
     let parsed = DpllPin::parse(&nla).unwrap();
     assert!(matches!(parsed, DpllPin::Other(_)));
 }

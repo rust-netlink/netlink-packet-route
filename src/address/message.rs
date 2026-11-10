@@ -6,10 +6,7 @@ use netlink_packet_core::{
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 use crate::{
-    address::{
-        attribute::VecAddressAttribute, AddressAttribute, AddressHeaderFlags,
-        AddressScope,
-    },
+    address::{AddressAttribute, AddressHeaderFlags, AddressScope},
     AddressFamily,
 };
 
@@ -101,9 +98,10 @@ impl Parseable<[u8]> for AddressMessage {
             .context("failed to parse address message header")?;
         Ok(AddressMessage {
             header,
-            attributes: VecAddressAttribute::parse(&buf[ADDRESS_HEADER_LEN..])
-                .context("failed to parse address message NLAs")?
-                .0,
+            attributes: Vec::<AddressAttribute>::parse(
+                &buf[ADDRESS_HEADER_LEN..],
+            )
+            .context("failed to parse address message NLAs")?,
         })
     }
 }

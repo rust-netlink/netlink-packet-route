@@ -4,10 +4,7 @@ use netlink_packet_core::{
     DecodeError, Emitable, EncodeError, ErrorContext, Parseable,
 };
 
-use super::{
-    attribute::VecNsidAttribute, header::NSID_HEADER_LEN, NsidAttribute,
-    NsidHeader,
-};
+use super::{header::NSID_HEADER_LEN, NsidAttribute, NsidHeader};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
@@ -21,9 +18,8 @@ impl Parseable<[u8]> for NsidMessage {
         Ok(Self {
             header: NsidHeader::parse(buf)
                 .context("failed to parse nsid message header")?,
-            attributes: VecNsidAttribute::parse(&buf[NSID_HEADER_LEN..])
-                .context("failed to parse nsid message NLAs")?
-                .0,
+            attributes: Vec::<NsidAttribute>::parse(&buf[NSID_HEADER_LEN..])
+                .context("failed to parse nsid message NLAs")?,
         })
     }
 }

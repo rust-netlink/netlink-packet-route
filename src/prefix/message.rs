@@ -5,7 +5,7 @@ use netlink_packet_core::{
 };
 
 use super::{
-    attribute::{PrefixAttribute, VecPrefixAttribute},
+    attribute::PrefixAttribute,
     header::{PrefixHeader, PREFIX_HEADER_LEN},
 };
 
@@ -28,9 +28,10 @@ impl Parseable<[u8]> for PrefixMessage {
         Ok(Self {
             header: PrefixHeader::parse(buf)
                 .context("failed to parse prefix message header")?,
-            attributes: VecPrefixAttribute::parse(&buf[PREFIX_HEADER_LEN..])
-                .context("failed to parse prefix message attributes")?
-                .0,
+            attributes: Vec::<PrefixAttribute>::parse(
+                &buf[PREFIX_HEADER_LEN..],
+            )
+            .context("failed to parse prefix message attributes")?,
         })
     }
 }

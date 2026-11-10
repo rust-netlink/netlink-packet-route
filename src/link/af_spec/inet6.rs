@@ -4,8 +4,7 @@ use std::{mem::size_of, net::Ipv6Addr};
 
 use netlink_packet_core::{
     append_bytes, append_u32, parse_u32, parse_u8, DecodeError, DefaultNla,
-    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use super::super::{
@@ -41,22 +40,6 @@ pub enum AfSpecInet6 {
     Other(DefaultNla),
 }
 
-pub(crate) struct VecAfSpecInet6(pub(crate) Vec<AfSpecInet6>);
-
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecAfSpecInet6
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        let err = "Invalid AF_INET6 NLA for IFLA_AF_SPEC(AF_UNSPEC)";
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(AfSpecInet6::parse(&nla).context(err)?);
-        }
-        Ok(Self(nlas))
-    }
-}
-
 impl Nla for AfSpecInet6 {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
@@ -88,8 +71,8 @@ impl Nla for AfSpecInet6 {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecInet6 {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for AfSpecInet6 {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_INET6_FLAGS => Self::Flags(Inet6IfaceFlags::from_bits_retain(

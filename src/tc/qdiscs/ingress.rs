@@ -39,10 +39,8 @@ impl Nla for TcQdiscIngressOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcQdiscIngressOption
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcQdiscIngressOption {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         Ok(Self::Other(
             DefaultNla::parse(buf).context("failed to parse ingress nla")?,
         ))

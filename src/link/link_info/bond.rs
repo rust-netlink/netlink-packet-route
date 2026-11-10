@@ -8,7 +8,7 @@ use std::{
 use netlink_packet_core::{
     append_bytes, append_u16, append_u32, parse_ip, parse_mac, parse_u16,
     parse_u32, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_BOND_AD_INFO_AGGREGATOR: u16 = 1;
@@ -122,8 +122,8 @@ impl Nla for BondAdInfo {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for BondAdInfo {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for BondAdInfo {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BOND_AD_INFO_AGGREGATOR => Self::Aggregator(
@@ -1009,8 +1009,8 @@ impl Nla for InfoBond {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoBond {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BOND_MODE => Self::Mode(
@@ -1044,7 +1044,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_ARP_IP_TARGET => {
                 let mut addrs = Vec::<Ipv4Addr>::new();
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla =
                         &nla.context("invalid IFLA_BOND_ARP_IP_TARGET value")?;
                     if let Ok(IpAddr::V4(addr)) = parse_ip(nla.value()) {
@@ -1120,7 +1120,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             IFLA_BOND_AD_INFO => {
                 let mut infos = Vec::new();
                 let err = "failed to parse IFLA_BOND_AD_INFO";
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     let info = BondAdInfo::parse(nla).context(err)?;
                     infos.push(info);
@@ -1159,7 +1159,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBond {
             ),
             IFLA_BOND_NS_IP6_TARGET => {
                 let mut addrs = Vec::<Ipv6Addr>::new();
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla =
                         &nla.context("invalid IFLA_BOND_NS_IP6_TARGET value")?;
                     if let Ok(IpAddr::V6(addr)) = parse_ip(nla.value()) {

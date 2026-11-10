@@ -4,7 +4,7 @@ use std::mem::size_of;
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -24,10 +24,10 @@ const BRIDGE_XSTATS_MCAST: u16 = 2;
 const BRIDGE_XSTATS_STP: u16 = 4;
 
 pub(crate) fn parse_bridge_xstats(
-    payload: &[u8],
+    buf: &NlaBuffer<'_>,
 ) -> Result<Vec<BridgeXstat>, DecodeError> {
     let mut result = Vec::new();
-    for nla in NlasIterator::new(payload) {
+    for nla in buf.nlas() {
         let nla = nla.context("invalid NLA in bridge xstats")?;
         let kind = nla.kind();
         let val = nla.value();

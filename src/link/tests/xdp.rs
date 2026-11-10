@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
 
-use crate::link::{xdp::VecLinkXdp, LinkXdp, XdpAttached};
+use crate::link::{LinkXdp, XdpAttached};
 
 static ATTACHED: [u8; 48] = [
     0x05, 0x00, // length = 5
@@ -32,8 +32,7 @@ static ATTACHED: [u8; 48] = [
 
 #[test]
 fn parse_xdp_attached() {
-    let nla = NlaBuffer::new_checked(&ATTACHED[..]).unwrap();
-    let parsed = VecLinkXdp::parse(&nla).unwrap().0;
+    let parsed = Vec::<LinkXdp>::parse(&ATTACHED[..]).unwrap();
     let expected = vec![
         LinkXdp::Attached(XdpAttached::None),
         LinkXdp::Attached(XdpAttached::Driver),
@@ -118,8 +117,7 @@ fn emit_xdp_attached() {
 
 #[test]
 fn parse_xdp() {
-    let nla = NlaBuffer::new_checked(&XDP[..]).unwrap();
-    let parsed = VecLinkXdp::parse(&nla).unwrap().0;
+    let parsed = Vec::<LinkXdp>::parse(&XDP[..]).unwrap();
     let expected = vec![
         LinkXdp::Fd(29856),
         LinkXdp::Flags(0),
@@ -129,9 +127,11 @@ fn parse_xdp() {
         LinkXdp::HwProgId(101),
         LinkXdp::ExpectedFd(29857),
         LinkXdp::Other(
-            DefaultNla::parse(&NlaBuffer::new(&XDP[56..64])).unwrap(),
+            DefaultNla::parse(&NlaBuffer::new(&XDP[56..64]).unwrap()).unwrap(),
         ),
-        LinkXdp::Other(DefaultNla::parse(&NlaBuffer::new(&XDP[64..])).unwrap()),
+        LinkXdp::Other(
+            DefaultNla::parse(&NlaBuffer::new(&XDP[64..]).unwrap()).unwrap(),
+        ),
     ];
     assert_eq!(expected, parsed);
 }
@@ -147,9 +147,11 @@ fn emit_xdp() {
         LinkXdp::HwProgId(101),
         LinkXdp::ExpectedFd(29857),
         LinkXdp::Other(
-            DefaultNla::parse(&NlaBuffer::new(&XDP[56..64])).unwrap(),
+            DefaultNla::parse(&NlaBuffer::new(&XDP[56..64]).unwrap()).unwrap(),
         ),
-        LinkXdp::Other(DefaultNla::parse(&NlaBuffer::new(&XDP[64..])).unwrap()),
+        LinkXdp::Other(
+            DefaultNla::parse(&NlaBuffer::new(&XDP[64..]).unwrap()).unwrap(),
+        ),
     ];
     let mut vec = Vec::new();
     nlas.as_slice().emit(&mut vec).unwrap();

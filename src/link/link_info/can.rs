@@ -3,8 +3,8 @@
 use bitflags::bitflags;
 use netlink_packet_core::{
     append_bytes, append_u16, append_u32, parse_u16, parse_u32, DecodeError,
-    DefaultNla, Emitable, EncodeError, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable, NLA_F_NESTED,
+    DefaultNla, Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
+    NLA_F_NESTED,
 };
 
 const IFLA_CAN_BITTIMING: u16 = 1;
@@ -298,8 +298,8 @@ impl Nla for CanTdc {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for CanTdc {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for CanTdc {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_CAN_TDC_TDCV_MIN => Self::TdcvMin(
@@ -375,10 +375,8 @@ impl Nla for CanCtrlModeExt {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for CanCtrlModeExt
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for CanCtrlModeExt {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_CAN_CTRLMODE_SUPPORTED => {
@@ -551,8 +549,8 @@ impl Nla for InfoCan {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoCan {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoCan {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_CAN_BITTIMING => Self::BitTiming(
@@ -603,7 +601,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoCan {
             IFLA_CAN_TDC => {
                 let mut v = Vec::new();
                 let err = "invalid IFLA_CAN_TDC";
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     v.push(CanTdc::parse(nla).context(err)?);
                 }
@@ -612,7 +610,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoCan {
             IFLA_CAN_CTRLMODE_EXT => {
                 let mut v = Vec::new();
                 let err = "invalid IFLA_CAN_CTRLMODE_EXT";
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     v.push(CanCtrlModeExt::parse(nla).context(err)?);
                 }

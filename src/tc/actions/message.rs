@@ -2,8 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
-    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use crate::tc::{
@@ -104,10 +103,8 @@ impl TcActionMessageFlagsWithSelector {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcActionMessageFlagsWithSelector
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcActionMessageFlagsWithSelector {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let value = buf.value();
         if value.len() != 8 {
             return Err(DecodeError::from("invalid length"));
@@ -151,13 +148,12 @@ pub enum TcActionMessageAttribute {
     Other(DefaultNla),
 }
 
-impl<'a, T: AsRef<[u8]> + 'a + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcActionMessageAttribute
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcActionMessageAttribute {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         Ok(match buf.kind() {
             TCA_ACT_TAB => {
-                let actions = NlasIterator::new(buf.value())
+                let actions = buf
+                    .nlas()
                     .map(|nla| TcAction::parse(&nla?))
                     .collect::<Result<Vec<_>, _>>()?;
                 Self::Actions(actions)
@@ -214,10 +210,9 @@ impl Parseable<[u8]> for TcActionMessage {
     fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         let header = TcActionMessageHeader::parse(buf)
             .context("failed to parse tc message header")?;
-        let attributes = NlasIterator::new(&buf[TCA_HEADER_LEN..])
-            .map(|attr| TcActionMessageAttribute::parse(&attr?))
-            .collect::<Result<Vec<_>, _>>()
-            .context("failed to parse tc action message NLAs")?;
+        let attributes =
+            Vec::<TcActionMessageAttribute>::parse(&buf[TCA_HEADER_LEN..])
+                .context("failed to parse tc action message NLAs")?;
         Ok(Self { header, attributes })
     }
 }

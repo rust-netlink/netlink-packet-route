@@ -184,11 +184,8 @@ impl Nla for Seg6LocalSrh {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for Seg6LocalSrh
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for Seg6LocalSrh {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         if payload.len() < SEG6_LOCAL_SRH_FIXED_LEN {
             return Err(DecodeError::from(format!(
@@ -306,11 +303,8 @@ impl Nla for RouteSeg6LocalTunnel {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteSeg6LocalTunnel
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteSeg6LocalTunnel {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             SEG6_LOCAL_UNSPEC => Self::Unspecified,

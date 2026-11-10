@@ -78,6 +78,6 @@ fn test_macsec_port_big_endian() {
     assert_eq!(buffer, expected);
 
     let parsed =
-        InfoMacSec::parse(&NlaBuffer::new_checked(&expected).unwrap()).unwrap();
+        InfoMacSec::parse(&NlaBuffer::new(&expected).unwrap()).unwrap();
     assert_eq!(parsed, port);
 }

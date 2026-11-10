@@ -2,33 +2,25 @@
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(crate) struct VecLinkVfPort(pub(crate) Vec<LinkVfPort>);
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecLinkVfPort
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.with_context(|| {
-                format!("invalid IFLA_VF_PORTS value: {:?}", buf.value())
-            })?;
+impl<'a> Parseable<NlaBuffer<'a>> for VecLinkVfPort {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
+        Ok(Self(buf.parse_nlas_with(|nla| {
             if nla.kind() == IFLA_VF_PORT {
-                nlas.push(LinkVfPort::parse(&NlaBuffer::new_checked(
-                    nla.value(),
-                )?)?);
+                Ok(Some(LinkVfPort::parse(&nla)?))
             } else {
                 log::warn!(
                     "BUG: Expecting IFLA_VF_PORT in IFLA_VF_PORTS, but got {}",
                     nla.kind()
                 );
+                Ok(None)
             }
-        }
-        Ok(Self(nlas))
+        })?))
     }
 }
 
@@ -47,14 +39,14 @@ impl Nla for LinkVfPort {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkVfPort {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for LinkVfPort {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.with_context(|| {
+        for nla in buf.nlas() {
+            let nla = nla.with_context(|| {
                 format!("invalid IFLA_VF_PORT value {:?}", buf.value())
             })?;
-            nlas.push(VfPort::parse(nla)?);
+            nlas.push(VfPort::parse(&nla)?);
         }
         Ok(Self(nlas))
     }
@@ -99,8 +91,8 @@ impl Nla for VfPort {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfPort {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for VfPort {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         #[allow(clippy::match_single_binding)]
         Ok(match buf.kind() {

@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 
 use crate::link::{
@@ -16,28 +16,20 @@ const IFLA_VF_INFO: u16 = 1;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(crate) struct VecLinkVfInfo(pub(crate) Vec<LinkVfInfo>);
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecLinkVfInfo
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.with_context(|| {
-                format!("invalid IFLA_VFINFO_LIST value: {:?}", buf.value())
-            })?;
+impl<'a> Parseable<NlaBuffer<'a>> for VecLinkVfInfo {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
+        Ok(Self(buf.parse_nlas_with(|nla| {
             if nla.kind() == IFLA_VF_INFO {
-                nlas.push(LinkVfInfo::parse(&NlaBuffer::new_checked(
-                    nla.value(),
-                )?)?);
+                Ok(Some(LinkVfInfo::parse(&nla)?))
             } else {
                 log::warn!(
                     "BUG: Expecting IFLA_VF_INFO in IFLA_VFINFO_LIST, but got \
                      {}",
                     nla.kind()
                 );
+                Ok(None)
             }
-        }
-        Ok(Self(nlas))
+        })?))
     }
 }
 
@@ -54,14 +46,14 @@ impl Nla for LinkVfInfo {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkVfInfo {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for LinkVfInfo {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = &nla.with_context(|| {
+        for nla in buf.nlas() {
+            let nla = nla.with_context(|| {
                 format!("invalid IFLA_VF_INFO value {:?}", buf.value())
             })?;
-            nlas.push(VfInfo::parse(nla)?);
+            nlas.push(VfInfo::parse(&nla)?);
         }
         Ok(Self(nlas))
     }
@@ -141,8 +133,8 @@ impl Nla for VfInfo {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfInfo {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for VfInfo {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VF_MAC => {
@@ -202,7 +194,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfInfo {
             }
             IFLA_VF_VLAN_LIST => {
                 let mut nlas: Vec<VfVlan> = Vec::new();
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.with_context(|| {
                         format!(
                             "invalid IFLA_VF_VLAN_LIST value: {:?}",
@@ -216,7 +208,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VfInfo {
             }
             IFLA_VF_STATS => {
                 let mut nlas: Vec<VfStats> = Vec::new();
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.with_context(|| {
                         format!(
                             "invalid IFLA_VF_STATS value: {:?}",

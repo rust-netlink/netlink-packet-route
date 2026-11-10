@@ -2,8 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, append_u32, append_u64, parse_u32, parse_u64, DecodeError,
-    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable,
+    DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const NDTPA_IFINDEX: u16 = 1;
@@ -111,10 +110,8 @@ impl Nla for NeighbourTableParameter {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for NeighbourTableParameter
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for NeighbourTableParameter {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             NDTPA_IFINDEX => {
@@ -216,24 +213,5 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 format!("invalid NDTA_PARMS attribute {payload:?}")
             })?),
         })
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub(crate) struct VecNeighbourTableParameter(
-    pub(crate) Vec<NeighbourTableParameter>,
-);
-
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecNeighbourTableParameter
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        let err = "invalid NDTA_PARMS attribute";
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(NeighbourTableParameter::parse(&nla).context(err)?);
-        }
-        Ok(Self(nlas))
     }
 }

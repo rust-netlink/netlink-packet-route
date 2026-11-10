@@ -6,7 +6,7 @@ use netlink_packet_core::{
     append_bytes, append_u16, append_u16_be, append_u32, append_u64, parse_ip,
     parse_mac, parse_u16, parse_u16_be, parse_u32, parse_u64, parse_u8,
     DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
+    NlaBuffer, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{
     byteorder::big_endian::U16, FromBytes, Immutable, IntoBytes, KnownLayout,
@@ -296,8 +296,8 @@ impl Nla for InfoBridge {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoBridge {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BR_FDB_FLUSH => Self::FdbFlush,
@@ -505,7 +505,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoBridge {
             IFLA_BR_MCAST_QUERIER_STATE => {
                 let mut v = Vec::new();
                 let err = "failed to parse IFLA_BR_MCAST_QUERIER_STATE";
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     let parsed = BridgeQuerierState::parse(nla).context(err)?;
                     v.push(parsed);
@@ -655,10 +655,8 @@ impl Nla for BridgeQuerierState {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for BridgeQuerierState
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for BridgeQuerierState {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             BRIDGE_QUERIER_IP_ADDRESS => match parse_ip(payload) {
