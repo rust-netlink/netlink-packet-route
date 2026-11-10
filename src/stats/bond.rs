@@ -2,8 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, append_u64, parse_u64, DecodeError, DefaultNla, Emitable,
-    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
-    NLA_F_NESTED,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable, NLA_F_NESTED,
 };
 
 const BOND_XSTATS_3AD: u16 = 1;
@@ -94,8 +93,8 @@ impl Nla for Bond3adStats {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Bond3adStats {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for Bond3adStats {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             BOND_3AD_STAT_LACPDU_RX => Self::LacpduRx(
@@ -144,18 +143,17 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for Bond3adStats {
 }
 
 pub(crate) fn parse_bond_xstats(
-    payload: &[u8],
+    buf: &NlaBuffer<'_>,
 ) -> Result<Vec<BondXstat>, DecodeError> {
     let mut result = Vec::new();
-    for nla in NlasIterator::new(payload) {
+    for nla in buf.nlas() {
         let nla = nla.context("invalid NLA in bond xstats")?;
         let kind = nla.kind();
-        let payload = nla.value();
         result.push(match kind {
             BOND_XSTATS_3AD => {
                 let mut stats = Vec::new();
                 let err = "failed to parse BOND_XSTATS_3AD ";
-                for nla in NlasIterator::new(payload) {
+                for nla in nla.nlas() {
                     let nla = &nla.context(err)?;
                     let parsed = Bond3adStats::parse(nla).context(err)?;
                     stats.push(parsed);

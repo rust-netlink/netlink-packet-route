@@ -224,7 +224,7 @@ fn tc_action_nat_option_parse_back_example_params() {
         let mut buffer = Vec::new();
         example.emit(&mut buffer).unwrap();
         let parsed = TcActionNatOption::parse(
-            &NlaBuffer::new_checked(buffer.as_slice()).unwrap(),
+            &NlaBuffer::new(buffer.as_slice()).unwrap(),
         )
         .unwrap();
         assert_eq!(example, parsed);
@@ -237,10 +237,9 @@ fn tc_action_nat_option_emit_appends() {
         let mut buffer = vec![0xaa, 0xbb];
         example.emit(&mut buffer).unwrap();
         assert_eq!(&buffer[..2], &[0xaa, 0xbb]);
-        let parsed = TcActionNatOption::parse(
-            &NlaBuffer::new_checked(&buffer[2..]).unwrap(),
-        )
-        .unwrap();
+        let parsed =
+            TcActionNatOption::parse(&NlaBuffer::new(&buffer[2..]).unwrap())
+                .unwrap();
         assert_eq!(example, parsed);
     }
 }

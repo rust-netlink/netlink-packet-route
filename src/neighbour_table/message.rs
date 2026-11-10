@@ -5,8 +5,8 @@ use netlink_packet_core::{
 };
 
 use super::{
-    attribute::VecNeighbourTableAttribute, header::NEIGHBOUR_TABLE_HEADER_LEN,
-    NeighbourTableAttribute, NeighbourTableHeader,
+    header::NEIGHBOUR_TABLE_HEADER_LEN, NeighbourTableAttribute,
+    NeighbourTableHeader,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -28,11 +28,10 @@ impl Parseable<[u8]> for NeighbourTableMessage {
         Ok(NeighbourTableMessage {
             header: NeighbourTableHeader::parse(buf)
                 .context("failed to parse neighbour table message header")?,
-            attributes: VecNeighbourTableAttribute::parse(
+            attributes: Vec::<NeighbourTableAttribute>::parse(
                 &buf[NEIGHBOUR_TABLE_HEADER_LEN..],
             )
-            .context("failed to parse neighbour table message NLAs")?
-            .0,
+            .context("failed to parse neighbour table message NLAs")?,
         })
     }
 }

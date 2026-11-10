@@ -39,7 +39,7 @@ fn disabled_link_attributes_round_trip_as_opaque_data() {
         bytes[..2].copy_from_slice(&8u16.to_ne_bytes());
         bytes[2..4].copy_from_slice(&(kind | NLA_F_NESTED).to_ne_bytes());
         bytes[4..].copy_from_slice(&[1, 2, 3, 4]);
-        let nla = NlaBuffer::new_checked(&bytes).unwrap();
+        let nla = NlaBuffer::new(&bytes).unwrap();
         let attr = LinkAttribute::parse_with_param(&nla, AddressFamily::Unspec)
             .unwrap();
         assert!(matches!(attr, LinkAttribute::Other(_)));

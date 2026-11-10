@@ -5,8 +5,7 @@ use netlink_packet_core::{
 };
 
 use super::{
-    attribute::VecAddrLabelAttribute, header::ADDRLABEL_HEADER_LEN,
-    AddrLabelAttribute, AddrLabelHeader,
+    header::ADDRLABEL_HEADER_LEN, AddrLabelAttribute, AddrLabelHeader,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -21,9 +20,8 @@ impl Parseable<[u8]> for AddrLabelMessage {
         let header = AddrLabelHeader::parse(buf)
             .context("failed to parse addrlabel message header")?;
         let attributes =
-            VecAddrLabelAttribute::parse(&buf[ADDRLABEL_HEADER_LEN..])
-                .context("failed to parse addrlabel message NLAs")?
-                .0;
+            Vec::<AddrLabelAttribute>::parse(&buf[ADDRLABEL_HEADER_LEN..])
+                .context("failed to parse addrlabel message NLAs")?;
         Ok(Self { header, attributes })
     }
 }

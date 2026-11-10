@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use netlink_packet_core::{
     append_bytes, append_u32, append_u32_be, parse_u16_be, parse_u32,
     parse_u32_be, parse_u8, DecodeError, DefaultNla, Emitable, EncodeError,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable, NLA_F_NESTED,
+    ErrorContext, Nla, NlaBuffer, Parseable, NLA_F_NESTED,
 };
 
 // `LWTUNNEL_IP_OPTS` and its `LWTUNNEL_IP6_OPTS` twin share the same
@@ -105,11 +105,8 @@ impl Nla for RouteVxlanOpt {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteVxlanOpt
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteVxlanOpt {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             LWTUNNEL_IP_OPT_VXLAN_GBP => Self::Gbp(
@@ -144,11 +141,8 @@ impl Nla for RouteErspanOpt {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteErspanOpt
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteErspanOpt {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             LWTUNNEL_IP_OPT_ERSPAN_VER => Self::Ver(
@@ -270,17 +264,13 @@ impl Nla for RouteLwTunnelOpt {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteLwTunnelOpt
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let payload = buf.value();
+impl<'a> Parseable<NlaBuffer<'a>> for RouteLwTunnelOpt {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         Ok(match buf.kind() {
             LWTUNNEL_IP_OPTS_GENEVE => {
                 let mut opts: Vec<RouteGeneveOpt> = Vec::new();
                 let mut current: Option<RouteGeneveOpt> = None;
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla =
                         nla.context("Invalid LWTUNNEL_IP_OPTS_GENEVE value")?;
                     match nla.kind() {
@@ -330,7 +320,7 @@ where
             }
             LWTUNNEL_IP_OPTS_VXLAN => {
                 let mut opts: Vec<RouteVxlanOpt> = Vec::new();
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla =
                         nla.context("Invalid LWTUNNEL_IP_OPTS_VXLAN value")?;
                     opts.push(RouteVxlanOpt::parse(&nla)?);
@@ -339,7 +329,7 @@ where
             }
             LWTUNNEL_IP_OPTS_ERSPAN => {
                 let mut opts: Vec<RouteErspanOpt> = Vec::new();
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla =
                         nla.context("Invalid LWTUNNEL_IP_OPTS_ERSPAN value")?;
                     opts.push(RouteErspanOpt::parse(&nla)?);

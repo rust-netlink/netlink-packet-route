@@ -35,8 +35,8 @@ impl Nla for InfoIpVlan {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVlan {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoIpVlan {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_IPVLAN_MODE => Self::Mode(
@@ -82,8 +82,8 @@ impl Nla for InfoIpVtap {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoIpVtap {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoIpVtap {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_IPVLAN_MODE => Self::Mode(

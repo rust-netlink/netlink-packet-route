@@ -12,7 +12,7 @@ use netlink_packet_core::ErrorContext;
 /// performed.
 use netlink_packet_core::{
     append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, Emitable,
-    EncodeError, Nla, NlaBuffer, NlasIterator, Parseable,
+    EncodeError, Nla, NlaBuffer, Parseable,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -93,10 +93,8 @@ impl Nla for TcFilterU32Option {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcFilterU32Option
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcFilterU32Option {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_U32_CLASSID => Self::ClassId(TcHandle::from(
@@ -120,7 +118,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             TCA_U32_POLICE => Self::Police(payload.to_vec()),
             TCA_U32_ACT => {
                 let mut acts = vec![];
-                for act in NlasIterator::new(payload) {
+                for act in buf.nlas() {
                     let act = act.context("invalid TCA_U32_ACT")?;
                     acts.push(
                         TcAction::parse(&act)

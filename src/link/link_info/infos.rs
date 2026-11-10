@@ -2,8 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, parse_string, DecodeError, DefaultNla, Emitable, EncodeError,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
-    ParseableParametrized,
+    ErrorContext, Nla, NlaBuffer, Parseable, ParseableParametrized,
 };
 
 use super::super::{InfoData, InfoPortData, InfoPortKind, LinkXstats};
@@ -103,19 +102,15 @@ pub(crate) struct VecLinkInfo(pub(crate) Vec<LinkInfo>);
 // depend on each other. To parse IFLA_INFO_DATA we first need to
 // parse the preceding IFLA_INFO_KIND for example.
 //
-// Moreover, with cannot `impl Parseable for Vec<LinkInfo>` due to the
-// orphan rule: `Parseable` and `Vec<_>` are both defined outside of
-// this crate. Thus, we create this internal VecLinkInfo struct that wraps
-// `Vec<LinkInfo>` and allows us to circumvent the orphan rule.
-//
-// The downside is that this impl will not be exposed.
+// The shared state also prevents using the `Vec<T>` blanket impl, so this
+// wrapper remains necessary.
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for VecLinkInfo {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let mut nlas = Vec::new();
         let mut link_info_kind: Option<InfoKind> = None;
         let mut link_info_port_kind: Option<InfoPortKind> = None;
-        for nla in NlasIterator::new(buf.into_inner()) {
+        for nla in buf.nlas() {
             let nla = nla?;
             match nla.kind() {
                 IFLA_INFO_XSTATS => {
@@ -138,7 +133,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                     if let Some(link_info_port_kind) = link_info_port_kind {
                         nlas.push(LinkInfo::PortData(
                             InfoPortData::parse_with_param(
-                                nla.value(),
+                                &nla,
                                 link_info_port_kind,
                             )?,
                         ));
@@ -157,7 +152,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkInfo {
                 IFLA_INFO_DATA => {
                     if let Some(link_info_kind) = &link_info_kind {
                         nlas.push(LinkInfo::Data(InfoData::parse_with_param(
-                            nla.value(),
+                            &nla,
                             link_info_kind,
                         )?));
                     } else {
@@ -354,8 +349,8 @@ impl From<&str> for InfoKind {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoKind {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoKind, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoKind {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<InfoKind, DecodeError> {
         if buf.kind() != IFLA_INFO_KIND {
             return Err(format!(
                 "failed to parse IFLA_INFO_KIND: NLA type is {}",

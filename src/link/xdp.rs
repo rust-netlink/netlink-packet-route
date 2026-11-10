@@ -5,7 +5,7 @@ use std::os::fd::RawFd;
 use netlink_packet_core::{
     append_bytes, append_i32, append_u32, parse_i32, parse_u32, parse_u8,
     DecodeError, DefaultNla, EncodeError, ErrorContext, Nla, NlaBuffer,
-    NlasIterator, Parseable,
+    Parseable,
 };
 
 const IFLA_XDP_FD: u32 = 1;
@@ -68,8 +68,8 @@ impl Nla for LinkXdp {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkXdp {
-    fn parse(nla: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for LinkXdp {
+    fn parse(nla: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = nla.value();
         Ok(match nla.kind() as u32 {
             IFLA_XDP_FD => Self::Fd(
@@ -107,26 +107,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for LinkXdp {
     }
 }
 
-pub(crate) struct VecLinkXdp(pub(crate) Vec<LinkXdp>);
-
 // These NLAs are nested, meaning they are NLAs that contain NLAs. These NLAs
 // can contain more nested NLAs nla->type     // IFLA_XDP
 // nla->len
 // nla->data[]   // <- You are here == Vec<Xdp>
 //  nla->data[0].type   <- nla.kind()
 //  nla->data[0].len
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for VecLinkXdp {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut res = Vec::new();
-        let nlas = NlasIterator::new(buf.into_inner());
-        for nla in nlas {
-            let nla = nla?;
-            res.push(LinkXdp::parse(&nla)?);
-        }
-        Ok(VecLinkXdp(res))
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub enum XdpAttached {

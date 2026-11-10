@@ -12,12 +12,6 @@ mod inet6_stats;
 mod mctp;
 mod unspec;
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "fuchsia",
-    target_os = "android"
-))]
-pub(crate) use self::bridge::VecAfSpecBridge;
 pub use self::{
     bridge::{
         AfSpecBridge, BridgeFlag, BridgeMode, BridgeVlanInfo,
@@ -33,8 +27,4 @@ pub use self::{
     inet6_stats::{Inet6Stats, Inet6StatsBuffer},
     mctp::{AfSpecMctp, MctpPhysBinding},
     unspec::AfSpecUnspec,
-};
-pub(crate) use self::{
-    inet::VecAfSpecInet, inet6::VecAfSpecInet6, mctp::VecAfSpecMctp,
-    unspec::VecAfSpecUnspec,
 };

@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 
 use super::{
@@ -49,29 +49,18 @@ impl Nla for LinkXstatGroup {
     }
 }
 
-pub(crate) struct VecLinkXstats(pub(crate) Vec<LinkXstatGroup>);
-
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecLinkXstats
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut groups = Vec::new();
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla?;
-            let kind = nla.kind();
-            let val = nla.value();
-            groups.push(match kind {
-                LINK_XSTATS_TYPE_BRIDGE => LinkXstatGroup::Bridge(
-                    parse_bridge_xstats(val)
-                        .context("invalid bridge xstats in link xstats")?,
-                ),
-                LINK_XSTATS_TYPE_BOND => LinkXstatGroup::Bond(
-                    parse_bond_xstats(val)
-                        .context("invalid bond xstats in link xstats")?,
-                ),
-                _ => LinkXstatGroup::Other(DefaultNla::parse(&nla)?),
-            });
-        }
-        Ok(Self(groups))
+impl<'a> Parseable<NlaBuffer<'a>> for LinkXstatGroup {
+    fn parse(nla: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
+        Ok(match nla.kind() {
+            LINK_XSTATS_TYPE_BRIDGE => LinkXstatGroup::Bridge(
+                parse_bridge_xstats(nla)
+                    .context("invalid bridge xstats in link xstats")?,
+            ),
+            LINK_XSTATS_TYPE_BOND => LinkXstatGroup::Bond(
+                parse_bond_xstats(nla)
+                    .context("invalid bond xstats in link xstats")?,
+            ),
+            _ => LinkXstatGroup::Other(DefaultNla::parse(nla)?),
+        })
     }
 }

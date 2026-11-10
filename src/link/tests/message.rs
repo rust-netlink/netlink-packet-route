@@ -80,7 +80,6 @@ fn link_mssage_packet_attributes_read() {
 
     // device name L=7,T=3,V=lo
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 7);
     assert_eq!(nla.kind(), 3);
     assert_eq!(nla.value(), &[0x6c, 0x6f, 0x00]);
@@ -90,7 +89,6 @@ fn link_mssage_packet_attributes_read() {
 
     // TxQueue length L=8,T=13,V=1000
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 13);
     assert_eq!(nla.value(), &[0xe8, 0x03, 0x00, 0x00]);
@@ -100,7 +98,6 @@ fn link_mssage_packet_attributes_read() {
 
     // OperState L=5,T=16,V=0 (unknown)
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 5);
     assert_eq!(nla.kind(), 16);
     assert_eq!(nla.value(), &[0x00]);
@@ -110,7 +107,6 @@ fn link_mssage_packet_attributes_read() {
 
     // Link mode L=5,T=17,V=0
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 5);
     assert_eq!(nla.kind(), 17);
     assert_eq!(nla.value(), &[0x00]);
@@ -120,7 +116,6 @@ fn link_mssage_packet_attributes_read() {
 
     // MTU L=8,T=4,V=65536
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 4);
     assert_eq!(nla.value(), &[0x00, 0x00, 0x01, 0x00]);
@@ -131,7 +126,6 @@ fn link_mssage_packet_attributes_read() {
     // 0x00, 0x00, 0x00, 0x00,
     // Group L=8,T=27,V=9
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 27);
     assert_eq!(nla.value(), &[0x00, 0x00, 0x00, 0x00]);
@@ -141,7 +135,6 @@ fn link_mssage_packet_attributes_read() {
 
     // Promiscuity L=8,T=30,V=0
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 30);
     assert_eq!(nla.value(), &[0x00, 0x00, 0x00, 0x00]);
@@ -152,7 +145,6 @@ fn link_mssage_packet_attributes_read() {
     // Number of Tx Queues L=8,T=31,V=1
     // 0x01, 0x00, 0x00, 0x00
     let nla = attributes.next().unwrap().unwrap();
-    nla.check_buffer_length().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 31);
     assert_eq!(nla.value(), &[0x01, 0x00, 0x00, 0x00]);

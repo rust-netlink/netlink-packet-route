@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, parse_string, DecodeError, Emitable, EncodeError,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 use super::{
@@ -63,8 +63,8 @@ impl Nla for InfoPortKind {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoPortKind {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<InfoPortKind, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoPortKind {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<InfoPortKind, DecodeError> {
         if buf.kind() != IFLA_INFO_PORT_KIND {
             return Err(format!(
                 "failed to parse IFLA_INFO_PORT_KIND: NLA type is {}",
@@ -115,23 +115,28 @@ impl Nla for InfoPortData {
 
 impl InfoPortData {
     pub(crate) fn parse_with_param(
-        payload: &[u8],
+        buf: &NlaBuffer<'_>,
         kind: InfoPortKind,
     ) -> Result<InfoPortData, DecodeError> {
+        let payload = buf.value();
         let port_data = match kind {
-            InfoPortKind::Bond => NlasIterator::new(payload)
+            InfoPortKind::Bond => buf
+                .nlas()
                 .map(|nla| nla.and_then(|nla| InfoBondPort::parse(&nla)))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BondPort),
-            InfoPortKind::Bridge => NlasIterator::new(payload)
+            InfoPortKind::Bridge => buf
+                .nlas()
                 .map(|nla| nla.and_then(|nla| InfoBridgePort::parse(&nla)))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BridgePort),
-            InfoPortKind::Vrf => NlasIterator::new(payload)
+            InfoPortKind::Vrf => buf
+                .nlas()
                 .map(|nla| nla.and_then(|nla| InfoVrfPort::parse(&nla)))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::VrfPort),
-            InfoPortKind::Team => NlasIterator::new(payload)
+            InfoPortKind::Team => buf
+                .nlas()
                 .map(|nla| nla.and_then(|nla| InfoTeamPort::parse(&nla)))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::TeamPort),

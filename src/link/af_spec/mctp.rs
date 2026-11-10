@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, append_u32, parse_u32, parse_u8, DecodeError, DefaultNla,
-    EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_MCTP_NET: u16 = 1;
@@ -49,22 +49,6 @@ pub enum MctpPhysBinding {
 
 // Not construted on non-Linux targets
 #[allow(unused)]
-pub(crate) struct VecAfSpecMctp(pub(crate) Vec<AfSpecMctp>);
-
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecAfSpecMctp
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        let err = "Invalid AF_MCTP NLA for IFLA_AF_SPEC(AF_UNSPEC)";
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(AfSpecMctp::parse(&nla).context(err)?);
-        }
-        Ok(Self(nlas))
-    }
-}
-
 impl Nla for AfSpecMctp {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
@@ -84,8 +68,8 @@ impl Nla for AfSpecMctp {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecMctp {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for AfSpecMctp {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_MCTP_NET => Self::Net(

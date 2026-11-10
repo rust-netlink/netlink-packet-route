@@ -8,8 +8,8 @@ use std::{
 use netlink_packet_core::{
     append_bytes, append_u16, append_u16_be, append_u32, append_u64_be,
     parse_u16_be, parse_u32, parse_u64_be, parse_u8, DecodeError, DefaultNla,
-    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable, ParseableParametrized, NLA_F_NESTED,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
+    ParseableParametrized, NLA_F_NESTED,
 };
 
 use super::{
@@ -235,11 +235,8 @@ impl Nla for RouteIpTunnel {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteIpTunnel
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteIpTunnel {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             LWTUNNEL_IP_UNSPEC => Self::Unspecified,
@@ -267,7 +264,7 @@ where
                         .context("invalid LWTUNNEL_IP_FLAGS value")?,
                 ))
             }
-            LWTUNNEL_IP_OPTS => Self::Opts(parse_tunnel_opts(payload)?),
+            LWTUNNEL_IP_OPTS => Self::Opts(parse_tunnel_opts(buf)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
@@ -369,11 +366,8 @@ impl Nla for RouteIp6Tunnel {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteIp6Tunnel
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteIp6Tunnel {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             LWTUNNEL_IP6_UNSPEC => Self::Unspecified,
@@ -402,7 +396,7 @@ where
                         .context("invalid LWTUNNEL_IP6_FLAGS value")?,
                 ))
             }
-            LWTUNNEL_IP_OPTS => Self::Opts(parse_tunnel_opts(payload)?),
+            LWTUNNEL_IP_OPTS => Self::Opts(parse_tunnel_opts(buf)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })
     }
@@ -463,11 +457,8 @@ impl Nla for RouteXfrmTunnel {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteXfrmTunnel
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteXfrmTunnel {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             LWT_XFRM_UNSPEC => Self::Unspecified,
@@ -513,13 +504,11 @@ impl Nla for RouteLwTunnelEncap {
     }
 }
 
-impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, RouteLwEnCapType>
+impl<'a> ParseableParametrized<NlaBuffer<'a>, RouteLwEnCapType>
     for RouteLwTunnelEncap
-where
-    T: AsRef<[u8]> + ?Sized,
 {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: RouteLwEnCapType,
     ) -> Result<Self, DecodeError> {
         Ok(match kind {
@@ -544,39 +533,11 @@ where
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-#[non_exhaustive]
-pub(crate) struct VecRouteLwTunnelEncap(pub(crate) Vec<RouteLwTunnelEncap>);
-
-impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, RouteLwEnCapType>
-    for VecRouteLwTunnelEncap
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
-        kind: RouteLwEnCapType,
-    ) -> Result<Self, DecodeError> {
-        let mut ret = Vec::new();
-        for nla in NlasIterator::new(buf.value()) {
-            let nla = nla.with_context(|| {
-                format!("Invalid RTA_ENCAP for kind: {kind}")
-            })?;
-            ret.push(
-                RouteLwTunnelEncap::parse_with_param(&nla, kind).with_context(
-                    || format!("Failed to parse RTA_ENCAP for kind: {kind}"),
-                )?,
-            )
-        }
-        Ok(Self(ret))
-    }
-}
-
 fn parse_tunnel_opts(
-    payload: &[u8],
+    buf: &NlaBuffer<'_>,
 ) -> Result<Vec<RouteLwTunnelOpt>, DecodeError> {
     let mut opts = Vec::new();
-    for nla in NlasIterator::new(payload) {
+    for nla in buf.nlas() {
         let nla = nla.context("Invalid LWTUNNEL_IP_OPTS value")?;
         opts.push(
             RouteLwTunnelOpt::parse(&nla)

@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, parse_u8, DecodeError, DefaultNla, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_BRPORT_NEIGH_FORWARD_GRAT: u16 = 45;
@@ -12,23 +12,6 @@ const IFLA_BRPORT_NEIGH_FORWARD_GRAT: u16 = 45;
 pub enum LinkProtoInfoBridge {
     NeighForwardGrat(bool),
     Other(DefaultNla),
-}
-
-pub(crate) struct VecLinkProtoInfoBridge(pub(crate) Vec<LinkProtoInfoBridge>);
-
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecLinkProtoInfoBridge
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.with_context(|| {
-                format!("invalid bridge IFLA_PROTINFO {:?}", buf.value())
-            })?;
-            nlas.push(LinkProtoInfoBridge::parse(&nla)?);
-        }
-        Ok(Self(nlas))
-    }
 }
 
 impl Nla for LinkProtoInfoBridge {
@@ -50,10 +33,8 @@ impl Nla for LinkProtoInfoBridge {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for LinkProtoInfoBridge
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for LinkProtoInfoBridge {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         Ok(match buf.kind() {
             IFLA_BRPORT_NEIGH_FORWARD_GRAT => Self::NeighForwardGrat(
                 parse_u8(buf.value())

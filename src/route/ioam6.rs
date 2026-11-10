@@ -95,11 +95,8 @@ impl Nla for Ioam6TraceHdr {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for Ioam6TraceHdr
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for Ioam6TraceHdr {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         if payload.len() != 8 {
             return Err(DecodeError::from(format!(
@@ -185,11 +182,8 @@ impl Nla for RouteIoam6Tunnel {
     }
 }
 
-impl<'a, T> Parseable<NlaBuffer<&'a T>> for RouteIoam6Tunnel
-where
-    T: AsRef<[u8]> + ?Sized,
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteIoam6Tunnel {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IOAM6_IPTUNNEL_UNSPEC => Self::Unspecified,

@@ -2,16 +2,13 @@
 
 use netlink_packet_core::{
     append_bytes, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 
 #[allow(unused)]
-use crate::link::{af_spec::VecAfSpecMctp, AfSpecMctp};
+use crate::link::AfSpecMctp;
 use crate::{
-    link::{
-        af_spec::{VecAfSpecInet, VecAfSpecInet6},
-        AfSpecInet, AfSpecInet6,
-    },
+    link::{AfSpecInet, AfSpecInet6},
     AddressFamily,
 };
 
@@ -46,63 +43,35 @@ pub enum AfSpecUnspec {
     Other(DefaultNla),
 }
 
-pub(crate) struct VecAfSpecUnspec(pub(crate) Vec<AfSpecUnspec>);
-
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecAfSpecUnspec
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
+impl<'a> Parseable<NlaBuffer<'a>> for AfSpecUnspec {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let err = "Invalid NLA for IFLA_AF_SPEC(AF_UNSPEC)";
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(match nla.kind() {
-                k if k == u8::from(AddressFamily::Inet) as u16 => {
-                    AfSpecUnspec::Inet(
-                        VecAfSpecInet::parse(
-                            &NlaBuffer::new_checked(&nla.value())
-                                .context(err)?,
-                        )
-                        .context(err)?
-                        .0,
+        Ok(match buf.kind() {
+            k if k == u8::from(AddressFamily::Inet) as u16 => {
+                AfSpecUnspec::Inet(Vec::<AfSpecInet>::parse(buf).context(err)?)
+            }
+            k if k == u8::from(AddressFamily::Inet6) as u16 => {
+                AfSpecUnspec::Inet6(
+                    Vec::<AfSpecInet6>::parse(buf).context(err)?,
+                )
+            }
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "fuchsia",
+                target_os = "android"
+            ))]
+            k if k == u8::from(AddressFamily::Mctp) as u16 => {
+                AfSpecUnspec::Mctp(Vec::<AfSpecMctp>::parse(buf).context(err)?)
+            }
+            kind => AfSpecUnspec::Other(DefaultNla::parse(buf).with_context(
+                || {
+                    format!(
+                        "Unknown AF_XXX type {kind} for \
+                         IFLA_AF_SPEC(AF_UNSPEC)"
                     )
-                }
-                k if k == u8::from(AddressFamily::Inet6) as u16 => {
-                    AfSpecUnspec::Inet6(
-                        VecAfSpecInet6::parse(
-                            &NlaBuffer::new_checked(&nla.value())
-                                .context(err)?,
-                        )
-                        .context(err)?
-                        .0,
-                    )
-                }
-                #[cfg(any(
-                    target_os = "linux",
-                    target_os = "fuchsia",
-                    target_os = "android"
-                ))]
-                k if k == u8::from(AddressFamily::Mctp) as u16 => {
-                    AfSpecUnspec::Mctp(
-                        VecAfSpecMctp::parse(
-                            &NlaBuffer::new_checked(&nla.value())
-                                .context(err)?,
-                        )
-                        .context(err)?
-                        .0,
-                    )
-                }
-                kind => AfSpecUnspec::Other(
-                    DefaultNla::parse(&nla).with_context(|| {
-                        format!(
-                            "Unknown AF_XXX type {kind} for \
-                             IFLA_AF_SPEC(AF_UNSPEC)"
-                        )
-                    })?,
-                ),
-            })
-        }
-        Ok(Self(nlas))
+                },
+            )?),
+        })
     }
 }
 

@@ -124,11 +124,11 @@ impl Nla for InfoIpTunnel {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized>
-    ParseableParametrized<NlaBuffer<&'a T>, super::InfoKind> for InfoIpTunnel
+impl<'a> ParseableParametrized<NlaBuffer<'a>, super::InfoKind>
+    for InfoIpTunnel
 {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: super::InfoKind,
     ) -> Result<Self, DecodeError> {
         let payload = buf.value();

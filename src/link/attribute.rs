@@ -5,30 +5,15 @@ use std::{mem::size_of, os::unix::io::RawFd};
 use netlink_packet_core::{
     append_bytes, append_i32, append_u32, parse_i32, parse_string, parse_u32,
     parse_u8, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, NlasIterator, Parseable, ParseableParametrized,
-    NLA_F_NESTED,
+    Nla, NlaBuffer, Parseable, ParseableParametrized, NLA_F_NESTED,
 };
 
-#[cfg(all(
-    feature = "link-af-spec",
-    any(target_os = "linux", target_os = "fuchsia", target_os = "android")
-))]
-use super::af_spec::VecAfSpecBridge;
-#[cfg(any(
-    target_os = "linux",
-    target_os = "fuchsia",
-    target_os = "android"
-))]
-use super::proto_info::VecLinkProtoInfoBridge;
-#[cfg(feature = "link-af-spec")]
-use super::{af_spec::VecAfSpecUnspec, AfSpecBridge, AfSpecUnspec};
 use super::{
     buffer_tool::expand_buffer_if_small, devlink_port::DevlinkPort,
-    dpll_pin::DpllPin, ext_mask::VecLinkExtentMask,
-    proto_info::VecLinkProtoInfoInet6, xdp::VecLinkXdp, LinkEvent,
-    LinkExtentMask, LinkMode, LinkPhysId, LinkProtoInfoBridge,
-    LinkProtoInfoInet6, LinkProtocolDownReason, LinkXdp, Map, Prop, State,
-    Stats, Stats64, Stats64Buffer, StatsBuffer, WirelessEvent,
+    dpll_pin::DpllPin, ext_mask::VecLinkExtentMask, LinkEvent, LinkExtentMask,
+    LinkMode, LinkPhysId, LinkProtoInfoBridge, LinkProtoInfoInet6,
+    LinkProtocolDownReason, LinkXdp, Map, Prop, State, Stats, Stats64,
+    Stats64Buffer, StatsBuffer, WirelessEvent,
 };
 #[cfg(feature = "link-info")]
 use super::{link_info::VecLinkInfo, LinkInfo};
@@ -37,6 +22,8 @@ use super::{
     sriov::{VecLinkVfInfo, VecLinkVfPort},
     LinkVfInfo, LinkVfPort,
 };
+#[cfg(feature = "link-af-spec")]
+use super::{AfSpecBridge, AfSpecUnspec};
 use crate::AddressFamily;
 
 const IFLA_ADDRESS: u16 = 1;
@@ -370,11 +357,9 @@ impl Nla for LinkAttribute {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized>
-    ParseableParametrized<NlaBuffer<&'a T>, AddressFamily> for LinkAttribute
-{
+impl<'a> ParseableParametrized<NlaBuffer<'a>, AddressFamily> for LinkAttribute {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         interface_family: AddressFamily,
     ) -> Result<Self, DecodeError> {
         let payload = buf.value();
@@ -384,12 +369,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 let err = || format!("invalid IFLA_VFINFO_LIST {payload:?}");
                 if !payload.is_empty() {
                     Self::VfInfoList(
-                        VecLinkVfInfo::parse(
-                            &NlaBuffer::new_checked(payload)
-                                .with_context(err)?,
-                        )
-                        .with_context(err)?
-                        .0,
+                        VecLinkVfInfo::parse(buf).with_context(err)?.0,
                     )
                 } else {
                     // Empty IFLA_VFINFO_LIST, this is likely a netdevsim device
@@ -400,23 +380,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             #[cfg(feature = "link-sriov")]
             IFLA_VF_PORTS => {
                 let err = || format!("invalid IFLA_VF_PORTS {payload:?}");
-                Self::VfPorts(
-                    VecLinkVfPort::parse(
-                        &NlaBuffer::new_checked(payload).with_context(err)?,
-                    )
-                    .with_context(err)?
-                    .0,
-                )
+                Self::VfPorts(VecLinkVfPort::parse(buf).with_context(err)?.0)
             }
             #[cfg(feature = "link-sriov")]
             IFLA_PORT_SELF => {
                 let err = || format!("invalid IFLA_PORT_SELF {payload:?}");
-                Self::PortSelf(
-                    LinkVfPort::parse(
-                        &NlaBuffer::new_checked(payload).with_context(err)?,
-                    )
-                    .with_context(err)?,
-                )
+                Self::PortSelf(LinkVfPort::parse(buf).with_context(err)?)
             }
             IFLA_PHYS_PORT_ID => {
                 Self::PhysPortId(LinkPhysId::parse(payload).with_context(
@@ -434,12 +403,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 };
                 match interface_family {
                     AddressFamily::Inet6 => Self::ProtoInfoInet6(
-                        VecLinkProtoInfoInet6::parse(
-                            &NlaBuffer::new_checked(payload)
-                                .with_context(err)?,
-                        )
-                        .with_context(err)?
-                        .0,
+                        Vec::<LinkProtoInfoInet6>::parse(buf)
+                            .with_context(err)?,
                     ),
                     #[cfg(any(
                         target_os = "linux",
@@ -447,16 +412,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         target_os = "android"
                     ))]
                     AddressFamily::Bridge => Self::ProtoInfoBridge(
-                        VecLinkProtoInfoBridge::parse(&NlaBuffer::new_checked(
-                            payload,
-                        )?)
-                        .with_context(|| {
-                            format!(
-                                "invalid IFLA_PROTINFO for AF_BRIDGE \
-                                 {payload:?}"
-                            )
-                        })?
-                        .0,
+                        Vec::<LinkProtoInfoBridge>::parse(buf).with_context(
+                            || {
+                                format!(
+                                    "invalid IFLA_PROTINFO for AF_BRIDGE \
+                                     {payload:?}"
+                                )
+                            },
+                        )?,
                     ),
                     _ => Self::ProtoInfoUnknown(
                         DefaultNla::parse(buf).with_context(|| {
@@ -494,7 +457,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_PROP_LIST => {
                 let error_msg = "invalid IFLA_PROP_LIST value";
                 let mut nlas = vec![];
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(error_msg)?;
                     let parsed = Prop::parse(nla).context(error_msg)?;
                     nlas.push(parsed);
@@ -503,7 +466,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             }
             IFLA_PROTO_DOWN_REASON => {
                 let mut nlas = vec![];
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla =
                         &nla.context("invalid IFLA_PROTO_DOWN_REASON value")?;
                     let parsed = LinkProtocolDownReason::parse(nla)?;
@@ -645,9 +608,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 AddressFamily::Unspec => {
                     let err = "invalid IFLA_AF_SPEC value for AF_UNSPEC";
                     Self::AfSpecUnspec(
-                        VecAfSpecUnspec::parse(&NlaBuffer::new(&buf.value()))
-                            .context(err)?
-                            .0,
+                        Vec::<AfSpecUnspec>::parse(buf).context(err)?,
                     )
                 }
                 #[cfg(any(
@@ -658,12 +619,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 AddressFamily::Bridge => {
                     let err = "invalid IFLA_AF_SPEC value for AF_BRIDGE";
                     Self::AfSpecBridge(
-                        VecAfSpecBridge::parse(
-                            &NlaBuffer::new_checked(&buf.value())
-                                .context(err)?,
-                        )
-                        .context(err)?
-                        .0,
+                        Vec::<AfSpecBridge>::parse(buf).context(err)?,
                     )
                 }
                 _ => Self::AfSpecUnknown(payload.to_vec()),
@@ -671,18 +627,11 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             #[cfg(feature = "link-info")]
             IFLA_LINKINFO => {
                 let err = "invalid IFLA_LINKINFO value";
-                Self::LinkInfo(
-                    VecLinkInfo::parse(
-                        &NlaBuffer::new_checked(&buf.value()).context(err)?,
-                    )
-                    .context(err)?
-                    .0,
-                )
+                Self::LinkInfo(VecLinkInfo::parse(buf).context(err)?.0)
             }
             IFLA_XDP => {
                 let err = "invalid IFLA_XDP value";
-                let buf = NlaBuffer::new_checked(payload).context(err)?;
-                Self::Xdp(VecLinkXdp::parse(&buf).context(err)?.0)
+                Self::Xdp(Vec::<LinkXdp>::parse(buf).context(err)?)
             }
             IFLA_WIRELESS => Self::Wireless(
                 WirelessEvent::parse(payload)
@@ -727,7 +676,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_DEVLINK_PORT => {
                 let err = "invalid IFLA_DEVLINK_PORT value";
                 let mut nlas = vec![];
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     let parsed = DevlinkPort::parse(nla).context(err)?;
                     nlas.push(parsed);
@@ -737,7 +686,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_DPLL_PIN => {
                 let err = "invalid IFLA_DPLL_PIN value";
                 let mut nlas = vec![];
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     let parsed = DpllPin::parse(nla).context(err)?;
                     nlas.push(parsed);

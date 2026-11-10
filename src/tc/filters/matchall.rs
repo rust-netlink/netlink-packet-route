@@ -5,7 +5,7 @@
 /// Matches all packets and performs an action on them.
 use netlink_packet_core::{
     append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, EncodeError,
-    Nla, NlaBuffer, NlasIterator, Parseable,
+    Nla, NlaBuffer, Parseable,
 };
 use netlink_packet_core::{Emitable, ErrorContext};
 
@@ -56,10 +56,8 @@ impl Nla for TcFilterMatchAllOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcFilterMatchAllOption
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcFilterMatchAllOption {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_MATCHALL_CLASSID => Self::ClassId(
@@ -69,7 +67,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
             ),
             TCA_MATCHALL_ACT => {
                 let mut acts = vec![];
-                for act in NlasIterator::new(payload) {
+                for act in buf.nlas() {
                     let act = act.context("invalid TCA_MATCHALL_ACT")?;
                     acts.push(
                         TcAction::parse(&act)

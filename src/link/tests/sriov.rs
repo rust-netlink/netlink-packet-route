@@ -175,7 +175,7 @@ fn test_parsing_link_sriov() {
     assert_eq!(
         expected,
         LinkAttribute::parse_with_param(
-            &NlaBuffer::new(&raw),
+            &NlaBuffer::new(&raw).unwrap(),
             AddressFamily::Unspec
         )
         .unwrap(),
@@ -198,7 +198,7 @@ fn test_parsing_empty_link_sriov_vf_info() {
     assert_eq!(
         expected,
         LinkAttribute::parse_with_param(
-            &NlaBuffer::new_checked(&raw).unwrap(),
+            &NlaBuffer::new(&raw).unwrap(),
             AddressFamily::Unspec
         )
         .unwrap(),

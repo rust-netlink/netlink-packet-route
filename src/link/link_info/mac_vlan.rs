@@ -3,7 +3,7 @@
 use netlink_packet_core::{
     append_bytes, append_i32, append_u16, append_u32, parse_i32, parse_mac,
     parse_u16, parse_u32, DecodeError, DefaultNla, Emitable, EncodeError,
-    ErrorContext, Nla, NlaBuffer, NlasIterator, Parseable,
+    ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const IFLA_MACVLAN_MODE: u16 = 1;
@@ -65,8 +65,8 @@ impl Nla for InfoMacVlan {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoMacVlan {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_MACVLAN_MODE => Self::Mode(
@@ -90,7 +90,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVlan {
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
                 let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     let parsed = InfoMacVlan::parse(nla).context(err)?;
                     mac_data.push(parsed);
@@ -168,8 +168,8 @@ impl Nla for InfoMacVtap {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for InfoMacVtap {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_MACVLAN_MODE => Self::Mode(
@@ -193,7 +193,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for InfoMacVtap {
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
                 let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.context(err)?;
                     let parsed = InfoMacVtap::parse(nla).context(err)?;
                     mac_data.push(parsed);

@@ -96,10 +96,8 @@ impl Nla for TcActionTunnelKeyOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcActionTunnelKeyOption
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcActionTunnelKeyOption {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_TUNNEL_KEY_TM => Self::Tm(Tcf::parse(payload)?),

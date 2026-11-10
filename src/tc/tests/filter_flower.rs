@@ -1084,7 +1084,7 @@ fn test_parse_flower_indev() {
         0x74, 0x2d, 0x70, 0x65, 0x65, 0x72, 0x00, 0x00,
     ];
 
-    let buf = NlaBuffer::new_checked(&raw[..]).unwrap();
+    let buf = NlaBuffer::new(&raw[..]).unwrap();
     let expected = TcFilterFlowerOption::InDev("veth-test-peer".to_string());
     assert_eq!(TcFilterFlowerOption::parse(&buf).unwrap(), expected);
 

@@ -41,10 +41,8 @@ impl Nla for RouteMplsIpTunnel {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for RouteMplsIpTunnel
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for RouteMplsIpTunnel {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             MPLS_IPTUNNEL_DST => Self::Destination(

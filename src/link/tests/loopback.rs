@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
 use crate::link::{
-    af_spec::VecAfSpecUnspec, AfSpecInet, AfSpecInet6, AfSpecMctp,
-    AfSpecUnspec, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf,
+    AfSpecInet, AfSpecInet6, AfSpecMctp, AfSpecUnspec, Inet6CacheInfo,
+    Inet6DevConf, Inet6IfaceFlags, InetDevConf,
 };
 
 #[test]
@@ -175,10 +175,7 @@ fn test_link_loopback() {
         ]),
     ];
 
-    assert_eq!(
-        VecAfSpecUnspec::parse(&NlaBuffer::new(&raw)).unwrap().0,
-        expected
-    );
+    assert_eq!(Vec::<AfSpecUnspec>::parse(&raw[..]).unwrap(), expected);
     let mut buffer = Vec::new();
     expected.as_slice().emit(&mut buffer).unwrap();
     assert_eq!(buffer.as_slice(), raw);

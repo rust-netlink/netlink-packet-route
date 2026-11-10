@@ -226,11 +226,9 @@ impl Nla for Seg6Header {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for RouteSeg6IpTunnel
-{
+impl<'a> Parseable<NlaBuffer<'a>> for RouteSeg6IpTunnel {
     fn parse(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
     ) -> Result<Self, netlink_packet_core::DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {

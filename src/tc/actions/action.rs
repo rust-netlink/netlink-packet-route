@@ -4,8 +4,8 @@ use std::mem::size_of;
 
 use netlink_packet_core::{
     append_bytes, append_u32, parse_string, parse_u32, DecodeError, DefaultNla,
-    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, NlasIterator,
-    Parseable, ParseableParametrized, NLA_F_NESTED,
+    Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
+    ParseableParametrized, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
@@ -52,8 +52,8 @@ impl Nla for TcAction {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for TcAction {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcAction {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         // We need to find the `Kind` attribute before we can parse the others,
         // as kind is used in calls to parse_with_param for the other
         // attributes.
@@ -63,7 +63,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for TcAction {
         // `attributes` `Vec` (although it usually is).
         // As a result, we need to determine `Kind` first, then parse the rest
         // of the attributes.
-        let kind = match NlasIterator::new(buf.value())
+        let kind = match buf
+            .nlas()
             .filter_map(|nla| {
                 let nla = match nla {
                     Ok(nla) => nla,
@@ -95,7 +96,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for TcAction {
             Err(e) => return Err(DecodeError::from(e.to_string())),
         };
 
-        let attributes = NlasIterator::new(buf.value())
+        let attributes = buf
+            .nlas()
             .map(|nla| {
                 TcActionAttribute::parse_with_param(&nla?, kind.as_str())
             })
@@ -202,13 +204,12 @@ impl Nla for TcActionAttribute {
     }
 }
 
-impl<'a, T, P> ParseableParametrized<NlaBuffer<&'a T>, P> for TcActionAttribute
+impl<'a, P> ParseableParametrized<NlaBuffer<'a>, P> for TcActionAttribute
 where
-    T: AsRef<[u8]> + ?Sized,
     P: AsRef<str>,
 {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: P,
     ) -> Result<Self, DecodeError> {
         Ok(match buf.kind() {
@@ -220,7 +221,7 @@ where
                 )
             }
             TCA_ACT_OPTIONS => TcActionAttribute::Options(
-                NlasIterator::new(buf.value())
+                buf.nlas()
                     .map(|nla| {
                         let nla = nla.context("invalid TCA_ACT_OPTIONS")?;
                         TcActionOption::parse_with_param(&nla, kind.as_ref())
@@ -233,7 +234,7 @@ where
                     .context("failed to parse TCA_ACT_INDEX")?,
             ),
             TCA_ACT_STATS => TcActionAttribute::Stats(
-                NlasIterator::new(buf.value())
+                buf.nlas()
                     .map(|nla| {
                         let nla = nla.context("invalid TCA_ACT_STATS")?;
                         TcStats2::parse_with_param(&nla, kind.as_ref())
@@ -303,13 +304,12 @@ impl Nla for TcActionOption {
     }
 }
 
-impl<'a, T, S> ParseableParametrized<NlaBuffer<&'a T>, S> for TcActionOption
+impl<'a, S> ParseableParametrized<NlaBuffer<'a>, S> for TcActionOption
 where
-    T: AsRef<[u8]> + ?Sized,
     S: AsRef<str>,
 {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: S,
     ) -> Result<Self, DecodeError> {
         Ok(match kind.as_ref() {

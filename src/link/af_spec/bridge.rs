@@ -3,7 +3,7 @@
 use netlink_packet_core::{
     append_bytes, append_u16, append_u32, emit_u16, parse_u16, parse_u32,
     DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext, Nla,
-    NlaBuffer, NlasIterator, Parseable,
+    NlaBuffer, Parseable,
 };
 
 const IFLA_BRIDGE_FLAGS: u16 = 0;
@@ -49,8 +49,8 @@ impl Nla for AfSpecBridge {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for AfSpecBridge {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BRIDGE_FLAGS => Self::Flags(
@@ -69,7 +69,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
             ),
             IFLA_BRIDGE_VLAN_TUNNEL_INFO => {
                 let mut nlas = Vec::new();
-                for nla in NlasIterator::new(payload) {
+                for nla in buf.nlas() {
                     let nla = &nla.with_context(|| {
                         format!(
                             "Invalid IFLA_BRIDGE_VLAN_TUNNEL_INFO for \
@@ -86,24 +86,6 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>> for AfSpecBridge {
                     .with_context(|| format!("Unknown NLA type {kind}"))?,
             ),
         })
-    }
-}
-
-#[cfg(any(target_os = "linux", target_os = "fuchsia", target_os = "android"))]
-pub(crate) struct VecAfSpecBridge(pub(crate) Vec<AfSpecBridge>);
-
-#[cfg(any(target_os = "linux", target_os = "fuchsia", target_os = "android"))]
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for VecAfSpecBridge
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
-        let mut nlas = vec![];
-        let err = "Invalid AF_INET NLA for IFLA_AF_SPEC(AF_BRIDGE)";
-        for nla in NlasIterator::new(buf.into_inner()) {
-            let nla = nla.context(err)?;
-            nlas.push(AfSpecBridge::parse(&nla).context(err)?);
-        }
-        Ok(Self(nlas))
     }
 }
 
@@ -340,10 +322,8 @@ impl Nla for BridgeVlanTunnelInfo {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for BridgeVlanTunnelInfo
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for BridgeVlanTunnelInfo {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_BRIDGE_VLAN_TUNNEL_ID => {

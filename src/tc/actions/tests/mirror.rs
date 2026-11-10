@@ -119,7 +119,10 @@ fn get_mirred_eggress_redirect_action() {
         ],
     };
 
-    assert_eq!(expected, TcAction::parse(&NlaBuffer::new(&raw)).unwrap());
+    assert_eq!(
+        expected,
+        TcAction::parse(&NlaBuffer::new(&raw).unwrap()).unwrap()
+    );
 
     let mut buf = Vec::new();
 

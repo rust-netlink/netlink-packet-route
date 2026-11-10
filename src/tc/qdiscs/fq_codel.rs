@@ -296,10 +296,8 @@ impl Nla for TcQdiscFqCodelOption {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
-    for TcQdiscFqCodelOption
-{
-    fn parse(buf: &NlaBuffer<&'a T>) -> Result<Self, DecodeError> {
+impl<'a> Parseable<NlaBuffer<'a>> for TcQdiscFqCodelOption {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let payload = buf.value();
         Ok(match buf.kind() {
             TCA_FQ_CODEL_TARGET => Self::Target(

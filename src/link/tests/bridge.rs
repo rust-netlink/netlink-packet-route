@@ -7,16 +7,16 @@ use netlink_packet_core::{
 
 use crate::{
     link::{
-        af_spec::VecAfSpecBridge, link_flag::LinkFlags, AfSpecBridge,
-        AfSpecInet, AfSpecInet6, AfSpecUnspec, BridgeBooleanOptionFlags,
-        BridgeBooleanOptions, BridgeFlag, BridgeId, BridgeMode,
-        BridgeMulticastRouterType, BridgePortState, BridgeStpMode,
-        BridgeStpState, BridgeVlanInfo, BridgeVlanInfoFlags,
-        BridgeVlanTunnelInfo, In6AddrGenMode, Inet6CacheInfo, Inet6DevConf,
-        Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
-        InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader,
-        LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkProtoInfoBridge,
-        LinkXdp, Map, State, Stats, Stats64, VlanProtocol, XdpAttached,
+        link_flag::LinkFlags, AfSpecBridge, AfSpecInet, AfSpecInet6,
+        AfSpecUnspec, BridgeBooleanOptionFlags, BridgeBooleanOptions,
+        BridgeFlag, BridgeId, BridgeMode, BridgeMulticastRouterType,
+        BridgePortState, BridgeStpMode, BridgeStpState, BridgeVlanInfo,
+        BridgeVlanInfoFlags, BridgeVlanTunnelInfo, In6AddrGenMode,
+        Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoBridge,
+        InfoBridgePort, InfoData, InfoKind, InfoPortData, InfoPortKind,
+        LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
+        LinkMode, LinkProtoInfoBridge, LinkXdp, Map, State, Stats, Stats64,
+        VlanProtocol, XdpAttached,
     },
     AddressFamily,
 };
@@ -846,10 +846,7 @@ fn test_af_spec_bridge() {
         }),
     ];
 
-    assert_eq!(
-        VecAfSpecBridge::parse(&NlaBuffer::new(&raw)).unwrap().0,
-        expected
-    );
+    assert_eq!(Vec::<AfSpecBridge>::parse(&raw[..]).unwrap(), expected);
 }
 
 #[test]
@@ -974,10 +971,7 @@ fn test_af_spec_bridge_mode() {
         AfSpecBridge::Mode(BridgeMode::Vepa),
     ];
 
-    assert_eq!(
-        VecAfSpecBridge::parse(&NlaBuffer::new(&raw)).unwrap().0,
-        expected
-    );
+    assert_eq!(Vec::<AfSpecBridge>::parse(&raw[..]).unwrap(), expected);
 }
 
 // Wireshark capture of nlmon for kernel reply of command `bridge vlan
@@ -1025,10 +1019,7 @@ fn test_af_spec_bridge_vlan_tunnel_info() {
         ]),
     ];
 
-    assert_eq!(
-        VecAfSpecBridge::parse(&NlaBuffer::new(&raw)).unwrap().0,
-        expected
-    );
+    assert_eq!(Vec::<AfSpecBridge>::parse(&raw[..]).unwrap(), expected);
 }
 
 // The nlmon capture of command:
@@ -1243,7 +1234,7 @@ fn test_bridge_fdb_max_learned() {
     assert_eq!(
         expected,
         LinkAttribute::parse_with_param(
-            &NlaBuffer::new(raw.as_slice()),
+            &NlaBuffer::new(raw.as_slice()).unwrap(),
             AddressFamily::Unspec
         )
         .unwrap()

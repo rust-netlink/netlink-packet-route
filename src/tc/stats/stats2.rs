@@ -48,12 +48,9 @@ impl Nla for TcStats2 {
     }
 }
 
-impl<'a, T> ParseableParametrized<NlaBuffer<&'a T>, &str> for TcStats2
-where
-    T: AsRef<[u8]> + ?Sized,
-{
+impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcStats2 {
     fn parse_with_param(
-        buf: &NlaBuffer<&'a T>,
+        buf: &NlaBuffer<'a>,
         kind: &str,
     ) -> Result<Self, DecodeError> {
         let payload = buf.value();
