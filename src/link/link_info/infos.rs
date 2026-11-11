@@ -110,8 +110,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for VecLinkInfo {
         let mut nlas = Vec::new();
         let mut link_info_kind: Option<InfoKind> = None;
         let mut link_info_port_kind: Option<InfoPortKind> = None;
-        for nla in buf.nlas() {
-            let nla = nla?;
+        for nla in buf.nlas()? {
             match nla.kind() {
                 IFLA_INFO_XSTATS => {
                     if let Some(link_info_kind) = &link_info_kind {

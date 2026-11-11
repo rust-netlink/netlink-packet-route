@@ -49,10 +49,9 @@ impl Nla for LinkVfInfo {
 impl<'a> Parseable<NlaBuffer<'a>> for LinkVfInfo {
     fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
-        for nla in buf.nlas() {
-            let nla = nla.with_context(|| {
-                format!("invalid IFLA_VF_INFO value {:?}", buf.value())
-            })?;
+        for nla in buf.nlas().with_context(|| {
+            format!("invalid IFLA_VF_INFO value {:?}", buf.value())
+        })? {
             nlas.push(VfInfo::parse(&nla)?);
         }
         Ok(Self(nlas))
@@ -194,29 +193,22 @@ impl<'a> Parseable<NlaBuffer<'a>> for VfInfo {
             }
             IFLA_VF_VLAN_LIST => {
                 let mut nlas: Vec<VfVlan> = Vec::new();
-                for nla in buf.nlas() {
-                    let nla = &nla.with_context(|| {
-                        format!(
-                            "invalid IFLA_VF_VLAN_LIST value: {:?}",
-                            buf.value()
-                        )
-                    })?;
-
-                    nlas.push(VfVlan::parse(nla)?);
+                for nla in buf.nlas().with_context(|| {
+                    format!(
+                        "invalid IFLA_VF_VLAN_LIST value: {:?}",
+                        buf.value()
+                    )
+                })? {
+                    nlas.push(VfVlan::parse(&nla)?);
                 }
                 Self::VlanList(nlas)
             }
             IFLA_VF_STATS => {
                 let mut nlas: Vec<VfStats> = Vec::new();
-                for nla in buf.nlas() {
-                    let nla = &nla.with_context(|| {
-                        format!(
-                            "invalid IFLA_VF_STATS value: {:?}",
-                            buf.value()
-                        )
-                    })?;
-
-                    nlas.push(VfStats::parse(nla)?);
+                for nla in buf.nlas().with_context(|| {
+                    format!("invalid IFLA_VF_STATS value: {:?}", buf.value())
+                })? {
+                    nlas.push(VfStats::parse(&nla)?);
                 }
                 Self::Stats(nlas)
             }

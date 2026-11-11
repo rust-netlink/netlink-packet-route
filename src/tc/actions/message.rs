@@ -153,8 +153,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcActionMessageAttribute {
         Ok(match buf.kind() {
             TCA_ACT_TAB => {
                 let actions = buf
-                    .nlas()
-                    .map(|nla| TcAction::parse(&nla?))
+                    .nlas()?
+                    .map(|nla| TcAction::parse(&nla))
                     .collect::<Result<Vec<_>, _>>()?;
                 Self::Actions(actions)
             }

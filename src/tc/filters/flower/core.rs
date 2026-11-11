@@ -479,8 +479,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcFilterFlowerOption {
             ),
             TCA_FLOWER_ACT => {
                 let mut acts = vec![];
-                for act in buf.nlas() {
-                    let act = act.context("invalid TCA_FLOWER_ACT")?;
+                for act in buf.nlas().context(nla_err!(TCA_FLOWER_ACT))? {
                     acts.push(
                         TcAction::parse(&act)
                             .context(nla_err!(TCA_FLOWER_ACT))?,
@@ -849,9 +848,9 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcFilterFlowerOption {
             ),
             TCA_FLOWER_KEY_MPLS_OPTS => {
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla =
-                        nla.context("invalid TCA_FLOWER_KEY_MPLS_OPTS nla")?;
+                for nla in
+                    buf.nlas().context(nla_err!(TCA_FLOWER_KEY_MPLS_OPTS))?
+                {
                     nlas.push(
                         TcFilterFlowerMplsOption::parse(&nla)
                             .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPTS))?,

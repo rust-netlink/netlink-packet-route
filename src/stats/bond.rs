@@ -146,16 +146,14 @@ pub(crate) fn parse_bond_xstats(
     buf: &NlaBuffer<'_>,
 ) -> Result<Vec<BondXstat>, DecodeError> {
     let mut result = Vec::new();
-    for nla in buf.nlas() {
-        let nla = nla.context("invalid NLA in bond xstats")?;
+    for nla in buf.nlas().context("invalid NLA in bond xstats")? {
         let kind = nla.kind();
         result.push(match kind {
             BOND_XSTATS_3AD => {
                 let mut stats = Vec::new();
                 let err = "failed to parse BOND_XSTATS_3AD ";
-                for nla in nla.nlas() {
-                    let nla = &nla.context(err)?;
-                    let parsed = Bond3adStats::parse(nla).context(err)?;
+                for nla in nla.nlas().context(err)? {
+                    let parsed = Bond3adStats::parse(&nla).context(err)?;
                     stats.push(parsed);
                 }
                 BondXstat::ThreeAd(stats)

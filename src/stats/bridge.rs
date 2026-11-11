@@ -27,8 +27,7 @@ pub(crate) fn parse_bridge_xstats(
     buf: &NlaBuffer<'_>,
 ) -> Result<Vec<BridgeXstat>, DecodeError> {
     let mut result = Vec::new();
-    for nla in buf.nlas() {
-        let nla = nla.context("invalid NLA in bridge xstats")?;
+    for nla in buf.nlas().context("invalid NLA in bridge xstats")? {
         let kind = nla.kind();
         let val = nla.value();
         result.push(match kind {

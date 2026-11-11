@@ -360,15 +360,12 @@ impl ParseableParametrized<[u8], (AddressFamily, RouteType)>
         let mut encap_type = RouteLwEnCapType::None;
         // The RTA_ENCAP_TYPE is provided __after__ RTA_ENCAP, we should find
         // RTA_ENCAP_TYPE first.
-        for nla_buf in NlasIterator::new(buf) {
-            let nla = match nla_buf {
-                Ok(n) => n,
-                Err(_) => continue,
-            };
+        let nlas = NlasIterator::new(buf)?.collect::<Vec<_>>();
+        for nla in &nlas {
             if nla.kind() == RTA_ENCAP_TYPE {
                 if let Ok(RouteAttribute::EncapType(v)) =
                     RouteAttribute::parse_with_param(
-                        &nla,
+                        nla,
                         (address_family, route_type, encap_type),
                     )
                 {
@@ -378,9 +375,9 @@ impl ParseableParametrized<[u8], (AddressFamily, RouteType)>
             }
         }
         let mut attributes = vec![];
-        for nla_buf in NlasIterator::new(buf) {
+        for nla in &nlas {
             attributes.push(RouteAttribute::parse_with_param(
-                &nla_buf?,
+                nla,
                 (address_family, route_type, encap_type),
             )?);
         }
@@ -400,9 +397,9 @@ impl ParseableParametrized<[u8], (AddressFamily, RouteType, RouteLwEnCapType)>
         ),
     ) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
-        for nla_buf in NlasIterator::new(buf) {
+        for nla_buf in NlasIterator::new(buf)? {
             nlas.push(RouteAttribute::parse_with_param(
-                &nla_buf?,
+                &nla_buf,
                 (address_family, route_type, encap_type),
             )?);
         }

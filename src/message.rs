@@ -859,11 +859,10 @@ impl ::netlink_packet_core::NetlinkMessagePayload for RouteNetlinkMessage {
 }
 
 impl NetlinkDeserializable for RouteNetlinkMessage {
-    type Error = DecodeError;
     fn deserialize(
         header: &NetlinkHeader,
         payload: &[u8],
-    ) -> Result<Self, Self::Error> {
+    ) -> Result<Self, DecodeError> {
         RouteNetlinkMessage::parse_with_param(payload, header.message_type)
     }
 }

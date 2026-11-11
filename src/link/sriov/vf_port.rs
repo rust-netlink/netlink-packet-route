@@ -42,10 +42,9 @@ impl Nla for LinkVfPort {
 impl<'a> Parseable<NlaBuffer<'a>> for LinkVfPort {
     fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
         let mut nlas = vec![];
-        for nla in buf.nlas() {
-            let nla = nla.with_context(|| {
-                format!("invalid IFLA_VF_PORT value {:?}", buf.value())
-            })?;
+        for nla in buf.nlas().with_context(|| {
+            format!("invalid IFLA_VF_PORT value {:?}", buf.value())
+        })? {
             nlas.push(VfPort::parse(&nla)?);
         }
         Ok(Self(nlas))

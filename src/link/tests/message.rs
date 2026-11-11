@@ -75,11 +75,11 @@ fn link_message_packet_header_build() {
 
 #[test]
 fn link_mssage_packet_attributes_read() {
-    assert_eq!(NlasIterator::new(&LINK_MSG[16..]).count(), 10);
-    let mut attributes = NlasIterator::new(&LINK_MSG[16..]);
+    assert_eq!(NlasIterator::new(&LINK_MSG[16..]).unwrap().count(), 10);
+    let mut attributes = NlasIterator::new(&LINK_MSG[16..]).unwrap();
 
     // device name L=7,T=3,V=lo
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 7);
     assert_eq!(nla.kind(), 3);
     assert_eq!(nla.value(), &[0x6c, 0x6f, 0x00]);
@@ -88,7 +88,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(parsed, LinkAttribute::IfName(String::from("lo")));
 
     // TxQueue length L=8,T=13,V=1000
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 13);
     assert_eq!(nla.value(), &[0xe8, 0x03, 0x00, 0x00]);
@@ -97,7 +97,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(parsed, LinkAttribute::TxQueueLen(1000));
 
     // OperState L=5,T=16,V=0 (unknown)
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 5);
     assert_eq!(nla.kind(), 16);
     assert_eq!(nla.value(), &[0x00]);
@@ -106,7 +106,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(parsed, LinkAttribute::OperState(State::Unknown));
 
     // Link mode L=5,T=17,V=0
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 5);
     assert_eq!(nla.kind(), 17);
     assert_eq!(nla.value(), &[0x00]);
@@ -115,7 +115,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(parsed, LinkAttribute::Mode(LinkMode::Default));
 
     // MTU L=8,T=4,V=65536
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 4);
     assert_eq!(nla.value(), &[0x00, 0x00, 0x01, 0x00]);
@@ -125,7 +125,7 @@ fn link_mssage_packet_attributes_read() {
 
     // 0x00, 0x00, 0x00, 0x00,
     // Group L=8,T=27,V=9
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 27);
     assert_eq!(nla.value(), &[0x00, 0x00, 0x00, 0x00]);
@@ -134,7 +134,7 @@ fn link_mssage_packet_attributes_read() {
     assert_eq!(parsed, LinkAttribute::Group(0));
 
     // Promiscuity L=8,T=30,V=0
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 30);
     assert_eq!(nla.value(), &[0x00, 0x00, 0x00, 0x00]);
@@ -144,7 +144,7 @@ fn link_mssage_packet_attributes_read() {
 
     // Number of Tx Queues L=8,T=31,V=1
     // 0x01, 0x00, 0x00, 0x00
-    let nla = attributes.next().unwrap().unwrap();
+    let nla = attributes.next().unwrap();
     assert_eq!(nla.length(), 8);
     assert_eq!(nla.kind(), 31);
     assert_eq!(nla.value(), &[0x01, 0x00, 0x00, 0x00]);

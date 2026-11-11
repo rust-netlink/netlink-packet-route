@@ -69,14 +69,12 @@ impl<'a> Parseable<NlaBuffer<'a>> for AfSpecBridge {
             ),
             IFLA_BRIDGE_VLAN_TUNNEL_INFO => {
                 let mut nlas = Vec::new();
-                for nla in buf.nlas() {
-                    let nla = &nla.with_context(|| {
-                        format!(
-                            "Invalid IFLA_BRIDGE_VLAN_TUNNEL_INFO for \
-                             {payload:?}"
-                        )
-                    })?;
-                    let parsed = BridgeVlanTunnelInfo::parse(nla)?;
+                for nla in buf.nlas().with_context(|| {
+                    format!(
+                        "Invalid IFLA_BRIDGE_VLAN_TUNNEL_INFO for {payload:?}"
+                    )
+                })? {
+                    let parsed = BridgeVlanTunnelInfo::parse(&nla)?;
                     nlas.push(parsed);
                 }
                 Self::VlanTunnelInfo(nlas)

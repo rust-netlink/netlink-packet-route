@@ -110,10 +110,9 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for VecTcOption {
             | TcQdiscFqCodel::KIND
             | TcFilterBpf::KIND => {
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla = nla.with_context(|| {
-                        format!("Invalid TCA_OPTIONS for kind: {kind}")
-                    })?;
+                for nla in buf.nlas().with_context(|| {
+                    format!("Invalid TCA_OPTIONS for kind: {kind}")
+                })? {
                     nlas.push(
                         TcOption::parse_with_param(&nla, kind).with_context(
                             || {

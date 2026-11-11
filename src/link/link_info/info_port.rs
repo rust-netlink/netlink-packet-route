@@ -121,23 +121,23 @@ impl InfoPortData {
         let payload = buf.value();
         let port_data = match kind {
             InfoPortKind::Bond => buf
-                .nlas()
-                .map(|nla| nla.and_then(|nla| InfoBondPort::parse(&nla)))
+                .nlas()?
+                .map(|nla| InfoBondPort::parse(&nla))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BondPort),
             InfoPortKind::Bridge => buf
-                .nlas()
-                .map(|nla| nla.and_then(|nla| InfoBridgePort::parse(&nla)))
+                .nlas()?
+                .map(|nla| InfoBridgePort::parse(&nla))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::BridgePort),
             InfoPortKind::Vrf => buf
-                .nlas()
-                .map(|nla| nla.and_then(|nla| InfoVrfPort::parse(&nla)))
+                .nlas()?
+                .map(|nla| InfoVrfPort::parse(&nla))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::VrfPort),
             InfoPortKind::Team => buf
-                .nlas()
-                .map(|nla| nla.and_then(|nla| InfoTeamPort::parse(&nla)))
+                .nlas()?
+                .map(|nla| InfoTeamPort::parse(&nla))
                 .collect::<Result<Vec<_>, _>>()
                 .map(InfoPortData::TeamPort),
             InfoPortKind::Other(_) => Ok(InfoPortData::Other(payload.to_vec())),

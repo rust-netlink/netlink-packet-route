@@ -136,8 +136,7 @@ fn parse_mappings(
     buf: &NlaBuffer<'_>,
 ) -> Result<Vec<VlanQosMapping>, DecodeError> {
     let mut mappings = Vec::new();
-    for nla in buf.nlas() {
-        let nla = nla?;
+    for nla in buf.nlas()? {
         let parsed = VlanQosMapping::parse(&nla)?;
         mappings.push(parsed);
     }

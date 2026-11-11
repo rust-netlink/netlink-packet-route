@@ -537,8 +537,7 @@ fn parse_tunnel_opts(
     buf: &NlaBuffer<'_>,
 ) -> Result<Vec<RouteLwTunnelOpt>, DecodeError> {
     let mut opts = Vec::new();
-    for nla in buf.nlas() {
-        let nla = nla.context("Invalid LWTUNNEL_IP_OPTS value")?;
+    for nla in buf.nlas().context("Invalid LWTUNNEL_IP_OPTS value")? {
         opts.push(
             RouteLwTunnelOpt::parse(&nla)
                 .context("Invalid LWTUNNEL_IP_OPTS value")?,

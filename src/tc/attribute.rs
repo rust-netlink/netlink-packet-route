@@ -113,8 +113,7 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcAttribute {
             TCA_FCNT => TcAttribute::Fcnt(payload.to_vec()),
             TCA_STATS2 => {
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla = nla.context("invalid TCA_STATS2")?;
+                for nla in buf.nlas().context("invalid TCA_STATS2")? {
                     let stats = TcStats2::parse_with_param(&nla, kind)
                         .with_context(|| {
                             format!(
@@ -147,9 +146,9 @@ impl Parseable<[u8]> for VecTcAttribute {
         let mut attributes = vec![];
         let mut kind = String::new();
 
-        for nla_buf in NlasIterator::new(buf) {
+        for nla_buf in NlasIterator::new(buf)? {
             let attribute =
-                TcAttribute::parse_with_param(&nla_buf?, kind.as_str())?;
+                TcAttribute::parse_with_param(&nla_buf, kind.as_str())?;
             if let TcAttribute::Kind(s) = &attribute {
                 kind = s.to_string();
             }
