@@ -559,6 +559,10 @@ pub struct BridgeIdBuffer {
 }
 
 impl BridgeId {
+    pub const fn new(priority: u16, address: [u8; 6]) -> Self {
+        Self { priority, address }
+    }
+
     pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         let (raw, _) =
             BridgeIdBuffer::ref_from_prefix(payload).map_err(|_| {

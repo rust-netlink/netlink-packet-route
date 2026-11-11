@@ -56,10 +56,7 @@ fn test_ipv4_route_realm() {
                 Ipv4Addr::from_str("192.0.2.1").unwrap().into(),
             ),
             RouteAttribute::Oif(1),
-            RouteAttribute::Realm(RouteRealm {
-                source: 250,
-                destination: 254,
-            }),
+            RouteAttribute::Realm(RouteRealm::new(250, 254)),
             RouteAttribute::PrefSource(
                 Ipv4Addr::from_str("172.17.2.12").unwrap().into(),
             ),

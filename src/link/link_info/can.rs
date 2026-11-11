@@ -234,6 +234,10 @@ impl Emitable for CanBerrCounter {
 }
 
 impl CanBerrCounter {
+    pub const fn new(txerr: u16, rxerr: u16) -> Self {
+        Self { txerr, rxerr }
+    }
+
     fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         if payload.len() < CAN_BERR_COUNTER_LEN {
             return Err(
@@ -624,5 +628,19 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoCan {
                 format!("unknown NLA type {kind} for IFLA_INFO_DATA(can)")
             })?),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_can_berr_counter_round_trip() {
+        let counter = CanBerrCounter::new(3, 7);
+        let mut buf = Vec::new();
+        counter.emit_value(&mut buf).unwrap();
+        assert_eq!(buf, [3, 0, 7, 0]);
+        assert_eq!(CanBerrCounter::parse(&buf).unwrap(), counter);
     }
 }

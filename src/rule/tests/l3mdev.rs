@@ -82,10 +82,7 @@ fn test_ipv6_l3mdev_uid() {
             RuleAttribute::Protocol(RouteProtocol::Unspec),
             RuleAttribute::Priority(2999),
             RuleAttribute::L3MDev(true),
-            RuleAttribute::UidRange(RuleUidRange {
-                start: 1000,
-                end: 1999,
-            }),
+            RuleAttribute::UidRange(RuleUidRange::new(1000, 1999)),
         ],
     };
     assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
