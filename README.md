@@ -7,12 +7,15 @@ this crate is saving netlink user from reading Kernel Netlink codes.
 This crate grouped Netlink route protocol into these modules:
  * `link`: NIC interface, similar to `ip link` command.
  * `address`: IP address, similar to `ip address` command.
+ * `addrlabel`: Address label, similar to `ip addrlabel` command.
  * `route`: Route, similar to `ip route` command.
  * `rule`: Route rule, similar to `ip rule` command.
  * `tc`: Traffic control, similar to `tc` command.
  * `neighbour`: Neighbour, similar to `ip neighbour` command.
  * `neighbour_table`: Neighbour table, similar to `ip ntable` command.
  * `nsid`: Namespace, similar to `ip netns` command.
+ * `prefix`: Prefix, similar to `ip prefix` command.
+ * `stats`: Interface statistics.
 
 Normally, you should use [`rtnetlink`][rtnetlink_url] instead of using this
 crate directly.

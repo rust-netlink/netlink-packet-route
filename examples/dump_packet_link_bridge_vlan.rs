@@ -44,20 +44,8 @@ fn main() {
 
         loop {
             let bytes = &receive_buffer[offset..];
-            // Note that we're parsing a NetlinkBuffer<&&[u8]>, NOT a
-            // NetlinkBuffer<&[u8]> here. This is important because
-            // Parseable<NetlinkMessage> is only implemented for
-            // NetlinkBuffer<&'a T>, where T implements AsRef<[u8] + 'a. This is
-            // not particularly user friendly, but this is a low
-            // level library anyway.
-            //
-            // Note also that the same could be written more explicitly with:
-            //
-            // let rx_packet =
-            //     <NetlinkBuffer<_> as
-            // Parseable<NetlinkMessage>>::parse(NetlinkBuffer::new(&bytes))
-            //         .unwrap();
-            //
+            // `NetlinkMessage::deserialize` validates the netlink header and
+            // decodes the payload according to the message type.
             let rx_packet: NetlinkMessage<RouteNetlinkMessage> =
                 NetlinkMessage::deserialize(bytes).unwrap();
 

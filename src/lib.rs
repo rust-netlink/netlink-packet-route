@@ -14,6 +14,8 @@
 //!  * `neighbour`: Neighbour, similar to `ip neighbour` command.
 //!  * `neighbour_table`: Neighbour table, similar to `ip ntable` command.
 //!  * `nsid`: Namespace, similar to `ip netns` command.
+//!  * `prefix`: Prefix, similar to `ip prefix` command.
+//!  * `stats`: Interface statistics.
 //!
 //! At the top level of this crate, we also provide:
 //!  * [AddressFamily]
@@ -90,9 +92,8 @@ pub use self::address_family_freebsd::AddressFamily;
     target_os = "android",
 )))]
 mod address_family_fallback;
-// Re-export `EthernetProtocol` from `netlink-packet-core` 0.8.2 so that
-// `netlink_packet_route::EthernetProtocol` stays available (previously
-// defined locally in `mac` module).
+// Re-export `EthernetProtocol` from `netlink-packet-core` so that
+// `netlink_packet_route::EthernetProtocol` stays available.
 pub use netlink_packet_core::EthernetProtocol;
 
 #[cfg(not(any(
