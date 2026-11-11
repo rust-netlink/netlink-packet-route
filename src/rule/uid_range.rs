@@ -12,6 +12,10 @@ pub struct RuleUidRange {
 }
 
 impl RuleUidRange {
+    pub const fn new(start: u32, end: u32) -> Self {
+        Self { start, end }
+    }
+
     pub(crate) fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         if buf.len() == RULE_UID_RANGE_LEN {
             Ok(Self {

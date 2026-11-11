@@ -12,6 +12,10 @@ pub struct RulePortRange {
 }
 
 impl RulePortRange {
+    pub const fn new(start: u16, end: u16) -> Self {
+        Self { start, end }
+    }
+
     pub(crate) fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         if buf.len() == RULE_PORT_RANGE_LEN {
             Ok(Self {

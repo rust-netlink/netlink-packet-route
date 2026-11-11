@@ -264,14 +264,14 @@ fn test_parse_link_bridge_no_extention_mask() {
                     InfoBridge::Priority(32768),
                     InfoBridge::VlanFiltering(false),
                     InfoBridge::GroupFwdMask(0),
-                    InfoBridge::BridgeId(BridgeId {
-                        priority: 0x8000,
-                        address: [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
-                    }),
-                    InfoBridge::RootId(BridgeId {
-                        priority: 0x8000,
-                        address: [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
-                    }),
+                    InfoBridge::BridgeId(BridgeId::new(
+                        0x8000,
+                        [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
+                    )),
+                    InfoBridge::RootId(BridgeId::new(
+                        0x8000,
+                        [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
+                    )),
                     InfoBridge::RootPort(0),
                     InfoBridge::RootPathCost(0),
                     InfoBridge::TopologyChange(0),
@@ -601,14 +601,14 @@ fn test_parse_link_bridge_stp_mode() {
                     InfoBridge::Priority(32768),
                     InfoBridge::VlanFiltering(false),
                     InfoBridge::GroupFwdMask(0),
-                    InfoBridge::BridgeId(BridgeId {
-                        priority: 32768,
-                        address: [0, 0, 0, 0, 0, 0],
-                    }),
-                    InfoBridge::RootId(BridgeId {
-                        priority: 32768,
-                        address: [0, 0, 0, 0, 0, 0],
-                    }),
+                    InfoBridge::BridgeId(BridgeId::new(
+                        32768,
+                        [0, 0, 0, 0, 0, 0],
+                    )),
+                    InfoBridge::RootId(BridgeId::new(
+                        32768,
+                        [0, 0, 0, 0, 0, 0],
+                    )),
                     InfoBridge::RootPort(0),
                     InfoBridge::RootPathCost(0),
                     InfoBridge::TopologyChange(0),
@@ -911,14 +911,14 @@ fn test_bridge_port_link_info() {
                 InfoBridgePort::BroadcastFlood(true),
                 InfoBridgePort::ProxyARP(false),
                 InfoBridgePort::ProxyARPWifi(false),
-                InfoBridgePort::RootId(BridgeId {
-                    priority: 0x8000,
-                    address: [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
-                }),
-                InfoBridgePort::BridgeId(BridgeId {
-                    priority: 0x8000,
-                    address: [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
-                }),
+                InfoBridgePort::RootId(BridgeId::new(
+                    0x8000,
+                    [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
+                )),
+                InfoBridgePort::BridgeId(BridgeId::new(
+                    0x8000,
+                    [0x52, 0x54, 0x00, 0xde, 0x0d, 0x2e],
+                )),
                 InfoBridgePort::DesignatedPort(32769),
                 InfoBridgePort::DesignatedCost(0),
                 InfoBridgePort::PortId(32769),
@@ -1183,14 +1183,14 @@ fn test_bridge_fdb_max_learned() {
             InfoBridge::Priority(32768),
             InfoBridge::VlanFiltering(false),
             InfoBridge::GroupFwdMask(0),
-            InfoBridge::BridgeId(BridgeId {
-                priority: 0x8000,
-                address: [0xde, 0x16, 0x13, 0xf1, 0xe3, 0x12],
-            }),
-            InfoBridge::RootId(BridgeId {
-                priority: 0x8000,
-                address: [0xde, 0x16, 0x13, 0xf1, 0xe3, 0x12],
-            }),
+            InfoBridge::BridgeId(BridgeId::new(
+                0x8000,
+                [0xde, 0x16, 0x13, 0xf1, 0xe3, 0x12],
+            )),
+            InfoBridge::RootId(BridgeId::new(
+                0x8000,
+                [0xde, 0x16, 0x13, 0xf1, 0xe3, 0x12],
+            )),
             InfoBridge::RootPort(0),
             InfoBridge::RootPathCost(0),
             InfoBridge::TopologyChange(0),
@@ -1414,14 +1414,14 @@ fn test_bridge_netns_immutable() {
                     InfoBridge::Priority(32768),
                     InfoBridge::VlanFiltering(false),
                     InfoBridge::GroupFwdMask(0),
-                    InfoBridge::BridgeId(BridgeId {
-                        priority: 32768,
-                        address: [82, 84, 0, 176, 82, 209],
-                    }),
-                    InfoBridge::RootId(BridgeId {
-                        priority: 32768,
-                        address: [82, 84, 0, 176, 82, 209],
-                    }),
+                    InfoBridge::BridgeId(BridgeId::new(
+                        32768,
+                        [82, 84, 0, 176, 82, 209],
+                    )),
+                    InfoBridge::RootId(BridgeId::new(
+                        32768,
+                        [82, 84, 0, 176, 82, 209],
+                    )),
                     InfoBridge::RootPort(0),
                     InfoBridge::RootPathCost(0),
                     InfoBridge::TopologyChange(0),

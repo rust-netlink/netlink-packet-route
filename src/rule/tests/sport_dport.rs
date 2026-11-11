@@ -41,19 +41,10 @@ fn test_ipv4_tcp_sport_dport_realm() {
             RuleAttribute::SuppressPrefixLen(0xffffffff),
             RuleAttribute::Protocol(RouteProtocol::Unspec),
             RuleAttribute::Priority(1009),
-            RuleAttribute::SourcePortRange(RulePortRange {
-                start: 80,
-                end: 80,
-            }),
-            RuleAttribute::DestinationPortRange(RulePortRange {
-                start: 8080,
-                end: 8080,
-            }),
+            RuleAttribute::SourcePortRange(RulePortRange::new(80, 80)),
+            RuleAttribute::DestinationPortRange(RulePortRange::new(8080, 8080)),
             RuleAttribute::IpProtocol(IpProtocol::Tcp),
-            RuleAttribute::Realm(RouteRealm {
-                source: 0,
-                destination: 199,
-            }),
+            RuleAttribute::Realm(RouteRealm::new(0, 199)),
         ],
     };
     assert_eq!(expected, RuleMessage::parse(&raw).unwrap());
@@ -97,19 +88,10 @@ fn test_ipv4_udp_sport_range_dport_range_reals_src_dst() {
             RuleAttribute::SuppressPrefixLen(0xffffffff),
             RuleAttribute::Protocol(RouteProtocol::Unspec),
             RuleAttribute::Priority(1020),
-            RuleAttribute::SourcePortRange(RulePortRange {
-                start: 80,
-                end: 8080,
-            }),
-            RuleAttribute::DestinationPortRange(RulePortRange {
-                start: 8080,
-                end: 9090,
-            }),
+            RuleAttribute::SourcePortRange(RulePortRange::new(80, 8080)),
+            RuleAttribute::DestinationPortRange(RulePortRange::new(8080, 9090)),
             RuleAttribute::IpProtocol(IpProtocol::Udp),
-            RuleAttribute::Realm(RouteRealm {
-                source: 199,
-                destination: 200,
-            }),
+            RuleAttribute::Realm(RouteRealm::new(199, 200)),
         ],
     };
     assert_eq!(expected, RuleMessage::parse(&raw).unwrap());

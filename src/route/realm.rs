@@ -12,6 +12,13 @@ pub struct RouteRealm {
 }
 
 impl RouteRealm {
+    pub const fn new(source: u16, destination: u16) -> Self {
+        Self {
+            source,
+            destination,
+        }
+    }
+
     pub(crate) fn parse(buf: &[u8]) -> Result<Self, DecodeError> {
         if buf.len() == RULE_REALM_LEN {
             let all = u32::from_ne_bytes([buf[0], buf[1], buf[2], buf[3]]);
