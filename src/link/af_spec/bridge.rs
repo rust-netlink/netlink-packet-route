@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    append_bytes, append_u16, append_u32, emit_u16, parse_u16, parse_u32,
-    DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext, Nla,
-    NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u32, parse_u16, parse_u32, DecodeError,
+    DefaultNla, Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
 const IFLA_BRIDGE_FLAGS: u16 = 0;
 const IFLA_BRIDGE_MODE: u16 = 1;
@@ -131,11 +131,33 @@ impl BridgeVlanInfo {
     pub const LENGTH: usize = 4;
 }
 
+#[derive(
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    FromBytes,
+    IntoBytes,
+    KnownLayout,
+    Immutable,
+    Unaligned,
+)]
+#[repr(C, packed)]
+pub struct BridgeVlanInfoBuffer {
+    flags: u16,
+    vid: u16,
+}
+
 impl From<&BridgeVlanInfo> for [u8; 4] {
     fn from(d: &BridgeVlanInfo) -> Self {
         let mut ret = [0u8; 4];
-        emit_u16(&mut ret[0..2], d.flags.bits()).unwrap();
-        emit_u16(&mut ret[2..4], d.vid).unwrap();
+        ret.copy_from_slice(
+            BridgeVlanInfoBuffer {
+                flags: d.flags.bits(),
+                vid: d.vid,
+            }
+            .as_bytes(),
+        );
         ret
     }
 }
@@ -143,23 +165,16 @@ impl From<&BridgeVlanInfo> for [u8; 4] {
 impl TryFrom<&[u8]> for BridgeVlanInfo {
     type Error = DecodeError;
     fn try_from(raw: &[u8]) -> Result<Self, DecodeError> {
-        if raw.len() == 4 {
-            Ok(Self {
-                flags: BridgeVlanInfoFlags::from_bits_retain(
-                    parse_u16(&raw[0..2]).with_context(|| {
-                        format!("Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}")
-                    })?,
-                ),
-                vid: parse_u16(&raw[2..4]).with_context(|| {
-                    format!("Invalid IFLA_BRIDGE_VLAN_INFO value: {raw:?}")
-                })?,
-            })
-        } else {
-            Err(DecodeError::from(format!(
+        let buf = BridgeVlanInfoBuffer::ref_from_bytes(raw).map_err(|_| {
+            DecodeError::from(format!(
                 "Invalid IFLA_BRIDGE_VLAN_INFO value, expecting [u8;4], but \
                  got {raw:?}"
-            )))
-        }
+            ))
+        })?;
+        Ok(Self {
+            flags: BridgeVlanInfoFlags::from_bits_retain(buf.flags),
+            vid: buf.vid,
+        })
     }
 }
 
