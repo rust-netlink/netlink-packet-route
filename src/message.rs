@@ -852,7 +852,7 @@ impl ::netlink_packet_core::Emitable for RouteNetlinkMessage {
     }
 }
 
-impl ::netlink_packet_core::NetlinkSerializable for RouteNetlinkMessage {
+impl ::netlink_packet_core::NetlinkMessagePayload for RouteNetlinkMessage {
     fn message_type(&self) -> u16 {
         self.message_type()
     }
