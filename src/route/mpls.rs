@@ -73,6 +73,7 @@ const MPLS_LS_TTL_MASK: u32 = 0x000000FF;
 const MPLS_LS_TTL_SHIFT: u32 = 0;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 /// MPLS label defined in RFC 3032 and updated by RFC 5462
 pub struct MplsLabel {
     /// label, 20 bytes

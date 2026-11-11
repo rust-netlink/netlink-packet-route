@@ -5,6 +5,7 @@ use netlink_packet_core::{append_u32, DecodeError, Emitable, EncodeError};
 const RULE_UID_RANGE_LEN: usize = 8;
 
 #[derive(Clone, Eq, PartialEq, Debug, Copy)]
+#[non_exhaustive]
 pub struct RuleUidRange {
     pub start: u32,
     pub end: u32,

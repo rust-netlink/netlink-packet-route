@@ -550,6 +550,7 @@ impl From<TcActionType> for i32 {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct Tcf {
     pub install: u64,
     pub lastuse: u64,

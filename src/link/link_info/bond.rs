@@ -647,6 +647,7 @@ const BOND_ALL_PORT_ACTIVE_DELIEVERD: u8 = 1;
 /// Specifies that duplicate frames (received on inactive ports) should be
 /// dropped (0) or delivered (1).
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 pub enum BondAllPortActive {
     Dropped,
     Delivered,
@@ -707,6 +708,7 @@ const AD_LACP_FAST: u8 = 1;
 /// Specifies that duplicate frames (received on inactive ports) should be
 /// dropped (0) or delivered (1).
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 pub enum BondLacpRate {
     Slow,
     Fast,

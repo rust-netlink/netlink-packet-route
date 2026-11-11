@@ -5,6 +5,7 @@ use netlink_packet_core::{append_u16, DecodeError, Emitable, EncodeError};
 const RULE_PORT_RANGE_LEN: usize = 4;
 
 #[derive(Clone, Eq, PartialEq, Debug, Copy)]
+#[non_exhaustive]
 pub struct RulePortRange {
     pub start: u16,
     pub end: u16,

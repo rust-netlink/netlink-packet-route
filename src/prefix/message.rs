@@ -10,6 +10,7 @@ use super::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct PrefixMessage {
     pub header: PrefixHeader,
     pub attributes: Vec<PrefixAttribute>,

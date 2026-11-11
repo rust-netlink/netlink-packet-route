@@ -13,6 +13,7 @@ const PREFIX_ADDRESS: u16 = 1;
 const PREFIX_CACHEINFO: u16 = 2;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub enum PrefixAttribute {
     Address(Ipv6Addr),
     CacheInfo(CacheInfo),

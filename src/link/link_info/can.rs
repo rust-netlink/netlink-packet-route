@@ -145,6 +145,7 @@ bitflags! {
 /// Contains `mask` and `flags` fields, each a bitmask of
 /// [`CanCtrlModeFlags`].
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub struct CanCtrlMode {
     pub mask: CanCtrlModeFlags,
     pub flags: CanCtrlModeFlags,
@@ -212,6 +213,7 @@ impl CanClock {
 /// CAN bus error counter, corresponding to `struct can_berr_counter` in the
 /// kernel.
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub struct CanBerrCounter {
     pub txerr: u16,
     pub rxerr: u16,

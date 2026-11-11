@@ -27,6 +27,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for VecLinkVfPort {
 const IFLA_VF_PORT: u16 = 1;
 
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct LinkVfPort(pub Vec<VfPort>);
 
 impl Nla for LinkVfPort {
