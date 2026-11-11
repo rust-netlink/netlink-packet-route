@@ -4,7 +4,7 @@ use std::{net::Ipv6Addr, str::FromStr};
 use netlink_packet_core::{Emitable, Parseable};
 
 use crate::prefix::{
-    attribute::PrefixAttribute, cache_info::CacheInfo, header::PrefixHeader,
+    attribute::PrefixAttribute, cache_info::CacheInfo, PrefixHeader,
     PrefixMessage,
 };
 
