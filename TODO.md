@@ -28,8 +28,6 @@
   it holds `BRIDGE_VLAN_INFO_*` bits.
 - Document `PrefixHeader::flags`: the kernel fills it from internal
   `IF_PREFIX_*` values, the UAPI defines no flag bits for it.
-- Remove the stale `Use Vec<enum> for IFF_UP` comment in
-  `src/link/af_spec/inet6.rs`, `Inet6IfaceFlags` is already typed.
 
 ## unit tests
 

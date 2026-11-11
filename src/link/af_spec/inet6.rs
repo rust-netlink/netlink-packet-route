@@ -28,7 +28,6 @@ const IFLA_INET6_RA_MTU: u16 = 9;
 #[derive(Clone, Eq, PartialEq, Debug)]
 #[non_exhaustive]
 pub enum AfSpecInet6 {
-    //TODO(Gris Ge): Use Vec<enum> for `IFF_UP` and etc
     Flags(Inet6IfaceFlags),
     CacheInfo(Inet6CacheInfo),
     DevConf(Inet6DevConf),
