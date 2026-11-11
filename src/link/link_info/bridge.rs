@@ -505,9 +505,9 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoBridge {
             IFLA_BR_MCAST_QUERIER_STATE => {
                 let mut v = Vec::new();
                 let err = "failed to parse IFLA_BR_MCAST_QUERIER_STATE";
-                for nla in buf.nlas() {
-                    let nla = &nla.context(err)?;
-                    let parsed = BridgeQuerierState::parse(nla).context(err)?;
+                for nla in buf.nlas().context(err)? {
+                    let parsed =
+                        BridgeQuerierState::parse(&nla).context(err)?;
                     v.push(parsed);
                 }
                 Self::MulticastQuerierState(v)

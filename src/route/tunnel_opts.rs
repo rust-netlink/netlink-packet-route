@@ -270,9 +270,10 @@ impl<'a> Parseable<NlaBuffer<'a>> for RouteLwTunnelOpt {
             LWTUNNEL_IP_OPTS_GENEVE => {
                 let mut opts: Vec<RouteGeneveOpt> = Vec::new();
                 let mut current: Option<RouteGeneveOpt> = None;
-                for nla in buf.nlas() {
-                    let nla =
-                        nla.context("Invalid LWTUNNEL_IP_OPTS_GENEVE value")?;
+                for nla in buf
+                    .nlas()
+                    .context("Invalid LWTUNNEL_IP_OPTS_GENEVE value")?
+                {
                     match nla.kind() {
                         LWTUNNEL_IP_OPT_GENEVE_CLASS => {
                             if let Some(opt) = current.take() {
@@ -320,18 +321,20 @@ impl<'a> Parseable<NlaBuffer<'a>> for RouteLwTunnelOpt {
             }
             LWTUNNEL_IP_OPTS_VXLAN => {
                 let mut opts: Vec<RouteVxlanOpt> = Vec::new();
-                for nla in buf.nlas() {
-                    let nla =
-                        nla.context("Invalid LWTUNNEL_IP_OPTS_VXLAN value")?;
+                for nla in buf
+                    .nlas()
+                    .context("Invalid LWTUNNEL_IP_OPTS_VXLAN value")?
+                {
                     opts.push(RouteVxlanOpt::parse(&nla)?);
                 }
                 Self::Vxlan(opts)
             }
             LWTUNNEL_IP_OPTS_ERSPAN => {
                 let mut opts: Vec<RouteErspanOpt> = Vec::new();
-                for nla in buf.nlas() {
-                    let nla =
-                        nla.context("Invalid LWTUNNEL_IP_OPTS_ERSPAN value")?;
+                for nla in buf
+                    .nlas()
+                    .context("Invalid LWTUNNEL_IP_OPTS_ERSPAN value")?
+                {
                     opts.push(RouteErspanOpt::parse(&nla)?);
                 }
                 Self::Erspan(opts)

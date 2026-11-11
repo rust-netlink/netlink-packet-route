@@ -457,19 +457,19 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, AddressFamily> for LinkAttribute {
             IFLA_PROP_LIST => {
                 let error_msg = "invalid IFLA_PROP_LIST value";
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla = &nla.context(error_msg)?;
-                    let parsed = Prop::parse(nla).context(error_msg)?;
+                for nla in buf.nlas().context(error_msg)? {
+                    let parsed = Prop::parse(&nla).context(error_msg)?;
                     nlas.push(parsed);
                 }
                 Self::PropList(nlas)
             }
             IFLA_PROTO_DOWN_REASON => {
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla =
-                        &nla.context("invalid IFLA_PROTO_DOWN_REASON value")?;
-                    let parsed = LinkProtocolDownReason::parse(nla)?;
+                for nla in buf
+                    .nlas()
+                    .context("invalid IFLA_PROTO_DOWN_REASON value")?
+                {
+                    let parsed = LinkProtocolDownReason::parse(&nla)?;
                     nlas.push(parsed);
                 }
                 Self::ProtoDownReason(nlas)
@@ -676,9 +676,8 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, AddressFamily> for LinkAttribute {
             IFLA_DEVLINK_PORT => {
                 let err = "invalid IFLA_DEVLINK_PORT value";
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla = &nla.context(err)?;
-                    let parsed = DevlinkPort::parse(nla).context(err)?;
+                for nla in buf.nlas().context(err)? {
+                    let parsed = DevlinkPort::parse(&nla).context(err)?;
                     nlas.push(parsed);
                 }
                 Self::DevlinkPort(nlas)
@@ -686,9 +685,8 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, AddressFamily> for LinkAttribute {
             IFLA_DPLL_PIN => {
                 let err = "invalid IFLA_DPLL_PIN value";
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla = &nla.context(err)?;
-                    let parsed = DpllPin::parse(nla).context(err)?;
+                for nla in buf.nlas().context(err)? {
+                    let parsed = DpllPin::parse(&nla).context(err)?;
                     nlas.push(parsed);
                 }
                 Self::DpllPin(nlas)

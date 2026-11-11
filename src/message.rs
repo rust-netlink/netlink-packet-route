@@ -852,18 +852,17 @@ impl ::netlink_packet_core::Emitable for RouteNetlinkMessage {
     }
 }
 
-impl ::netlink_packet_core::NetlinkSerializable for RouteNetlinkMessage {
+impl ::netlink_packet_core::NetlinkMessagePayload for RouteNetlinkMessage {
     fn message_type(&self) -> u16 {
         self.message_type()
     }
 }
 
 impl NetlinkDeserializable for RouteNetlinkMessage {
-    type Error = DecodeError;
     fn deserialize(
         header: &NetlinkHeader,
         payload: &[u8],
-    ) -> Result<Self, Self::Error> {
+    ) -> Result<Self, DecodeError> {
         RouteNetlinkMessage::parse_with_param(payload, header.message_type)
     }
 }

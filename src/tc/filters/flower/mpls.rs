@@ -56,9 +56,9 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcFilterFlowerMplsOption {
         Ok(match buf.kind() {
             TCA_FLOWER_KEY_MPLS_OPT_LSE => {
                 let mut nlas = vec![];
-                for nla in buf.nlas() {
-                    let nla =
-                        nla.context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE))?;
+                for nla in
+                    buf.nlas().context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE))?
+                {
                     nlas.push(
                         TcFilterFlowerMplsLseOption::parse(&nla)
                             .context(nla_err!(TCA_FLOWER_KEY_MPLS_OPT_LSE))?,

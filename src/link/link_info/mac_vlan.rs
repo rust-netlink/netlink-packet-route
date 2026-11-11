@@ -90,9 +90,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoMacVlan {
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
                 let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
-                for nla in buf.nlas() {
-                    let nla = &nla.context(err)?;
-                    let parsed = InfoMacVlan::parse(nla).context(err)?;
+                for nla in buf.nlas().context(err)? {
+                    let parsed = InfoMacVlan::parse(&nla).context(err)?;
                     mac_data.push(parsed);
                 }
                 Self::MacAddrData(mac_data)
@@ -193,9 +192,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoMacVtap {
             IFLA_MACVLAN_MACADDR_DATA => {
                 let mut mac_data = Vec::new();
                 let err = "failed to parse IFLA_MACVLAN_MACADDR_DATA";
-                for nla in buf.nlas() {
-                    let nla = &nla.context(err)?;
-                    let parsed = InfoMacVtap::parse(nla).context(err)?;
+                for nla in buf.nlas().context(err)? {
+                    let parsed = InfoMacVtap::parse(&nla).context(err)?;
                     mac_data.push(parsed);
                 }
                 Self::MacAddrData(mac_data)

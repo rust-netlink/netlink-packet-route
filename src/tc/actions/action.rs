@@ -65,22 +65,13 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcAction {
         // of the attributes.
         let kind = match buf
             .nlas()
-            .filter_map(|nla| {
-                let nla = match nla {
-                    Ok(nla) => nla,
-                    Err(e) => {
-                        return Some(
-                            Err(e).context("failed to parse action nla"),
-                        )
-                    }
-                };
-                match nla.kind() {
-                    TCA_ACT_KIND => Some(
-                        parse_string(nla.value())
-                            .context("failed to parse TCA_ACT_KIND"),
-                    ),
-                    _ => None,
-                }
+            .context("failed to parse action nla")?
+            .filter_map(|nla| match nla.kind() {
+                TCA_ACT_KIND => Some(
+                    parse_string(nla.value())
+                        .context("failed to parse TCA_ACT_KIND"),
+                ),
+                _ => None,
             })
             .collect::<Result<Vec<_>, _>>()
         {
@@ -97,10 +88,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcAction {
         };
 
         let attributes = buf
-            .nlas()
-            .map(|nla| {
-                TcActionAttribute::parse_with_param(&nla?, kind.as_str())
-            })
+            .nlas()?
+            .map(|nla| TcActionAttribute::parse_with_param(&nla, kind.as_str()))
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Self {
@@ -222,8 +211,8 @@ where
             }
             TCA_ACT_OPTIONS => TcActionAttribute::Options(
                 buf.nlas()
+                    .context("invalid TCA_ACT_OPTIONS")?
                     .map(|nla| {
-                        let nla = nla.context("invalid TCA_ACT_OPTIONS")?;
                         TcActionOption::parse_with_param(&nla, kind.as_ref())
                             .context("failed to parse TCA_ACT_OPTIONS")
                     })
@@ -235,8 +224,8 @@ where
             ),
             TCA_ACT_STATS => TcActionAttribute::Stats(
                 buf.nlas()
+                    .context("invalid TCA_ACT_STATS")?
                     .map(|nla| {
-                        let nla = nla.context("invalid TCA_ACT_STATS")?;
                         TcStats2::parse_with_param(&nla, kind.as_ref())
                             .context("failed to parse TCA_ACT_STATS")
                     })

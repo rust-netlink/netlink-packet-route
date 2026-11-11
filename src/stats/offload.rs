@@ -56,8 +56,7 @@ pub(crate) fn parse_offload_xstats_inner(
     buf: &NlaBuffer<'_>,
 ) -> Result<Vec<OffloadXstat>, DecodeError> {
     let mut result = Vec::new();
-    for nla in buf.nlas() {
-        let nla = nla.context("invalid NLA in offload xstats")?;
+    for nla in buf.nlas().context("invalid NLA in offload xstats")? {
         let kind = nla.kind();
         let val = nla.value();
         result.push(match kind {
@@ -178,8 +177,7 @@ pub struct HwStatsInfo {
 impl HwStatsInfo {
     pub fn parse(buf: &NlaBuffer<'_>) -> Result<Self, DecodeError> {
         let mut info = HwStatsInfo::default();
-        for nla in buf.nlas() {
-            let nla = nla.context("invalid NLA in hw stats info")?;
+        for nla in buf.nlas().context("invalid NLA in hw stats info")? {
             let val = nla.value();
             match nla.kind() {
                 IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST if !val.is_empty() => {
@@ -191,9 +189,10 @@ impl HwStatsInfo {
                 // L3_STATS is nested inside HW_S_INFO; descend to find
                 // request/used
                 IFLA_OFFLOAD_XSTATS_L3_STATS => {
-                    for inner in nla.nlas() {
-                        let inner = inner
-                            .context("invalid NLA in hw stats info L3 stats")?;
+                    for inner in nla
+                        .nlas()
+                        .context("invalid NLA in hw stats info L3 stats")?
+                    {
                         let iv = inner.value();
                         match inner.kind() {
                             IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST

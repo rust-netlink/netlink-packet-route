@@ -601,18 +601,16 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoCan {
             IFLA_CAN_TDC => {
                 let mut v = Vec::new();
                 let err = "invalid IFLA_CAN_TDC";
-                for nla in buf.nlas() {
-                    let nla = &nla.context(err)?;
-                    v.push(CanTdc::parse(nla).context(err)?);
+                for nla in buf.nlas().context(err)? {
+                    v.push(CanTdc::parse(&nla).context(err)?);
                 }
                 Self::Tdc(v)
             }
             IFLA_CAN_CTRLMODE_EXT => {
                 let mut v = Vec::new();
                 let err = "invalid IFLA_CAN_CTRLMODE_EXT";
-                for nla in buf.nlas() {
-                    let nla = &nla.context(err)?;
-                    v.push(CanCtrlModeExt::parse(nla).context(err)?);
+                for nla in buf.nlas().context(err)? {
+                    v.push(CanCtrlModeExt::parse(&nla).context(err)?);
                 }
                 Self::CtrlModeExt(v)
             }

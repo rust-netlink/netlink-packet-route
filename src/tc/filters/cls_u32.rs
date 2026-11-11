@@ -118,8 +118,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcFilterU32Option {
             TCA_U32_POLICE => Self::Police(payload.to_vec()),
             TCA_U32_ACT => {
                 let mut acts = vec![];
-                for act in buf.nlas() {
-                    let act = act.context("invalid TCA_U32_ACT")?;
+                for act in buf.nlas().context("invalid TCA_U32_ACT")? {
                     acts.push(
                         TcAction::parse(&act)
                             .context("failed to parse TCA_U32_ACT")?,

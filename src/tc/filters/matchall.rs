@@ -67,8 +67,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcFilterMatchAllOption {
             ),
             TCA_MATCHALL_ACT => {
                 let mut acts = vec![];
-                for act in buf.nlas() {
-                    let act = act.context("invalid TCA_MATCHALL_ACT")?;
+                for act in buf.nlas().context("invalid TCA_MATCHALL_ACT")? {
                     acts.push(
                         TcAction::parse(&act)
                             .context("failed to parse TCA_MATCHALL_ACT")?,
