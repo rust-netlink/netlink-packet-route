@@ -87,6 +87,20 @@ pub struct MplsLabel {
 }
 
 impl MplsLabel {
+    pub const fn new(
+        label: u32,
+        traffic_class: u8,
+        bottom_of_stack: bool,
+        ttl: u8,
+    ) -> Self {
+        Self {
+            label,
+            traffic_class,
+            bottom_of_stack,
+            ttl,
+        }
+    }
+
     pub(crate) fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         if payload.len() == 4 {
             Ok(Self::from(u32::from_be_bytes([
