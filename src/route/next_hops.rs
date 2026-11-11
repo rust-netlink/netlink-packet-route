@@ -230,3 +230,42 @@ pub(crate) fn parse_multipath_next_hops(
     }
     Ok(next_hops)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn params() -> (AddressFamily, RouteType, RouteLwEnCapType) {
+        (
+            AddressFamily::Inet,
+            RouteType::Unicast,
+            RouteLwEnCapType::None,
+        )
+    }
+
+    #[test]
+    fn multipath_rejects_truncated_header() {
+        assert!(parse_multipath_next_hops(&[0u8; 7], params()).is_err());
+    }
+
+    #[test]
+    fn multipath_rejects_zero_length_hop() {
+        assert!(parse_multipath_next_hops(&[0u8; 8], params()).is_err());
+    }
+
+    #[test]
+    fn multipath_rejects_length_beyond_buffer() {
+        let mut buf = [0u8; 8];
+        buf[0..2].copy_from_slice(&16u16.to_ne_bytes());
+        assert!(parse_multipath_next_hops(&buf, params()).is_err());
+    }
+
+    #[test]
+    fn multipath_rejects_truncated_second_hop() {
+        let buf = [
+            8, 0, 0, 0, 1, 0, 0, 0, // first next hop, length 8
+            8, 0, 0, 0, // second next hop, truncated
+        ];
+        assert!(parse_multipath_next_hops(&buf, params()).is_err());
+    }
+}
