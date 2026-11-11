@@ -130,6 +130,10 @@ pub struct BridgeVlanInfo {
 
 impl BridgeVlanInfo {
     pub const LENGTH: usize = 4;
+
+    pub const fn new(flags: BridgeVlanInfoFlags, vid: u16) -> Self {
+        Self { flags, vid }
+    }
 }
 
 #[derive(

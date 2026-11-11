@@ -15,6 +15,15 @@ pub struct BridgeBooleanOptions {
     pub mask: BridgeBooleanOptionFlags,
 }
 
+impl BridgeBooleanOptions {
+    pub const fn new(
+        value: BridgeBooleanOptionFlags,
+        mask: BridgeBooleanOptionFlags,
+    ) -> Self {
+        Self { value, mask }
+    }
+}
+
 impl<T: AsRef<[u8]> + ?Sized> Parseable<T> for BridgeBooleanOptions {
     fn parse(buf: &T) -> Result<Self, DecodeError> {
         let buf = buf.as_ref();

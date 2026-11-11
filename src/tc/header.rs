@@ -104,6 +104,10 @@ impl TcHandle {
     pub const MIN_PRIORITY: u16 = 0xFFE0;
     pub const MIN_INGRESS: u16 = 0xFFF2;
     pub const MIN_EGRESS: u16 = 0xFFF3;
+
+    pub const fn new(major: u16, minor: u16) -> Self {
+        Self { major, minor }
+    }
 }
 
 impl From<u32> for TcHandle {

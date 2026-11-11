@@ -162,6 +162,10 @@ impl Emitable for CanCtrlMode {
 }
 
 impl CanCtrlMode {
+    pub const fn new(mask: CanCtrlModeFlags, flags: CanCtrlModeFlags) -> Self {
+        Self { mask, flags }
+    }
+
     fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
         if payload.len() < CAN_CTRLMODE_LEN {
             return Err("invalid IFLA_CAN_CTRLMODE: expected 8 bytes".into());
