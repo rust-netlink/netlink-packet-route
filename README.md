@@ -20,6 +20,25 @@ This crate grouped Netlink route protocol into these modules:
 Normally, you should use [`rtnetlink`][rtnetlink_url] instead of using this
 crate directly.
 
+## Feature flags
+
+Every message family has a cargo feature of the same name: `address`,
+`addrlabel`, `link`, `neighbour`, `neighbour-table`, `nsid`, `prefix`,
+`route`, `rule`, `stats` and `tc`. All of them are enabled by default through
+the `all` feature.
+
+The `link` module additionally splits its largest attributes into
+`link-af-spec`, `link-info` and `link-sriov`.
+
+Disabling a family removes its module, its `RouteNetlinkMessage` variants and
+its parsing code; messages of that family then fail to parse with `Unknown
+message type`. Disabling `link-af-spec`, `link-info` or `link-sriov` makes the
+corresponding link attribute parse into `LinkAttribute::Other` instead.
+
+This only affects binary size; the default feature set behaves exactly like
+earlier releases. Adding a message family in a future release is non-breaking
+because the message enums are `#[non_exhaustive]`.
+
 ## Development
  * Please use `git commit --signoff` to append Signed-off-by trailer to commit
    message.
