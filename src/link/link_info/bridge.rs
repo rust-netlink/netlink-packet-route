@@ -533,6 +533,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoBridge {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
 pub struct BridgeId {
     pub priority: u16,
     pub address: [u8; 6],

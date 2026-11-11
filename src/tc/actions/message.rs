@@ -47,6 +47,7 @@ bitflags! {
 /// [`flags`]: #structfield.flags
 /// [`selector`]: #structfield.selector
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default, PartialOrd, Ord, Hash)]
+#[non_exhaustive]
 pub struct TcActionMessageFlagsWithSelector {
     /// A bitmask of [`TcActionMessageFlags`] to be associated with an
     /// operation.

@@ -82,6 +82,7 @@ impl Emitable for TcHeader {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[non_exhaustive]
 pub struct TcHandle {
     pub major: u16,
     pub minor: u16,

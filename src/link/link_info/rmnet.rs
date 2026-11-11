@@ -31,6 +31,7 @@ bitflags! {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 pub struct InfoRmNetFlags {
     pub flags: RmNetFlags,
     pub mask: RmNetFlags,

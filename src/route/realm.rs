@@ -5,6 +5,7 @@ use netlink_packet_core::{append_u32, DecodeError, Emitable, EncodeError};
 const RULE_REALM_LEN: usize = 4;
 
 #[derive(Clone, Eq, PartialEq, Debug, Copy)]
+#[non_exhaustive]
 pub struct RouteRealm {
     pub source: u16,
     pub destination: u16,

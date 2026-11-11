@@ -153,6 +153,7 @@ impl std::str::FromStr for MiiStatus {
 
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[non_exhaustive]
     pub struct LacpState: u8 {
         /// The port is willing to participate in LACP (LACP_ACTIVITY).
         const LACP_ACTIVITY   = 0x01;

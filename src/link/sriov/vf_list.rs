@@ -34,6 +34,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for VecLinkVfInfo {
 }
 
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct LinkVfInfo(pub Vec<VfInfo>);
 
 impl Nla for LinkVfInfo {

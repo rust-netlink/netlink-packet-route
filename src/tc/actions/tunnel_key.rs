@@ -145,6 +145,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcActionTunnelKeyOption {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct TcTunnelKey {
     pub generic: TcActionGeneric,
     pub t_action: i32,

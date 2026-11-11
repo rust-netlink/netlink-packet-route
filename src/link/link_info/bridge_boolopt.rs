@@ -9,6 +9,7 @@ use netlink_packet_core::{
 // Kernel struct `br_boolopt_multi`
 /// Change multiple bridge boolean options
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 pub struct BridgeBooleanOptions {
     pub value: BridgeBooleanOptionFlags,
     pub mask: BridgeBooleanOptionFlags,
