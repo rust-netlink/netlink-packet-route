@@ -14,6 +14,4 @@
 ## unit tests
 
 - Assert `InfoKind::Netdevsim` in the netdevsim test.
-- Fix the `emit()` round trip of `test_parsing_link_vrf` or document
-  why the emitted packet differs from the capture.
 - Add `dpll_pin` tests when DPLL capable hardware is available.
