@@ -57,8 +57,8 @@ fn test_parsing_combined_stats() {
             }),
             StatsAttribute::LinkOffloadXstats(vec![OffloadXstat::HwStatsInfo(
                 HwStatsInfo {
-                    request: Some(0),
-                    used: Some(0),
+                    request: Some(false),
+                    used: Some(false),
                 },
             )]),
             StatsAttribute::AfSpec(AfSpecStats(vec![])),

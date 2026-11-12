@@ -170,8 +170,8 @@ impl Emitable for HwStats64 {
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct HwStatsInfo {
-    pub request: Option<u8>,
-    pub used: Option<u8>,
+    pub request: Option<bool>,
+    pub used: Option<bool>,
 }
 
 impl HwStatsInfo {
@@ -181,10 +181,10 @@ impl HwStatsInfo {
             let val = nla.value();
             match nla.kind() {
                 IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST if !val.is_empty() => {
-                    info.request = Some(val[0])
+                    info.request = Some(val[0] > 0)
                 }
                 IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED if !val.is_empty() => {
-                    info.used = Some(val[0])
+                    info.used = Some(val[0] > 0)
                 }
                 // L3_STATS is nested inside HW_S_INFO; descend to find
                 // request/used
@@ -198,12 +198,12 @@ impl HwStatsInfo {
                             IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST
                                 if !iv.is_empty() =>
                             {
-                                info.request = Some(iv[0])
+                                info.request = Some(iv[0] > 0)
                             }
                             IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED
                                 if !iv.is_empty() =>
                             {
-                                info.used = Some(iv[0])
+                                info.used = Some(iv[0] > 0)
                             }
                             _ => {}
                         }
@@ -220,12 +220,18 @@ impl Emitable for HwStatsInfo {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         let mut inner = Vec::new();
         if let Some(v) = self.request {
-            DefaultNla::new(IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST, vec![v])
-                .emit(&mut inner)?;
+            DefaultNla::new(
+                IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST,
+                vec![u8::from(v)],
+            )
+            .emit(&mut inner)?;
         }
         if let Some(v) = self.used {
-            DefaultNla::new(IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED, vec![v])
-                .emit(&mut inner)?;
+            DefaultNla::new(
+                IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED,
+                vec![u8::from(v)],
+            )
+            .emit(&mut inner)?;
         }
         if inner.is_empty() {
             return Ok(());
