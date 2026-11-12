@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{
+    Emitable, NlaBuffer, Parseable, ParseableParametrized,
+};
 
 use crate::{
     tc::{
@@ -55,7 +57,7 @@ fn test_get_qdisc_ingress() {
         attributes: vec![
             TcAttribute::Kind("ingress".to_string()),
             TcAttribute::Options(vec![]),
-            TcAttribute::HwOffload(0),
+            TcAttribute::HwOffload(false),
             TcAttribute::Stats2(vec![
                 TcStats2::Basic(TcStatsBasic {
                     bytes: 0,
@@ -89,4 +91,17 @@ fn test_get_qdisc_ingress() {
     expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_tc_hw_offload() {
+    // nlmon capture of TCA_HW_OFFLOAD from `tc qdisc show dev dcap0`.
+    let raw = vec![0x05, 0x00, 0x0c, 0x00, 0x00];
+
+    assert_eq!(
+        TcAttribute::parse_with_param(&NlaBuffer::new(&raw).unwrap(), "")
+            .unwrap(),
+        TcAttribute::HwOffload(false)
+    );
 }

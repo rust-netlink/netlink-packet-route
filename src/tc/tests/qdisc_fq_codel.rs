@@ -132,7 +132,7 @@ fn test_get_qdisc_fq_codel() {
                 TcOption::FqCodel(TcQdiscFqCodelOption::MemoryLimit(33554432)),
                 TcOption::FqCodel(TcQdiscFqCodelOption::Flows(1024)),
             ]),
-            TcAttribute::HwOffload(0),
+            TcAttribute::HwOffload(false),
             TcAttribute::Stats2(vec![
                 TcStats2::App(TcXstats::FqCodel(TcFqCodelXstats::Qdisc(
                     TcFqCodelQdStats {

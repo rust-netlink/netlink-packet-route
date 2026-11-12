@@ -40,7 +40,7 @@ pub enum TcAttribute {
     Stats2(Vec<TcStats2>),
     Stab(Vec<u8>),
     Chain(u32),
-    HwOffload(u8),
+    HwOffload(bool),
     DumpInvisible(bool),
     Other(DefaultNla),
 }
@@ -53,7 +53,7 @@ impl Nla for TcAttribute {
             | Self::Stab(ref bytes) => append_bytes(out, bytes.as_slice()),
             Self::Chain(v) => append_u32(out, v),
             Self::Xstats(ref v) => v.emit(out)?,
-            Self::HwOffload(ref val) => append_u8(out, *val),
+            Self::HwOffload(ref val) => append_u8(out, u8::from(*val)),
             Self::Stats2(ref stats) => (stats.as_slice()).emit(out)?,
             Self::Stats(ref stats) => stats.emit(out)?,
             Self::Kind(ref string) => {
@@ -129,7 +129,8 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcAttribute {
                 parse_u32(payload).context("failed to parse TCA_CHAIN")?,
             ),
             TCA_HW_OFFLOAD => TcAttribute::HwOffload(
-                parse_u8(payload).context("failed to parse TCA_HW_OFFLOAD")?,
+                parse_u8(payload).context("failed to parse TCA_HW_OFFLOAD")?
+                    > 0,
             ),
             TCA_DUMP_INVISIBLE => TcAttribute::DumpInvisible(true),
             _ => TcAttribute::Other(
