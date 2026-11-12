@@ -10,6 +10,7 @@ use crate::{
         link_flag::LinkFlags, AfSpecBridge, AfSpecInet, AfSpecInet6,
         AfSpecUnspec, BridgeBooleanOptionFlags, BridgeBooleanOptions,
         BridgeFlag, BridgeGroupFwdMask, BridgeId, BridgeMode,
+        BridgeMulticastIgmpVersion, BridgeMulticastMldVersion,
         BridgeMulticastRouterType, BridgePortState, BridgeStpMode,
         BridgeStpState, BridgeVlanInfo, BridgeVlanInfoFlags,
         BridgeVlanTunnelInfo, In6AddrGenMode, Inet6CacheInfo, Inet6DevConf,
@@ -298,8 +299,12 @@ fn test_parse_link_bridge_no_extention_mask() {
                     InfoBridge::MulticastHashMax(4096),
                     InfoBridge::MulticastLastMemberCount(2),
                     InfoBridge::MulticastStartupQueryCount(2),
-                    InfoBridge::MulticastIgmpVersion(2),
-                    InfoBridge::MulticastMldVersion(1),
+                    InfoBridge::MulticastIgmpVersion(
+                        BridgeMulticastIgmpVersion::V2,
+                    ),
+                    InfoBridge::MulticastMldVersion(
+                        BridgeMulticastMldVersion::V1,
+                    ),
                     InfoBridge::MulticastLastMemberInterval(99),
                     InfoBridge::MulticastMembershipInterval(25999),
                     InfoBridge::MulticastQuerierInterval(25499),
@@ -640,8 +645,12 @@ fn test_parse_link_bridge_stp_mode() {
                     InfoBridge::MulticastHashMax(4096),
                     InfoBridge::MulticastLastMemberCount(2),
                     InfoBridge::MulticastStartupQueryCount(2),
-                    InfoBridge::MulticastIgmpVersion(2),
-                    InfoBridge::MulticastMldVersion(1),
+                    InfoBridge::MulticastIgmpVersion(
+                        BridgeMulticastIgmpVersion::V2,
+                    ),
+                    InfoBridge::MulticastMldVersion(
+                        BridgeMulticastMldVersion::V1,
+                    ),
                     InfoBridge::MulticastLastMemberInterval(100),
                     InfoBridge::MulticastMembershipInterval(26000),
                     InfoBridge::MulticastQuerierInterval(25500),
@@ -847,6 +856,45 @@ fn test_af_spec_bridge() {
     ];
 
     assert_eq!(Vec::<AfSpecBridge>::parse(&raw[..]).unwrap(), expected);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_link_bridge_multicast_versions() {
+    // nlmon capture of:
+    //  ip link set brcap0 type bridge mcast_igmp_version 3 mcast_mld_version 2
+    let raw = vec![
+        0x00, 0x00, 0x00, 0x00, 0x6a, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x24, 0x00, 0x12, 0x00, 0x0b, 0x00, 0x01, 0x00,
+        0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x00, 0x00, 0x14, 0x00, 0x02, 0x00,
+        0x05, 0x00, 0x2b, 0x00, 0x03, 0x00, 0x00, 0x00, 0x05, 0x00, 0x2c, 0x00,
+        0x02, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 0x046a,
+            link_layer_type: LinkLayerType::Netrom,
+            flags: LinkFlags::empty(),
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![LinkAttribute::LinkInfo(vec![
+            LinkInfo::Kind(InfoKind::Bridge),
+            LinkInfo::Data(InfoData::Bridge(vec![
+                InfoBridge::MulticastIgmpVersion(
+                    BridgeMulticastIgmpVersion::V3,
+                ),
+                InfoBridge::MulticastMldVersion(BridgeMulticastMldVersion::V2),
+            ])),
+        ])],
+    };
+
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
+
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
+    assert_eq!(buf, raw);
 }
 
 #[cfg(not(target_endian = "big"))]
@@ -1281,8 +1329,8 @@ fn test_bridge_fdb_max_learned() {
             InfoBridge::MulticastHashMax(4096),
             InfoBridge::MulticastLastMemberCount(2),
             InfoBridge::MulticastStartupQueryCount(2),
-            InfoBridge::MulticastIgmpVersion(2),
-            InfoBridge::MulticastMldVersion(1),
+            InfoBridge::MulticastIgmpVersion(BridgeMulticastIgmpVersion::V2),
+            InfoBridge::MulticastMldVersion(BridgeMulticastMldVersion::V1),
             InfoBridge::MulticastLastMemberInterval(99),
             InfoBridge::MulticastMembershipInterval(25999),
             InfoBridge::MulticastQuerierInterval(25499),
@@ -1516,8 +1564,12 @@ fn test_bridge_netns_immutable() {
                     InfoBridge::MulticastHashMax(4096),
                     InfoBridge::MulticastLastMemberCount(2),
                     InfoBridge::MulticastStartupQueryCount(2),
-                    InfoBridge::MulticastIgmpVersion(2),
-                    InfoBridge::MulticastMldVersion(1),
+                    InfoBridge::MulticastIgmpVersion(
+                        BridgeMulticastIgmpVersion::V2,
+                    ),
+                    InfoBridge::MulticastMldVersion(
+                        BridgeMulticastMldVersion::V1,
+                    ),
                     InfoBridge::MulticastLastMemberInterval(100),
                     InfoBridge::MulticastMembershipInterval(26000),
                     InfoBridge::MulticastQuerierInterval(25500),

@@ -66,6 +66,88 @@ const IFLA_BR_FDB_N_LEARNED: u16 = 48;
 const IFLA_BR_FDB_MAX_LEARNED: u16 = 49;
 const IFLA_BR_STP_MODE: u16 = 50;
 
+const BR_MCAST_IGMP_VERSION_2: u8 = 2;
+const BR_MCAST_IGMP_VERSION_3: u8 = 3;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum BridgeMulticastIgmpVersion {
+    V2,
+    V3,
+    Other(u8),
+}
+
+impl From<u8> for BridgeMulticastIgmpVersion {
+    fn from(d: u8) -> Self {
+        match d {
+            BR_MCAST_IGMP_VERSION_2 => Self::V2,
+            BR_MCAST_IGMP_VERSION_3 => Self::V3,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BridgeMulticastIgmpVersion> for u8 {
+    fn from(v: BridgeMulticastIgmpVersion) -> u8 {
+        match v {
+            BridgeMulticastIgmpVersion::V2 => BR_MCAST_IGMP_VERSION_2,
+            BridgeMulticastIgmpVersion::V3 => BR_MCAST_IGMP_VERSION_3,
+            BridgeMulticastIgmpVersion::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for BridgeMulticastIgmpVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::V2 => f.write_str("2"),
+            Self::V3 => f.write_str("3"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
+const BR_MCAST_MLD_VERSION_1: u8 = 1;
+const BR_MCAST_MLD_VERSION_2: u8 = 2;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum BridgeMulticastMldVersion {
+    V1,
+    V2,
+    Other(u8),
+}
+
+impl From<u8> for BridgeMulticastMldVersion {
+    fn from(d: u8) -> Self {
+        match d {
+            BR_MCAST_MLD_VERSION_1 => Self::V1,
+            BR_MCAST_MLD_VERSION_2 => Self::V2,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<BridgeMulticastMldVersion> for u8 {
+    fn from(v: BridgeMulticastMldVersion) -> u8 {
+        match v {
+            BridgeMulticastMldVersion::V1 => BR_MCAST_MLD_VERSION_1,
+            BridgeMulticastMldVersion::V2 => BR_MCAST_MLD_VERSION_2,
+            BridgeMulticastMldVersion::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for BridgeMulticastMldVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::V1 => f.write_str("1"),
+            Self::V2 => f.write_str("2"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
 const BR_GROUPFWD_STP: u16 = 1 << 0;
 const BR_GROUPFWD_MACPAUSE: u16 = 1 << 1;
 const BR_GROUPFWD_LACP: u16 = 1 << 2;
@@ -128,8 +210,8 @@ pub enum InfoBridge {
     NfCallArpTables(bool),
     VlanStatsEnabled(bool),
     MulticastStatsEnabled(bool),
-    MulticastIgmpVersion(u8),
-    MulticastMldVersion(u8),
+    MulticastIgmpVersion(BridgeMulticastIgmpVersion),
+    MulticastMldVersion(BridgeMulticastMldVersion),
     VlanStatsPerPort(bool),
     MultiBoolOpt(BridgeBooleanOptions),
     MulticastQuerierState(Vec<BridgeQuerierState>),
@@ -215,10 +297,16 @@ impl Nla for InfoBridge {
                 Ok(())
             }
             Self::TopologyChange(value)
-            | Self::TopologyChangeDetected(value)
-            | Self::MulticastIgmpVersion(value)
-            | Self::MulticastMldVersion(value) => {
+            | Self::TopologyChangeDetected(value) => {
                 out.push(*value);
+                Ok(())
+            }
+            Self::MulticastIgmpVersion(value) => {
+                out.push((*value).into());
+                Ok(())
+            }
+            Self::MulticastMldVersion(value) => {
+                out.push((*value).into());
                 Ok(())
             }
 
@@ -511,11 +599,13 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoBridge {
             ),
             IFLA_BR_MCAST_IGMP_VERSION => Self::MulticastIgmpVersion(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_MCAST_IGMP_VERSION value")?,
+                    .context("invalid IFLA_BR_MCAST_IGMP_VERSION value")?
+                    .into(),
             ),
             IFLA_BR_MCAST_MLD_VERSION => Self::MulticastMldVersion(
                 parse_u8(payload)
-                    .context("invalid IFLA_BR_MCAST_MLD_VERSION value")?,
+                    .context("invalid IFLA_BR_MCAST_MLD_VERSION value")?
+                    .into(),
             ),
             IFLA_BR_VLAN_STATS_PER_PORT => Self::VlanStatsPerPort(
                 parse_u8(payload)
