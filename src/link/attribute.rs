@@ -139,8 +139,8 @@ pub enum LinkAttribute {
     IfAlias(String),
     PhysPortName(String),
     Mode(LinkMode),
-    Carrier(u8),
-    ProtoDown(u8),
+    Carrier(bool),
+    ProtoDown(bool),
     Mtu(u32),
     Link(u32),
     Controller(u32),
@@ -220,7 +220,9 @@ impl Nla for LinkAttribute {
             }
             Self::Mode(v) => out.push((*v).into()),
 
-            Self::Carrier(val) | Self::ProtoDown(val) => out.push(*val),
+            Self::Carrier(val) | Self::ProtoDown(val) => {
+                out.push(u8::from(*val))
+            }
 
             Self::NetnsImmutable(val) => out.push(u8::from(*val)),
 
@@ -498,10 +500,10 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, AddressFamily> for LinkAttribute {
                 parse_u8(payload).context("invalid IFLA_LINKMODE value")?,
             )),
             IFLA_CARRIER => Self::Carrier(
-                parse_u8(payload).context("invalid IFLA_CARRIER value")?,
+                parse_u8(payload).context("invalid IFLA_CARRIER value")? > 0,
             ),
             IFLA_PROTO_DOWN => Self::ProtoDown(
-                parse_u8(payload).context("invalid IFLA_PROTO_DOWN value")?,
+                parse_u8(payload).context("invalid IFLA_PROTO_DOWN value")? > 0,
             ),
 
             IFLA_MTU => {

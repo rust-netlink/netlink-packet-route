@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 use netlink_packet_core::{
-    DefaultNla, Emitable, Nla, NlasIterator, ParseableParametrized,
+    DefaultNla, Emitable, Nla, NlaBuffer, NlasIterator, ParseableParametrized,
     NLA_MAX_VALUE_LEN,
 };
 
@@ -233,4 +233,32 @@ fn link_attribute_emit_rolls_back_on_failure() {
     let error = attribute.emit(&mut out).unwrap_err();
     assert!(error.is_too_large());
     assert_eq!(out, vec![0xaa, 0xbb]);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_link_carrier_and_proto_down() {
+    // nlmon capture of IFLA_CARRIER from `ip -d link show dcap2` after
+    // `ip link set dcap2 carrier on`.
+    let carrier = vec![0x05, 0x00, 0x21, 0x00, 0x01];
+    assert_eq!(
+        LinkAttribute::parse_with_param(
+            &NlaBuffer::new(&carrier).unwrap(),
+            AddressFamily::Unspec,
+        )
+        .unwrap(),
+        LinkAttribute::Carrier(true)
+    );
+
+    // nlmon capture of IFLA_PROTO_DOWN from `ip -d link show vxcap0` after
+    // `ip link set vxcap0 protodown on`.
+    let proto_down = vec![0x05, 0x00, 0x27, 0x00, 0x01];
+    assert_eq!(
+        LinkAttribute::parse_with_param(
+            &NlaBuffer::new(&proto_down).unwrap(),
+            AddressFamily::Unspec,
+        )
+        .unwrap(),
+        LinkAttribute::ProtoDown(true)
+    );
 }
