@@ -10,3 +10,4 @@ pub use self::{
     basic::TcStatsBasic, compat::TcStats, queue::TcStatsQueue,
     stats2::TcStats2, xstats::TcXstats,
 };
+pub use super::rate::{TcStatsRateEst, TcStatsRateEst64};

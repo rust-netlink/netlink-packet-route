@@ -5,13 +5,15 @@ use netlink_packet_core::{
     NlaBuffer, Parseable, ParseableParametrized,
 };
 
-use super::{TcStatsBasic, TcStatsQueue, TcXstats};
+use super::{
+    TcStatsBasic, TcStatsQueue, TcStatsRateEst, TcStatsRateEst64, TcXstats,
+};
 
 const TCA_STATS_BASIC: u16 = 1;
-// const TCA_STATS_RATE_EST: u16 = 2; // TODO
+const TCA_STATS_RATE_EST: u16 = 2;
 const TCA_STATS_QUEUE: u16 = 3;
 const TCA_STATS_APP: u16 = 4;
-// const TCA_STATS_RATE_EST64: u16 = 5; // TODO
+const TCA_STATS_RATE_EST64: u16 = 5;
 // const TCA_STATS_PAD: u16 = 6;
 const TCA_STATS_BASIC_HW: u16 = 7;
 
@@ -20,7 +22,9 @@ const TCA_STATS_BASIC_HW: u16 = 7;
 pub enum TcStats2 {
     App(TcXstats),
     Basic(TcStatsBasic),
+    RateEst(TcStatsRateEst),
     Queue(TcStatsQueue),
+    RateEst64(TcStatsRateEst64),
     BasicHw(TcStatsBasic),
     Other(DefaultNla),
 }
@@ -30,7 +34,9 @@ impl Nla for TcStats2 {
         match self {
             Self::App(v) => v.emit(out)?,
             Self::Basic(v) => v.emit(out)?,
+            Self::RateEst(v) => v.emit(out)?,
             Self::Queue(v) => v.emit(out)?,
+            Self::RateEst64(v) => v.emit(out)?,
             Self::BasicHw(v) => v.emit(out)?,
             Self::Other(ref nla) => append_bytes(out, nla.value()),
         }
@@ -41,7 +47,9 @@ impl Nla for TcStats2 {
         match self {
             Self::App(_) => TCA_STATS_APP,
             Self::Basic(_) => TCA_STATS_BASIC,
+            Self::RateEst(_) => TCA_STATS_RATE_EST,
             Self::Queue(_) => TCA_STATS_QUEUE,
+            Self::RateEst64(_) => TCA_STATS_RATE_EST64,
             Self::BasicHw(_) => TCA_STATS_BASIC_HW,
             Self::Other(ref nla) => nla.kind(),
         }
@@ -57,7 +65,13 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcStats2 {
         Ok(match buf.kind() {
             TCA_STATS_APP => Self::App(TcXstats::parse_with_param(buf, kind)?),
             TCA_STATS_BASIC => Self::Basic(TcStatsBasic::parse(payload)?),
+            TCA_STATS_RATE_EST => {
+                Self::RateEst(TcStatsRateEst::parse(payload)?)
+            }
             TCA_STATS_QUEUE => Self::Queue(TcStatsQueue::parse(payload)?),
+            TCA_STATS_RATE_EST64 => {
+                Self::RateEst64(TcStatsRateEst64::parse(payload)?)
+            }
             TCA_STATS_BASIC_HW => Self::BasicHw(TcStatsBasic::parse(payload)?),
             _ => Self::Other(DefaultNla::parse(buf)?),
         })

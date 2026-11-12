@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 #[cfg(test)]
+mod attribute;
+#[cfg(test)]
 mod filter_bpf;
 #[cfg(test)]
 mod filter_flower;

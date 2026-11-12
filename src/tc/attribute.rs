@@ -6,7 +6,9 @@ use netlink_packet_core::{
     NlaBuffer, NlasIterator, Parseable, ParseableParametrized,
 };
 
-use super::{TcOption, TcStats, TcStats2, TcXstats, VecTcOption};
+use super::{
+    TcOption, TcRateEstimator, TcStab, TcStats, TcStats2, TcXstats, VecTcOption,
+};
 
 const TCA_KIND: u16 = 1;
 const TCA_OPTIONS: u16 = 2;
@@ -20,8 +22,8 @@ const TCA_STAB: u16 = 8;
 const TCA_DUMP_INVISIBLE: u16 = 10;
 const TCA_CHAIN: u16 = 11;
 const TCA_HW_OFFLOAD: u16 = 12;
-// const TCA_INGRESS_BLOCK: u16 = 13; // TODO
-// const TCA_EGRESS_BLOCK: u16 = 14; // TODO
+const TCA_INGRESS_BLOCK: u16 = 13;
+const TCA_EGRESS_BLOCK: u16 = 14;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -34,27 +36,33 @@ pub enum TcAttribute {
     Stats(TcStats),
     /// Module-specific statistics
     Xstats(TcXstats),
-    /// Rate limit
-    Rate(Vec<u8>),
-    Fcnt(Vec<u8>),
+    /// Rate estimator configuration
+    Rate(TcRateEstimator),
+    /// Number of flushed actions
+    Fcnt(u32),
     Stats2(Vec<TcStats2>),
-    Stab(Vec<u8>),
+    /// Size table
+    Stab(Vec<TcStab>),
     Chain(u32),
     HwOffload(bool),
     DumpInvisible(bool),
+    IngressBlock(u32),
+    EgressBlock(u32),
     Other(DefaultNla),
 }
 
 impl Nla for TcAttribute {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match *self {
-            Self::Rate(ref bytes)
-            | Self::Fcnt(ref bytes)
-            | Self::Stab(ref bytes) => append_bytes(out, bytes.as_slice()),
-            Self::Chain(v) => append_u32(out, v),
+            Self::Rate(ref value) => value.emit(out)?,
+            Self::Fcnt(v) => append_u32(out, v),
+            Self::Stats2(ref stats) => (stats.as_slice()).emit(out)?,
+            Self::Stab(ref nlas) => (nlas).emit(out)?,
+            Self::Chain(v) | Self::IngressBlock(v) | Self::EgressBlock(v) => {
+                append_u32(out, v)
+            }
             Self::Xstats(ref v) => v.emit(out)?,
             Self::HwOffload(ref val) => append_u8(out, u8::from(*val)),
-            Self::Stats2(ref stats) => (stats.as_slice()).emit(out)?,
             Self::Stats(ref stats) => stats.emit(out)?,
             Self::Kind(ref string) => {
                 append_bytes(out, string.as_bytes());
@@ -80,6 +88,8 @@ impl Nla for TcAttribute {
             Self::Chain(_) => TCA_CHAIN,
             Self::HwOffload(_) => TCA_HW_OFFLOAD,
             Self::DumpInvisible(_) => TCA_DUMP_INVISIBLE,
+            Self::IngressBlock(_) => TCA_INGRESS_BLOCK,
+            Self::EgressBlock(_) => TCA_EGRESS_BLOCK,
             Self::Other(ref nla) => nla.kind(),
         }
     }
@@ -109,8 +119,13 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcAttribute {
                 TcXstats::parse_with_param(buf, kind)
                     .context("invalid TCA_XSTATS")?,
             ),
-            TCA_RATE => TcAttribute::Rate(payload.to_vec()),
-            TCA_FCNT => TcAttribute::Fcnt(payload.to_vec()),
+            TCA_RATE => TcAttribute::Rate(
+                TcRateEstimator::parse(payload)
+                    .context("failed to parse TCA_RATE")?,
+            ),
+            TCA_FCNT => TcAttribute::Fcnt(
+                parse_u32(payload).context("failed to parse TCA_FCNT")?,
+            ),
             TCA_STATS2 => {
                 let mut nlas = vec![];
                 for nla in buf.nlas().context("invalid TCA_STATS2")? {
@@ -124,7 +139,23 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, &str> for TcAttribute {
                 }
                 TcAttribute::Stats2(nlas)
             }
-            TCA_STAB => TcAttribute::Stab(payload.to_vec()),
+            TCA_STAB => {
+                let mut nlas = vec![];
+                for nla in buf.nlas().context("invalid TCA_STAB")? {
+                    nlas.push(TcStab::parse(&nla).with_context(|| {
+                        "failed to parse TCA_STAB attribute"
+                    })?);
+                }
+                TcAttribute::Stab(nlas)
+            }
+            TCA_INGRESS_BLOCK => TcAttribute::IngressBlock(
+                parse_u32(payload)
+                    .context("failed to parse TCA_INGRESS_BLOCK")?,
+            ),
+            TCA_EGRESS_BLOCK => TcAttribute::EgressBlock(
+                parse_u32(payload)
+                    .context("failed to parse TCA_EGRESS_BLOCK")?,
+            ),
             TCA_CHAIN => TcAttribute::Chain(
                 parse_u32(payload).context("failed to parse TCA_CHAIN")?,
             ),

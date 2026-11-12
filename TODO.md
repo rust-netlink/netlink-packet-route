@@ -2,17 +2,6 @@
 
 ## tc
 
-- Parse `TcAttribute::Rate` (`struct gnet_estimator`, 2 bytes) instead
-  of keeping the payload as `Vec<u8>`. The kernel accepts it when a
-  qdisc is created, but never dumps it.
-- Parse `TcAttribute::Fcnt` as `u32`.
-- Parse `TcAttribute::Stab` as nested attributes: `TCA_STAB_BASE`
-  (`struct tc_sizespec`) plus `TCA_STAB_DATA` (u16 size table).
-- Add `TCA_INGRESS_BLOCK` (13) and `TCA_EGRESS_BLOCK` (14), both are
-  `u32` shared block indexes.
-- Add `TCA_STATS_RATE_EST` (`struct gnet_stats_rate_est`) and
-  `TCA_STATS_RATE_EST64` (`struct gnet_stats_rate_est64`) to
-  `TcStats2`.
 - Add unit tests with real nlmon capture for the attributes above.
 
 ## link
