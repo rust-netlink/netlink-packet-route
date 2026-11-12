@@ -17,6 +17,48 @@ const IFLA_HSR_VERSION: u16 = 6;
 const IFLA_HSR_PROTOCOL: u16 = 7;
 const IFLA_HSR_INTERLINK: u16 = 8;
 
+const HSR_V0: u8 = 0;
+const HSR_V1: u8 = 1;
+
+/// HSR protocol version carried by `IFLA_HSR_VERSION`.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum HsrVersion {
+    V0,
+    V1,
+    Other(u8),
+}
+
+impl From<u8> for HsrVersion {
+    fn from(d: u8) -> Self {
+        match d {
+            HSR_V0 => Self::V0,
+            HSR_V1 => Self::V1,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<HsrVersion> for u8 {
+    fn from(v: HsrVersion) -> u8 {
+        match v {
+            HsrVersion::V0 => HSR_V0,
+            HsrVersion::V1 => HSR_V1,
+            HsrVersion::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for HsrVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::V0 => f.write_str("0"),
+            Self::V1 => f.write_str("1"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoHsr {
@@ -25,7 +67,7 @@ pub enum InfoHsr {
     Interlink(u32),
     MulticastSpec(u8),
     SupervisionAddr([u8; 6]),
-    Version(u8),
+    Version(HsrVersion),
     SeqNr(u16),
     Protocol(HsrProtocol),
     Other(DefaultNla),
@@ -40,8 +82,12 @@ impl Nla for InfoHsr {
                 append_u32(out, *value);
                 Ok(())
             }
-            Self::MulticastSpec(value) | Self::Version(value) => {
+            Self::MulticastSpec(value) => {
                 out.push(*value);
+                Ok(())
+            }
+            Self::Version(value) => {
+                out.push((*value).into());
                 Ok(())
             }
             Self::SeqNr(value) => {
@@ -104,7 +150,9 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoHsr {
                 parse_u16(payload).context("invalid IFLA_HSR_SEQ_NR value")?,
             ),
             IFLA_HSR_VERSION => Self::Version(
-                parse_u8(payload).context("invalid IFLA_HSR_VERSION value")?,
+                parse_u8(payload)
+                    .context("invalid IFLA_HSR_VERSION value")?
+                    .into(),
             ),
             IFLA_HSR_PROTOCOL => Self::Protocol(
                 parse_u8(payload)

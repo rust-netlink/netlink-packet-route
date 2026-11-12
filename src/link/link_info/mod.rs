@@ -67,7 +67,7 @@ pub use self::{
         ErSpanDir, GreEncapFlags, GreEncapType, GreIOFlags, InfoGre, InfoGre6,
     },
     gtp::{GtpRole, InfoGtp},
-    hsr::{HsrProtocol, InfoHsr},
+    hsr::{HsrProtocol, HsrVersion, InfoHsr},
     info_data::InfoData,
     info_port::{InfoPortData, InfoPortKind, InfoVrfPort},
     infos::{InfoKind, LinkInfo},
