@@ -32,6 +32,18 @@ const IFLA_IPTUN_ENCAP_DPORT: u16 = 18;
 const IFLA_IPTUN_COLLECT_METADATA: u16 = 19;
 const IFLA_IPTUN_FWMARK: u16 = 20;
 
+const SIT_ISATAP: u16 = 0x0001;
+
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+    #[non_exhaustive]
+    pub struct SitFlags: u16 {
+        /// The SIT tunnel is an ISATAP tunnel, see `SIT_ISATAP`.
+        const Isatap = SIT_ISATAP;
+        const _ = !0;
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoIpTunnel {
@@ -42,7 +54,7 @@ pub enum InfoIpTunnel {
     Tos(u8),
     EncapLimit(u8),
     FlowInfo(u32),
-    Ipv6SitFlags(u16),
+    Ipv6SitFlags(SitFlags),
     Ipv4Flags(u16),
     Ipv6Flags(Ip6TunnelFlags),
     Protocol(IpProtocol),
@@ -70,9 +82,8 @@ impl Nla for InfoIpTunnel {
             Self::Link(value) | Self::FwMark(value) => append_u32(out, *value),
             Self::FlowInfo(value) => append_u32_be(out, *value),
             Self::Ipv6Flags(f) => append_u32(out, f.bits()),
-            Self::Ipv6SitFlags(val) | Self::Ipv4Flags(val) => {
-                append_u16_be(out, *val)
-            }
+            Self::Ipv6SitFlags(val) => append_u16(out, val.bits()),
+            Self::Ipv4Flags(val) => append_u16_be(out, *val),
             Self::Local(value) | Self::Remote(value) => match value {
                 IpAddr::V4(ipv4) => append_bytes(out, &ipv4.octets()),
                 IpAddr::V6(ipv6) => append_bytes(out, &ipv6.octets()),
@@ -165,10 +176,12 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, super::InfoKind>
                     parse_u16_be(payload)
                         .context("invalid IFLA_IPTUN_FLAGS for IPIP")?,
                 ),
-                super::InfoKind::SitTun => InfoIpTunnel::Ipv6SitFlags(
-                    parse_u16_be(payload)
-                        .context("invalid IFLA_IPTUN_FLAGS for SIT")?,
-                ),
+                super::InfoKind::SitTun => {
+                    InfoIpTunnel::Ipv6SitFlags(SitFlags::from_bits_retain(
+                        parse_u16(payload)
+                            .context("invalid IFLA_IPTUN_FLAGS for SIT")?,
+                    ))
+                }
                 super::InfoKind::Ip6Tnl => {
                     InfoIpTunnel::Ipv6Flags(Ip6TunnelFlags::from_bits_retain(
                         parse_u32(payload)

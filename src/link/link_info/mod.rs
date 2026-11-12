@@ -72,7 +72,8 @@ pub use self::{
     infos::{InfoKind, LinkInfo},
     ipoib::{InfoIpoib, IpoibMode},
     iptunnel::{
-        InfoIpTunnel, Ip6TunnelFlags, TunnelEncapFlags, TunnelEncapType,
+        InfoIpTunnel, Ip6TunnelFlags, SitFlags, TunnelEncapFlags,
+        TunnelEncapType,
     },
     ipvlan::{
         InfoIpVlan, InfoIpVtap, IpVlanFlags, IpVlanMode, IpVtapFlags,
