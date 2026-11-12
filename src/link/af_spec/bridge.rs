@@ -7,14 +7,15 @@ use netlink_packet_core::{
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
+use super::{bridge_cfm::BridgeCfm, bridge_mrp::BridgeMrp};
 use crate::link::{bridge_vlan::BridgeVlanInfoFlags, BridgePortState};
 
 const IFLA_BRIDGE_FLAGS: u16 = 0;
 const IFLA_BRIDGE_MODE: u16 = 1;
 const IFLA_BRIDGE_VLAN_INFO: u16 = 2;
 const IFLA_BRIDGE_VLAN_TUNNEL_INFO: u16 = 3;
-// const IFLA_BRIDGE_MRP: u16 = 4;
-// const IFLA_BRIDGE_CFM: u16 = 5;
+const IFLA_BRIDGE_MRP: u16 = 4;
+const IFLA_BRIDGE_CFM: u16 = 5;
 const IFLA_BRIDGE_MST: u16 = 6;
 const IFLA_BRIDGE_MST_ENTRY: u16 = 1;
 const IFLA_BRIDGE_MST_ENTRY_MSTI: u16 = 1;
@@ -27,6 +28,8 @@ pub enum AfSpecBridge {
     Mode(BridgeMode),
     VlanInfo(BridgeVlanInfo),
     VlanTunnelInfo(Vec<BridgeVlanTunnelInfo>),
+    Mrp(Vec<BridgeMrp>),
+    Cfm(Vec<BridgeCfm>),
     Mst(Vec<BridgeMstEntry>),
     Other(DefaultNla),
 }
@@ -40,6 +43,8 @@ impl Nla for AfSpecBridge {
                 append_bytes(out, <[u8; 4]>::from(info).as_slice())
             }
             Self::VlanTunnelInfo(s) => (s).emit(out)?,
+            Self::Mrp(nlas) => (nlas).emit(out)?,
+            Self::Cfm(nlas) => (nlas).emit(out)?,
             Self::Mst(entries) => (entries).emit(out)?,
             Self::Other(nla) => append_bytes(out, nla.value()),
         }
@@ -52,6 +57,8 @@ impl Nla for AfSpecBridge {
             Self::Mode(_) => IFLA_BRIDGE_MODE,
             Self::VlanInfo(_) => IFLA_BRIDGE_VLAN_INFO,
             Self::VlanTunnelInfo(_) => IFLA_BRIDGE_VLAN_TUNNEL_INFO,
+            Self::Mrp(_) => IFLA_BRIDGE_MRP,
+            Self::Cfm(_) => IFLA_BRIDGE_CFM | NLA_F_NESTED,
             Self::Mst(_) => IFLA_BRIDGE_MST | NLA_F_NESTED,
             Self::Other(nla) => nla.kind(),
         }
@@ -87,6 +94,24 @@ impl<'a> Parseable<NlaBuffer<'a>> for AfSpecBridge {
                     nlas.push(parsed);
                 }
                 Self::VlanTunnelInfo(nlas)
+            }
+            IFLA_BRIDGE_MRP => {
+                let mut nlas = Vec::new();
+                for nla in buf.nlas().with_context(|| {
+                    format!("invalid IFLA_BRIDGE_MRP {payload:?}")
+                })? {
+                    nlas.push(BridgeMrp::parse(&nla)?);
+                }
+                Self::Mrp(nlas)
+            }
+            IFLA_BRIDGE_CFM => {
+                let mut nlas = Vec::new();
+                for nla in buf.nlas().with_context(|| {
+                    format!("invalid IFLA_BRIDGE_CFM {payload:?}")
+                })? {
+                    nlas.push(BridgeCfm::parse(&nla)?);
+                }
+                Self::Cfm(nlas)
             }
             IFLA_BRIDGE_MST => {
                 let mut entries = Vec::new();
@@ -157,6 +182,34 @@ impl<'a> Parseable<NlaBuffer<'a>> for BridgeMstEntry {
         }
         Ok(Self { msti, state })
     }
+}
+
+pub(super) fn append_nla_u16(out: &mut Vec<u8>, kind: u16, value: u16) {
+    append_u16(out, 6);
+    append_u16(out, kind);
+    append_u16(out, value);
+    out.extend_from_slice(&[0, 0]);
+}
+
+pub(super) fn append_nla_u32(out: &mut Vec<u8>, kind: u16, value: u32) {
+    append_u16(out, 8);
+    append_u16(out, kind);
+    append_u32(out, value);
+}
+
+pub(super) fn append_nla_u8(out: &mut Vec<u8>, kind: u16, value: u8) {
+    append_u16(out, 5);
+    append_u16(out, kind);
+    append_u8(out, value);
+    out.extend_from_slice(&[0, 0, 0]);
+}
+
+pub(super) fn append_nla_bytes(out: &mut Vec<u8>, kind: u16, value: &[u8]) {
+    let len = 4 + value.len();
+    append_u16(out, len as u16);
+    append_u16(out, kind);
+    out.extend_from_slice(value);
+    out.extend_from_slice(&vec![0; (4 - len % 4) % 4]);
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
