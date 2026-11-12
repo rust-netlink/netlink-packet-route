@@ -16,6 +16,45 @@ const IFLA_MACVLAN_BC_QUEUE_LEN: u16 = 7;
 const IFLA_MACVLAN_BC_QUEUE_LEN_USED: u16 = 8;
 const IFLA_MACVLAN_BC_CUTOFF: u16 = 9;
 
+/// Broadcast/multicast filter cutoff carried by `IFLA_MACVLAN_BC_CUTOFF`.
+///
+/// The kernel treats any negative value as "disable the broadcast/multicast
+/// filter" and any non-negative value as a reference-count cutoff.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum MacVlanBcCutoff {
+    Disabled,
+    Limit(i32),
+}
+
+impl From<i32> for MacVlanBcCutoff {
+    fn from(d: i32) -> Self {
+        if d < 0 {
+            Self::Disabled
+        } else {
+            Self::Limit(d)
+        }
+    }
+}
+
+impl From<MacVlanBcCutoff> for i32 {
+    fn from(v: MacVlanBcCutoff) -> i32 {
+        match v {
+            MacVlanBcCutoff::Disabled => -1,
+            MacVlanBcCutoff::Limit(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for MacVlanBcCutoff {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Disabled => f.write_str("disabled"),
+            Self::Limit(d) => write!(f, "{d}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoMacVlan {
@@ -28,7 +67,7 @@ pub enum InfoMacVlan {
     MacAddrCount(u32),
     BcQueueLen(u32),
     BcQueueLenUsed(u32),
-    BcCutoff(i32),
+    BcCutoff(MacVlanBcCutoff),
     Other(DefaultNla),
 }
 
@@ -43,7 +82,7 @@ impl Nla for InfoMacVlan {
             Self::MacAddrCount(value) => append_u32(out, *value),
             Self::BcQueueLen(value) => append_u32(out, *value),
             Self::BcQueueLenUsed(value) => append_u32(out, *value),
-            Self::BcCutoff(value) => append_i32(out, *value),
+            Self::BcCutoff(value) => append_i32(out, (*value).into()),
             Self::Other(nla) => append_bytes(out, nla.value()),
         }
         Ok(())
@@ -110,7 +149,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoMacVlan {
             ),
             IFLA_MACVLAN_BC_CUTOFF => Self::BcCutoff(
                 parse_i32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
+                    .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?
+                    .into(),
             ),
             kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
                 format!("unknown NLA type {kind} for IFLA_INFO_DATA(mac_vlan)")
@@ -130,7 +170,7 @@ pub enum InfoMacVtap {
     MacAddrCount(u32),
     BcQueueLen(u32),
     BcQueueLenUsed(u32),
-    BcCutoff(i32),
+    BcCutoff(MacVlanBcCutoff),
     Other(DefaultNla),
 }
 
@@ -145,7 +185,7 @@ impl Nla for InfoMacVtap {
             Self::MacAddrCount(value) => append_u32(out, *value),
             Self::BcQueueLen(value) => append_u32(out, *value),
             Self::BcQueueLenUsed(value) => append_u32(out, *value),
-            Self::BcCutoff(value) => append_i32(out, *value),
+            Self::BcCutoff(value) => append_i32(out, (*value).into()),
             Self::Other(nla) => append_bytes(out, nla.value()),
         }
         Ok(())
@@ -212,7 +252,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoMacVtap {
             ),
             IFLA_MACVLAN_BC_CUTOFF => Self::BcCutoff(
                 parse_i32(payload)
-                    .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?,
+                    .context("invalid IFLA_MACVLAN_BC_CUTOFF value")?
+                    .into(),
             ),
             kind => Self::Other(DefaultNla::parse(buf).with_context(|| {
                 format!("unknown NLA type {kind} for IFLA_INFO_DATA(mac_vtap)")

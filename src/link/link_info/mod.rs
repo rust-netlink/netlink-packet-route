@@ -81,8 +81,9 @@ pub use self::{
         IpVtapMode,
     },
     mac_vlan::{
-        InfoMacVlan, InfoMacVtap, MacVlanFlags, MacVlanMacAddressMode,
-        MacVlanMode, MacVtapFlags, MacVtapMacAddressMode, MacVtapMode,
+        InfoMacVlan, InfoMacVtap, MacVlanBcCutoff, MacVlanFlags,
+        MacVlanMacAddressMode, MacVlanMode, MacVtapFlags,
+        MacVtapMacAddressMode, MacVtapMode,
     },
     macsec::{InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate},
     netkit::{InfoNetkit, NetkitMode, NetkitPolicy, NetkitScrub},
