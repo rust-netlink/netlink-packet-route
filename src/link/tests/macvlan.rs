@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::{
     link::{
         link_flag::LinkFlags, InfoData, InfoKind, InfoMacVlan, LinkAttribute,
-        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, MacVlanFlags,
-        MacVlanMacAddressMode, MacVlanMode,
+        LinkHeader, LinkInfo, LinkLayerType, LinkMessage, MacVlanBcCutoff,
+        MacVlanFlags, MacVlanMacAddressMode, MacVlanMode,
     },
     AddressFamily,
 };
@@ -101,4 +101,22 @@ fn test_macvlan_modify_mac_addr_mode() {
     expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_macvlan_bc_cutoff() {
+    // nlmon capture of IFLA_MACVLAN_BC_CUTOFF from `ip -d link show mvlcap0`
+    // after setting `bclim 5`, then `bclim -1`.
+    let limit = vec![0x08, 0x00, 0x09, 0x00, 0x05, 0x00, 0x00, 0x00];
+    assert_eq!(
+        InfoMacVlan::parse(&NlaBuffer::new(&limit).unwrap()).unwrap(),
+        InfoMacVlan::BcCutoff(MacVlanBcCutoff::Limit(5))
+    );
+
+    let disabled = vec![0x08, 0x00, 0x09, 0x00, 0xff, 0xff, 0xff, 0xff];
+    assert_eq!(
+        InfoMacVlan::parse(&NlaBuffer::new(&disabled).unwrap()).unwrap(),
+        InfoMacVlan::BcCutoff(MacVlanBcCutoff::Disabled)
+    );
 }

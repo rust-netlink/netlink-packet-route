@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::{
     link::{
         link_flag::LinkFlags, AfSpecInet, AfSpecInet6, AfSpecUnspec,
         Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoData,
         InfoKind, InfoMacVtap, LinkAttribute, LinkHeader, LinkInfo,
-        LinkLayerType, LinkMessage, LinkMode, LinkXdp, MacVtapFlags,
-        MacVtapMacAddressMode, MacVtapMode, Map, State, Stats, Stats64,
-        XdpAttached,
+        LinkLayerType, LinkMessage, LinkMode, LinkXdp, MacVlanBcCutoff,
+        MacVtapFlags, MacVtapMacAddressMode, MacVtapMode, Map, State, Stats,
+        Stats64, XdpAttached,
     },
     AddressFamily,
 };
@@ -382,4 +382,22 @@ fn test_macvtap_modify_mac_addr_mode() {
     expected.emit(&mut buf).unwrap();
 
     assert_eq!(buf, raw);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_macvtap_bc_cutoff() {
+    // nlmon capture of IFLA_MACVLAN_BC_CUTOFF from `ip -d link show mvlcap0`
+    // after setting `bclim 5`, then `bclim -1`.
+    let limit = vec![0x08, 0x00, 0x09, 0x00, 0x05, 0x00, 0x00, 0x00];
+    assert_eq!(
+        InfoMacVtap::parse(&NlaBuffer::new(&limit).unwrap()).unwrap(),
+        InfoMacVtap::BcCutoff(MacVlanBcCutoff::Limit(5))
+    );
+
+    let disabled = vec![0x08, 0x00, 0x09, 0x00, 0xff, 0xff, 0xff, 0xff];
+    assert_eq!(
+        InfoMacVtap::parse(&NlaBuffer::new(&disabled).unwrap()).unwrap(),
+        InfoMacVtap::BcCutoff(MacVlanBcCutoff::Disabled)
+    );
 }
