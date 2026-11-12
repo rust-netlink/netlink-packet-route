@@ -5,9 +5,10 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     route::{
-        RouteAttribute, RouteCacheInfo, RouteFlags, RouteHeader,
-        RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage, RoutePreference,
-        RouteProtocol, RouteRplIpTunnel, RouteScope, RouteType, RplSrh,
+        Ipv6RoutingType, RouteAttribute, RouteCacheInfo, RouteFlags,
+        RouteHeader, RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage,
+        RoutePreference, RouteProtocol, RouteRplIpTunnel, RouteScope,
+        RouteType, RplSrh,
     },
     AddressFamily,
 };
@@ -59,7 +60,7 @@ fn test_rpl_tunnel() {
             RouteAttribute::Encap(vec![RouteLwTunnelEncap::Rpl(
                 RouteRplIpTunnel::Srh(RplSrh {
                     next_header: 0,
-                    routing_type: 3,
+                    routing_type: Ipv6RoutingType::Rpl,
                     segments_left: 2,
                     cmpri: 0,
                     cmpre: 0,
@@ -132,7 +133,7 @@ fn test_rpl_tunnel_request() {
             RouteAttribute::Encap(vec![RouteLwTunnelEncap::Rpl(
                 RouteRplIpTunnel::Srh(RplSrh {
                     next_header: 0,
-                    routing_type: 3,
+                    routing_type: Ipv6RoutingType::Rpl,
                     segments_left: 2,
                     cmpri: 0,
                     cmpre: 0,
@@ -205,7 +206,7 @@ fn test_rpl_tunnel_pad() {
             RouteAttribute::Encap(vec![RouteLwTunnelEncap::Rpl(
                 RouteRplIpTunnel::Srh(RplSrh {
                     next_header: 0,
-                    routing_type: 3,
+                    routing_type: Ipv6RoutingType::Rpl,
                     segments_left: 2,
                     cmpri: 0,
                     cmpre: 0,
