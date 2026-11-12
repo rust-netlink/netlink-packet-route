@@ -110,11 +110,11 @@ fn test_empty_af_spec() {
             LinkAttribute::TsoMaxSize(65536),
             LinkAttribute::TsoMaxSegs(65535),
             LinkAttribute::NumRxQueues(4),
-            LinkAttribute::Carrier(0),
+            LinkAttribute::Carrier(false),
             LinkAttribute::CarrierChanges(6),
             LinkAttribute::CarrierUpCount(3),
             LinkAttribute::CarrierDownCount(3),
-            LinkAttribute::ProtoDown(0),
+            LinkAttribute::ProtoDown(false),
             LinkAttribute::Broadcast(vec![255, 255, 255, 255, 255, 255]),
             LinkAttribute::Stats64(Stats64 {
                 rx_packets: 38,
