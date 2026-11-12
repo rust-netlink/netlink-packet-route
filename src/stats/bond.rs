@@ -2,7 +2,7 @@
 
 use netlink_packet_core::{
     append_bytes, append_u64, parse_u64, DecodeError, DefaultNla, Emitable,
-    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable, NLA_F_NESTED,
+    EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
 const BOND_XSTATS_3AD: u16 = 1;
@@ -28,7 +28,7 @@ impl Nla for BondXstat {
 
     fn kind(&self) -> u16 {
         match self {
-            Self::ThreeAd(_) => BOND_XSTATS_3AD | NLA_F_NESTED,
+            Self::ThreeAd(_) => BOND_XSTATS_3AD,
             Self::Other(v) => v.kind(),
         }
     }

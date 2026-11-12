@@ -32,8 +32,6 @@
 ## unit tests
 
 - Assert `InfoKind::Netdevsim` in the netdevsim test.
-- Replace the hand made payloads of the stats tests (`offload`,
-  `bridge`, `bond` and `af_spec`) with real nlmon captures.
 - Fix the `emit()` round trip of `test_parsing_link_vrf` or document
   why the emitted packet differs from the capture.
 - Add `dpll_pin` tests when DPLL capable hardware is available.
