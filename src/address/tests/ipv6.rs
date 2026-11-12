@@ -14,7 +14,97 @@ use crate::{
     AddressFamily,
 };
 
-// TODO(Gris Ge): Need test for `AddressAttribute::Anycast` and `Multicast`.
+// nlmon capture (netlink header removed) of the kernel `RTM_GETANYCAST`
+// dump reply on Linux 7.2.14 after:
+//
+//      ip link add nltest0 type dummy
+//      ip link set nltest0 up
+//      sysctl -w net.ipv6.conf.nltest0.forwarding=1
+//      ip -6 addr add 2001:db8::1/64 dev nltest0 nodad
+//
+// test data are using hard coded little endian byte order, not for big-endian
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_ipv6_get_anycast_address() {
+    let raw = vec![
+        0x0a, 0x80, 0x80, 0x00, 0x63, 0x05, 0x00, 0x00, 0x14, 0x00, 0x05, 0x00,
+        0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x06, 0x00, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0x92, 0xdb, 0x9b, 0x02, 0x92, 0xdb, 0x9b, 0x02,
+    ];
+
+    let expected = AddressMessage {
+        header: AddressHeader {
+            family: AddressFamily::Inet6,
+            prefix_len: 128,
+            flags: AddressHeaderFlags::Permanent,
+            scope: AddressScope::Universe,
+            index: 1379,
+        },
+        attributes: vec![
+            AddressAttribute::Anycast(
+                Ipv6Addr::from_str("2001:db8::").unwrap(),
+            ),
+            AddressAttribute::CacheInfo(CacheInfo {
+                ifa_preferred: u32::MAX,
+                ifa_valid: u32::MAX,
+                cstamp: 43768722,
+                tstamp: 43768722,
+            }),
+        ],
+    };
+
+    assert_eq!(expected, AddressMessage::parse(&raw).unwrap());
+
+    let mut buf = Vec::new();
+
+    expected.emit(&mut buf).unwrap();
+
+    assert_eq!(buf, raw);
+}
+
+// nlmon capture (netlink header removed) of the kernel `RTM_GETMULTICAST`
+// dump reply on Linux 7.2.14 triggered by an `RTM_GETMULTICAST` request for
+// the loopback interface.
+//
+// test data are using hard coded little endian byte order, not for big-endian
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_ipv6_get_multicast_address() {
+    let raw = vec![
+        0x0a, 0x80, 0x80, 0x00, 0x01, 0x00, 0x00, 0x00, 0x14, 0x00, 0x07, 0x00,
+        0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x01, 0x14, 0x00, 0x06, 0x00, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0x5a, 0x00, 0x00, 0x00, 0x5a, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = AddressMessage {
+        header: AddressHeader {
+            family: AddressFamily::Inet6,
+            prefix_len: 128,
+            flags: AddressHeaderFlags::Permanent,
+            scope: AddressScope::Universe,
+            index: 1,
+        },
+        attributes: vec![
+            AddressAttribute::Multicast(Ipv6Addr::from_str("ff02::1").unwrap()),
+            AddressAttribute::CacheInfo(CacheInfo {
+                ifa_preferred: u32::MAX,
+                ifa_valid: u32::MAX,
+                cstamp: 90,
+                tstamp: 90,
+            }),
+        ],
+    };
+
+    assert_eq!(expected, AddressMessage::parse(&raw).unwrap());
+
+    let mut buf = Vec::new();
+
+    expected.emit(&mut buf).unwrap();
+
+    assert_eq!(buf, raw);
+}
 
 #[test]
 fn test_addr_flag_stable_privacy() {

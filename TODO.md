@@ -31,8 +31,6 @@
 
 ## unit tests
 
-- Add tests for `AddressAttribute::Broadcast` (IPv4), `Anycast` and
-  `Multicast` (IPv6).
 - Add tests for the `dsa`, `ifb`, `nlmon`, `tun`, `team` and
   `virt_wifi` link kinds, and assert `InfoKind::Netdevsim` in the
   netdevsim test.
