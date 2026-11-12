@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 use netlink_packet_core::{
-    DefaultNla, Emitable, Nla, NlaBuffer, NlasIterator, ParseableParametrized,
-    NLA_MAX_VALUE_LEN,
+    DefaultNla, Emitable, Nla, NlaBuffer, NlasIterator, Parseable,
+    ParseableParametrized, NLA_MAX_VALUE_LEN,
 };
 
 use crate::{
@@ -261,4 +261,42 @@ fn test_parsing_link_carrier_and_proto_down() {
         .unwrap(),
         LinkAttribute::ProtoDown(true)
     );
+}
+
+// nlmon capture of the kernel reply to `ip -d link show sit0` (netlink
+// header removed) on Linux 7.2.14, trimmed to `IFLA_IFNAME`,
+// `IFLA_MAX_PACING_OFFLOAD_HORIZON`, `IFLA_HEADROOM` and `IFLA_TAILROOM`.
+// test data are using hard coded little endian byte order, not for big-endian
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_link_headroom_tailroom_pacing_offload_horizon() {
+    let raw = vec![
+        0x00, 0x00, 0x08, 0x03, 0x84, 0x04, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x03, 0x00, 0x73, 0x69, 0x74, 0x30,
+        0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x06, 0x00, 0x44, 0x00, 0x94, 0x00, 0x00, 0x00, 0x06, 0x00, 0x45, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 1156,
+            link_layer_type: LinkLayerType::Sit,
+            flags: LinkFlags::Noarp,
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![
+            LinkAttribute::IfName("sit0".to_string()),
+            LinkAttribute::MaxPacingOffloadHorizon(0),
+            LinkAttribute::Headroom(148),
+            LinkAttribute::Tailroom(0),
+        ],
+    };
+
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
+
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
+    assert_eq!(buf, raw);
 }
