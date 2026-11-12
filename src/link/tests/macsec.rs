@@ -47,12 +47,12 @@ fn test_macsec_link_info() {
                 #[allow(deprecated)]
                 InfoMacSec::CipherSuite(MacSecCipherId::DefaultGcmAes128),
                 InfoMacSec::EncodingSa(0),
-                InfoMacSec::Encrypt(1),
-                InfoMacSec::Protect(1),
-                InfoMacSec::IncSci(1),
-                InfoMacSec::Es(0),
-                InfoMacSec::Scb(0),
-                InfoMacSec::ReplayProtect(0),
+                InfoMacSec::Encrypt(true),
+                InfoMacSec::Protect(true),
+                InfoMacSec::IncSci(true),
+                InfoMacSec::Es(false),
+                InfoMacSec::Scb(false),
+                InfoMacSec::ReplayProtect(false),
                 InfoMacSec::Validation(MacSecValidate::Strict),
                 InfoMacSec::Offload(MacSecOffload::Off),
             ])),
@@ -80,4 +80,31 @@ fn test_macsec_port_big_endian() {
     let parsed =
         InfoMacSec::parse(&NlaBuffer::new(&expected).unwrap()).unwrap();
     assert_eq!(parsed, port);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_macsec_bool_attributes() {
+    // nlmon capture of IFLA_INFO_DATA from `ip -d link show macsec0` where
+    // macsec0 was created with:
+    //  ip link add link dcap2 macsec0 type macsec encrypt on protect on \
+    //      send_sci on replay on window 32
+    let attrs: [(&[u8], InfoMacSec); 6] = [
+        (&[0x05, 0x00, 0x07, 0x00, 0x01], InfoMacSec::Encrypt(true)),
+        (&[0x05, 0x00, 0x08, 0x00, 0x01], InfoMacSec::Protect(true)),
+        (&[0x05, 0x00, 0x09, 0x00, 0x01], InfoMacSec::IncSci(true)),
+        (&[0x05, 0x00, 0x0a, 0x00, 0x00], InfoMacSec::Es(false)),
+        (&[0x05, 0x00, 0x0b, 0x00, 0x00], InfoMacSec::Scb(false)),
+        (
+            &[0x05, 0x00, 0x0c, 0x00, 0x01],
+            InfoMacSec::ReplayProtect(true),
+        ),
+    ];
+
+    for (raw, expected) in attrs {
+        assert_eq!(
+            InfoMacSec::parse(&NlaBuffer::new(raw).unwrap()).unwrap(),
+            expected
+        );
+    }
 }
