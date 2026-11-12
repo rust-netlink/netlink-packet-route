@@ -55,6 +55,8 @@ const WWAN: &str = "wwan";
 const CAN: &str = "can";
 const DSA: &str = "dsa";
 const TEAM: &str = "team";
+const OVPN: &str = "ovpn";
+const PPP: &str = "ppp";
 const ERSPAN: &str = "erspan";
 const IP6ERSPAN: &str = "ip6erspan";
 const PFCP: &str = "pfcp";
@@ -216,6 +218,8 @@ pub enum InfoKind {
     Can,
     Dsa,
     Team,
+    Ovpn,
+    Ppp,
     ErSpan,
     Ip6ErSpan,
     Pfcp,
@@ -271,6 +275,8 @@ impl std::fmt::Display for InfoKind {
                 Self::Can => CAN,
                 Self::Dsa => DSA,
                 Self::Team => TEAM,
+                Self::Ovpn => OVPN,
+                Self::Ppp => PPP,
                 Self::ErSpan => ERSPAN,
                 Self::Ip6ErSpan => IP6ERSPAN,
                 Self::Pfcp => PFCP,
@@ -339,6 +345,8 @@ impl From<&str> for InfoKind {
             CAN => Self::Can,
             DSA => Self::Dsa,
             TEAM => Self::Team,
+            OVPN => Self::Ovpn,
+            PPP => Self::Ppp,
             ERSPAN => Self::ErSpan,
             IP6ERSPAN => Self::Ip6ErSpan,
             PFCP => Self::Pfcp,
