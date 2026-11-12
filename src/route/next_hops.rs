@@ -99,7 +99,7 @@ impl std::fmt::Display for RouteNextHopFlags {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct RouteNextHopBuffer {
+pub(crate) struct RouteNextHopBuffer {
     length: u16,
     flags: u8,
     hops: u8,

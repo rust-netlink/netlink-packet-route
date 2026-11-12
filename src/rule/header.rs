@@ -19,7 +19,7 @@ pub(crate) const RULE_HEADER_LEN: usize = 12;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct RuleMessageBuffer {
+pub(crate) struct RuleMessageBuffer {
     family: u8,
     dst_len: u8,
     src_len: u8,

@@ -89,7 +89,7 @@ pub struct TcMirror {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcMirrorBuffer {
+pub(crate) struct TcMirrorBuffer {
     generic: TcActionGenericBuffer,
     eaction: i32,
     ifindex: u32,

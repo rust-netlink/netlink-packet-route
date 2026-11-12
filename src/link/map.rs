@@ -17,7 +17,7 @@ const LINK_MAP_LEN: usize = 32;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct MapBuffer {
+pub(crate) struct MapBuffer {
     memory_start: u64,
     memory_end: u64,
     base_address: u64,

@@ -105,7 +105,7 @@ impl Default for TcNat {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcNatBuffer {
+pub(crate) struct TcNatBuffer {
     generic: TcActionGenericBuffer,
     old_addr: [u8; 4],
     new_addr: [u8; 4],

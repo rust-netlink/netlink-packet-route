@@ -38,7 +38,7 @@ pub struct MplsLinkStats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct MplsLinkStatsBuffer {
+pub(crate) struct MplsLinkStatsBuffer {
     rx_packets: u64,
     tx_packets: u64,
     rx_bytes: u64,

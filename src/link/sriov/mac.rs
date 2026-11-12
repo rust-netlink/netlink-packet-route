@@ -41,7 +41,7 @@ impl VfInfoMac {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoMacBuffer {
+pub(crate) struct VfInfoMacBuffer {
     vf_id: u32,
     mac: [u8; MAX_ADDR_LEN],
 }

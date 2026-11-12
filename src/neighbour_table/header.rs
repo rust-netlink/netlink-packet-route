@@ -19,7 +19,7 @@ pub(crate) const NEIGHBOUR_TABLE_HEADER_LEN: usize = 4;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct NeighbourTableMessageBuffer {
+pub(crate) struct NeighbourTableMessageBuffer {
     family: u8,
     _pad: [u8; 3],
 }

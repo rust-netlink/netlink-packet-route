@@ -70,7 +70,7 @@ pub struct Stats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct StatsBuffer {
+pub(crate) struct StatsBuffer {
     rx_packets: u32,
     tx_packets: u32,
     rx_bytes: u32,

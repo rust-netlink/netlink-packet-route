@@ -20,7 +20,7 @@ pub(crate) const ADDRLABEL_HEADER_LEN: usize = 12;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct AddrLabelMessageBuffer {
+pub(crate) struct AddrLabelMessageBuffer {
     family: u8,
     reserved: u8,
     prefix_len: u8,

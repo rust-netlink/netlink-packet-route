@@ -29,7 +29,7 @@ pub struct Icmp6Stats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct Icmp6StatsBuffer {
+pub(crate) struct Icmp6StatsBuffer {
     num: i64,
     in_msgs: i64,
     in_errors: i64,

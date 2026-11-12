@@ -40,7 +40,7 @@ pub struct TcStats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcStatsBuffer {
+pub(crate) struct TcStatsBuffer {
     bytes: u64,
     packets: u32,
     drops: u32,

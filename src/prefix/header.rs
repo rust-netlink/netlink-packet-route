@@ -17,7 +17,7 @@ pub(crate) const PREFIX_HEADER_LEN: usize = 12;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct PrefixMessageBuffer {
+pub(crate) struct PrefixMessageBuffer {
     prefix_family: u8,
     pad1: u8,
     pad2: u16,

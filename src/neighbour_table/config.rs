@@ -31,7 +31,7 @@ pub struct NeighbourTableConfig {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct NeighbourTableConfigBuffer {
+pub(crate) struct NeighbourTableConfigBuffer {
     key_len: u16,
     entry_size: u16,
     entries: u32,

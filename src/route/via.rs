@@ -38,7 +38,7 @@ const RTVIA_LEN: usize = 2;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct RouteViaBuffer {
+pub(crate) struct RouteViaBuffer {
     address_family: u16,
 }
 

@@ -30,7 +30,7 @@ impl VfInfoTrust {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoTrustBuffer {
+pub(crate) struct VfInfoTrustBuffer {
     vf_id: u32,
     setting: u32,
 }

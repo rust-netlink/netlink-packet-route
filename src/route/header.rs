@@ -21,7 +21,7 @@ pub(crate) const ROUTE_HEADER_LEN: usize = 12;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct RouteMessageBuffer {
+pub(crate) struct RouteMessageBuffer {
     address_family: u8,
     destination_prefix_length: u8,
     source_prefix_length: u8,

@@ -12,13 +12,13 @@ mod stats;
 pub(crate) use self::options::VecTcOption;
 pub use self::{
     actions::{
-        TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
-        TcActionMessage, TcActionMessageAttribute, TcActionMessageBuffer,
-        TcActionMessageFlags, TcActionMessageFlagsWithSelector,
-        TcActionMessageHeader, TcActionMirror, TcActionMirrorOption,
-        TcActionNat, TcActionNatOption, TcActionOption, TcActionTunnelKey,
-        TcActionTunnelKeyOption, TcActionType, TcMirror, TcMirrorActionType,
-        TcMirrorBuffer, TcNat, TcNatBuffer, TcNatFlags, TcTunnelKey, Tcf,
+        TcAction, TcActionAttribute, TcActionGeneric, TcActionMessage,
+        TcActionMessageAttribute, TcActionMessageFlags,
+        TcActionMessageFlagsWithSelector, TcActionMessageHeader,
+        TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
+        TcActionOption, TcActionTunnelKey, TcActionTunnelKeyOption,
+        TcActionType, TcMirror, TcMirrorActionType, TcNat, TcNatFlags,
+        TcTunnelKey, Tcf,
     },
     attribute::TcAttribute,
     filters::{
@@ -26,20 +26,16 @@ pub use self::{
         TcFilterFlowerMplsLseOption, TcFilterFlowerMplsOption,
         TcFilterFlowerOption, TcFilterMatchAll, TcFilterMatchAllOption,
         TcFilterU32, TcFilterU32Option, TcU32Key, TcU32OptionFlags,
-        TcU32Selector, TcU32SelectorBuffer, TcU32SelectorFlags,
+        TcU32Selector, TcU32SelectorFlags,
     },
-    header::{TcHandle, TcHeader, TcMessageBuffer},
+    header::{TcHandle, TcHeader},
     message::TcMessage,
     options::TcOption,
     qdiscs::{
-        TcFqCodelClStats, TcFqCodelClStatsBuffer, TcFqCodelQdStats,
-        TcFqCodelQdStatsBuffer, TcFqCodelXstats, TcQdiscFqCodel,
+        TcFqCodelClStats, TcFqCodelQdStats, TcFqCodelXstats, TcQdiscFqCodel,
         TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
     },
-    stats::{
-        TcStats, TcStats2, TcStatsBasic, TcStatsBasicBuffer, TcStatsBuffer,
-        TcStatsQueue, TcStatsQueueBuffer, TcXstats,
-    },
+    stats::{TcStats, TcStats2, TcStatsBasic, TcStatsQueue, TcXstats},
 };
 
 #[cfg(test)]

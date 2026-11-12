@@ -119,7 +119,7 @@ const SEG6_HEADER_LEN: usize = SEG6_IPTUN_MODE_LEN + SEG6_SRH_FIXED_LEN;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct Seg6MessageBuffer {
+pub(crate) struct Seg6MessageBuffer {
     mode: u32,
     nexthdr: u8,
     hdrlen: u8,

@@ -182,7 +182,7 @@ fn devconf_entries(conf: &InetDevConf) -> [(u16, i32); IPV4_DEVCONF_MAX] {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct InetDevConfBuffer {
+pub(crate) struct InetDevConfBuffer {
     forwarding: i32,
     mc_forwarding: i32,
     proxy_arp: i32,

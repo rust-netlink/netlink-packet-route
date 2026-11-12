@@ -7,9 +7,6 @@ mod stats2;
 mod xstats;
 
 pub use self::{
-    basic::{TcStatsBasic, TcStatsBasicBuffer},
-    compat::{TcStats, TcStatsBuffer},
-    queue::{TcStatsQueue, TcStatsQueueBuffer},
-    stats2::TcStats2,
-    xstats::TcXstats,
+    basic::TcStatsBasic, compat::TcStats, queue::TcStatsQueue,
+    stats2::TcStats2, xstats::TcXstats,
 };

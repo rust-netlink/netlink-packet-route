@@ -17,7 +17,7 @@ use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct Inet6DevConfBuffer {
+pub(crate) struct Inet6DevConfBuffer {
     forwarding: i32,
     hoplimit: i32,
     mtu6: i32,

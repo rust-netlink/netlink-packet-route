@@ -13,6 +13,6 @@ pub use self::{
     addr_flags::{AddressFlags, AddressHeaderFlags},
     addr_scope::AddressScope,
     attribute::{AddressAttribute, AddressProtocol},
-    cache_info::{CacheInfo, CacheInfoBuffer},
-    message::{AddressHeader, AddressMessage, AddressMessageBuffer},
+    cache_info::CacheInfo,
+    message::{AddressHeader, AddressMessage},
 };

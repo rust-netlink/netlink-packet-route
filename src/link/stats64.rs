@@ -19,7 +19,7 @@ use zerocopy::{
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct Stats64Buffer {
+pub(crate) struct Stats64Buffer {
     rx_packets: u64,
     tx_packets: u64,
     rx_bytes: u64,

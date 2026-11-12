@@ -24,7 +24,7 @@ const ADDRESS_HEADER_LEN: usize = 8;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct AddressMessageBuffer {
+pub(crate) struct AddressMessageBuffer {
     family: u8,
     prefix_len: u8,
     flags: u8,

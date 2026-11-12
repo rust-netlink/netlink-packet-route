@@ -20,7 +20,7 @@ pub(crate) const NEIGHBOUR_HEADER_LEN: usize = 12;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct NeighbourMessageBuffer {
+pub(crate) struct NeighbourMessageBuffer {
     family: u8,
     _pad: [u8; 3],
     ifindex: u32,

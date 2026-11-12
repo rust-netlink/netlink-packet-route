@@ -120,7 +120,7 @@ pub struct BridgeMcastStats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct BridgeMcastStatsBuffer {
+pub(crate) struct BridgeMcastStatsBuffer {
     igmp_v1queries_rx: u64,
     igmp_v1queries_tx: u64,
     igmp_v2queries_rx: u64,
@@ -266,7 +266,7 @@ pub struct BridgeStpXstats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct BridgeStpXstatsBuffer {
+pub(crate) struct BridgeStpXstatsBuffer {
     transition_blk: u64,
     transition_fwd: u64,
     rx_bpdu: u64,
@@ -340,7 +340,7 @@ pub struct BridgeVlanXstats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct BridgeVlanXstatsBuffer {
+pub(crate) struct BridgeVlanXstatsBuffer {
     rx_bytes: u64,
     rx_packets: u64,
     tx_bytes: u64,

@@ -30,7 +30,7 @@ impl VfInfoSpoofCheck {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoSpoofCheckBuffer {
+pub(crate) struct VfInfoSpoofCheckBuffer {
     vf_id: u32,
     setting: u32,
 }

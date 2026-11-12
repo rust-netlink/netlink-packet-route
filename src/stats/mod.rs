@@ -17,12 +17,10 @@ pub use self::{
     attribute::StatsAttribute,
     bond::{Bond3adStats, BondXstat},
     bridge::{
-        BridgeMcastStats, BridgeMcastStatsBuffer, BridgeStpXstats,
-        BridgeStpXstatsBuffer, BridgeVlanXstats, BridgeVlanXstatsBuffer,
-        BridgeXstat,
+        BridgeMcastStats, BridgeStpXstats, BridgeVlanXstats, BridgeXstat,
     },
-    header::{StatsFilterMask, StatsHeader, StatsMessageBuffer},
+    header::{StatsFilterMask, StatsHeader},
     message::StatsMessage,
-    offload::{HwStats64, HwStats64Buffer, HwStatsInfo, OffloadXstat},
+    offload::{HwStats64, HwStatsInfo, OffloadXstat},
     xstats::LinkXstatGroup,
 };

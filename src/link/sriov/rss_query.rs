@@ -30,7 +30,7 @@ impl VfInfoRssQueryEn {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoRssQueryEnBuffer {
+pub(crate) struct VfInfoRssQueryEnBuffer {
     vf_id: u32,
     setting: u32,
 }

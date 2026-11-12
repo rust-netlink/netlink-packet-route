@@ -16,19 +16,19 @@ mod vf_vlan;
 mod vlan;
 
 pub use self::{
-    broadcast::{VfInfoBroadcast, VfInfoBroadcastBuffer},
-    guid::{VfInfoGuid, VfInfoGuidBuffer},
-    link_state::{VfInfoLinkState, VfInfoLinkStateBuffer, VfLinkState},
-    mac::{VfInfoMac, VfInfoMacBuffer},
-    rate::{VfInfoRate, VfInfoRateBuffer},
-    rss_query::{VfInfoRssQueryEn, VfInfoRssQueryEnBuffer},
-    spoofchk::{VfInfoSpoofCheck, VfInfoSpoofCheckBuffer},
+    broadcast::VfInfoBroadcast,
+    guid::VfInfoGuid,
+    link_state::{VfInfoLinkState, VfLinkState},
+    mac::VfInfoMac,
+    rate::VfInfoRate,
+    rss_query::VfInfoRssQueryEn,
+    spoofchk::VfInfoSpoofCheck,
     stats::VfStats,
-    trust::{VfInfoTrust, VfInfoTrustBuffer},
-    tx_rate::{VfInfoTxRate, VfInfoTxRateBuffer},
+    trust::VfInfoTrust,
+    tx_rate::VfInfoTxRate,
     vf_list::{LinkVfInfo, VfInfo},
     vf_port::{LinkVfPort, VfPort},
     vf_vlan::{VfVlan, VfVlanInfo},
-    vlan::{VfInfoVlan, VfInfoVlanBuffer},
+    vlan::VfInfoVlan,
 };
 pub(crate) use self::{vf_list::VecLinkVfInfo, vf_port::VecLinkVfPort};

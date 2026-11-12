@@ -422,7 +422,7 @@ impl TcActionGeneric {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcActionGenericBuffer {
+pub(crate) struct TcActionGenericBuffer {
     index: u32,
     capab: u32,
     action: i32,
@@ -571,7 +571,7 @@ pub struct Tcf {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcfBuffer {
+pub(crate) struct TcfBuffer {
     install: u64,
     lastuse: u64,
     expires: u64,
