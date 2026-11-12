@@ -19,6 +19,19 @@ use crate::{
 
 #[cfg(not(target_endian = "big"))]
 #[test]
+fn test_parsing_link_vxlan_ttl_inherit() {
+    // nlmon capture of IFLA_VXLAN_TTL_INHERIT from `ip -d link show vxcap1`
+    // where vxcap1 was created with `ttl inherit`.
+    let raw = vec![0x05, 0x00, 0x1c, 0x00, 0x01];
+
+    assert_eq!(
+        InfoVxlan::parse(&NlaBuffer::new(&raw).unwrap()).unwrap(),
+        InfoVxlan::TtlInherit(true)
+    );
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
 fn test_parsing_link_vxlan_label_policy() {
     // nlmon capture of IFLA_VXLAN_LABEL_POLICY from:
     //  ip link add vxcap0 type vxlan id 42 dstport 4789 \
@@ -173,7 +186,7 @@ fn test_parsing_link_vxlan() {
                     InfoVxlan::Link(20),
                     InfoVxlan::Local(Ipv4Addr::from_str("1.1.1.1").unwrap()),
                     InfoVxlan::Ttl(0),
-                    InfoVxlan::TtlInherit(0),
+                    InfoVxlan::TtlInherit(false),
                     InfoVxlan::Tos(0),
                     InfoVxlan::Df(VxlanDf::Unset),
                     InfoVxlan::Label(0),
@@ -418,7 +431,7 @@ fn test_parsing_link_vxlan_ipv6() {
                     InfoVxlan::Link(2),
                     InfoVxlan::Local6(Ipv6Addr::from_str("fd01::2").unwrap()),
                     InfoVxlan::Ttl(0),
-                    InfoVxlan::TtlInherit(0),
+                    InfoVxlan::TtlInherit(false),
                     InfoVxlan::Tos(0),
                     InfoVxlan::Df(VxlanDf::Unset),
                     InfoVxlan::Label(0),
@@ -554,7 +567,7 @@ fn test_parsing_link_vxlan_label() {
                 InfoVxlan::Group6(Ipv6Addr::from_str("fc00::2").unwrap()),
                 InfoVxlan::Local6(Ipv6Addr::from_str("fc00::1").unwrap()),
                 InfoVxlan::Ttl(0),
-                InfoVxlan::TtlInherit(0),
+                InfoVxlan::TtlInherit(false),
                 InfoVxlan::Tos(0),
                 InfoVxlan::Df(VxlanDf::Unset),
                 InfoVxlan::Label(12345),
