@@ -4,16 +4,38 @@ use std::{
     str::FromStr,
 };
 
-use netlink_packet_core::{Emitable, Parseable};
+use netlink_packet_core::{
+    Emitable, Nla, NlaBuffer, Parseable, ParseableParametrized,
+};
 
 use crate::{
     link::{
         InfoData, InfoIpTunnel, InfoKind, Ip6TunnelFlags, LinkAttribute,
-        LinkFlags, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
+        LinkFlags, LinkHeader, LinkInfo, LinkLayerType, LinkMessage, SitFlags,
         TunnelEncapFlags, TunnelEncapType,
     },
     AddressFamily, IpProtocol,
 };
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_iptunnel_sit_isatap_flags() {
+    // nlmon capture of IFLA_IPTUN_FLAGS from:
+    //  ip link add sitcap0 type sit local 192.0.2.1 remote 192.0.2.2 isatap
+    let raw = vec![0x06, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x00];
+
+    let parsed = InfoIpTunnel::parse_with_param(
+        &NlaBuffer::new(&raw).unwrap(),
+        InfoKind::SitTun,
+    )
+    .unwrap();
+
+    assert_eq!(parsed, InfoIpTunnel::Ipv6SitFlags(SitFlags::Isatap));
+
+    let mut buf = Vec::new();
+    parsed.emit_value(&mut buf).unwrap();
+    assert_eq!(buf, raw[4..6]);
+}
 
 #[test]
 fn test_iptunnel_ipip_link_info() {
@@ -258,7 +280,7 @@ fn test_iptunnel_sit_link_info() {
                 InfoIpTunnel::Tos(0),
                 InfoIpTunnel::PMtuDisc(true),
                 InfoIpTunnel::Protocol(IpProtocol::Ipv6),
-                InfoIpTunnel::Ipv6SitFlags(0),
+                InfoIpTunnel::Ipv6SitFlags(SitFlags::empty()),
                 InfoIpTunnel::FwMark(0),
                 InfoIpTunnel::EncapType(TunnelEncapType::None),
                 InfoIpTunnel::EncapSPort(10),

@@ -65,8 +65,8 @@ pub use self::link_info::{
     IpoibMode, LacpState, LinkInfo, LinkXstats, MacSecCipherId, MacSecOffload,
     MacSecValidate, MacVlanFlags, MacVlanMacAddressMode, MacVlanMode,
     MacVtapFlags, MacVtapMacAddressMode, MacVtapMode, MiiStatus, NetkitMode,
-    NetkitPolicy, NetkitScrub, RmNetFlags, TunnelEncapFlags, TunnelEncapType,
-    VlanFlags, VlanQosMapping, VxlanDf,
+    NetkitPolicy, NetkitScrub, RmNetFlags, SitFlags, TunnelEncapFlags,
+    TunnelEncapType, VlanFlags, VlanQosMapping, VxlanDf,
 };
 #[cfg(feature = "link-sriov")]
 pub use self::sriov::{
