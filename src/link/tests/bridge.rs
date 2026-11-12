@@ -9,7 +9,7 @@ use crate::{
     link::{
         link_flag::LinkFlags, AfSpecBridge, AfSpecInet, AfSpecInet6,
         AfSpecUnspec, BridgeBooleanOptionFlags, BridgeBooleanOptions,
-        BridgeFlag, BridgeGroupFwdMask, BridgeId, BridgeMode,
+        BridgeFlag, BridgeGroupFwdMask, BridgeId, BridgeMode, BridgeMstEntry,
         BridgeMulticastIgmpVersion, BridgeMulticastMldVersion,
         BridgeMulticastRouterType, BridgePortState, BridgeStpMode,
         BridgeStpState, BridgeVlanInfo, BridgeVlanInfoFlags,
@@ -1868,6 +1868,36 @@ fn test_bridge_port_learning_sync() {
     let nla = NlaBuffer::new(&raw).unwrap();
     let parsed = InfoBridgePort::parse(&nla).unwrap();
     assert_eq!(parsed, InfoBridgePort::LearningSync(true));
+
+    let mut buf = Vec::new();
+    parsed.emit(&mut buf).unwrap();
+    assert_eq!(buf, raw);
+}
+
+// nlmon capture of the kernel `RTM_NEWLINK` reply (netlink header removed)
+// on Linux 7.2.14, triggered by:
+//
+//      ip link set dev brmst0 type bridge mst_enabled 1
+//      bridge vlan add vid 10 dev vmst0 msti 1
+//      bridge mst show dev vmst0
+//
+// Only the `IFLA_BRIDGE_MST` attribute from `IFLA_AF_SPEC` is kept.
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_bridge_mst() {
+    let raw = vec![
+        0x18, 0x00, 0x06, 0x80, 0x14, 0x00, 0x01, 0x00, 0x06, 0x00, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+
+    let parsed = AfSpecBridge::parse(&NlaBuffer::new(&raw).unwrap()).unwrap();
+    assert_eq!(
+        parsed,
+        AfSpecBridge::Mst(vec![BridgeMstEntry {
+            msti: 0,
+            state: BridgePortState::Disabled,
+        }])
+    );
 
     let mut buf = Vec::new();
     parsed.emit(&mut buf).unwrap();

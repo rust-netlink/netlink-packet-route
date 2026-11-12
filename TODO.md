@@ -4,8 +4,7 @@
 
 ## link
 
-- Parse `IFLA_BRIDGE_MST`, `IFLA_BRIDGE_CFM` and `IFLA_BRIDGE_MRP`
-  of `AfSpecBridge`.
+- Parse `IFLA_BRIDGE_CFM` and `IFLA_BRIDGE_MRP` of `AfSpecBridge`.
 
 ## unit tests
 

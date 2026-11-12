@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 use netlink_packet_core::{
-    append_bytes, append_u16, append_u32, parse_u16, parse_u32, DecodeError,
-    DefaultNla, Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
+    append_bytes, append_u16, append_u32, append_u8, parse_u16, parse_u32,
+    parse_u8, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
+    Nla, NlaBuffer, Parseable, NLA_F_NESTED,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
-use crate::link::bridge_vlan::BridgeVlanInfoFlags;
+use crate::link::{bridge_vlan::BridgeVlanInfoFlags, BridgePortState};
 
 const IFLA_BRIDGE_FLAGS: u16 = 0;
 const IFLA_BRIDGE_MODE: u16 = 1;
@@ -14,7 +15,10 @@ const IFLA_BRIDGE_VLAN_INFO: u16 = 2;
 const IFLA_BRIDGE_VLAN_TUNNEL_INFO: u16 = 3;
 // const IFLA_BRIDGE_MRP: u16 = 4;
 // const IFLA_BRIDGE_CFM: u16 = 5;
-// const IFLA_BRIDGE_MST: u16 = 6;
+const IFLA_BRIDGE_MST: u16 = 6;
+const IFLA_BRIDGE_MST_ENTRY: u16 = 1;
+const IFLA_BRIDGE_MST_ENTRY_MSTI: u16 = 1;
+const IFLA_BRIDGE_MST_ENTRY_STATE: u16 = 2;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 #[non_exhaustive]
@@ -23,6 +27,7 @@ pub enum AfSpecBridge {
     Mode(BridgeMode),
     VlanInfo(BridgeVlanInfo),
     VlanTunnelInfo(Vec<BridgeVlanTunnelInfo>),
+    Mst(Vec<BridgeMstEntry>),
     Other(DefaultNla),
 }
 
@@ -35,6 +40,7 @@ impl Nla for AfSpecBridge {
                 append_bytes(out, <[u8; 4]>::from(info).as_slice())
             }
             Self::VlanTunnelInfo(s) => (s).emit(out)?,
+            Self::Mst(entries) => (entries).emit(out)?,
             Self::Other(nla) => append_bytes(out, nla.value()),
         }
         Ok(())
@@ -46,6 +52,7 @@ impl Nla for AfSpecBridge {
             Self::Mode(_) => IFLA_BRIDGE_MODE,
             Self::VlanInfo(_) => IFLA_BRIDGE_VLAN_INFO,
             Self::VlanTunnelInfo(_) => IFLA_BRIDGE_VLAN_TUNNEL_INFO,
+            Self::Mst(_) => IFLA_BRIDGE_MST | NLA_F_NESTED,
             Self::Other(nla) => nla.kind(),
         }
     }
@@ -81,11 +88,74 @@ impl<'a> Parseable<NlaBuffer<'a>> for AfSpecBridge {
                 }
                 Self::VlanTunnelInfo(nlas)
             }
+            IFLA_BRIDGE_MST => {
+                let mut entries = Vec::new();
+                for nla in buf.nlas().with_context(|| {
+                    format!("invalid IFLA_BRIDGE_MST {payload:?}")
+                })? {
+                    entries.push(BridgeMstEntry::parse(&nla)?);
+                }
+                Self::Mst(entries)
+            }
             kind => Self::Other(
                 DefaultNla::parse(buf)
                     .with_context(|| format!("Unknown NLA type {kind}"))?,
             ),
         })
+    }
+}
+
+/// A single MSTI entry (`IFLA_BRIDGE_MST_ENTRY`).
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub struct BridgeMstEntry {
+    pub msti: u16,
+    pub state: BridgePortState,
+}
+
+impl Nla for BridgeMstEntry {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u16(out, 6);
+        append_u16(out, IFLA_BRIDGE_MST_ENTRY_MSTI);
+        append_u16(out, self.msti);
+        append_u16(out, 0);
+        append_u16(out, 5);
+        append_u16(out, IFLA_BRIDGE_MST_ENTRY_STATE);
+        append_u8(out, self.state.into());
+        out.extend_from_slice(&[0, 0, 0]);
+        Ok(())
+    }
+
+    fn kind(&self) -> u16 {
+        IFLA_BRIDGE_MST_ENTRY
+    }
+}
+
+impl<'a> Parseable<NlaBuffer<'a>> for BridgeMstEntry {
+    fn parse(buf: &NlaBuffer<'a>) -> Result<Self, DecodeError> {
+        let payload = buf.value();
+        let mut msti = 0u16;
+        let mut state = BridgePortState::Disabled;
+        for nla in buf.nlas().with_context(|| {
+            format!("invalid IFLA_BRIDGE_MST_ENTRY {payload:?}")
+        })? {
+            match nla.kind() {
+                IFLA_BRIDGE_MST_ENTRY_MSTI => {
+                    msti = parse_u16(nla.value()).with_context(|| {
+                        "invalid IFLA_BRIDGE_MST_ENTRY_MSTI value"
+                    })?;
+                }
+                IFLA_BRIDGE_MST_ENTRY_STATE => {
+                    state = parse_u8(nla.value())
+                        .with_context(|| {
+                            "invalid IFLA_BRIDGE_MST_ENTRY_STATE value"
+                        })?
+                        .into();
+                }
+                _ => {}
+            }
+        }
+        Ok(Self { msti, state })
     }
 }
 
