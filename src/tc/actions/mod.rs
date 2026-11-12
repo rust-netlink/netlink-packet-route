@@ -17,7 +17,10 @@ pub use self::{
         TcActionMirror, TcActionMirrorOption, TcMirror, TcMirrorActionType,
     },
     nat::{TcActionNat, TcActionNatOption, TcNat},
-    tunnel_key::{TcActionTunnelKey, TcActionTunnelKeyOption, TcTunnelKey},
+    tunnel_key::{
+        TcActionTunnelKey, TcActionTunnelKeyOption, TcTunnelKey,
+        TcTunnelKeyAction,
+    },
 };
 
 mod action;
