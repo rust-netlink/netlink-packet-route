@@ -31,9 +31,7 @@
 
 ## unit tests
 
-- Add tests for the `dsa`, `ifb`, `nlmon`, `tun`, `team` and
-  `virt_wifi` link kinds, and assert `InfoKind::Netdevsim` in the
-  netdevsim test.
+- Assert `InfoKind::Netdevsim` in the netdevsim test.
 - Replace the hand made payloads of the stats tests (`offload`,
   `bridge`, `bond` and `af_spec`) with real nlmon captures.
 - Fix the `emit()` round trip of `test_parsing_link_vrf` or document
