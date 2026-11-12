@@ -2,8 +2,6 @@
 
 ## tc
 
-- Add unit tests with real nlmon capture for the attributes above.
-
 ## link
 
 - Support link kind `ovpn` (`IFLA_OVPN_MODE`) and `ppp`

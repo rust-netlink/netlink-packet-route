@@ -4,8 +4,8 @@
 ///
 /// Matches all packets and performs an action on them.
 use netlink_packet_core::{
-    append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, EncodeError,
-    Nla, NlaBuffer, Parseable,
+    append_bytes, append_u32, append_u64, parse_u32, parse_u64, DecodeError,
+    DefaultNla, EncodeError, Nla, NlaBuffer, Parseable,
 };
 use netlink_packet_core::{Emitable, ErrorContext};
 
@@ -28,7 +28,7 @@ impl TcFilterMatchAll {
 pub enum TcFilterMatchAllOption {
     ClassId(TcHandle),
     Action(Vec<TcAction>),
-    Pnct(Vec<u8>),
+    Pnct(TcMatchAllPcnt),
     Flags(u32),
     Other(DefaultNla),
 }
@@ -36,7 +36,7 @@ pub enum TcFilterMatchAllOption {
 impl Nla for TcFilterMatchAllOption {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
-            Self::Pnct(b) => append_bytes(out, b.as_slice()),
+            Self::Pnct(v) => v.emit(out)?,
             Self::ClassId(i) => append_u32(out, (*i).into()),
             Self::Flags(i) => append_u32(out, *i),
             Self::Action(acts) => (acts).emit(out)?,
@@ -75,7 +75,10 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcFilterMatchAllOption {
                 }
                 Self::Action(acts)
             }
-            TCA_MATCHALL_PCNT => Self::Pnct(payload.to_vec()),
+            TCA_MATCHALL_PCNT => Self::Pnct(
+                TcMatchAllPcnt::parse(payload)
+                    .context("failed to parse TCA_MATCHALL_PCNT")?,
+            ),
             TCA_MATCHALL_FLAGS => Self::Flags(
                 parse_u32(payload)
                     .context("failed to parse TCA_MATCHALL_FLAGS")?,
@@ -85,5 +88,31 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcFilterMatchAllOption {
                     .context("failed to parse matchall nla")?,
             ),
         })
+    }
+}
+
+/// Matchall per-filter counters (`struct tc_matchall_pcnt`).
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub struct TcMatchAllPcnt {
+    pub rhit: u64,
+}
+
+impl TcMatchAllPcnt {
+    pub fn parse(payload: &[u8]) -> Result<Self, DecodeError> {
+        if payload.len() < 8 {
+            return Err(DecodeError::buffer_too_small(payload.len(), 8));
+        }
+        Ok(Self {
+            rhit: parse_u64(&payload[0..8])
+                .context("invalid TCA_MATCHALL_PCNT rhit")?,
+        })
+    }
+}
+
+impl Emitable for TcMatchAllPcnt {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        append_u64(out, self.rhit);
+        Ok(())
     }
 }
