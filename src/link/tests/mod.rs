@@ -33,6 +33,8 @@ mod iptunnel;
 mod ipvlan;
 #[cfg(feature = "link-info")]
 mod ipvtap;
+#[cfg(feature = "link-info")]
+mod kinds;
 #[cfg(feature = "link-af-spec")]
 mod loopback;
 #[cfg(feature = "link-info")]
