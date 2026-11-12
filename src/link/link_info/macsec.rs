@@ -144,12 +144,12 @@ pub enum InfoMacSec {
     CipherSuite(MacSecCipherId),
     Window(u32),
     EncodingSa(u8),
-    Encrypt(u8),
-    Protect(u8),
-    IncSci(u8),
-    Es(u8),
-    Scb(u8),
-    ReplayProtect(u8),
+    Encrypt(bool),
+    Protect(bool),
+    IncSci(bool),
+    Es(bool),
+    Scb(bool),
+    ReplayProtect(bool),
     Validation(MacSecValidate),
     Offload(MacSecOffload),
     Other(DefaultNla),
@@ -162,14 +162,13 @@ impl Nla for InfoMacSec {
             Self::CipherSuite(value) => append_u64(out, (*value).into()),
             Self::Window(value) => append_u32(out, *value),
             Self::Port(value) => append_u16_be(out, *value),
-            Self::IcvLen(value)
-            | Self::EncodingSa(value)
-            | Self::Encrypt(value)
+            Self::IcvLen(value) | Self::EncodingSa(value) => out.push(*value),
+            Self::Encrypt(value)
             | Self::Protect(value)
             | Self::IncSci(value)
             | Self::Es(value)
             | Self::Scb(value)
-            | Self::ReplayProtect(value) => out.push(*value),
+            | Self::ReplayProtect(value) => out.push(u8::from(*value)),
             Self::Offload(value) => out.push((*value).into()),
             Self::Validation(value) => out.push((*value).into()),
             Self::Other(nla) => append_bytes(out, nla.value()),
@@ -228,25 +227,29 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoMacSec {
             ),
             IFLA_MACSEC_ENCRYPT => Self::Encrypt(
                 parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_ENCRYPT value")?,
+                    .context("invalid IFLA_MACSEC_ENCRYPT value")?
+                    > 0,
             ),
             IFLA_MACSEC_PROTECT => Self::Protect(
                 parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_PROTECT value")?,
+                    .context("invalid IFLA_MACSEC_PROTECT value")?
+                    > 0,
             ),
             IFLA_MACSEC_INC_SCI => Self::IncSci(
                 parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_INC_SCI value")?,
+                    .context("invalid IFLA_MACSEC_INC_SCI value")?
+                    > 0,
             ),
             IFLA_MACSEC_ES => Self::Es(
-                parse_u8(payload).context("invalid IFLA_MACSEC_ES value")?,
+                parse_u8(payload).context("invalid IFLA_MACSEC_ES value")? > 0,
             ),
             IFLA_MACSEC_SCB => Self::Scb(
-                parse_u8(payload).context("invalid IFLA_MACSEC_SCB value")?,
+                parse_u8(payload).context("invalid IFLA_MACSEC_SCB value")? > 0,
             ),
             IFLA_MACSEC_REPLAY_PROTECT => Self::ReplayProtect(
                 parse_u8(payload)
-                    .context("invalid IFLA_MACSEC_REPLAY_PROTECT value")?,
+                    .context("invalid IFLA_MACSEC_REPLAY_PROTECT value")?
+                    > 0,
             ),
             IFLA_MACSEC_VALIDATION => Self::Validation(
                 parse_u8(payload)
