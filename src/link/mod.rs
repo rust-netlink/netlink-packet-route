@@ -3,6 +3,7 @@
 #[cfg(feature = "link-af-spec")]
 mod af_spec;
 mod attribute;
+mod bridge_port_state;
 mod bridge_vlan;
 mod buffer_tool;
 mod devlink_port;
@@ -36,9 +37,9 @@ mod tests;
 #[cfg(feature = "link-af-spec")]
 pub use self::af_spec::{
     AfSpecBridge, AfSpecInet, AfSpecInet6, AfSpecMctp, AfSpecUnspec,
-    BridgeFlag, BridgeMode, BridgeVlanInfo, BridgeVlanTunnelInfo, Icmp6Stats,
-    In6AddrGenMode, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, Inet6Stats,
-    InetDevConf, MctpPhysBinding,
+    BridgeFlag, BridgeMode, BridgeMstEntry, BridgeVlanInfo,
+    BridgeVlanTunnelInfo, Icmp6Stats, In6AddrGenMode, Inet6CacheInfo,
+    Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, MctpPhysBinding,
 };
 #[cfg(feature = "link-af-spec")]
 pub(crate) use self::af_spec::{
@@ -51,25 +52,24 @@ pub use self::link_info::{
     BondPrimaryReselect, BondXmitHashPolicy, BridgeBooleanOptionFlags,
     BridgeBooleanOptions, BridgeGroupFwdMask, BridgeId,
     BridgeMulticastIgmpVersion, BridgeMulticastMldVersion,
-    BridgeMulticastRouterType, BridgePortState, BridgeQuerierState,
-    BridgeStpMode, BridgeStpState, CanBerrCounter, CanBitTiming,
-    CanBitTimingConst, CanClock, CanCtrlMode, CanCtrlModeExt, CanCtrlModeFlags,
-    CanState, CanTdc, ChurnState, ErSpanDir, GeneveDf, GreEncapFlags,
-    GreEncapType, GreIOFlags, GtpRole, HsrProtocol, HsrVersion, InfoAmt,
-    InfoBareUdp, InfoBatAdv, InfoBond, InfoBondPort, InfoBridge,
-    InfoBridgePort, InfoCan, InfoData, InfoDsa, InfoGeneve, InfoGre, InfoGre6,
-    InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan, InfoIpVtap, InfoIpoib,
-    InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap, InfoNetkit, InfoOvpn,
-    InfoPortData, InfoPortKind, InfoPpp, InfoRmNet, InfoRmNetFlags,
-    InfoTeamPort, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVrfPort, InfoVti,
-    InfoVxcan, InfoVxlan, InfoWireguard, InfoWwan, InfoXfrm, Ip6TunnelFlags,
-    IpVlanFlags, IpVlanMode, IpVtapFlags, IpVtapMode, IpoibMode, LacpState,
-    LinkInfo, LinkXstats, MacSecCipherId, MacSecOffload, MacSecValidate,
-    MacVlanBcCutoff, MacVlanFlags, MacVlanMacAddressMode, MacVlanMode,
-    MacVtapFlags, MacVtapMacAddressMode, MacVtapMode, MiiStatus, NetkitMode,
-    NetkitPolicy, NetkitScrub, OvpnMode, RmNetFlags, SitFlags,
-    TunnelEncapFlags, TunnelEncapType, VlanFlags, VlanQosMapping, VxlanDf,
-    VxlanLabelPolicy,
+    BridgeMulticastRouterType, BridgeQuerierState, BridgeStpMode,
+    BridgeStpState, CanBerrCounter, CanBitTiming, CanBitTimingConst, CanClock,
+    CanCtrlMode, CanCtrlModeExt, CanCtrlModeFlags, CanState, CanTdc,
+    ChurnState, ErSpanDir, GeneveDf, GreEncapFlags, GreEncapType, GreIOFlags,
+    GtpRole, HsrProtocol, HsrVersion, InfoAmt, InfoBareUdp, InfoBatAdv,
+    InfoBond, InfoBondPort, InfoBridge, InfoBridgePort, InfoCan, InfoData,
+    InfoDsa, InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr, InfoIpTunnel,
+    InfoIpVlan, InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan,
+    InfoMacVtap, InfoNetkit, InfoOvpn, InfoPortData, InfoPortKind, InfoPpp,
+    InfoRmNet, InfoRmNetFlags, InfoTeamPort, InfoTun, InfoVeth, InfoVlan,
+    InfoVrf, InfoVrfPort, InfoVti, InfoVxcan, InfoVxlan, InfoWireguard,
+    InfoWwan, InfoXfrm, Ip6TunnelFlags, IpVlanFlags, IpVlanMode, IpVtapFlags,
+    IpVtapMode, IpoibMode, LacpState, LinkInfo, LinkXstats, MacSecCipherId,
+    MacSecOffload, MacSecValidate, MacVlanBcCutoff, MacVlanFlags,
+    MacVlanMacAddressMode, MacVlanMode, MacVtapFlags, MacVtapMacAddressMode,
+    MacVtapMode, MiiStatus, NetkitMode, NetkitPolicy, NetkitScrub, OvpnMode,
+    RmNetFlags, SitFlags, TunnelEncapFlags, TunnelEncapType, VlanFlags,
+    VlanQosMapping, VxlanDf, VxlanLabelPolicy,
 };
 #[cfg(feature = "link-sriov")]
 pub use self::sriov::{
@@ -80,6 +80,7 @@ pub use self::sriov::{
 };
 pub use self::{
     attribute::LinkAttribute,
+    bridge_port_state::BridgePortState,
     bridge_vlan::BridgeVlanInfoFlags,
     devlink_port::DevlinkPort,
     down_reason::LinkProtocolDownReason,

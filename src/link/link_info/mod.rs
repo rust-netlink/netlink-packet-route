@@ -58,7 +58,7 @@ pub use self::{
         BridgeQuerierState, BridgeStpMode, BridgeStpState, InfoBridge,
     },
     bridge_boolopt::{BridgeBooleanOptionFlags, BridgeBooleanOptions},
-    bridge_port::{BridgePortState, InfoBridgePort},
+    bridge_port::InfoBridgePort,
     can::{
         CanBerrCounter, CanBitTiming, CanBitTimingConst, CanClock, CanCtrlMode,
         CanCtrlModeExt, CanCtrlModeFlags, CanState, CanTdc, InfoCan,
