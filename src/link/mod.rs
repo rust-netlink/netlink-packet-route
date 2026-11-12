@@ -50,6 +50,7 @@ pub use self::link_info::{
     BondArpValidate, BondFailOverMac, BondLacpRate, BondMode, BondPortState,
     BondPrimaryReselect, BondXmitHashPolicy, BridgeBooleanOptionFlags,
     BridgeBooleanOptions, BridgeGroupFwdMask, BridgeId,
+    BridgeMulticastIgmpVersion, BridgeMulticastMldVersion,
     BridgeMulticastRouterType, BridgePortState, BridgeQuerierState,
     BridgeStpMode, BridgeStpState, CanBerrCounter, CanBitTiming,
     CanBitTimingConst, CanClock, CanCtrlMode, CanCtrlModeExt, CanCtrlModeFlags,

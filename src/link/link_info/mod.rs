@@ -51,7 +51,8 @@ pub use self::{
         BondPortState, ChurnState, InfoBondPort, LacpState, MiiStatus,
     },
     bridge::{
-        BridgeGroupFwdMask, BridgeId, BridgeMulticastRouterType,
+        BridgeGroupFwdMask, BridgeId, BridgeMulticastIgmpVersion,
+        BridgeMulticastMldVersion, BridgeMulticastRouterType,
         BridgeQuerierState, BridgeStpMode, BridgeStpState, InfoBridge,
     },
     bridge_boolopt::{BridgeBooleanOptionFlags, BridgeBooleanOptions},
