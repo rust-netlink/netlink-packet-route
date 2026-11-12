@@ -30,7 +30,7 @@ impl VfInfoTxRate {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoTxRateBuffer {
+pub(crate) struct VfInfoTxRateBuffer {
     vf_id: u32,
     rate: u32,
 }

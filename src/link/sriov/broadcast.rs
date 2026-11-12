@@ -35,7 +35,7 @@ impl VfInfoBroadcast {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoBroadcastBuffer {
+pub(crate) struct VfInfoBroadcastBuffer {
     addr: [u8; VF_INFO_BROADCAST_LEN],
 }
 

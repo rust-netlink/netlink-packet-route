@@ -26,7 +26,7 @@ const LINK_INET6_CACHE_INFO_LEN: usize = 16;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct Inet6CacheInfoBuffer {
+pub(crate) struct Inet6CacheInfoBuffer {
     max_reasm_len: i32,
     tstamp: i32,
     reachable_time: i32,

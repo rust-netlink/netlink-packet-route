@@ -91,7 +91,7 @@ impl VfVlanInfo {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfVlanInfoBuffer {
+pub(crate) struct VfVlanInfoBuffer {
     vf_id: u32,
     vlan_id: u32,
     qos: u32,

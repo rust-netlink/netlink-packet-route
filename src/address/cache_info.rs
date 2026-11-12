@@ -26,7 +26,7 @@ pub struct CacheInfo {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct CacheInfoBuffer {
+pub(crate) struct CacheInfoBuffer {
     ifa_preferred: u32,
     ifa_valid: u32,
     cstamp: u32,

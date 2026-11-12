@@ -51,8 +51,8 @@ pub use self::{
         BondPortState, ChurnState, InfoBondPort, LacpState, MiiStatus,
     },
     bridge::{
-        BridgeId, BridgeIdBuffer, BridgeMulticastRouterType,
-        BridgeQuerierState, BridgeStpMode, BridgeStpState, InfoBridge,
+        BridgeId, BridgeMulticastRouterType, BridgeQuerierState, BridgeStpMode,
+        BridgeStpState, InfoBridge,
     },
     bridge_boolopt::{BridgeBooleanOptionFlags, BridgeBooleanOptions},
     bridge_port::{BridgePortState, InfoBridgePort},

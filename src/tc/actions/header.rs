@@ -19,7 +19,7 @@ pub(crate) const TCA_HEADER_LEN: usize = 4;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcActionMessageBuffer {
+pub(crate) struct TcActionMessageBuffer {
     family: u8,
     pad1: u8,
     pad2: u16,

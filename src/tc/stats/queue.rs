@@ -33,7 +33,7 @@ pub struct TcStatsQueue {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcStatsQueueBuffer {
+pub(crate) struct TcStatsQueueBuffer {
     qlen: u32,
     backlog: u32,
     drops: u32,

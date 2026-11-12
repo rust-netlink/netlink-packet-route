@@ -7,7 +7,6 @@ mod message;
 mod tests;
 
 pub use self::{
-    attribute::AddrLabelAttribute,
-    header::{AddrLabelHeader, AddrLabelMessageBuffer},
+    attribute::AddrLabelAttribute, header::AddrLabelHeader,
     message::AddrLabelMessage,
 };

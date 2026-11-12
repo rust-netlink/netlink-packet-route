@@ -28,10 +28,8 @@ pub use flags::RouteFlags;
 pub use self::{
     address::RouteAddress,
     attribute::RouteAttribute,
-    cache_info::{RouteCacheInfo, RouteCacheInfoBuffer},
-    header::{
-        RouteHeader, RouteMessageBuffer, RouteProtocol, RouteScope, RouteType,
-    },
+    cache_info::RouteCacheInfo,
+    header::{RouteHeader, RouteProtocol, RouteScope, RouteType},
     ioam6::{Ioam6Mode, Ioam6TraceHdr, RouteIoam6Tunnel},
     lwtunnel::{
         RouteIp6Tunnel, RouteIp6TunnelFlags, RouteIpTunnel, RouteIpTunnelFlags,
@@ -39,9 +37,9 @@ pub use self::{
     },
     message::RouteMessage,
     metrics::RouteMetric,
-    mfc_stats::{RouteMfcStats, RouteMfcStatsBuffer},
+    mfc_stats::RouteMfcStats,
     mpls::{MplsLabel, RouteMplsIpTunnel, RouteMplsTtlPropagation},
-    next_hops::{RouteNextHop, RouteNextHopBuffer, RouteNextHopFlags},
+    next_hops::{RouteNextHop, RouteNextHopFlags},
     preference::RoutePreference,
     realm::RouteRealm,
     rpl::{RouteRplIpTunnel, RplSrh},
@@ -50,5 +48,5 @@ pub use self::{
     tunnel_opts::{
         RouteErspanOpt, RouteGeneveOpt, RouteLwTunnelOpt, RouteVxlanOpt,
     },
-    via::{RouteVia, RouteViaBuffer},
+    via::RouteVia,
 };

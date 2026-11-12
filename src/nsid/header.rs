@@ -19,7 +19,7 @@ pub(crate) const NSID_HEADER_LEN: usize = 4;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct NsidMessageBuffer {
+pub(crate) struct NsidMessageBuffer {
     family: u8,
     _pad: [u8; 3],
 }

@@ -25,7 +25,7 @@ pub struct RouteMfcStats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct RouteMfcStatsBuffer {
+pub(crate) struct RouteMfcStatsBuffer {
     packets: u64,
     bytes: u64,
     wrong_if: u64,

@@ -97,7 +97,7 @@ pub struct TcFqCodelQdStats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcFqCodelQdStatsBuffer {
+pub(crate) struct TcFqCodelQdStatsBuffer {
     maxpacket: u32,
     drop_overlimit: u32,
     ecn_mark: u32,
@@ -179,7 +179,7 @@ pub struct TcFqCodelClStats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcFqCodelClStatsBuffer {
+pub(crate) struct TcFqCodelClStatsBuffer {
     deficit: i32,
     ldelay: u32,
     count: u32,

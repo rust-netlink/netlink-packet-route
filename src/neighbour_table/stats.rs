@@ -33,7 +33,7 @@ pub struct NeighbourTableStats {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct NeighbourTableStatsBuffer {
+pub(crate) struct NeighbourTableStatsBuffer {
     allocs: u64,
     destroys: u64,
     hash_grows: u64,

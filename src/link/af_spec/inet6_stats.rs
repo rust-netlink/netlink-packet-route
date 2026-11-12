@@ -17,7 +17,7 @@ use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct Inet6StatsBuffer {
+pub(crate) struct Inet6StatsBuffer {
     num: i64,
     in_pkts: i64,
     in_octets: i64,

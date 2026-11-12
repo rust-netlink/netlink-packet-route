@@ -19,7 +19,7 @@ pub(crate) const STATS_HEADER_LEN: usize = 12;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct StatsMessageBuffer {
+pub(crate) struct StatsMessageBuffer {
     family: u8,
     pad1: u8,
     pad2: u16,

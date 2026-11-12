@@ -29,7 +29,7 @@ pub struct TcStatsBasic {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcStatsBasicBuffer {
+pub(crate) struct TcStatsBasicBuffer {
     bytes: u64,
     packets: u32,
     _padding: [u8; 4],

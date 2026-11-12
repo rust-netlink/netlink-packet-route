@@ -5,9 +5,9 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     tc::{
-        filters::{TcU32OptionFlags, TcU32SelectorFlags},
+        filters::{TcU32OptionFlags, TcU32SelectorBuffer, TcU32SelectorFlags},
         TcAttribute, TcFilterU32Option, TcHandle, TcHeader, TcMessage,
-        TcOption, TcU32Key, TcU32Selector, TcU32SelectorBuffer,
+        TcOption, TcU32Key, TcU32Selector,
     },
     AddressFamily,
 };

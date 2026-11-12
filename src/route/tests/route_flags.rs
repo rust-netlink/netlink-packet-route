@@ -5,8 +5,8 @@ use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     route::{
-        flags::RouteFlags, RouteAttribute, RouteHeader, RouteMessage,
-        RouteNextHopBuffer, RouteProtocol, RouteScope, RouteType,
+        flags::RouteFlags, next_hops::RouteNextHopBuffer, RouteAttribute,
+        RouteHeader, RouteMessage, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };

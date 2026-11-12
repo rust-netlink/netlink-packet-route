@@ -30,7 +30,7 @@ impl VfInfoLinkState {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoLinkStateBuffer {
+pub(crate) struct VfInfoLinkStateBuffer {
     vf_id: u32,
     state: u32,
 }

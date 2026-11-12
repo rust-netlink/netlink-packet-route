@@ -7,7 +7,5 @@ mod message;
 mod tests;
 
 pub use self::{
-    attribute::NsidAttribute,
-    header::{NsidHeader, NsidMessageBuffer},
-    message::NsidMessage,
+    attribute::NsidAttribute, header::NsidHeader, message::NsidMessage,
 };

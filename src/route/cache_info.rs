@@ -30,7 +30,7 @@ pub struct RouteCacheInfo {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct RouteCacheInfoBuffer {
+pub(crate) struct RouteCacheInfoBuffer {
     clntref: u32,
     last_use: u32,
     expires: u32,

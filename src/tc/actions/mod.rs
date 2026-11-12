@@ -2,21 +2,21 @@
 
 pub use nat_flag::TcNatFlags;
 
+pub(crate) use self::action::TcActionGenericBuffer;
 pub use self::{
     action::{
-        TcAction, TcActionAttribute, TcActionGeneric, TcActionGenericBuffer,
-        TcActionOption, TcActionType, Tcf,
+        TcAction, TcActionAttribute, TcActionGeneric, TcActionOption,
+        TcActionType, Tcf,
     },
-    header::{TcActionMessageBuffer, TcActionMessageHeader},
+    header::TcActionMessageHeader,
     message::{
         TcActionMessage, TcActionMessageAttribute, TcActionMessageFlags,
         TcActionMessageFlagsWithSelector,
     },
     mirror::{
         TcActionMirror, TcActionMirrorOption, TcMirror, TcMirrorActionType,
-        TcMirrorBuffer,
     },
-    nat::{TcActionNat, TcActionNatOption, TcNat, TcNatBuffer},
+    nat::{TcActionNat, TcActionNatOption, TcNat},
     tunnel_key::{TcActionTunnelKey, TcActionTunnelKeyOption, TcTunnelKey},
 };
 

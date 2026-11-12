@@ -26,7 +26,7 @@ pub struct NeighbourCacheInfo {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct NeighbourCacheInfoBuffer {
+pub(crate) struct NeighbourCacheInfoBuffer {
     confirmed: u32,
     used: u32,
     updated: u32,

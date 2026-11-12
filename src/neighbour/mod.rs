@@ -14,9 +14,9 @@ mod tests;
 pub use self::{
     address::NeighbourAddress,
     attribute::NeighbourAttribute,
-    cache_info::{NeighbourCacheInfo, NeighbourCacheInfoBuffer},
+    cache_info::NeighbourCacheInfo,
     flags::{NeighbourExtFlags, NeighbourFlags},
-    header::{NeighbourHeader, NeighbourMessageBuffer},
+    header::NeighbourHeader,
     message::NeighbourMessage,
     state::NeighbourState,
 };

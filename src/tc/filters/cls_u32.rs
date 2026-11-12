@@ -165,7 +165,7 @@ pub struct TcU32Selector {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcU32SelectorBuffer {
+pub(crate) struct TcU32SelectorBuffer {
     flags: u8,
     offshift: u8,
     nkeys: u8,
@@ -288,7 +288,7 @@ pub struct TcU32Key {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcU32KeyBuffer {
+pub(crate) struct TcU32KeyBuffer {
     mask: u32,
     val: u32,
     off: i32,

@@ -148,7 +148,7 @@ impl BridgeVlanInfo {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct BridgeVlanInfoBuffer {
+pub(crate) struct BridgeVlanInfoBuffer {
     flags: u16,
     vid: u16,
 }

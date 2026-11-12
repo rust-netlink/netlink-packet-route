@@ -35,7 +35,7 @@ impl VfInfoGuid {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct VfInfoGuidBuffer {
+pub(crate) struct VfInfoGuidBuffer {
     vf_id: u32,
     #[cfg(not(target_pointer_width = "32"))]
     _pad: u32,

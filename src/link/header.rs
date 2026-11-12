@@ -20,7 +20,7 @@ pub(crate) const LINK_HEADER_LEN: usize = 16;
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct LinkMessageBuffer {
+pub(crate) struct LinkMessageBuffer {
     interface_family: u8,
     reserved_1: u8,
     link_layer_type: u16,

@@ -9,5 +9,5 @@ mod tests;
 
 pub use attribute::PrefixAttribute;
 pub use cache_info::CacheInfo;
-pub use header::{PrefixHeader, PrefixMessageBuffer};
+pub use header::PrefixHeader;
 pub use message::PrefixMessage;

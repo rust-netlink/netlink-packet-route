@@ -10,10 +10,7 @@ mod stats;
 mod tests;
 
 pub use self::{
-    attribute::NeighbourTableAttribute,
-    config::{NeighbourTableConfig, NeighbourTableConfigBuffer},
-    header::{NeighbourTableHeader, NeighbourTableMessageBuffer},
-    message::NeighbourTableMessage,
-    param::NeighbourTableParameter,
-    stats::{NeighbourTableStats, NeighbourTableStatsBuffer},
+    attribute::NeighbourTableAttribute, config::NeighbourTableConfig,
+    header::NeighbourTableHeader, message::NeighbourTableMessage,
+    param::NeighbourTableParameter, stats::NeighbourTableStats,
 };

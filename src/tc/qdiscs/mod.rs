@@ -5,8 +5,7 @@ mod ingress;
 
 pub use self::{
     fq_codel::{
-        TcFqCodelClStats, TcFqCodelClStatsBuffer, TcFqCodelQdStats,
-        TcFqCodelQdStatsBuffer, TcFqCodelXstats, TcQdiscFqCodel,
+        TcFqCodelClStats, TcFqCodelQdStats, TcFqCodelXstats, TcQdiscFqCodel,
         TcQdiscFqCodelOption,
     },
     ingress::{TcQdiscIngress, TcQdiscIngressOption},

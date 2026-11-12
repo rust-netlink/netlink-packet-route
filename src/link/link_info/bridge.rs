@@ -553,7 +553,7 @@ pub struct BridgeId {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct BridgeIdBuffer {
+pub(crate) struct BridgeIdBuffer {
     priority: U16,
     address: [u8; 6],
 }

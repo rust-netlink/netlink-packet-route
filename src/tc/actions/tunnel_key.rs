@@ -164,7 +164,7 @@ pub struct TcTunnelKey {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct TcTunnelKeyBuffer {
+pub(crate) struct TcTunnelKeyBuffer {
     generic: TcActionGenericBuffer,
     t_action: i32,
 }

@@ -107,7 +107,7 @@ pub struct HwStats64 {
     Unaligned,
 )]
 #[repr(C, packed)]
-pub struct HwStats64Buffer {
+pub(crate) struct HwStats64Buffer {
     rx_packets: u64,
     tx_packets: u64,
     rx_bytes: u64,
