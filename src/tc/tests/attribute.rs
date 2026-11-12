@@ -5,6 +5,7 @@ use netlink_packet_core::{Nla, NlaBuffer, ParseableParametrized};
 
 use crate::tc::{
     TcAttribute, TcRateEstimator, TcSizeSpec, TcStab, TcStats2, TcStatsRateEst,
+    TcStatsRateEst64,
 };
 
 // nlmon capture of the iproute2 `RTM_NEWTCLASS` request (netlink header
@@ -137,6 +138,29 @@ fn test_parsing_tc_stats_rate_est() {
         TcStats2::parse_with_param(&NlaBuffer::new(&raw).unwrap(), "htb")
             .unwrap();
     assert_eq!(parsed, TcStats2::RateEst(TcStatsRateEst::new(0, 0)));
+
+    let mut buf = Vec::new();
+    parsed.emit(&mut buf).unwrap();
+    assert_eq!(buf, raw);
+}
+
+// Synthetic `TCA_STATS_RATE_EST64` attribute. The kernel only emits this
+// attribute when the sampled byte rate exceeds 32 bits, which is not
+// practical to trigger on the test VM.
+#[test]
+fn test_parsing_tc_stats_rate_est64() {
+    let raw = vec![
+        0x14, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x2a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ];
+
+    let parsed =
+        TcStats2::parse_with_param(&NlaBuffer::new(&raw).unwrap(), "htb")
+            .unwrap();
+    assert_eq!(
+        parsed,
+        TcStats2::RateEst64(TcStatsRateEst64::new(0x1_0000_0000, 42))
+    );
 
     let mut buf = Vec::new();
     parsed.emit(&mut buf).unwrap();
