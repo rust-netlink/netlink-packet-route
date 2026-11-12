@@ -94,7 +94,7 @@ pub use self::{
     vrf::InfoVrf,
     vti::InfoVti,
     vxcan::InfoVxcan,
-    vxlan::{InfoVxlan, VxlanDf},
+    vxlan::{InfoVxlan, VxlanDf, VxlanLabelPolicy},
     wireguard::InfoWireguard,
     wwan::InfoWwan,
     xfrm::InfoXfrm,
