@@ -7,6 +7,8 @@ mod header;
 mod message;
 mod options;
 mod qdiscs;
+mod rate;
+mod stab;
 mod stats;
 
 pub(crate) use self::options::VecTcOption;
@@ -35,6 +37,8 @@ pub use self::{
         TcFqCodelClStats, TcFqCodelQdStats, TcFqCodelXstats, TcQdiscFqCodel,
         TcQdiscFqCodelOption, TcQdiscIngress, TcQdiscIngressOption,
     },
+    rate::{TcRateEstimator, TcStatsRateEst, TcStatsRateEst64},
+    stab::{TcSizeSpec, TcStab},
     stats::{TcStats, TcStats2, TcStatsBasic, TcStatsQueue, TcXstats},
 };
 
