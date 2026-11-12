@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
 
 use crate::link::{
     link_flag::LinkFlags, CanBitTiming, CanBitTimingConst, CanClock,
-    CanCtrlMode, CanCtrlModeExt, CanCtrlModeFlags, CanTdc, InfoCan, InfoData,
-    InfoKind, LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-    LinkXstats,
+    CanCtrlMode, CanCtrlModeExt, CanCtrlModeFlags, CanState, CanTdc, InfoCan,
+    InfoData, InfoKind, LinkAttribute, LinkHeader, LinkInfo, LinkLayerType,
+    LinkMessage, LinkXstats,
 };
 
 // nlmon capture of packet sent by
@@ -163,7 +163,7 @@ fn test_parsing_link_can_fd_tdc() {
                     "dummy_can CC",
                 )),
                 InfoCan::Clock(CanClock::new(160000000)),
-                InfoCan::State(4),
+                InfoCan::State(CanState::Stopped),
                 InfoCan::CtrlMode(CanCtrlMode {
                     mask: CanCtrlModeFlags::empty(),
                     flags: CanCtrlModeFlags::Fd | CanCtrlModeFlags::TdcAuto,
@@ -240,4 +240,16 @@ fn test_parsing_link_can_fd_tdc() {
     let mut buf = Vec::new();
     expected.emit(&mut buf).unwrap();
     assert_eq!(buf, raw);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_link_can_state() {
+    // Synthetic `IFLA_CAN_STATE` attribute: state 3 is CAN_STATE_BUS_OFF.
+    let raw = vec![0x08, 0x00, 0x04, 0x00, 0x03, 0x00, 0x00, 0x00];
+
+    assert_eq!(
+        InfoCan::parse(&NlaBuffer::new(&raw).unwrap()).unwrap(),
+        InfoCan::State(CanState::BusOff)
+    );
 }

@@ -479,13 +479,75 @@ impl CanBitTimingConst {
     }
 }
 
+const CAN_STATE_ERROR_ACTIVE: u32 = 0;
+const CAN_STATE_ERROR_WARNING: u32 = 1;
+const CAN_STATE_ERROR_PASSIVE: u32 = 2;
+const CAN_STATE_BUS_OFF: u32 = 3;
+const CAN_STATE_STOPPED: u32 = 4;
+const CAN_STATE_SLEEPING: u32 = 5;
+
+/// CAN controller state carried by `IFLA_CAN_STATE`.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum CanState {
+    ErrorActive,
+    ErrorWarning,
+    ErrorPassive,
+    BusOff,
+    Stopped,
+    Sleeping,
+    Other(u32),
+}
+
+impl From<u32> for CanState {
+    fn from(d: u32) -> Self {
+        match d {
+            CAN_STATE_ERROR_ACTIVE => Self::ErrorActive,
+            CAN_STATE_ERROR_WARNING => Self::ErrorWarning,
+            CAN_STATE_ERROR_PASSIVE => Self::ErrorPassive,
+            CAN_STATE_BUS_OFF => Self::BusOff,
+            CAN_STATE_STOPPED => Self::Stopped,
+            CAN_STATE_SLEEPING => Self::Sleeping,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<CanState> for u32 {
+    fn from(v: CanState) -> u32 {
+        match v {
+            CanState::ErrorActive => CAN_STATE_ERROR_ACTIVE,
+            CanState::ErrorWarning => CAN_STATE_ERROR_WARNING,
+            CanState::ErrorPassive => CAN_STATE_ERROR_PASSIVE,
+            CanState::BusOff => CAN_STATE_BUS_OFF,
+            CanState::Stopped => CAN_STATE_STOPPED,
+            CanState::Sleeping => CAN_STATE_SLEEPING,
+            CanState::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for CanState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ErrorActive => f.write_str("ERROR-ACTIVE"),
+            Self::ErrorWarning => f.write_str("ERROR-WARNING"),
+            Self::ErrorPassive => f.write_str("ERROR-PASSIVE"),
+            Self::BusOff => f.write_str("BUS-OFF"),
+            Self::Stopped => f.write_str("STOPPED"),
+            Self::Sleeping => f.write_str("SLEEPING"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoCan {
     BitTiming(CanBitTiming),
     BitTimingConst(CanBitTimingConst),
     Clock(CanClock),
-    State(u32),
+    State(CanState),
     CtrlMode(CanCtrlMode),
     RestartMs(u32),
     Restart(u32),
@@ -506,7 +568,7 @@ impl Nla for InfoCan {
             Self::BitTimingConst(v) => v.emit(out),
             Self::Clock(v) => v.emit(out),
             Self::State(v) => {
-                append_u32(out, *v);
+                append_u32(out, (*v).into());
                 Ok(())
             }
             Self::CtrlMode(v) => v.emit(out),
@@ -575,7 +637,9 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoCan {
                 CanClock::parse(payload).context("invalid IFLA_CAN_CLOCK")?,
             ),
             IFLA_CAN_STATE => Self::State(
-                parse_u32(payload).context("invalid IFLA_CAN_STATE value")?,
+                parse_u32(payload)
+                    .context("invalid IFLA_CAN_STATE value")?
+                    .into(),
             ),
             IFLA_CAN_CTRLMODE => Self::CtrlMode(
                 CanCtrlMode::parse(payload)
