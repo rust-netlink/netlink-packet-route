@@ -12,10 +12,13 @@ pub use u32_flags::{TcU32OptionFlags, TcU32SelectorFlags};
 pub(crate) use self::cls_u32::TcU32SelectorBuffer;
 pub use self::{
     bpf::{TcBpfFlags, TcFilterBpf, TcFilterBpfOption},
-    cls_u32::{TcFilterU32, TcFilterU32Option, TcU32Key, TcU32Selector},
+    cls_u32::{
+        TcFilterU32, TcFilterU32Option, TcPolice, TcPoliceOption, TcPoliceTm,
+        TcRateSpec, TcU32Key, TcU32Mark, TcU32Pcnt, TcU32Selector,
+    },
     flower::{
         TcFilterFlower, TcFilterFlowerMplsLseOption, TcFilterFlowerMplsOption,
         TcFilterFlowerOption,
     },
-    matchall::{TcFilterMatchAll, TcFilterMatchAllOption},
+    matchall::{TcFilterMatchAll, TcFilterMatchAllOption, TcMatchAllPcnt},
 };

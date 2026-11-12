@@ -5,8 +5,9 @@ use crate::{
     tc::{
         TcAction, TcActionAttribute, TcActionGeneric, TcActionMirrorOption,
         TcActionOption, TcActionType, TcAttribute, TcFilterMatchAllOption,
-        TcHandle, TcHeader, TcMessage, TcMirror, TcMirrorActionType, TcOption,
-        TcStats2, TcStatsBasic, TcStatsQueue, Tcf,
+        TcHandle, TcHeader, TcMatchAllPcnt, TcMessage, TcMirror,
+        TcMirrorActionType, TcOption, TcStats2, TcStatsBasic, TcStatsQueue,
+        Tcf,
     },
     AddressFamily,
 };
@@ -112,9 +113,9 @@ fn test_get_filter_matchall() {
             TcAttribute::Chain(0),
             TcAttribute::Options(vec![
                 TcOption::MatchAll(TcFilterMatchAllOption::Flags(8)),
-                TcOption::MatchAll(TcFilterMatchAllOption::Pnct(vec![
-                    1, 0, 0, 0, 0, 0, 0, 0, // TODO(Gris Ge)
-                ])),
+                TcOption::MatchAll(TcFilterMatchAllOption::Pnct(
+                    TcMatchAllPcnt { rhit: 1 },
+                )),
                 TcOption::MatchAll(TcFilterMatchAllOption::Action(vec![
                     TcAction {
                         tab: 1,
