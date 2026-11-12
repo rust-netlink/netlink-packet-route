@@ -23,6 +23,8 @@ mod ipvlan;
 mod mac_vlan;
 mod macsec;
 mod netkit;
+mod ovpn;
+mod ppp;
 mod rmnet;
 mod team_port;
 mod tun;
@@ -87,6 +89,8 @@ pub use self::{
     },
     macsec::{InfoMacSec, MacSecCipherId, MacSecOffload, MacSecValidate},
     netkit::{InfoNetkit, NetkitMode, NetkitPolicy, NetkitScrub},
+    ovpn::{InfoOvpn, OvpnMode},
+    ppp::InfoPpp,
     rmnet::{InfoRmNet, InfoRmNetFlags, RmNetFlags},
     team_port::InfoTeamPort,
     tun::InfoTun,

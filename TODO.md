@@ -4,8 +4,6 @@
 
 ## link
 
-- Support link kind `ovpn` (`IFLA_OVPN_MODE`) and `ppp`
-  (`IFLA_PPP_DEV_FD`).
 - Parse `IFLA_BRIDGE_MST`, `IFLA_BRIDGE_CFM` and `IFLA_BRIDGE_MRP`
   of `AfSpecBridge`.
 - Convert `BridgeVlanXstats::flags` (`u16`) into a typed flags value,

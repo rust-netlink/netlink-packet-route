@@ -9,8 +9,8 @@ use super::super::{
     InfoAmt, InfoBareUdp, InfoBatAdv, InfoBond, InfoBridge, InfoCan, InfoDsa,
     InfoGeneve, InfoGre, InfoGre6, InfoGtp, InfoHsr, InfoIpTunnel, InfoIpVlan,
     InfoIpVtap, InfoIpoib, InfoKind, InfoMacSec, InfoMacVlan, InfoMacVtap,
-    InfoNetkit, InfoRmNet, InfoTun, InfoVeth, InfoVlan, InfoVrf, InfoVti,
-    InfoVxcan, InfoVxlan, InfoWireguard, InfoWwan, InfoXfrm,
+    InfoNetkit, InfoOvpn, InfoPpp, InfoRmNet, InfoTun, InfoVeth, InfoVlan,
+    InfoVrf, InfoVti, InfoVxcan, InfoVxlan, InfoWireguard, InfoWwan, InfoXfrm,
 };
 
 const IFLA_INFO_DATA: u16 = 2;
@@ -48,6 +48,8 @@ pub enum InfoData {
     BatAdv(Vec<InfoBatAdv>),
     BareUdp(Vec<InfoBareUdp>),
     Dsa(Vec<InfoDsa>),
+    Ovpn(Vec<InfoOvpn>),
+    Ppp(Vec<InfoPpp>),
     Wwan(Vec<InfoWwan>),
     RmNet(Vec<InfoRmNet>),
     ErSpan(Vec<InfoGre>),
@@ -89,6 +91,8 @@ impl Nla for InfoData {
             Self::BatAdv(nlas) => (nlas).emit(out),
             Self::BareUdp(nlas) => (nlas).emit(out),
             Self::Dsa(nlas) => (nlas).emit(out),
+            Self::Ovpn(nlas) => (nlas).emit(out),
+            Self::Ppp(nlas) => (nlas).emit(out),
             Self::Wwan(nlas) => (nlas).emit(out),
             Self::RmNet(nlas) => (nlas).emit(out),
             Self::ErSpan(nlas) => (nlas).emit(out),
@@ -427,6 +431,26 @@ impl InfoData {
                     v.push(parsed);
                 }
                 InfoData::Dsa(v)
+            }
+            InfoKind::Ovpn => {
+                let mut v = Vec::new();
+                for nla in buf.nlas().with_context(|| {
+                    format!("invalid IFLA_INFO_DATA for {kind} {payload:?}")
+                })? {
+                    let parsed = InfoOvpn::parse(&nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Ovpn(v)
+            }
+            InfoKind::Ppp => {
+                let mut v = Vec::new();
+                for nla in buf.nlas().with_context(|| {
+                    format!("invalid IFLA_INFO_DATA for {kind} {payload:?}")
+                })? {
+                    let parsed = InfoPpp::parse(&nla)?;
+                    v.push(parsed);
+                }
+                InfoData::Ppp(v)
             }
             InfoKind::ErSpan => {
                 let mut v = Vec::new();
