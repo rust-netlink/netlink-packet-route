@@ -36,10 +36,16 @@ mod tests;
 
 #[cfg(feature = "link-af-spec")]
 pub use self::af_spec::{
-    AfSpecBridge, AfSpecInet, AfSpecInet6, AfSpecMctp, AfSpecUnspec,
-    BridgeFlag, BridgeMode, BridgeMstEntry, BridgeVlanInfo,
-    BridgeVlanTunnelInfo, Icmp6Stats, In6AddrGenMode, Inet6CacheInfo,
-    Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, MctpPhysBinding,
+    AfSpecBridge, AfSpecInet, AfSpecInet6, AfSpecMctp, AfSpecUnspec, BridgeCfm,
+    BridgeCfmCcCcmTx, BridgeCfmCcConfig, BridgeCfmCcPeerMep,
+    BridgeCfmCcPeerStatus, BridgeCfmCcRdi, BridgeCfmMepConfig,
+    BridgeCfmMepCreate, BridgeCfmMepStatus, BridgeFlag, BridgeMode, BridgeMrp,
+    BridgeMrpInRole, BridgeMrpInState, BridgeMrpInfo, BridgeMrpInstance,
+    BridgeMrpPortRole, BridgeMrpPortState, BridgeMrpRingRole,
+    BridgeMrpRingState, BridgeMrpStartInTest, BridgeMrpStartTest,
+    BridgeMstEntry, BridgeVlanInfo, BridgeVlanTunnelInfo, Icmp6Stats,
+    In6AddrGenMode, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, Inet6Stats,
+    InetDevConf, MctpPhysBinding,
 };
 #[cfg(feature = "link-af-spec")]
 pub(crate) use self::af_spec::{

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 mod bridge;
+mod bridge_cfm;
+mod bridge_mrp;
 mod in6_addr_gen_mode;
 mod inet;
 mod inet6;
@@ -18,6 +20,17 @@ pub use self::{
     bridge::{
         AfSpecBridge, BridgeFlag, BridgeMode, BridgeMstEntry, BridgeVlanInfo,
         BridgeVlanTunnelInfo,
+    },
+    bridge_cfm::{
+        BridgeCfm, BridgeCfmCcCcmTx, BridgeCfmCcConfig, BridgeCfmCcPeerMep,
+        BridgeCfmCcPeerStatus, BridgeCfmCcRdi, BridgeCfmMepConfig,
+        BridgeCfmMepCreate, BridgeCfmMepStatus,
+    },
+    bridge_mrp::{
+        BridgeMrp, BridgeMrpInRole, BridgeMrpInState, BridgeMrpInfo,
+        BridgeMrpInstance, BridgeMrpPortRole, BridgeMrpPortState,
+        BridgeMrpRingRole, BridgeMrpRingState, BridgeMrpStartInTest,
+        BridgeMrpStartTest,
     },
     in6_addr_gen_mode::In6AddrGenMode,
     inet::{AfSpecInet, InetDevConf},
