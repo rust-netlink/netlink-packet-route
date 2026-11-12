@@ -9,5 +9,4 @@
 
 ## unit tests
 
-- Assert `InfoKind::Netdevsim` in the netdevsim test.
 - Add `dpll_pin` tests when DPLL capable hardware is available.
