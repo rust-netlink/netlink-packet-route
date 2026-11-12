@@ -176,7 +176,7 @@ pub enum InfoVxlan {
     /// Kernel dumps this attribute as a `u8` (even when disabled, value 0).
     ///
     /// Use this variant when **parsing dump/get** messages.
-    TtlInherit(u8),
+    TtlInherit(bool),
     Df(VxlanDf),
     Vnifilter(bool),
     Localbypass(bool),
@@ -204,7 +204,7 @@ impl Nla for InfoVxlan {
             | Self::Gpe
             | Self::RemCsumNoPartial
             | Self::TtlInheritFlag => (),
-            Self::TtlInherit(value) => out.push(*value),
+            Self::TtlInherit(value) => out.push(u8::from(*value)),
             Self::Tos(value) | Self::Ttl(value) => out.push(*value),
             Self::Df(value) => out.push(u8::from(*value)),
             Self::Vnifilter(value)
@@ -431,7 +431,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoVxlan {
                 } else {
                     Self::TtlInherit(
                         parse_u8(payload)
-                            .context("invalid IFLA_VXLAN_TTL_INHERIT value")?,
+                            .context("invalid IFLA_VXLAN_TTL_INHERIT value")?
+                            > 0,
                     )
                 }
             }
