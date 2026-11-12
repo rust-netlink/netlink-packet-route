@@ -6,7 +6,7 @@ use netlink_packet_core::{Nla, NlaBuffer, Parseable};
 use crate::tc::{
     TcAction, TcActionAttribute, TcActionGeneric, TcActionOption,
     TcActionTunnelKeyOption, TcActionType, TcStats2, TcStatsBasic,
-    TcStatsQueue, TcTunnelKey, Tcf,
+    TcStatsQueue, TcTunnelKey, TcTunnelKeyAction, Tcf,
 };
 
 //      > tc actions add action tunnel_key set id 33 src_ip 1.2.3.4 dst_ip
@@ -67,7 +67,7 @@ fn get_tunnel_key_vxlan_action_ipv4() {
                             refcnt: 1,
                             bindcnt: 0,
                         },
-                        t_action: 1,
+                        t_action: TcTunnelKeyAction::Set,
                     },
                 )),
                 TcActionOption::TunnelKey(TcActionTunnelKeyOption::EncKeyId(
@@ -169,7 +169,7 @@ fn test_action_tunnel_key_vxlan_ipv6() {
                             refcnt: 1,
                             bindcnt: 1,
                         },
-                        t_action: 1,
+                        t_action: TcTunnelKeyAction::Set,
                     },
                 )),
                 TcActionOption::TunnelKey(TcActionTunnelKeyOption::EncKeyId(

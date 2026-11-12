@@ -18,7 +18,7 @@ pub use self::{
         TcActionMirror, TcActionMirrorOption, TcActionNat, TcActionNatOption,
         TcActionOption, TcActionTunnelKey, TcActionTunnelKeyOption,
         TcActionType, TcMirror, TcMirrorActionType, TcNat, TcNatFlags,
-        TcTunnelKey, Tcf,
+        TcTunnelKey, TcTunnelKeyAction, Tcf,
     },
     attribute::TcAttribute,
     filters::{

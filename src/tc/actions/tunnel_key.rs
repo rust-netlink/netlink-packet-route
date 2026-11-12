@@ -144,11 +144,61 @@ impl<'a> Parseable<NlaBuffer<'a>> for TcActionTunnelKeyOption {
     }
 }
 
+const TCA_TUNNEL_KEY_ACT_SET: i32 = 1;
+const TCA_TUNNEL_KEY_ACT_RELEASE: i32 = 2;
+
+/// The action performed by a `tunnel_key` action.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum TcTunnelKeyAction {
+    /// Set the tunnel metadata, `TCA_TUNNEL_KEY_ACT_SET`.
+    Set,
+    /// Release the tunnel metadata, `TCA_TUNNEL_KEY_ACT_RELEASE`.
+    Release,
+    Other(i32),
+}
+
+impl Default for TcTunnelKeyAction {
+    fn default() -> Self {
+        Self::Other(0)
+    }
+}
+
+impl From<i32> for TcTunnelKeyAction {
+    fn from(d: i32) -> Self {
+        match d {
+            TCA_TUNNEL_KEY_ACT_SET => Self::Set,
+            TCA_TUNNEL_KEY_ACT_RELEASE => Self::Release,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<TcTunnelKeyAction> for i32 {
+    fn from(v: TcTunnelKeyAction) -> i32 {
+        match v {
+            TcTunnelKeyAction::Set => TCA_TUNNEL_KEY_ACT_SET,
+            TcTunnelKeyAction::Release => TCA_TUNNEL_KEY_ACT_RELEASE,
+            TcTunnelKeyAction::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for TcTunnelKeyAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Set => f.write_str("set"),
+            Self::Release => f.write_str("release"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[non_exhaustive]
 pub struct TcTunnelKey {
     pub generic: TcActionGeneric,
-    pub t_action: i32,
+    pub t_action: TcTunnelKeyAction,
 }
 
 // kernel struct `tc_tunnel_key`
@@ -182,7 +232,7 @@ impl TcTunnelKey {
             generic: TcActionGeneric::parse(
                 &payload[..size_of::<TcActionGenericBuffer>()],
             )?,
-            t_action: raw.t_action,
+            t_action: raw.t_action.into(),
         })
     }
 }
@@ -191,7 +241,7 @@ impl From<&TcTunnelKey> for TcTunnelKeyBuffer {
     fn from(key: &TcTunnelKey) -> Self {
         Self {
             generic: TcActionGenericBuffer::from(&key.generic),
-            t_action: key.t_action,
+            t_action: key.t_action.into(),
         }
     }
 }
