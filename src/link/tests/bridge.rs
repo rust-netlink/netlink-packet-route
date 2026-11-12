@@ -9,14 +9,14 @@ use crate::{
     link::{
         link_flag::LinkFlags, AfSpecBridge, AfSpecInet, AfSpecInet6,
         AfSpecUnspec, BridgeBooleanOptionFlags, BridgeBooleanOptions,
-        BridgeFlag, BridgeId, BridgeMode, BridgeMulticastRouterType,
-        BridgePortState, BridgeStpMode, BridgeStpState, BridgeVlanInfo,
-        BridgeVlanInfoFlags, BridgeVlanTunnelInfo, In6AddrGenMode,
-        Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, InetDevConf, InfoBridge,
-        InfoBridgePort, InfoData, InfoKind, InfoPortData, InfoPortKind,
-        LinkAttribute, LinkHeader, LinkInfo, LinkLayerType, LinkMessage,
-        LinkMode, LinkProtoInfoBridge, LinkXdp, Map, State, Stats, Stats64,
-        VlanProtocol, XdpAttached,
+        BridgeFlag, BridgeGroupFwdMask, BridgeId, BridgeMode,
+        BridgeMulticastRouterType, BridgePortState, BridgeStpMode,
+        BridgeStpState, BridgeVlanInfo, BridgeVlanInfoFlags,
+        BridgeVlanTunnelInfo, In6AddrGenMode, Inet6CacheInfo, Inet6DevConf,
+        Inet6IfaceFlags, InetDevConf, InfoBridge, InfoBridgePort, InfoData,
+        InfoKind, InfoPortData, InfoPortKind, LinkAttribute, LinkHeader,
+        LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkProtoInfoBridge,
+        LinkXdp, Map, State, Stats, Stats64, VlanProtocol, XdpAttached,
     },
     AddressFamily,
 };
@@ -263,7 +263,7 @@ fn test_parse_link_bridge_no_extention_mask() {
                     InfoBridge::StpState(BridgeStpState::Disabled),
                     InfoBridge::Priority(32768),
                     InfoBridge::VlanFiltering(false),
-                    InfoBridge::GroupFwdMask(0),
+                    InfoBridge::GroupFwdMask(BridgeGroupFwdMask::empty()),
                     InfoBridge::BridgeId(BridgeId::new(
                         0x8000,
                         [0x00, 0x23, 0x45, 0x67, 0x89, 0x1c],
@@ -600,7 +600,7 @@ fn test_parse_link_bridge_stp_mode() {
                     InfoBridge::StpState(BridgeStpState::Disabled),
                     InfoBridge::Priority(32768),
                     InfoBridge::VlanFiltering(false),
-                    InfoBridge::GroupFwdMask(0),
+                    InfoBridge::GroupFwdMask(BridgeGroupFwdMask::empty()),
                     InfoBridge::BridgeId(BridgeId::new(
                         32768,
                         [0, 0, 0, 0, 0, 0],
@@ -849,6 +849,70 @@ fn test_af_spec_bridge() {
     assert_eq!(Vec::<AfSpecBridge>::parse(&raw[..]).unwrap(), expected);
 }
 
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_link_bridge_group_fwd_mask() {
+    // nlmon capture of:
+    //  ip link set brcap0 type bridge group_fwd_mask 0x0007
+    let raw = vec![
+        0x00, 0x00, 0x00, 0x00, 0x4e, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x12, 0x00, 0x0b, 0x00, 0x01, 0x00,
+        0x62, 0x72, 0x69, 0x64, 0x67, 0x65, 0x00, 0x00, 0x0c, 0x00, 0x02, 0x00,
+        0x06, 0x00, 0x09, 0x00, 0x07, 0x00, 0x00, 0x00,
+    ];
+
+    let expected = LinkMessage {
+        header: LinkHeader {
+            interface_family: AddressFamily::Unspec,
+            index: 0x044e,
+            link_layer_type: LinkLayerType::Netrom,
+            flags: LinkFlags::empty(),
+            change_mask: LinkFlags::empty(),
+        },
+        attributes: vec![LinkAttribute::LinkInfo(vec![
+            LinkInfo::Kind(InfoKind::Bridge),
+            LinkInfo::Data(InfoData::Bridge(vec![InfoBridge::GroupFwdMask(
+                BridgeGroupFwdMask::Stp
+                    | BridgeGroupFwdMask::MacPause
+                    | BridgeGroupFwdMask::Lacp,
+            )])),
+        ])],
+    };
+
+    assert_eq!(expected, LinkMessage::parse(&raw).unwrap());
+
+    let mut buf = Vec::new();
+    expected.emit(&mut buf).unwrap();
+    assert_eq!(buf, raw);
+}
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_link_bridge_port_group_fwd_mask() {
+    // nlmon capture of IFLA_INFO_PORT_DATA from:
+    //  ip link set vethcap0 type bridge_slave group_fwd_mask 0x0005
+    let raw = vec![
+        0x0c, 0x00, 0x05, 0x00, 0x06, 0x00, 0x1f, 0x00, 0x05, 0x00, 0x00, 0x00,
+    ];
+
+    let parsed = InfoPortData::parse_with_param(
+        &NlaBuffer::new(&raw).unwrap(),
+        InfoPortKind::Bridge,
+    )
+    .unwrap();
+
+    assert_eq!(
+        parsed,
+        InfoPortData::BridgePort(vec![InfoBridgePort::GroupFwdMask(
+            BridgeGroupFwdMask::Stp | BridgeGroupFwdMask::Lacp,
+        )])
+    );
+
+    let mut buf = Vec::new();
+    parsed.emit_value(&mut buf).unwrap();
+    assert_eq!(buf, raw[4..]);
+}
+
 #[test]
 fn test_bridge_port_link_info() {
     let raw = vec![
@@ -926,7 +990,7 @@ fn test_bridge_port_link_info() {
                 InfoBridgePort::TopologyChangeAck(false),
                 InfoBridgePort::ConfigPending(false),
                 InfoBridgePort::VlanTunnel(false),
-                InfoBridgePort::GroupFwdMask(0),
+                InfoBridgePort::GroupFwdMask(BridgeGroupFwdMask::empty()),
                 InfoBridgePort::NeighSupress(false),
                 InfoBridgePort::MrpRingOpen(false),
                 InfoBridgePort::MrpInOpen(false),
@@ -1182,7 +1246,7 @@ fn test_bridge_fdb_max_learned() {
             InfoBridge::StpState(BridgeStpState::Disabled),
             InfoBridge::Priority(32768),
             InfoBridge::VlanFiltering(false),
-            InfoBridge::GroupFwdMask(0),
+            InfoBridge::GroupFwdMask(BridgeGroupFwdMask::empty()),
             InfoBridge::BridgeId(BridgeId::new(
                 0x8000,
                 [0xde, 0x16, 0x13, 0xf1, 0xe3, 0x12],
@@ -1413,7 +1477,7 @@ fn test_bridge_netns_immutable() {
                     InfoBridge::StpState(BridgeStpState::KernelStp),
                     InfoBridge::Priority(32768),
                     InfoBridge::VlanFiltering(false),
-                    InfoBridge::GroupFwdMask(0),
+                    InfoBridge::GroupFwdMask(BridgeGroupFwdMask::empty()),
                     InfoBridge::BridgeId(BridgeId::new(
                         32768,
                         [82, 84, 0, 176, 82, 209],

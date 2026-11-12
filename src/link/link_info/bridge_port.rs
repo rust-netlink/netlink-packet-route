@@ -6,7 +6,7 @@ use netlink_packet_core::{
     ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
-use crate::link::{BridgeId, BridgeMulticastRouterType};
+use crate::link::{BridgeGroupFwdMask, BridgeId, BridgeMulticastRouterType};
 
 const IFLA_BRPORT_STATE: u16 = 1;
 const IFLA_BRPORT_PRIORITY: u16 = 2;
@@ -86,7 +86,7 @@ pub enum InfoBridgePort {
     MulticastToUnicast(bool),
     VlanTunnel(bool),
     BroadcastFlood(bool),
-    GroupFwdMask(u16),
+    GroupFwdMask(BridgeGroupFwdMask),
     NeighSupress(bool),
     Isolated(bool),
     BackupPort(u32),
@@ -137,9 +137,12 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::DesignatedPort(value)
             | InfoBridgePort::DesignatedCost(value)
             | InfoBridgePort::PortId(value)
-            | InfoBridgePort::PortNumber(value)
-            | InfoBridgePort::GroupFwdMask(value) => {
+            | InfoBridgePort::PortNumber(value) => {
                 append_u16(out, *value);
+                Ok(())
+            }
+            InfoBridgePort::GroupFwdMask(value) => {
+                append_u16(out, value.bits());
                 Ok(())
             }
             InfoBridgePort::Cost(value)
@@ -397,9 +400,13 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoBridgePort {
                 })? > 0,
             ),
             IFLA_BRPORT_GROUP_FWD_MASK => InfoBridgePort::GroupFwdMask(
-                parse_u16(payload).with_context(|| {
-                    format!("invalid IFLA_BRPORT_GROUP_FWD_MASK {payload:?}")
-                })?,
+                BridgeGroupFwdMask::from_bits_retain(
+                    parse_u16(payload).with_context(|| {
+                        format!(
+                            "invalid IFLA_BRPORT_GROUP_FWD_MASK {payload:?}"
+                        )
+                    })?,
+                ),
             ),
             IFLA_BRPORT_NEIGH_SUPPRESS => InfoBridgePort::NeighSupress(
                 parse_u8(payload).with_context(|| {

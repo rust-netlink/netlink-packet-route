@@ -66,6 +66,24 @@ const IFLA_BR_FDB_N_LEARNED: u16 = 48;
 const IFLA_BR_FDB_MAX_LEARNED: u16 = 49;
 const IFLA_BR_STP_MODE: u16 = 50;
 
+const BR_GROUPFWD_STP: u16 = 1 << 0;
+const BR_GROUPFWD_MACPAUSE: u16 = 1 << 1;
+const BR_GROUPFWD_LACP: u16 = 1 << 2;
+
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+    #[non_exhaustive]
+    pub struct BridgeGroupFwdMask: u16 {
+        /// Allow forwarding STP BPDUs, see `BR_GROUPFWD_STP`.
+        const Stp = BR_GROUPFWD_STP;
+        /// Allow forwarding MAC pause frames, see `BR_GROUPFWD_MACPAUSE`.
+        const MacPause = BR_GROUPFWD_MACPAUSE;
+        /// Allow forwarding LACP frames, see `BR_GROUPFWD_LACP`.
+        const Lacp = BR_GROUPFWD_LACP;
+        const _ = !0;
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoBridge {
@@ -93,7 +111,7 @@ pub enum InfoBridge {
     RootPathCost(u32),
     Priority(u16),
     VlanProtocol(VlanProtocol),
-    GroupFwdMask(u16),
+    GroupFwdMask(BridgeGroupFwdMask),
     RootId(BridgeId),
     BridgeId(BridgeId),
     RootPort(u16),
@@ -168,10 +186,13 @@ impl Nla for InfoBridge {
             }
 
             Self::Priority(value)
-            | Self::GroupFwdMask(value)
             | Self::RootPort(value)
             | Self::VlanDefaultPvid(value) => {
                 append_u16(out, *value);
+                Ok(())
+            }
+            Self::GroupFwdMask(value) => {
+                append_u16(out, value.bits());
                 Ok(())
             }
 
@@ -403,10 +424,12 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoBridge {
                     .context("invalid IFLA_BR_VLAN_PROTOCOL value")?
                     .into(),
             ),
-            IFLA_BR_GROUP_FWD_MASK => Self::GroupFwdMask(
-                parse_u16(payload)
-                    .context("invalid IFLA_BR_GROUP_FWD_MASK value")?,
-            ),
+            IFLA_BR_GROUP_FWD_MASK => {
+                Self::GroupFwdMask(BridgeGroupFwdMask::from_bits_retain(
+                    parse_u16(payload)
+                        .context("invalid IFLA_BR_GROUP_FWD_MASK value")?,
+                ))
+            }
             IFLA_BR_ROOT_ID => Self::RootId(
                 BridgeId::parse(payload)
                     .context("invalid IFLA_BR_ROOT_ID value")?,
