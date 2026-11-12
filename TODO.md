@@ -19,8 +19,6 @@
 
 - Support link kind `ovpn` (`IFLA_OVPN_MODE`) and `ppp`
   (`IFLA_PPP_DEV_FD`).
-- Parse `IFLA_HEADROOM` and `IFLA_TAILROOM` (both `u16`) and
-  `IFLA_MAX_PACING_OFFLOAD_HORIZON`.
 - Parse `IFLA_BRPORT_LEARNING_SYNC` of `InfoBridgePort`.
 - Parse `IFLA_BRIDGE_MST`, `IFLA_BRIDGE_CFM` and `IFLA_BRIDGE_MRP`
   of `AfSpecBridge`.

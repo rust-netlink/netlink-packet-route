@@ -3,9 +3,10 @@
 use std::{mem::size_of, os::unix::io::RawFd};
 
 use netlink_packet_core::{
-    append_bytes, append_i32, append_u32, parse_i32, parse_string, parse_u32,
-    parse_u8, DecodeError, DefaultNla, Emitable, EncodeError, ErrorContext,
-    Nla, NlaBuffer, Parseable, ParseableParametrized, NLA_F_NESTED,
+    append_bytes, append_i32, append_u16, append_u32, append_u64, parse_i32,
+    parse_string, parse_u16, parse_u32, parse_u64, parse_u8, DecodeError,
+    DefaultNla, Emitable, EncodeError, ErrorContext, Nla, NlaBuffer, Parseable,
+    ParseableParametrized, NLA_F_NESTED,
 };
 
 use super::{
@@ -98,10 +99,10 @@ const IFLA_DEVLINK_PORT: u16 = 62;
 const IFLA_GSO_IPV4_MAX_SIZE: u16 = 63;
 const IFLA_GRO_IPV4_MAX_SIZE: u16 = 64;
 const IFLA_DPLL_PIN: u16 = 65;
-// const IFLA_MAX_PACING_OFFLOAD_HORIZON: u16 = 66;
+const IFLA_MAX_PACING_OFFLOAD_HORIZON: u16 = 66;
 const IFLA_NETNS_IMMUTABLE: u16 = 67;
-// const IFLA_HEADROOM: u16 = 68;
-// const IFLA_TAILROOM: u16 = 69;
+const IFLA_HEADROOM: u16 = 68;
+const IFLA_TAILROOM: u16 = 69;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -182,6 +183,9 @@ pub enum LinkAttribute {
     GsoIpv4MaxSize(u32),
     GroIpv4MaxSize(u32),
     NetnsImmutable(bool),
+    MaxPacingOffloadHorizon(u64),
+    Headroom(u16),
+    Tailroom(u16),
     DevlinkPort(Vec<DevlinkPort>),
     DpllPin(Vec<DpllPin>),
     Other(DefaultNla),
@@ -225,6 +229,18 @@ impl Nla for LinkAttribute {
             }
 
             Self::NetnsImmutable(val) => out.push(u8::from(*val)),
+
+            Self::MaxPacingOffloadHorizon(value) => {
+                if *value <= u32::MAX as u64 {
+                    append_u32(out, *value as u32);
+                } else {
+                    append_u64(out, *value);
+                }
+            }
+
+            Self::Headroom(value) | Self::Tailroom(value) => {
+                append_u16(out, *value)
+            }
 
             Self::Mtu(value)
             | Self::Link(value)
@@ -352,6 +368,9 @@ impl Nla for LinkAttribute {
             Self::GsoIpv4MaxSize(_) => IFLA_GSO_IPV4_MAX_SIZE,
             Self::GroIpv4MaxSize(_) => IFLA_GRO_IPV4_MAX_SIZE,
             Self::NetnsImmutable(_) => IFLA_NETNS_IMMUTABLE,
+            Self::MaxPacingOffloadHorizon(_) => IFLA_MAX_PACING_OFFLOAD_HORIZON,
+            Self::Headroom(_) => IFLA_HEADROOM,
+            Self::Tailroom(_) => IFLA_TAILROOM,
             Self::DevlinkPort(_) => IFLA_DEVLINK_PORT | NLA_F_NESTED,
             Self::DpllPin(_) => IFLA_DPLL_PIN | NLA_F_NESTED,
             Self::Other(attr) => attr.kind(),
@@ -674,6 +693,28 @@ impl<'a> ParseableParametrized<NlaBuffer<'a>, AddressFamily> for LinkAttribute {
                 parse_u8(payload)
                     .context("invalid IFLA_NETNS_IMMUTABLE value")?
                     != 0,
+            ),
+            IFLA_MAX_PACING_OFFLOAD_HORIZON => {
+                Self::MaxPacingOffloadHorizon(match payload.len() {
+                    4 => u64::from(parse_u32(payload).context(
+                        "invalid IFLA_MAX_PACING_OFFLOAD_HORIZON value",
+                    )?),
+                    8 => parse_u64(payload).context(
+                        "invalid IFLA_MAX_PACING_OFFLOAD_HORIZON value",
+                    )?,
+                    len => {
+                        return Err(DecodeError::from(format!(
+                            "Invalid IFLA_MAX_PACING_OFFLOAD_HORIZON, \
+                             unexpected payload length {len}"
+                        )));
+                    }
+                })
+            }
+            IFLA_HEADROOM => Self::Headroom(
+                parse_u16(payload).context("invalid IFLA_HEADROOM value")?,
+            ),
+            IFLA_TAILROOM => Self::Tailroom(
+                parse_u16(payload).context("invalid IFLA_TAILROOM value")?,
             ),
             IFLA_DEVLINK_PORT => {
                 let err = "invalid IFLA_DEVLINK_PORT value";
