@@ -3,6 +3,7 @@
 #[cfg(feature = "link-af-spec")]
 mod af_spec;
 mod attribute;
+mod bridge_vlan;
 mod buffer_tool;
 mod devlink_port;
 mod down_reason;
@@ -35,9 +36,9 @@ mod tests;
 #[cfg(feature = "link-af-spec")]
 pub use self::af_spec::{
     AfSpecBridge, AfSpecInet, AfSpecInet6, AfSpecMctp, AfSpecUnspec,
-    BridgeFlag, BridgeMode, BridgeVlanInfo, BridgeVlanInfoFlags,
-    BridgeVlanTunnelInfo, Icmp6Stats, In6AddrGenMode, Inet6CacheInfo,
-    Inet6DevConf, Inet6IfaceFlags, Inet6Stats, InetDevConf, MctpPhysBinding,
+    BridgeFlag, BridgeMode, BridgeVlanInfo, BridgeVlanTunnelInfo, Icmp6Stats,
+    In6AddrGenMode, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags, Inet6Stats,
+    InetDevConf, MctpPhysBinding,
 };
 #[cfg(feature = "link-af-spec")]
 pub(crate) use self::af_spec::{
@@ -76,6 +77,7 @@ pub use self::sriov::{
 };
 pub use self::{
     attribute::LinkAttribute,
+    bridge_vlan::BridgeVlanInfoFlags,
     devlink_port::DevlinkPort,
     down_reason::LinkProtocolDownReason,
     dpll_pin::DpllPin,

@@ -8,6 +8,8 @@ use netlink_packet_core::{
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, Unaligned};
 
+use crate::link::BridgeVlanInfoFlags;
+
 /// Parsed bridge xstat value.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
@@ -325,7 +327,7 @@ pub struct BridgeVlanXstats {
     pub tx_bytes: u64,
     pub tx_packets: u64,
     pub vid: u16,
-    pub flags: u16,
+    pub flags: BridgeVlanInfoFlags,
 }
 
 #[derive(
@@ -365,7 +367,7 @@ impl BridgeVlanXstats {
             tx_bytes: raw.tx_bytes,
             tx_packets: raw.tx_packets,
             vid: raw.vid,
-            flags: raw.flags,
+            flags: BridgeVlanInfoFlags::from_bits_retain(raw.flags),
         })
     }
 }
@@ -378,7 +380,7 @@ impl From<&BridgeVlanXstats> for BridgeVlanXstatsBuffer {
             tx_bytes: value.tx_bytes,
             tx_packets: value.tx_packets,
             vid: value.vid,
-            flags: value.flags,
+            flags: value.flags.bits(),
             pad2: 0,
         }
     }

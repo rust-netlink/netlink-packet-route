@@ -17,7 +17,7 @@ pub(crate) use self::inet::InetDevConfBuffer;
 pub use self::{
     bridge::{
         AfSpecBridge, BridgeFlag, BridgeMode, BridgeVlanInfo,
-        BridgeVlanInfoFlags, BridgeVlanTunnelInfo,
+        BridgeVlanTunnelInfo,
     },
     in6_addr_gen_mode::In6AddrGenMode,
     inet::{AfSpecInet, InetDevConf},
