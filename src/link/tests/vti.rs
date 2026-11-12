@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 use std::net::Ipv4Addr;
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{Emitable, Parseable};
 
 use crate::{
     link::{
