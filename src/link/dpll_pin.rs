@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-// TODO: If you have hardware to simulate DPLL pins, please add unit tests for
-// this module.
+// Tests for this module use synthetic DPLL pin attributes. Real hardware
+// captures can be added when DPLL capable hardware is available.
 
 use netlink_packet_core::{
     append_bytes, append_u32, parse_u32, DecodeError, DefaultNla, EncodeError,
