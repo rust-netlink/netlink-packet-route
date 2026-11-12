@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use netlink_packet_core::{DefaultNla, Emitable, Parseable};
+use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
 
 use crate::{
     link::{
@@ -12,10 +12,23 @@ use crate::{
         AfSpecUnspec, Inet6CacheInfo, Inet6DevConf, Inet6IfaceFlags,
         InetDevConf, InfoData, InfoKind, InfoVxlan, LinkAttribute, LinkHeader,
         LinkInfo, LinkLayerType, LinkMessage, LinkMode, LinkXdp, Map, State,
-        VxlanDf, XdpAttached,
+        VxlanDf, VxlanLabelPolicy, XdpAttached,
     },
     AddressFamily,
 };
+
+#[cfg(not(target_endian = "big"))]
+#[test]
+fn test_parsing_link_vxlan_label_policy() {
+    // nlmon capture of IFLA_VXLAN_LABEL_POLICY from:
+    //  ip link add vxcap0 type vxlan id 42 dstport 4789 \
+    //      local 192.0.2.1 remote 192.0.2.2
+    let raw = vec![0x08, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00];
+
+    let parsed = InfoVxlan::parse(&NlaBuffer::new(&raw).unwrap()).unwrap();
+
+    assert_eq!(parsed, InfoVxlan::LabelPolicy(VxlanLabelPolicy::Fixed));
+}
 
 #[test]
 fn test_parsing_link_vxlan() {
@@ -164,7 +177,7 @@ fn test_parsing_link_vxlan() {
                     InfoVxlan::Tos(0),
                     InfoVxlan::Df(VxlanDf::Unset),
                     InfoVxlan::Label(0),
-                    InfoVxlan::LabelPolicy(0),
+                    InfoVxlan::LabelPolicy(VxlanLabelPolicy::Fixed),
                     InfoVxlan::Learning(true),
                     InfoVxlan::Proxy(false),
                     InfoVxlan::Rsc(false),
@@ -409,7 +422,7 @@ fn test_parsing_link_vxlan_ipv6() {
                     InfoVxlan::Tos(0),
                     InfoVxlan::Df(VxlanDf::Unset),
                     InfoVxlan::Label(0),
-                    InfoVxlan::LabelPolicy(0),
+                    InfoVxlan::LabelPolicy(VxlanLabelPolicy::Fixed),
                     InfoVxlan::Learning(true),
                     InfoVxlan::Proxy(false),
                     InfoVxlan::Rsc(false),
@@ -545,7 +558,7 @@ fn test_parsing_link_vxlan_label() {
                 InfoVxlan::Tos(0),
                 InfoVxlan::Df(VxlanDf::Unset),
                 InfoVxlan::Label(12345),
-                InfoVxlan::LabelPolicy(0),
+                InfoVxlan::LabelPolicy(VxlanLabelPolicy::Fixed),
                 InfoVxlan::Learning(true),
                 InfoVxlan::Proxy(false),
                 InfoVxlan::Rsc(false),

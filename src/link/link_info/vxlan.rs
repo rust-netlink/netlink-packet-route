@@ -96,6 +96,48 @@ const IFLA_VXLAN_LABEL_POLICY: u16 = 32;
 const IFLA_VXLAN_RESERVED_BITS: u16 = 33;
 const IFLA_VXLAN_MC_ROUTE: u16 = 34;
 
+const VXLAN_LABEL_FIXED: u32 = 0;
+const VXLAN_LABEL_INHERIT: u32 = 1;
+
+/// IPv6 flow label policy carried by `IFLA_VXLAN_LABEL_POLICY`.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
+pub enum VxlanLabelPolicy {
+    Fixed,
+    Inherit,
+    Other(u32),
+}
+
+impl From<u32> for VxlanLabelPolicy {
+    fn from(d: u32) -> Self {
+        match d {
+            VXLAN_LABEL_FIXED => Self::Fixed,
+            VXLAN_LABEL_INHERIT => Self::Inherit,
+            _ => Self::Other(d),
+        }
+    }
+}
+
+impl From<VxlanLabelPolicy> for u32 {
+    fn from(v: VxlanLabelPolicy) -> u32 {
+        match v {
+            VxlanLabelPolicy::Fixed => VXLAN_LABEL_FIXED,
+            VxlanLabelPolicy::Inherit => VXLAN_LABEL_INHERIT,
+            VxlanLabelPolicy::Other(d) => d,
+        }
+    }
+}
+
+impl std::fmt::Display for VxlanLabelPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Fixed => f.write_str("fixed"),
+            Self::Inherit => f.write_str("inherit"),
+            Self::Other(d) => write!(f, "{d}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[non_exhaustive]
 pub enum InfoVxlan {
@@ -138,7 +180,7 @@ pub enum InfoVxlan {
     Df(VxlanDf),
     Vnifilter(bool),
     Localbypass(bool),
-    LabelPolicy(u32),
+    LabelPolicy(VxlanLabelPolicy),
     /// Tolerated reserved bits in VxLAN header
     ///
     /// When set to 1 on certain reserved bit, linux kernel will not
@@ -153,10 +195,10 @@ impl Nla for InfoVxlan {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         match self {
             Self::Id(value)
-            | Self::LabelPolicy(value)
             | Self::Link(value)
             | Self::Ageing(value)
             | Self::Limit(value) => append_u32(out, *value),
+            Self::LabelPolicy(value) => append_u32(out, (*value).into()),
             Self::Label(value) => append_u32_be(out, *value),
             Self::Gbp
             | Self::Gpe
@@ -405,7 +447,8 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoVxlan {
             ),
             IFLA_VXLAN_LABEL_POLICY => Self::LabelPolicy(
                 parse_u32(payload)
-                    .context("invalid IFLA_VXLAN_LABEL_POLICY value")?,
+                    .context("invalid IFLA_VXLAN_LABEL_POLICY value")?
+                    .into(),
             ),
             IFLA_VXLAN_RESERVED_BITS => Self::ReservedBits(
                 parse_u64_be(payload)

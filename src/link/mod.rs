@@ -68,6 +68,7 @@ pub use self::link_info::{
     MacVlanMode, MacVtapFlags, MacVtapMacAddressMode, MacVtapMode, MiiStatus,
     NetkitMode, NetkitPolicy, NetkitScrub, RmNetFlags, SitFlags,
     TunnelEncapFlags, TunnelEncapType, VlanFlags, VlanQosMapping, VxlanDf,
+    VxlanLabelPolicy,
 };
 #[cfg(feature = "link-sriov")]
 pub use self::sriov::{
