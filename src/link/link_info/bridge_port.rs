@@ -18,8 +18,7 @@ const IFLA_BRPORT_FAST_LEAVE: u16 = 7;
 const IFLA_BRPORT_LEARNING: u16 = 8;
 const IFLA_BRPORT_UNICAST_FLOOD: u16 = 9;
 const IFLA_BRPORT_PROXYARP: u16 = 10;
-// only used in one driver, we don't know if its type is stable:
-// const IFLA_BRPORT_LEARNING_SYNC: u16 = 11;
+const IFLA_BRPORT_LEARNING_SYNC: u16 = 11;
 const IFLA_BRPORT_PROXYARP_WIFI: u16 = 12;
 const IFLA_BRPORT_ROOT_ID: u16 = 13;
 const IFLA_BRPORT_BRIDGE_ID: u16 = 14;
@@ -66,6 +65,7 @@ pub enum InfoBridgePort {
     Protect(bool),
     FastLeave(bool),
     Learning(bool),
+    LearningSync(bool),
     UnicastFlood(bool),
     ProxyARP(bool),
     ProxyARPWifi(bool),
@@ -113,6 +113,7 @@ impl Nla for InfoBridgePort {
             | InfoBridgePort::Protect(value)
             | InfoBridgePort::FastLeave(value)
             | InfoBridgePort::Learning(value)
+            | InfoBridgePort::LearningSync(value)
             | InfoBridgePort::UnicastFlood(value)
             | InfoBridgePort::ProxyARP(value)
             | InfoBridgePort::TopologyChangeAck(value)
@@ -188,6 +189,7 @@ impl Nla for InfoBridgePort {
             InfoBridgePort::Protect(_) => IFLA_BRPORT_PROTECT,
             InfoBridgePort::FastLeave(_) => IFLA_BRPORT_FAST_LEAVE,
             InfoBridgePort::Learning(_) => IFLA_BRPORT_LEARNING,
+            InfoBridgePort::LearningSync(_) => IFLA_BRPORT_LEARNING_SYNC,
             InfoBridgePort::UnicastFlood(_) => IFLA_BRPORT_UNICAST_FLOOD,
             InfoBridgePort::ProxyARP(_) => IFLA_BRPORT_PROXYARP,
             InfoBridgePort::ProxyARPWifi(_) => IFLA_BRPORT_PROXYARP_WIFI,
@@ -287,6 +289,11 @@ impl<'a> Parseable<NlaBuffer<'a>> for InfoBridgePort {
             IFLA_BRPORT_LEARNING => InfoBridgePort::Learning(
                 parse_u8(payload).with_context(|| {
                     format!("invalid IFLA_BRPORT_LEARNING {payload:?}")
+                })? > 0,
+            ),
+            IFLA_BRPORT_LEARNING_SYNC => InfoBridgePort::LearningSync(
+                parse_u8(payload).with_context(|| {
+                    format!("invalid IFLA_BRPORT_LEARNING_SYNC {payload:?}")
                 })? > 0,
             ),
             IFLA_BRPORT_UNICAST_FLOOD => InfoBridgePort::UnicastFlood(
