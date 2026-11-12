@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use netlink_packet_core::{DefaultNla, Emitable, NlaBuffer, Parseable};
+use netlink_packet_core::{Emitable, NlaBuffer, Parseable};
 
 use crate::{
     link::{
