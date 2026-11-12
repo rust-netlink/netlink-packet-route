@@ -7,7 +7,7 @@ use netlink_packet_core::{
     ErrorContext, Nla, NlaBuffer, Parseable,
 };
 
-use crate::ip::parse_ipv6_addr;
+use crate::{ip::parse_ipv6_addr, route::Ipv6RoutingType};
 
 const RPL_IPTUNNEL_UNSPEC: u16 = 0;
 const RPL_IPTUNNEL_SRH: u16 = 1;
@@ -23,7 +23,7 @@ const RPL_SEGMENT_LEN: usize = 16;
 #[non_exhaustive]
 pub struct RplSrh {
     pub next_header: u8,
-    pub routing_type: u8,
+    pub routing_type: Ipv6RoutingType,
     pub segments_left: u8,
     pub cmpri: u8,
     pub cmpre: u8,
@@ -59,7 +59,7 @@ impl Nla for RplSrh {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         out.push(self.next_header);
         out.push(self.hdr_len());
-        out.push(self.routing_type);
+        out.push(self.routing_type.into());
         out.push(self.segments_left);
         append_u32(out, self.cmpr_fields());
         for segment in &self.segments {
@@ -120,7 +120,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for RplSrh {
         }
         Ok(Self {
             next_header: payload[0],
-            routing_type: payload[2],
+            routing_type: payload[2].into(),
             segments_left: payload[3],
             cmpri,
             cmpre,
