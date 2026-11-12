@@ -9,9 +9,9 @@ use netlink_packet_core::{Emitable, Parseable};
 use crate::{
     route::{
         seg6local::{RouteSeg6LocalTunnel, Seg6LocalAction, Seg6LocalSrh},
-        RouteAttribute, RouteCacheInfo, RouteFlags, RouteHeader,
-        RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage, RoutePreference,
-        RouteProtocol, RouteScope, RouteType,
+        Ipv6RoutingType, RouteAttribute, RouteCacheInfo, RouteFlags,
+        RouteHeader, RouteLwEnCapType, RouteLwTunnelEncap, RouteMessage,
+        RoutePreference, RouteProtocol, RouteScope, RouteType,
     },
     AddressFamily,
 };
@@ -143,7 +143,7 @@ fn test_seg6local_end_b6_encaps() {
                 RouteLwTunnelEncap::Seg6Local(RouteSeg6LocalTunnel::Srh(
                     Seg6LocalSrh {
                         next_header: 0,
-                        routing_type: 4,
+                        routing_type: Ipv6RoutingType::SegmentRouting,
                         segments_left: 1,
                         first_segment: 1,
                         flags: 0,
@@ -464,7 +464,7 @@ fn test_seg6local_end_b6() {
                 RouteLwTunnelEncap::Seg6Local(RouteSeg6LocalTunnel::Srh(
                     Seg6LocalSrh {
                         next_header: 0,
-                        routing_type: 4,
+                        routing_type: Ipv6RoutingType::SegmentRouting,
                         segments_left: 2,
                         first_segment: 2,
                         flags: 0,

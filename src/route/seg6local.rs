@@ -11,7 +11,10 @@ use netlink_packet_core::{
     Parseable,
 };
 
-use crate::ip::{parse_ipv4_addr, parse_ipv6_addr};
+use crate::{
+    ip::{parse_ipv4_addr, parse_ipv6_addr},
+    route::Ipv6RoutingType,
+};
 
 const SEG6_LOCAL_UNSPEC: u16 = 0;
 const SEG6_LOCAL_ACTION: u16 = 1;
@@ -148,7 +151,7 @@ impl std::fmt::Display for Seg6LocalAction {
 #[non_exhaustive]
 pub struct Seg6LocalSrh {
     pub next_header: u8,
-    pub routing_type: u8,
+    pub routing_type: Ipv6RoutingType,
     pub segments_left: u8,
     pub first_segment: u8,
     pub flags: u8,
@@ -168,7 +171,7 @@ impl Nla for Seg6LocalSrh {
     fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
         out.push(self.next_header);
         out.push(self.hdr_len());
-        out.push(self.routing_type);
+        out.push(self.routing_type.into());
         out.push(self.segments_left);
         out.push(self.first_segment);
         out.push(self.flags);
@@ -214,7 +217,7 @@ impl<'a> Parseable<NlaBuffer<'a>> for Seg6LocalSrh {
         }
         Ok(Self {
             next_header: payload[0],
-            routing_type: payload[2],
+            routing_type: payload[2].into(),
             segments_left: payload[3],
             first_segment: payload[4],
             flags: payload[5],
