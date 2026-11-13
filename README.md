@@ -31,13 +31,15 @@ The `link` module additionally splits its largest attributes into
 `link-af-spec`, `link-info` and `link-sriov`.
 
 Disabling a family removes its module, its `RouteNetlinkMessage` variants and
-its parsing code; messages of that family then fail to parse with `Unknown
-message type`. Disabling `link-af-spec`, `link-info` or `link-sriov` makes the
-corresponding link attribute parse into `LinkAttribute::Other` instead.
+its parsing code. Messages of that family, and any other `RTM_*` type this
+crate does not know, are preserved as `RouteNetlinkMessage::Other` with their
+raw payload in a `DefaultMessage`. Disabling `link-af-spec`, `link-info` or
+`link-sriov` makes the corresponding link attribute parse into
+`LinkAttribute::Other` instead.
 
 This only affects binary size; the default feature set behaves exactly like
 earlier releases. Adding a message family in a future release is non-breaking
-because the message enums are `#[non_exhaustive]`.
+because the message enum is `#[non_exhaustive]`.
 
 ## Development
  * Please use `git commit --signoff` to append Signed-off-by trailer to commit

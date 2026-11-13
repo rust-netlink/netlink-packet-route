@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-#[cfg(not(has_message_family))]
-use netlink_packet_core::EncodeErrorKind;
 use netlink_packet_core::{
     DecodeError, EncodeError, NetlinkDeserializable, NetlinkHeader,
     NetlinkPayload, ParseableParametrized,
@@ -140,8 +138,6 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
         buf: &[u8],
         message_type: u16,
     ) -> Result<Self, DecodeError> {
-        #[cfg(not(has_message_family))]
-        let _ = buf;
         match message_type {
             // Link messages
             #[cfg(feature = "link")]
@@ -361,8 +357,49 @@ impl ParseableParametrized<[u8], u16> for RouteNetlinkMessage {
                 }
             }),
 
-            _ => Err(format!("Unknown message type: {message_type}").into()),
+            _ => Ok(RouteNetlinkMessage::Other(DefaultMessage::new(
+                message_type,
+                buf.to_vec(),
+            ))),
         }
+    }
+}
+
+/// An opaque rtnetlink message whose type is unknown to this crate.
+///
+/// The raw message type and payload are preserved so the message can be
+/// inspected or emitted unchanged.
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[non_exhaustive]
+pub struct DefaultMessage {
+    message_type: u16,
+    payload: Vec<u8>,
+}
+
+impl DefaultMessage {
+    /// Create an opaque message from its raw message type and payload.
+    pub fn new(message_type: u16, payload: Vec<u8>) -> Self {
+        Self {
+            message_type,
+            payload,
+        }
+    }
+
+    /// Return the raw rtnetlink message type.
+    pub fn message_type(&self) -> u16 {
+        self.message_type
+    }
+
+    /// Return the raw message payload.
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+}
+
+impl ::netlink_packet_core::Emitable for DefaultMessage {
+    fn emit_value(&self, out: &mut Vec<u8>) -> Result<(), EncodeError> {
+        out.extend_from_slice(&self.payload);
+        Ok(())
     }
 }
 
@@ -459,6 +496,8 @@ pub enum RouteNetlinkMessage {
     DelRule(RuleMessage),
     #[cfg(feature = "rule")]
     GetRule(RuleMessage),
+    /// A message whose type is unknown to this crate.
+    Other(DefaultMessage),
 }
 
 impl RouteNetlinkMessage {
@@ -673,7 +712,7 @@ impl RouteNetlinkMessage {
     }
 
     pub fn message_type(&self) -> u16 {
-        match *self {
+        match self {
             #[cfg(feature = "link")]
             Self::NewLink(_) => RTM_NEWLINK,
             #[cfg(feature = "link")]
@@ -764,6 +803,7 @@ impl RouteNetlinkMessage {
             Self::NewRule(_) => RTM_NEWRULE,
             #[cfg(feature = "rule")]
             Self::DelRule(_) => RTM_DELRULE,
+            Self::Other(msg) => msg.message_type(),
         }
     }
 }
@@ -839,15 +879,7 @@ impl ::netlink_packet_core::Emitable for RouteNetlinkMessage {
                 msg.emit(out)
             }
 
-            #[cfg(not(has_message_family))]
-            _ => {
-                let _ = out;
-                Err(EncodeError::new(
-                    EncodeErrorKind::InvalidValue,
-                    "no message family feature is enabled: cannot encode \
-                     RouteNetlinkMessage",
-                ))
-            }
+            Self::Other(msg) => msg.emit(out),
         }
     }
 }
@@ -876,7 +908,8 @@ impl From<RouteNetlinkMessage> for NetlinkPayload<RouteNetlinkMessage> {
 #[cfg(all(test, feature = "route"))]
 mod emit_tests {
     use netlink_packet_core::{
-        DefaultNla, Emitable, NetlinkMessage, NLA_MAX_VALUE_LEN,
+        DefaultNla, Emitable, NetlinkMessage, ParseableParametrized,
+        NLA_MAX_VALUE_LEN,
     };
 
     use super::RouteNetlinkMessage;
@@ -900,6 +933,23 @@ mod emit_tests {
         let header_len = emit(&netlink.header).len();
         assert_eq!(&full[header_len..], buffer);
         assert_eq!(netlink.header.length, 0);
+    }
+
+    #[test]
+    fn unknown_message_type_round_trips_as_opaque() {
+        let payload = vec![0xde, 0xad, 0xbe, 0xef];
+        let message =
+            RouteNetlinkMessage::parse_with_param(&payload, 0xffff).unwrap();
+        assert_eq!(message.message_type(), 0xffff);
+        match &message {
+            RouteNetlinkMessage::Other(other) => {
+                assert_eq!(other.message_type(), 0xffff);
+                assert_eq!(other.payload(), payload.as_slice());
+                assert_eq!(emit(other), payload);
+            }
+            _ => panic!("expected an opaque message"),
+        }
+        assert_eq!(emit(&message), payload);
     }
 
     #[test]
