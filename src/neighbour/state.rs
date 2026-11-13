@@ -10,72 +10,87 @@ const NUD_PROBE: u16 = 0x10;
 const NUD_FAILED: u16 = 0x20;
 const NUD_NOARP: u16 = 0x40;
 const NUD_PERMANENT: u16 = 0x80;
-const NUD_NONE: u16 = 0x00;
 
-#[derive(Clone, Eq, PartialEq, Debug, Copy, Default)]
-#[non_exhaustive]
-pub enum NeighbourState {
-    Incomplete,
-    Reachable,
-    Stale,
-    Delay,
-    Probe,
-    Failed,
-    Noarp,
-    Permanent,
-    #[default]
-    None,
-    Other(u16),
+const NUD_KNOWN: u16 = NUD_INCOMPLETE
+    | NUD_REACHABLE
+    | NUD_STALE
+    | NUD_DELAY
+    | NUD_PROBE
+    | NUD_FAILED
+    | NUD_NOARP
+    | NUD_PERMANENT;
+
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+    #[non_exhaustive]
+    pub struct NeighbourState: u16 {
+        const Incomplete = NUD_INCOMPLETE;
+        const Reachable = NUD_REACHABLE;
+        const Stale = NUD_STALE;
+        const Delay = NUD_DELAY;
+        const Probe = NUD_PROBE;
+        const Failed = NUD_FAILED;
+        const Noarp = NUD_NOARP;
+        const Permanent = NUD_PERMANENT;
+        const _ = !0;
+    }
+}
+
+impl NeighbourState {
+    /// The state of a neighbour entry with no `NUD_*` bits set.
+    #[allow(non_upper_case_globals)]
+    pub const None: Self = Self::empty();
 }
 
 impl From<NeighbourState> for u16 {
     fn from(v: NeighbourState) -> u16 {
-        match v {
-            NeighbourState::Incomplete => NUD_INCOMPLETE,
-            NeighbourState::Reachable => NUD_REACHABLE,
-            NeighbourState::Stale => NUD_STALE,
-            NeighbourState::Delay => NUD_DELAY,
-            NeighbourState::Probe => NUD_PROBE,
-            NeighbourState::Failed => NUD_FAILED,
-            NeighbourState::Noarp => NUD_NOARP,
-            NeighbourState::Permanent => NUD_PERMANENT,
-            NeighbourState::None => NUD_NONE,
-            NeighbourState::Other(d) => d,
-        }
+        v.bits()
     }
 }
 
 impl From<u16> for NeighbourState {
     fn from(d: u16) -> Self {
-        match d {
-            NUD_INCOMPLETE => Self::Incomplete,
-            NUD_REACHABLE => Self::Reachable,
-            NUD_STALE => Self::Stale,
-            NUD_DELAY => Self::Delay,
-            NUD_PROBE => Self::Probe,
-            NUD_FAILED => Self::Failed,
-            NUD_NOARP => Self::Noarp,
-            NUD_PERMANENT => Self::Permanent,
-            NUD_NONE => Self::None,
-            _ => Self::Other(d),
-        }
+        Self::from_bits_retain(d)
     }
 }
 
 impl std::fmt::Display for NeighbourState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Incomplete => write!(f, "incomplete"),
-            Self::Reachable => write!(f, "reachable"),
-            Self::Stale => write!(f, "stale"),
-            Self::Delay => write!(f, "delay"),
-            Self::Probe => write!(f, "probe"),
-            Self::Failed => write!(f, "failed"),
-            Self::Noarp => write!(f, "noarp"),
-            Self::Permanent => write!(f, "permanent"),
-            Self::None => write!(f, "none"),
-            Self::Other(d) => write!(f, "other({d}"),
+        let mut first = true;
+        for (flag, name) in [
+            (Self::Incomplete, "incomplete"),
+            (Self::Reachable, "reachable"),
+            (Self::Stale, "stale"),
+            (Self::Delay, "delay"),
+            (Self::Probe, "probe"),
+            (Self::Failed, "failed"),
+            (Self::Noarp, "noarp"),
+            (Self::Permanent, "permanent"),
+        ] {
+            if !self.contains(flag) {
+                continue;
+            }
+            if !first {
+                f.write_str(" ")?;
+            }
+            f.write_str(name)?;
+            first = false;
         }
+
+        let unknown = self.bits() & !NUD_KNOWN;
+        if unknown != 0 {
+            if !first {
+                f.write_str(" ")?;
+            }
+            write!(f, "other(0x{unknown:x})")?;
+            first = false;
+        }
+
+        if first {
+            f.write_str("none")?;
+        }
+
+        Ok(())
     }
 }
 
@@ -83,20 +98,33 @@ impl std::str::FromStr for NeighbourState {
     type Err = DecodeError;
 
     fn from_str(state: &str) -> Result<Self, Self::Err> {
-        let state = match state {
-            "incomplete" => Self::Incomplete,
-            "reachable" => Self::Reachable,
-            "stale" => Self::Stale,
-            "delay" => Self::Delay,
-            "probe" => Self::Probe,
-            "failed" => Self::Failed,
-            "noarp" => Self::Noarp,
-            "permanent" => Self::Permanent,
-            "none" => Self::None,
-            _ => return Err(format!("Invalid state string '{state}'").into()),
-        };
+        let mut parsed = Self::empty();
+        let mut found = false;
 
-        Ok(state)
+        for token in state.split_whitespace() {
+            let flag = match token {
+                "incomplete" => Self::Incomplete,
+                "reachable" => Self::Reachable,
+                "stale" => Self::Stale,
+                "delay" => Self::Delay,
+                "probe" => Self::Probe,
+                "failed" => Self::Failed,
+                "noarp" => Self::Noarp,
+                "permanent" => Self::Permanent,
+                "none" => Self::None,
+                _ => {
+                    return Err(format!("Invalid state string '{state}'").into())
+                }
+            };
+            parsed |= flag;
+            found = true;
+        }
+
+        if !found {
+            return Err(format!("Invalid state string '{state}'").into());
+        }
+
+        Ok(parsed)
     }
 }
 
@@ -146,5 +174,32 @@ mod tests {
         ));
         assert!(matches!(NeighbourState::from_str("None"), Err(..)));
         assert!(matches!(NeighbourState::from_str("not a nud"), Err(..)));
+    }
+
+    #[test]
+    fn test_neighbour_state_multiple_flags() {
+        assert_eq!(
+            NeighbourState::from_str("reachable permanent").unwrap(),
+            NeighbourState::Reachable | NeighbourState::Permanent
+        );
+        assert_eq!(
+            NeighbourState::from(
+                NeighbourState::Noarp.bits() | NeighbourState::Permanent.bits()
+            ),
+            NeighbourState::Noarp | NeighbourState::Permanent
+        );
+    }
+
+    #[test]
+    fn test_neighbour_state_display() {
+        assert_eq!(
+            (NeighbourState::Reachable | NeighbourState::Permanent).to_string(),
+            "reachable permanent"
+        );
+        assert_eq!(NeighbourState::None.to_string(), "none");
+        assert_eq!(
+            NeighbourState::from_bits_retain(0x100).to_string(),
+            "other(0x100)"
+        );
     }
 }
