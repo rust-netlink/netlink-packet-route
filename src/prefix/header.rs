@@ -60,6 +60,7 @@ bitflags! {
 
 // Linux kernel code `struct prefixmsg`
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct PrefixHeader {
     pub prefix_family: AddressFamily,
     pub ifindex: i32,

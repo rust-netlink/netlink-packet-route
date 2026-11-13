@@ -30,6 +30,7 @@ pub(crate) struct AddrLabelMessageBuffer {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct AddrLabelHeader {
     pub family: AddressFamily,
     pub prefix_len: u8,

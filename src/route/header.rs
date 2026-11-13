@@ -36,6 +36,7 @@ pub(crate) struct RouteMessageBuffer {
 /// High level representation of `RTM_GETROUTE`, `RTM_ADDROUTE`, `RTM_DELROUTE`
 /// messages headers.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct RouteHeader {
     /// Address family of the route: either [AddressFamily::Inet] for IPv4,
     /// or [AddressFamily::Inet6] for IPv6.

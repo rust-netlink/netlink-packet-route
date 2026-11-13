@@ -25,6 +25,7 @@ pub(crate) struct NsidMessageBuffer {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct NsidHeader {
     pub family: AddressFamily,
 }

@@ -40,6 +40,7 @@ pub struct AddressMessage {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct AddressHeader {
     pub family: AddressFamily,
     pub prefix_len: u8,

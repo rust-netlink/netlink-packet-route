@@ -16,12 +16,10 @@ fn main() {
     let _port_number = socket.bind_auto().unwrap().port_number();
     socket.connect(&SocketAddr::new(0, 0)).unwrap();
 
-    let rule_msg_hdr = RuleHeader {
-        family: AddressFamily::Inet,
-        table: 254,
-        action: RuleAction::ToTable,
-        ..Default::default()
-    };
+    let mut rule_msg_hdr = RuleHeader::default();
+    rule_msg_hdr.family = AddressFamily::Inet;
+    rule_msg_hdr.table = 254;
+    rule_msg_hdr.action = RuleAction::ToTable;
 
     let mut rule_msg = RuleMessage::default();
     rule_msg.header = rule_msg_hdr;

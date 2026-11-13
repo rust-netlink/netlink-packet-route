@@ -45,6 +45,7 @@ pub(crate) struct NeighbourMessageBuffer {
 /// `NeighbourHeader` exposes all these fields.
 // Linux kernel struct `struct ndmsg`
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct NeighbourHeader {
     pub family: AddressFamily,
     pub ifindex: u32,

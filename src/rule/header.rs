@@ -33,6 +33,7 @@ pub(crate) struct RuleMessageBuffer {
 
 // Linux kernel code `struct fib_rule_hdr`
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct RuleHeader {
     pub family: AddressFamily,
     pub dst_len: u8,
