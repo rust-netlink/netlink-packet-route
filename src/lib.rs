@@ -25,8 +25,9 @@
 //! Every message family above has a cargo feature of the same name, and all of
 //! them are enabled by default through the `all` feature. Disabling a family
 //! removes its module, its [`RouteNetlinkMessage`] variants and its parsing
-//! code; messages of that family then fail to parse with `Unknown message
-//! type`, exactly as message types this crate never supported do.
+//! code. Messages of that family, and any other `RTM_*` type this crate does
+//! not know, are preserved as [`RouteNetlinkMessage::Other`] with the raw
+//! payload in a [`DefaultMessage`].
 //!
 //! The `link` module additionally splits its largest attributes into
 //! `link-af-spec`, `link-info` and `link-sriov`. With one of those disabled the
@@ -103,7 +104,10 @@ pub use netlink_packet_core::EthernetProtocol;
     target_os = "android",
 )))]
 pub use self::address_family_fallback::AddressFamily;
-pub use self::{ip::IpProtocol, message::RouteNetlinkMessage};
+pub use self::{
+    ip::IpProtocol,
+    message::{DefaultMessage, RouteNetlinkMessage},
+};
 
 #[cfg(all(test, has_message_family))]
 #[macro_use]

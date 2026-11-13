@@ -2,13 +2,22 @@
 
 #[test]
 #[cfg(not(feature = "address"))]
-fn disabled_message_family_is_rejected() {
-    use netlink_packet_core::ParseableParametrized;
+fn disabled_message_family_round_trips_as_opaque() {
+    use netlink_packet_core::{Emitable, ParseableParametrized};
     use netlink_packet_route::RouteNetlinkMessage;
 
-    // RTM_NEWADDR must be rejected even when the payload is otherwise valid.
-    let error = RouteNetlinkMessage::parse_with_param(&[0; 8], 20).unwrap_err();
-    assert!(error.to_string().contains("Unknown message type: 20"));
+    let payload = [0u8; 8];
+    let message = RouteNetlinkMessage::parse_with_param(&payload, 20).unwrap();
+    match &message {
+        RouteNetlinkMessage::Other(msg) => {
+            assert_eq!(msg.message_type(), 20);
+            assert_eq!(msg.payload(), payload.as_slice());
+        }
+        _ => panic!("expected an opaque message"),
+    }
+    let mut emitted = Vec::new();
+    message.emit(&mut emitted).unwrap();
+    assert_eq!(emitted, payload.as_slice());
 }
 
 #[test]
