@@ -49,6 +49,7 @@ pub(crate) struct LinkMessageBuffer {
 ///
 /// `LinkHeader` exposes all these fields except for the "reserved" one.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct LinkHeader {
     /// Address family: one of the `AF_*` constants.
     /// The [AddressFamily] has `From<u8>` and `From<AddressFamily> for u8`

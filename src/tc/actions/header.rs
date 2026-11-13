@@ -27,6 +27,7 @@ pub(crate) struct TcActionMessageBuffer {
 
 /// Header for a traffic control action message.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct TcActionMessageHeader {
     /// Address family (usually `AddressFamily::Unspec`).
     pub family: AddressFamily,

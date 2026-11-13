@@ -26,6 +26,7 @@ pub(crate) struct NeighbourTableMessageBuffer {
 
 // kernel code is `struct rtgenmsg`
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[non_exhaustive]
 pub struct NeighbourTableHeader {
     pub family: AddressFamily,
 }

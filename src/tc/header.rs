@@ -30,6 +30,7 @@ pub(crate) struct TcMessageBuffer {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[non_exhaustive]
 pub struct TcHeader {
     pub family: AddressFamily,
     // Interface index
