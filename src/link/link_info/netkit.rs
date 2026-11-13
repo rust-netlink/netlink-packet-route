@@ -139,7 +139,7 @@ impl From<NetkitScrub> for u32 {
     fn from(scrub: NetkitScrub) -> Self {
         match scrub {
             NetkitScrub::None => NETKIT_SCRUB_NONE,
-            _ => NETKIT_SCRUB_DEFAULT,
+            NetkitScrub::Default => NETKIT_SCRUB_DEFAULT,
         }
     }
 }
@@ -148,7 +148,14 @@ impl From<u32> for NetkitScrub {
     fn from(value: u32) -> Self {
         match value {
             NETKIT_SCRUB_NONE => NetkitScrub::None,
-            _ => NetkitScrub::Default,
+            NETKIT_SCRUB_DEFAULT => NetkitScrub::Default,
+            _ => {
+                log::warn!(
+                    "BUG: Got unknown NETKIT_SCRUB value {value}, treating it \
+                     as NetkitScrub::Default"
+                );
+                NetkitScrub::Default
+            }
         }
     }
 }
