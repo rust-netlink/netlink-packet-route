@@ -1,4 +1,14 @@
 # Changelog
+## [1.0.0-rc2] - 2026-11-15
+### Breaking changes
+ - N/A
+
+### New features
+ - N/A
+
+### Bug fixes
+ - Use netlink-packet-core 1.0.0-rc2. (2715068)
+
 ## [1.0.0-rc1] - 2026-11-15
 ### Breaking changes
  - API break: make wire `*Buffer` types crate-private. (dfa3055)
