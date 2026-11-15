@@ -77,21 +77,35 @@ fn test_emit_appends_and_zeroes_nla_padding() {
 #[test]
 fn test_short_message_payloads_return_error() {
     // One RTM_NEW* message type per supported family, with the length of
-    // its wire header.
-    for (message_type, header_len) in [
-        (16u16, 16usize), // RTM_NEWLINK
-        (20, 8),          // RTM_NEWADDR
-        (24, 12),         // RTM_NEWROUTE
-        (28, 12),         // RTM_NEWNEIGH
-        (32, 12),         // RTM_NEWRULE
-        (36, 20),         // RTM_NEWQDISC
-        (48, 4),          // RTM_NEWACTION
-        (52, 12),         // RTM_NEWPREFIX
-        (64, 4),          // RTM_NEWNEIGHTBL
-        (72, 12),         // RTM_NEWADDRLABEL
-        (88, 4),          // RTM_NEWNSID
-        (92, 12),         // RTM_NEWSTATS
-    ] {
+    // its wire header. Only the families enabled by the current feature set
+    // are checked: disabled ones are parsed as opaque `Other` messages, which
+    // accept any payload length.
+    let mut cases: Vec<(u16, usize)> = Vec::new();
+    #[cfg(feature = "link")]
+    cases.push((16u16, 16usize)); // RTM_NEWLINK
+    #[cfg(feature = "address")]
+    cases.push((20, 8)); // RTM_NEWADDR
+    #[cfg(feature = "route")]
+    cases.push((24, 12)); // RTM_NEWROUTE
+    #[cfg(feature = "neighbour")]
+    cases.push((28, 12)); // RTM_NEWNEIGH
+    #[cfg(feature = "rule")]
+    cases.push((32, 12)); // RTM_NEWRULE
+    #[cfg(feature = "tc")]
+    cases.push((36, 20)); // RTM_NEWQDISC
+    #[cfg(feature = "tc")]
+    cases.push((48, 4)); // RTM_NEWACTION
+    #[cfg(feature = "prefix")]
+    cases.push((52, 12)); // RTM_NEWPREFIX
+    #[cfg(feature = "neighbour-table")]
+    cases.push((64, 4)); // RTM_NEWNEIGHTBL
+    #[cfg(feature = "addrlabel")]
+    cases.push((72, 12)); // RTM_NEWADDRLABEL
+    #[cfg(feature = "nsid")]
+    cases.push((88, 4)); // RTM_NEWNSID
+    #[cfg(feature = "stats")]
+    cases.push((92, 12)); // RTM_NEWSTATS
+    for (message_type, header_len) in cases {
         for len in 0..header_len {
             let buffer = vec![0u8; len];
             let result =
